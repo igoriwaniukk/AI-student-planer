@@ -18,11 +18,22 @@ a { color: #8b6dff; }
 .app-shell {
   width: 100%;
   max-width: 460px;
-  min-height: 100vh;
+  height: 100vh;
   position: relative;
   background: #08080c;
-  padding: 20px 20px 96px;
-  overflow-y: auto;
+  overflow: hidden;
+}
+
+.sc { scrollbar-width: none; }
+.sc::-webkit-scrollbar { width: 0; height: 0; }
+
+@keyframes pulseGlow {
+  0%, 100% { transform: scale(1); opacity: .9; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
 }
 
 .card {
@@ -58,31 +69,3 @@ input, select, textarea {
   font-size: 14px;
   font-family: inherit;
 }
-
-.tab-bar {
-  position: fixed;
-  bottom: 0;
-  width: 100%;
-  max-width: 460px;
-  display: flex;
-  justify-content: space-around;
-  padding: 10px 8px calc(10px + env(safe-area-inset-bottom));
-  background: rgba(12, 12, 16, 0.92);
-  backdrop-filter: blur(12px);
-  border-top: 1px solid rgba(255, 255, 255, 0.07);
-}
-
-.tab-btn {
-  background: none;
-  border: none;
-  color: #6f6f7d;
-  font-size: 11px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  cursor: pointer;
-  padding: 4px 10px;
-}
-
-.tab-btn.active { color: #a58cff; }
