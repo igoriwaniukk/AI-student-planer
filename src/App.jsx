@@ -6,7 +6,8 @@ import AddDeadline from './screens/AddDeadline';
 import PrepPlan from './screens/PrepPlan';
 import RescueDay from './screens/RescueDay';
 import Summary from './screens/Summary';
-import { useDeadlines, useSessions, useStudentName, toISODate } from './lib/store';
+import Onboarding from './screens/Onboarding';
+import { useDeadlines, useSessions, useStudentName, useSchoolPlan, useActivities, toISODate } from './lib/store';
 
 const TAB_SCREENS = new Set(['home', 'planner', 'deadline', 'summary']);
 
@@ -14,10 +15,11 @@ export default function App() {
   const [name, setName] = useStudentName();
   const [sessions, setSessions] = useSessions();
   const [deadlines, setDeadlines] = useDeadlines();
+  const [schoolPlan, setSchoolPlan] = useSchoolPlan();
+  const [activities, setActivities] = useActivities();
   const [screen, setScreen] = useState('home');
   const [screenParams, setScreenParams] = useState({});
   const [selectedDay, setSelectedDay] = useState(toISODate(new Date()));
-  const [nameDraft, setNameDraft] = useState('');
 
   function navigate(next, params = {}) {
     setScreen(next);
@@ -61,20 +63,13 @@ export default function App() {
 
   if (!name) {
     return (
-      <div className="app-shell" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-        <div style={{ fontSize: 24, fontWeight: 750 }}>Cześć! 👋</div>
-        <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 8 }}>Jak masz na imię?</div>
-        <form
-          style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (nameDraft.trim()) setName(nameDraft.trim());
-          }}
-        >
-          <input value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} placeholder="Imię" autoFocus />
-          <button type="submit" className="btn btn-primary">Zaczynajmy</button>
-        </form>
-      </div>
+      <Onboarding
+        onComplete={({ name: newName, schoolPlan, activities }) => {
+          setSchoolPlan(schoolPlan);
+          setActivities(activities);
+          setName(newName);
+        }}
+      />
     );
   }
 
@@ -85,6 +80,8 @@ export default function App() {
           name={name}
           sessions={sessions}
           deadlines={deadlines}
+          schoolPlan={schoolPlan}
+          activities={activities}
           selectedDay={selectedDay}
           onSelectDay={setSelectedDay}
           onToggleSession={toggleSession}

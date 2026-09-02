@@ -1,7 +1,7 @@
 import { colorForSubject, toISODate } from '../lib/store';
 import WeekStrip from '../components/WeekStrip';
 
-export default function Home({ name, sessions, deadlines, selectedDay, onSelectDay, onToggleSession, onNavigate }) {
+export default function Home({ name, sessions, deadlines, schoolPlan, activities, selectedDay, onSelectDay, onToggleSession, onNavigate }) {
   const today = toISODate(new Date());
   const todaysSessions = sessions
     .filter((s) => s.day === selectedDay)
@@ -34,6 +34,21 @@ export default function Home({ name, sessions, deadlines, selectedDay, onSelectD
         <span style={{ fontSize: 20 }}>👋</span>
       </div>
       <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 6 }}>Gotowy na produktywny dzień?</div>
+
+      {(schoolPlan || activities?.selected?.length > 0) && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 10 }}>
+          {schoolPlan && (
+            <span style={{ fontSize: 11, color: '#a58cff', background: 'rgba(139,109,255,.12)', border: '1px solid rgba(139,109,255,.25)', borderRadius: 999, padding: '4px 10px' }}>
+              📎 {schoolPlan.name}
+            </span>
+          )}
+          {activities?.selected?.map((a) => (
+            <span key={a} style={{ fontSize: 11, color: '#8a8a99', background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 999, padding: '4px 10px' }}>
+              {a}
+            </span>
+          ))}
+        </div>
+      )}
 
       <WeekStrip selectedDay={selectedDay} onSelect={onSelectDay} sessionsByDay={sessionsByDay} />
 

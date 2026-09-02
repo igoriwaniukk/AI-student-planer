@@ -4,6 +4,8 @@ const KEYS = {
   name: 'sp_name',
   sessions: 'sp_sessions',
   deadlines: 'sp_deadlines',
+  schoolPlan: 'sp_schoolPlan',
+  activities: 'sp_activities',
 };
 
 export function useLocalStorage(key, initialValue) {
@@ -77,4 +79,12 @@ export function useSessions() {
 
 export function useDeadlines() {
   return useLocalStorage(KEYS.deadlines, seedDeadlines());
+}
+
+export function useSchoolPlan() {
+  return useLocalStorage(KEYS.schoolPlan, null);
+}
+
+export function useActivities() {
+  return useLocalStorage(KEYS.activities, null);
 }
