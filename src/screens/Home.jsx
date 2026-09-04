@@ -222,9 +222,9 @@ function EnergySheet({ planner }) {
   );
 }
 
-export default function Home({ planner, studentName }) {
+export default function Home({ planner, studentName, vulcanExams = [] }) {
   const { state, ts, openEnergySheet } = planner;
-  const goalExam = planner.nextGoalPrompt();
+  const goalExam = planner.nextGoalPrompt(vulcanExams);
   const dayIds = state.taskDefs.filter((_, i) => state.tasks[i]).map((t) => t.id);
   const doneCount = dayIds.filter((id) => ts(id).status === 'completed').length;
   const totalCount = dayIds.filter((id) => ts(id).status !== 'skipped').length;

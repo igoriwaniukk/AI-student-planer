@@ -25,7 +25,10 @@ function ExamGoalCard({ exam, goal, onGrade, onImportance, onAdjust, onRemove })
   return (
     <Card>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: exam.color }}>{exam.subject.toUpperCase()}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: exam.color }}>{exam.subject.toUpperCase()}</span>
+          {exam.source === 'vulcan' && <Pill text="Z dziennika" color="#8fbaff" bg="rgba(91,156,255,.15)" />}
+        </div>
         <Pill text={exam.daysUntil === 1 ? 'Jutro' : 'Za ' + exam.daysUntil + ' dni'} color="#f5a524" bg="rgba(245,165,36,.15)" />
       </div>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
@@ -130,10 +133,10 @@ function AddGoalSheet({ onCancel, onSave }) {
   );
 }
 
-export default function Goals({ planner }) {
+export default function Goals({ planner, vulcanExams = [] }) {
   const { state, go, setExamGrade, setExamImportance, adjustExamStudyMinutes, addCustomExam, removeCustomExam } = planner;
   const [adding, setAdding] = useState(false);
-  const exams = upcomingExams(state);
+  const exams = upcomingExams(state).concat(vulcanExams).sort((a, b) => a.daysUntil - b.daysUntil);
   const DEFAULT_GOAL = { grade: GOALS[2], studyMinutes: 120, importance: 'Średni' };
 
   return (

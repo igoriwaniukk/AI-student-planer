@@ -40,7 +40,50 @@ function Row({ icon, title, sub, right }) {
   );
 }
 
-export default function Calendar({ planner, activities }) {
+function VulcanSection({ vulcanData, go }) {
+  const { exams, lessons, loading, error } = vulcanData;
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const todaysLessons = lessons.filter((l) => l.date === todayStr).sort((a, b) => (a.start || '').localeCompare(b.start || ''));
+  const upcoming = exams.filter((e) => e.daysUntil <= 7).slice(0, 5);
+
+  return (
+    <>
+      <SectionTitle style={{ margin: '22px 0 12px' }}>Z Twojego dziennika (Vulcan)</SectionTitle>
+      {loading && <Card><div style={{ fontSize: 12.5, color: '#8a8a99' }}>Wczytywanie danych z dziennika…</div></Card>}
+      {error && <Card style={{ background: 'rgba(245,165,36,.06)', border: '1px solid rgba(245,165,36,.28)' }}><div style={{ fontSize: 12.5, color: '#f7c46c' }}>{error}</div></Card>}
+      {!loading && !error && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+          {upcoming.length ? upcoming.map((e) => (
+            <Card key={e.id} style={{ background: 'rgba(91,156,255,.06)', border: '1px solid rgba(91,156,255,.22)' }}>
+              <div onClick={() => go('goals')} style={{ cursor: 'pointer' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: '#8fbaff' }}>{e.subject.toUpperCase()}</span>
+                  <Pill text={e.daysUntil <= 0 ? 'Dziś' : e.daysUntil === 1 ? 'Jutro' : 'Za ' + e.daysUntil + ' dni'} color="#f5a524" bg="rgba(245,165,36,.15)" />
+                </div>
+                <div style={{ fontSize: 14.5, fontWeight: 700, marginTop: 6 }}>{e.title}</div>
+              </div>
+            </Card>
+          )) : <Card><div style={{ fontSize: 12.5, color: '#8a8a99' }}>Brak sprawdzianów w ciągu najbliższych 7 dni.</div></Card>}
+          {todaysLessons.length > 0 && (
+            <Card>
+              <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', marginBottom: 10 }}>DZISIEJSZE LEKCJE</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {todaysLessons.map((l) => (
+                  <div key={l.id} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
+                    <span>{l.subject}</span>
+                    <span style={{ color: '#8a8a99' }}>{l.start}–{l.end}{l.room ? ' · ' + l.room : ''}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+export default function Calendar({ planner, activities, vulcanData }) {
   const { state, go } = planner;
   const [calDay, setCalDay] = useState(state.selectedDay || REFERENCE_DAY);
   const info = dayInfo(calDay);
@@ -63,9 +106,11 @@ export default function Calendar({ planner, activities }) {
         </div>
       </div>
 
+      {vulcanData && <VulcanSection vulcanData={vulcanData} go={go} />}
+
       <WeekStrip selectedDay={calDay} onSelect={setCalDay} eventDays={eventDays} />
 
-      <SectionTitle style={{ margin: '22px 0 12px' }}>Nadchodzące terminy</SectionTitle>
+      <SectionTitle style={{ margin: '22px 0 12px' }}>Nadchodzące terminy{vulcanData ? ' (dane demo)' : ''}</SectionTitle>
       {weekExams.length ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
           {weekExams.map((e) => {

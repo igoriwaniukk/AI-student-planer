@@ -541,9 +541,9 @@ export function usePlanner() {
       examGoals: { ...s.examGoals, [examId]: { ...(s.examGoals[examId] || DEFAULT_EXAM_GOAL), grade, importance, answered: true } },
     }));
   }
-  function nextGoalPrompt(st) {
-    const s = st || state;
-    return upcomingExams(s)
+  function nextGoalPrompt(extraExams = []) {
+    const s = state;
+    return upcomingExams(s).concat(extraExams)
       .filter((e) => e.daysUntil >= 0 && e.daysUntil <= 7 && !s.examGoals[e.id]?.answered && !s.dismissedGoalPrompts[e.id])
       .sort((a, b) => a.daysUntil - b.daysUntil)[0] || null;
   }

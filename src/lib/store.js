@@ -4,6 +4,7 @@ const KEYS = {
   name: 'sp_name',
   schoolPlan: 'sp_schoolPlan',
   activities: 'sp_activities',
+  vulcanSession: 'sp_vulcanSession',
 };
 
 export function useLocalStorage(key, initialValue) {
@@ -33,4 +34,12 @@ export function useSchoolPlan() {
 
 export function useActivities() {
   return useLocalStorage(KEYS.activities, null);
+}
+
+// Session id only — the actual Vulcan credentials never leave the backend
+// (see server/vulcanSessions.js). This just remembers "we were connected"
+// across reloads; if the dev server restarted, the id is stale and the
+// next request will come back as "session expired".
+export function useVulcanSession() {
+  return useLocalStorage(KEYS.vulcanSession, null);
 }
