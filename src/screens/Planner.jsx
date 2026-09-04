@@ -118,16 +118,6 @@ export default function Planner({ planner }) {
         style={{ width: '100%', boxSizing: 'border-box', minHeight: 96, borderRadius: 16, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', padding: 14, fontSize: 13.5, lineHeight: 1.5, color: '#f4f4f7', fontFamily: 'inherit', resize: 'vertical' }}
       />
 
-      <div onClick={() => update((s) => ({ gcal: !s.gcal }))} style={{ marginTop: 14, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', gap: 13, cursor: 'pointer' }}>
-        <div style={{ width: 44, height: 26, flex: 'none', borderRadius: 99, padding: 3, display: 'flex', alignItems: 'center', background: state.gcal ? '#7c5cff' : 'rgba(255,255,255,.14)', justifyContent: state.gcal ? 'flex-end' : 'flex-start' }}>
-          <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff' }} />
-        </div>
-        <div>
-          <div style={{ fontSize: 13.5, fontWeight: 700 }}>Dodaj bloki nauki do Google Calendar</div>
-          <div style={{ fontSize: 11.5, lineHeight: 1.45, color: '#7a7a8a', marginTop: 4 }}>Dodane zostaną tylko bloki nauki. Szkoła i tenis nie zostaną dodane ponownie.</div>
-        </div>
-      </div>
-
       <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
         <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>PODSUMOWANIE</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14 }}>

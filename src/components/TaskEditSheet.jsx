@@ -29,9 +29,9 @@ export default function TaskEditSheet({ planner }) {
 
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>CZAS TRWANIA</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-        <div onClick={stepTaskDur(-5)} style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, cursor: 'pointer' }}>−</div>
+        <div onClick={() => stepTaskDur(-5)} style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, cursor: 'pointer' }}>−</div>
         <div style={{ flex: 1, textAlign: 'center', fontSize: 21, fontWeight: 750 }}>{fm.dur} min</div>
-        <div onClick={stepTaskDur(5)} style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, cursor: 'pointer' }}>+</div>
+        <div onClick={() => stepTaskDur(5)} style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, cursor: 'pointer' }}>+</div>
       </div>
       {errs.dur && <div style={{ fontSize: 11.5, color: '#f5a524', marginTop: 7 }}>{errs.dur}</div>}
 
