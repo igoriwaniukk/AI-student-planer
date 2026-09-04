@@ -1,6 +1,7 @@
 import TabBar from './components/TabBar';
 import { GeneratingOverlay } from './components/ui';
 import Home from './screens/Home';
+import Calendar from './screens/Calendar';
 import Planner from './screens/Planner';
 import Plan from './screens/Plan';
 import Rescue from './screens/Rescue';
@@ -13,7 +14,7 @@ import Onboarding from './screens/Onboarding';
 import { useStudentName, useSchoolPlan, useActivities } from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
 
-const TAB_SCREENS = new Set(['home', 'profile']);
+const TAB_SCREENS = new Set(['home', 'calendar', 'profile']);
 
 export default function App() {
   const [name, setName] = useStudentName();
@@ -39,6 +40,7 @@ export default function App() {
   return (
     <div className="app-shell">
       {screen === 'home' && <Home planner={planner} studentName={name} />}
+      {screen === 'calendar' && <Calendar planner={planner} activities={activities} />}
       {screen === 'planner' && <Planner planner={planner} />}
       {screen === 'plan' && <Plan planner={planner} />}
       {screen === 'rescue' && <Rescue planner={planner} />}

@@ -4,7 +4,7 @@ const TABS = [
     icon: (c) => <path d="M3.4 9.2L11 3.2l7.6 6v8.4a1.6 1.6 0 01-1.6 1.6H5a1.6 1.6 0 01-1.6-1.6V9.2z" stroke={c} strokeWidth="1.5" strokeLinejoin="round" />,
   },
   {
-    key: 'Kalendarz', screens: ['planner', 'plan'],
+    key: 'Kalendarz', screens: ['calendar'],
     icon: (c) => (
       <>
         <rect x="3.2" y="4.6" width="15.6" height="14.2" rx="3" stroke={c} strokeWidth="1.5" />
