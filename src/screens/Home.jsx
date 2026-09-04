@@ -1,7 +1,49 @@
-import { STATUS_COLOR, STATUS_LABEL } from '../lib/plannerData';
+import { useState } from 'react';
+import { STATUS_COLOR, STATUS_LABEL, GOALS, IMPORTANCE_OPTIONS } from '../lib/plannerData';
 import { span } from '../lib/plannerLogic';
 import WeekStrip from '../components/WeekStrip';
-import { Pill, BottomSheet, EnergyPicker } from '../components/ui';
+import { Pill, BottomSheet, EnergyPicker, Chip } from '../components/ui';
+
+function GoalPromptCard({ planner, exam }) {
+  const { answerGoalPrompt, dismissGoalPrompt } = planner;
+  const [importance, setImportance] = useState('');
+  const [grade, setGrade] = useState('');
+  const canSave = importance && grade;
+
+  return (
+    <div style={{ marginTop: 18, padding: 16, borderRadius: 20, background: 'rgba(124,92,255,.08)', border: '1.5px solid rgba(124,92,255,.35)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+        <span style={{ fontSize: 16 }}>🎯</span>
+        <div style={{ fontSize: 13.5, fontWeight: 700 }}>Zbliża się sprawdzian: {exam.subject}</div>
+      </div>
+      <div style={{ fontSize: 12, color: '#a3a3b3', marginTop: 6, lineHeight: 1.45 }}>{exam.title} — {exam.daysUntil === 1 ? 'jutro' : 'za ' + exam.daysUntil + ' dni'}. Ustaw cel, żeby AI mogło lepiej zaplanować naukę.</div>
+
+      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '14px 0 8px' }}>JAK WAŻNY JEST TEN SPRAWDZIAN?</div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        {IMPORTANCE_OPTIONS.map((imp) => (
+          <Chip key={imp} label={imp} active={importance === imp} onClick={() => setImportance(imp)} style={{ flex: 1, textAlign: 'center' }} />
+        ))}
+      </div>
+
+      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '14px 0 8px' }}>JAKĄ OCENĘ CHCESZ ZDOBYĆ?</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        {GOALS.map((g) => (
+          <Chip key={g} label={g} active={grade === g} onClick={() => setGrade(g)} />
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', gap: 11, marginTop: 16 }}>
+        <div onClick={() => dismissGoalPrompt(exam.id)} style={{ flex: 1, height: 44, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, cursor: 'pointer' }}>Później</div>
+        <div
+          onClick={() => canSave && answerGoalPrompt(exam.id, { importance, grade })}
+          style={{ flex: 1.3, height: 44, borderRadius: 14, background: canSave ? 'linear-gradient(160deg,#8b6dff,#6d4dff)' : 'rgba(255,255,255,.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: canSave ? '#fff' : '#6b6b7a', cursor: canSave ? 'pointer' : 'not-allowed' }}
+        >
+          Zapisz cel
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function SmallBtn({ label, onClick, accent }) {
   return (
@@ -182,6 +224,7 @@ function EnergySheet({ planner }) {
 
 export default function Home({ planner, studentName }) {
   const { state, ts, openEnergySheet } = planner;
+  const goalExam = planner.nextGoalPrompt();
   const dayIds = state.taskDefs.filter((_, i) => state.tasks[i]).map((t) => t.id);
   const doneCount = dayIds.filter((id) => ts(id).status === 'completed').length;
   const totalCount = dayIds.filter((id) => ts(id).status !== 'skipped').length;
@@ -219,6 +262,8 @@ export default function Home({ planner, studentName }) {
           <div style={{ fontSize: 12, color: '#a3a3b3', marginTop: 11 }}>Angielski przeniesiono na jutro o {state.engStart}.</div>
         </div>
       )}
+
+      {goalExam && <GoalPromptCard key={goalExam.id} planner={planner} exam={goalExam} />}
 
       <WeekStrip selectedDay={state.selectedDay} />
 

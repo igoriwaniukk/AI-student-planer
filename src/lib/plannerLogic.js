@@ -93,9 +93,11 @@ export function startOf(id, { schedule, startOverride }) {
 }
 
 export function upcomingExams(state) {
-  return EXAMS
-    .filter((e) => !e.requires || state[e.requires])
-    .map((e) => ({ ...e, daysUntil: e.day - REFERENCE_DAY }));
+  const builtIn = EXAMS.filter((e) => !e.requires || state[e.requires]);
+  const all = builtIn.concat(state.customExams || []);
+  return all
+    .map((e) => ({ ...e, daysUntil: e.day - REFERENCE_DAY }))
+    .sort((a, b) => a.daysUntil - b.daysUntil);
 }
 
 export function checkBlockConflict(id, start, dur, schedule, def) {

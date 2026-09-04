@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  TASK_DEFS, PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, SESSIONS, SESSION_DATES, GOALS,
+  TASK_DEFS, PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, SESSIONS, SESSION_DATES, GOALS, REFERENCE_DAY,
 } from '../lib/plannerData';
-import { buildSchedule, activeIds as computeActiveIds, checkBlockConflict } from '../lib/plannerLogic';
+import { buildSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams } from '../lib/plannerLogic';
 
 function initialState() {
   return {
@@ -103,8 +103,10 @@ function initialState() {
     calendarEvents: [],
 
     examGoals: {
-      math: { grade: 'Ocena co najmniej 4', studyMinutes: 180 },
+      math: { grade: 'Ocena co najmniej 4', studyMinutes: 180, importance: 'Wysoki', answered: false },
     },
+    customExams: [],
+    dismissedGoalPrompts: {},
   };
 }
 
@@ -501,16 +503,49 @@ export function usePlanner() {
   function applyAdaptive() { update({ adaptive: true }); }
   function declineAdaptive() { update({ adaptive: false }); }
 
-  // ---- goals (per-exam target grade + planned study time) ----
-  const DEFAULT_EXAM_GOAL = { grade: GOALS[2], studyMinutes: 120 };
+  // ---- goals (per-exam target grade, importance, and planned study time) ----
+  const DEFAULT_EXAM_GOAL = { grade: GOALS[2], studyMinutes: 120, importance: 'Średni', answered: false };
   function setExamGrade(examId, grade) {
-    update((s) => ({ examGoals: { ...s.examGoals, [examId]: { ...(s.examGoals[examId] || DEFAULT_EXAM_GOAL), grade } } }));
+    update((s) => ({ examGoals: { ...s.examGoals, [examId]: { ...(s.examGoals[examId] || DEFAULT_EXAM_GOAL), grade, answered: true } } }));
+  }
+  function setExamImportance(examId, importance) {
+    update((s) => ({ examGoals: { ...s.examGoals, [examId]: { ...(s.examGoals[examId] || DEFAULT_EXAM_GOAL), importance, answered: true } } }));
   }
   function adjustExamStudyMinutes(examId, delta) {
     update((s) => {
       const cur = s.examGoals[examId] || DEFAULT_EXAM_GOAL;
       return { examGoals: { ...s.examGoals, [examId]: { ...cur, studyMinutes: Math.max(15, cur.studyMinutes + delta) } } };
     });
+  }
+  function addCustomExam({ subject, title, daysUntil, grade, importance, studyMinutes, color }) {
+    const id = 'custom-' + Date.now();
+    const exam = { id, subject, title, color: color || '#8fbaff', day: REFERENCE_DAY + daysUntil };
+    update((s) => ({
+      customExams: s.customExams.concat(exam),
+      examGoals: { ...s.examGoals, [id]: { grade, importance, studyMinutes, answered: true } },
+    }));
+    return id;
+  }
+  function removeCustomExam(id) {
+    update((s) => {
+      const examGoals = { ...s.examGoals };
+      delete examGoals[id];
+      return { customExams: s.customExams.filter((e) => e.id !== id), examGoals };
+    });
+  }
+  function dismissGoalPrompt(examId) {
+    update((s) => ({ dismissedGoalPrompts: { ...s.dismissedGoalPrompts, [examId]: true } }));
+  }
+  function answerGoalPrompt(examId, { grade, importance }) {
+    update((s) => ({
+      examGoals: { ...s.examGoals, [examId]: { ...(s.examGoals[examId] || DEFAULT_EXAM_GOAL), grade, importance, answered: true } },
+    }));
+  }
+  function nextGoalPrompt(st) {
+    const s = st || state;
+    return upcomingExams(s)
+      .filter((e) => e.daysUntil >= 0 && e.daysUntil <= 7 && !s.examGoals[e.id]?.answered && !s.dismissedGoalPrompts[e.id])
+      .sort((a, b) => a.daysUntil - b.daysUntil)[0] || null;
   }
 
   return {
@@ -529,7 +564,8 @@ export function usePlanner() {
     finishDay, goHomeSummarized, saveLater, bioAdjust, mathAdjust,
     keepEngTomorrow, openEngTime, pickEngTime, cancelEngTime, saveEngTime,
     applyAdaptive, declineAdaptive,
-    setExamGrade, adjustExamStudyMinutes,
+    setExamGrade, setExamImportance, adjustExamStudyMinutes,
+    addCustomExam, removeCustomExam, dismissGoalPrompt, answerGoalPrompt, nextGoalPrompt,
     computeActiveIds,
   };
 }
