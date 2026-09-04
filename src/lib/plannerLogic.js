@@ -1,4 +1,4 @@
-import { DEFAULT_START } from './plannerData';
+import { DEFAULT_START, EXAMS, REFERENCE_DAY } from './plannerData';
 
 export function fmt(totalMinutes) {
   const h = Math.floor(totalMinutes / 60) % 24;
@@ -90,6 +90,12 @@ export function startOf(id, { schedule, startOverride }) {
   if (startOverride && startOverride[id] != null) return startOverride[id];
   if (schedule && schedule[id]) return schedule[id].start;
   return DEFAULT_START[id] || 930;
+}
+
+export function upcomingExams(state) {
+  return EXAMS
+    .filter((e) => !e.requires || state[e.requires])
+    .map((e) => ({ ...e, daysUntil: e.day - REFERENCE_DAY }));
 }
 
 export function checkBlockConflict(id, start, dur, schedule, def) {

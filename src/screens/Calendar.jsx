@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import WeekStrip from '../components/WeekStrip';
 import { BackButton, Pill, SectionTitle } from '../components/ui';
-import { span } from '../lib/plannerLogic';
+import { span, upcomingExams, hm } from '../lib/plannerLogic';
+import { REFERENCE_DAY } from '../lib/plannerData';
 
 const DAYS = [
   { num: 16, label: 'Czwartek', short: 'CZW', school: true },
@@ -12,7 +13,6 @@ const DAYS = [
   { num: 21, label: 'Wtorek', short: 'WT', school: true },
   { num: 22, label: 'Środa', short: 'ŚR', school: true },
 ];
-const REFERENCE_DAY = 20; // "jutro" pivot used across the app (Poniedziałek, 20 lipca)
 const TENIS_DAY = 20;
 
 function dayInfo(num) {
@@ -45,13 +45,7 @@ export default function Calendar({ planner, activities }) {
   const [calDay, setCalDay] = useState(state.selectedDay || REFERENCE_DAY);
   const info = dayInfo(calDay);
 
-  // Exams within the visible 7-day window, derived the same way the rest of the
-  // app phrases deadlines ("za N dni") relative to the planning pivot day.
-  const exams = [{ subject: 'Matematyka', title: 'Sprawdzian', color: '#a58cff', day: 22 }];
-  if (state.bioDeadlineSaved) exams.push({ subject: 'Biologia', title: 'Sprawdzian', color: '#2ee6c5', day: 31 });
-  const weekExams = exams
-    .filter((e) => e.day >= 16 && e.day <= 22)
-    .map((e) => ({ ...e, daysUntil: e.day - REFERENCE_DAY }));
+  const weekExams = upcomingExams(state).filter((e) => e.day >= 16 && e.day <= 22);
   const eventDays = new Set(weekExams.map((e) => e.day));
   if (info.school) eventDays.add(TENIS_DAY);
 
@@ -74,16 +68,30 @@ export default function Calendar({ planner, activities }) {
       <SectionTitle style={{ margin: '22px 0 12px' }}>Nadchodzące terminy</SectionTitle>
       {weekExams.length ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
-          {weekExams.map((e) => (
-            <Card key={e.subject} style={{ background: 'rgba(245,165,36,.06)', border: '1px solid rgba(245,165,36,.28)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: e.color }}>{e.subject.toUpperCase()}</span>
-                <Pill text={e.daysUntil === 1 ? 'Jutro' : 'Za ' + e.daysUntil + ' dni'} color="#f5a524" bg="rgba(245,165,36,.15)" />
-              </div>
-              <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6 }}>{e.title}</div>
-              <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 3 }}>{dayInfo(e.day).label}, {e.day} lipca</div>
-            </Card>
-          ))}
+          {weekExams.map((e) => {
+            const goal = state.examGoals?.[e.id];
+            return (
+              <Card key={e.id} style={{ background: 'rgba(245,165,36,.06)', border: '1px solid rgba(245,165,36,.28)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: e.color }}>{e.subject.toUpperCase()}</span>
+                  <Pill text={e.daysUntil === 1 ? 'Jutro' : 'Za ' + e.daysUntil + ' dni'} color="#f5a524" bg="rgba(245,165,36,.15)" />
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6 }}>{e.title}</div>
+                <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 3 }}>{dayInfo(e.day).label}, {e.day} lipca</div>
+                <div
+                  onClick={() => go('goals')}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,.07)', cursor: 'pointer' }}
+                >
+                  {goal ? (
+                    <span style={{ fontSize: 12, color: '#c9baff' }}>🎯 Cel: {goal.grade} · {hm(goal.studyMinutes)} nauki</span>
+                  ) : (
+                    <span style={{ fontSize: 12, color: '#8a8a99' }}>Nie ustawiono celu</span>
+                  )}
+                  <span style={{ fontSize: 12, fontWeight: 650, color: '#a58cff' }}>Cele ›</span>
+                </div>
+              </Card>
+            );
+          })}
         </div>
       ) : (
         <Card><div style={{ fontSize: 12.5, color: '#8a8a99' }}>Brak terminów w najbliższym tygodniu.</div></Card>

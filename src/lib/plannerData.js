@@ -36,6 +36,14 @@ export const PRIO_STYLE = {
 };
 export const DEFAULT_START = { math: 930, bio: 1000, eng: 1170 };
 
+// "jutro" pivot used across the app (Poniedziałek, 20 lipca) — deadlines are
+// phrased ("za N dni") relative to this day.
+export const REFERENCE_DAY = 20;
+export const EXAMS = [
+  { id: 'math', subject: 'Matematyka', title: 'Sprawdzian', color: '#a58cff', day: 22 },
+  { id: 'bio', subject: 'Biologia', title: 'Sprawdzian', color: '#2ee6c5', day: 31, requires: 'bioDeadlineSaved' },
+];
+
 export const SUBJECTS = ['Matematyka', 'Biologia', 'Angielski', 'Polski', 'Historia', 'Geografia', 'Fizyka', 'Chemia', 'Inny'];
 export const GOALS = ['Zaliczyć', 'Ocena co najmniej 3', 'Ocena co najmniej 4', 'Ocena co najmniej 5', 'Bez konkretnego celu'];
 export const LEVELS = ['Nie znam', 'Znam podstawy', 'Średnio', 'Dobrze', 'Bardzo dobrze'];

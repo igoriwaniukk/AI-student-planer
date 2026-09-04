@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  TASK_DEFS, PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, SESSIONS, SESSION_DATES,
+  TASK_DEFS, PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, SESSIONS, SESSION_DATES, GOALS,
 } from '../lib/plannerData';
 import { buildSchedule, activeIds as computeActiveIds, checkBlockConflict } from '../lib/plannerLogic';
 
@@ -101,6 +101,10 @@ function initialState() {
     planApproved: false,
     dayEnded: false,
     calendarEvents: [],
+
+    examGoals: {
+      math: { grade: 'Ocena co najmniej 4', studyMinutes: 180 },
+    },
   };
 }
 
@@ -497,6 +501,18 @@ export function usePlanner() {
   function applyAdaptive() { update({ adaptive: true }); }
   function declineAdaptive() { update({ adaptive: false }); }
 
+  // ---- goals (per-exam target grade + planned study time) ----
+  const DEFAULT_EXAM_GOAL = { grade: GOALS[2], studyMinutes: 120 };
+  function setExamGrade(examId, grade) {
+    update((s) => ({ examGoals: { ...s.examGoals, [examId]: { ...(s.examGoals[examId] || DEFAULT_EXAM_GOAL), grade } } }));
+  }
+  function adjustExamStudyMinutes(examId, delta) {
+    update((s) => {
+      const cur = s.examGoals[examId] || DEFAULT_EXAM_GOAL;
+      return { examGoals: { ...s.examGoals, [examId]: { ...cur, studyMinutes: Math.max(15, cur.studyMinutes + delta) } } };
+    });
+  }
+
   return {
     state, update, def, ts, go,
     toggleTask, generatePlan, deadlineGenerate, rescueGenerate,
@@ -513,6 +529,7 @@ export function usePlanner() {
     finishDay, goHomeSummarized, saveLater, bioAdjust, mathAdjust,
     keepEngTomorrow, openEngTime, pickEngTime, cancelEngTime, saveEngTime,
     applyAdaptive, declineAdaptive,
+    setExamGrade, adjustExamStudyMinutes,
     computeActiveIds,
   };
 }

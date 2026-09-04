@@ -17,7 +17,7 @@ const TABS = [
     icon: (c) => <path d="M11 4l8 14H3l8-14z" stroke={c} strokeWidth="1.5" strokeLinejoin="round" />,
   },
   {
-    key: 'Cele', screens: ['summary'],
+    key: 'Cele', screens: ['goals'],
     icon: (c) => (
       <>
         <circle cx="11" cy="11" r="7.6" stroke={c} strokeWidth="1.5" />
