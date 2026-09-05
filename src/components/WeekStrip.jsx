@@ -1,11 +1,15 @@
-const DAYS = [['CZW', 16], ['PT', 17], ['SOB', 18], ['ND', 19], ['PN', 20], ['WT', 21], ['ŚR', 22]];
+import { WEEK_DAYS } from '../lib/plannerData';
+import { DAY_KEY } from '../lib/i18n';
+import { useLang } from '../lib/useLang';
 
 export default function WeekStrip({ selectedDay, onSelect, eventDays }) {
+  const { t } = useLang();
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginTop: 22 }}>
-      {DAYS.map(([label, num]) => {
+      {WEEK_DAYS.map(({ num, label, short }) => {
         const on = num === selectedDay;
         const hasEvent = eventDays ? eventDays.has(num) : num % 2 === 0;
+        const shortLabel = t(DAY_KEY[label] + '.short') || short;
         return (
           <div
             key={num}
@@ -17,7 +21,7 @@ export default function WeekStrip({ selectedDay, onSelect, eventDays }) {
               cursor: onSelect ? 'pointer' : 'default',
             }}
           >
-            <span style={{ fontSize: 10, fontWeight: 650, color: on ? 'rgba(255,255,255,.85)' : '#7a7a8a', letterSpacing: '.06em' }}>{label}</span>
+            <span style={{ fontSize: 10, fontWeight: 650, color: on ? 'rgba(255,255,255,.85)' : '#7a7a8a', letterSpacing: '.06em' }}>{shortLabel}</span>
             <span style={{ fontSize: 17, fontWeight: on ? 750 : 700 }}>{num}</span>
             <span style={{ width: 4, height: 4, borderRadius: '50%', background: on ? '#fff' : (hasEvent ? '#2ee6c5' : 'transparent') }} />
           </div>

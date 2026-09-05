@@ -1,4 +1,5 @@
 import { DEFAULT_START, EXAMS, REFERENCE_DAY } from './plannerData';
+import { getCurrentLang } from './i18n';
 
 export function fmt(totalMinutes) {
   const h = Math.floor(totalMinutes / 60) % 24;
@@ -13,8 +14,9 @@ export function span(a, b) {
 export function hm(mins) {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
-  if (h && m) return h + ' godz. ' + m + ' min';
-  if (h) return h + ' godz.';
+  const hUnit = getCurrentLang() === 'en' ? 'hr' : 'godz.';
+  if (h && m) return h + ' ' + hUnit + ' ' + m + ' min';
+  if (h) return h + ' ' + hUnit;
   return m + ' min';
 }
 
@@ -100,49 +102,60 @@ export function startOf(id, { schedule, startOverride }) {
 }
 
 const PREP_DIFFICULTY_DUR = { 'Łatwy': 25, 'Średni': 35, 'Trudny': 40 };
-const WEEKDAYS = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+const WEEKDAYS = { pl: ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'], en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] };
 
 function prepDayLabel(day) {
   const idx = (((1 + (day - REFERENCE_DAY)) % 7) + 7) % 7;
-  return WEEKDAYS[idx] + ', ' + day + ' lipca';
+  const lang = getCurrentLang();
+  const monthName = lang === 'en' ? 'July' : 'lipca';
+  return WEEKDAYS[lang === 'en' ? 'en' : 'pl'][idx] + ', ' + (lang === 'en' ? monthName + ' ' + day : day + ' ' + monthName);
 }
 
 // Turns whatever topics the student actually entered on the Deadline screen
 // into a concrete, ordered study plan — instead of a fixed, unrelated example.
 export function buildPrepSessions(topics, difficulty) {
   const baseDur = PREP_DIFFICULTY_DUR[difficulty] || 35;
-  const list = topics && topics.length ? topics : ['Materiał do sprawdzianu'];
+  const en = getCurrentLang() === 'en';
+  const list = topics && topics.length ? topics : [en ? 'Exam material' : 'Materiał do sprawdzianu'];
   const sessions = list.map((topic, i) => {
     if (i === 0) {
       return {
-        title: topic + ' — podstawy', type: 'Pierwszy kontakt', dur: Math.max(20, baseDur - 5),
-        why: 'Najpierw uporządkujemy podstawowe pojęcia potrzebne do kolejnych tematów.',
+        title: topic + (en ? ' — basics' : ' — podstawy'), type: en ? 'First contact' : 'Pierwszy kontakt', dur: Math.max(20, baseDur - 5),
+        why: en
+          ? "First we'll sort out the basic concepts needed for the following topics."
+          : 'Najpierw uporządkujemy podstawowe pojęcia potrzebne do kolejnych tematów.',
       };
     }
     const last = i === list.length - 1;
     return {
-      title: topic + (last ? ' — ćwiczenia' : ' — wprowadzenie'),
-      type: last ? 'Nowy materiał i ćwiczenia' : 'Ćwiczenia',
+      title: topic + (last ? (en ? ' — exercises' : ' — ćwiczenia') : (en ? ' — introduction' : ' — wprowadzenie')),
+      type: last ? (en ? 'New material and exercises' : 'Nowy materiał i ćwiczenia') : (en ? 'Exercises' : 'Ćwiczenia'),
       dur: baseDur,
       why: last
-        ? 'Łączymy ostatni temat z praktycznymi przykładami.'
-        : 'Pierwsze zadania pojawiają się po poznaniu tego tematu.',
+        ? (en ? 'We combine the last topic with practical examples.' : 'Łączymy ostatni temat z praktycznymi przykładami.')
+        : (en ? 'The first exercises come right after learning this topic.' : 'Pierwsze zadania pojawiają się po poznaniu tego tematu.'),
     };
   });
   sessions.push({
-    title: 'Zadania mieszane z ' + zad(list.length),
-    type: 'Utrwalenie', dur: baseDur,
-    why: 'Ćwiczenia ze wszystkich tematów pokażą, które elementy wymagają poprawy.',
+    title: en ? 'Mixed exercises from ' + list.length + (list.length === 1 ? ' topic' : ' topics') : 'Zadania mieszane z ' + zad(list.length),
+    type: en ? 'Reinforcement' : 'Utrwalenie', dur: baseDur,
+    why: en
+      ? 'Exercises covering every topic will show which parts need more work.'
+      : 'Ćwiczenia ze wszystkich tematów pokażą, które elementy wymagają poprawy.',
   });
   sessions.push({
-    title: 'Powtórka trudniejszych obszarów',
-    type: 'Powtórka', dur: Math.max(20, baseDur - 5),
-    why: 'Wracamy do tematów ocenionych najsłabiej podczas wcześniejszych ćwiczeń.',
+    title: en ? 'Review of harder areas' : 'Powtórka trudniejszych obszarów',
+    type: en ? 'Review' : 'Powtórka', dur: Math.max(20, baseDur - 5),
+    why: en
+      ? 'We go back to the topics that scored weakest in earlier exercises.'
+      : 'Wracamy do tematów ocenionych najsłabiej podczas wcześniejszych ćwiczeń.',
   });
   sessions.push({
-    title: 'Krótki test przed sprawdzianem',
-    type: 'Samosprawdzenie', dur: Math.max(20, baseDur - 10),
-    why: 'Ostatniego dnia sprawdzisz gotowość bez przeciążania wieczoru.',
+    title: en ? 'Short test before the exam' : 'Krótki test przed sprawdzianem',
+    type: en ? 'Self-check' : 'Samosprawdzenie', dur: Math.max(20, baseDur - 10),
+    why: en
+      ? "On the last day you'll check your readiness without overloading the evening."
+      : 'Ostatniego dnia sprawdzisz gotowość bez przeciążania wieczoru.',
   });
   return sessions.map((sx) => ({ ...sx, time: range('17:00', sx.dur), dur: sx.dur + ' min' }));
 }
