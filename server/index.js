@@ -14,7 +14,7 @@ config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '.env') }
 // generateContent REST endpoint's wire format has been stable and
 // documented for a long time.
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 const PORT = process.env.PORT || 8787;
 
 const app = express();
