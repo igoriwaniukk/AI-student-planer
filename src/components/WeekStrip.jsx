@@ -3,11 +3,13 @@ import { WEEK_DAYS, REFERENCE_DAY } from '../lib/plannerData';
 import { DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 
-// examDay pulls the days counting down to it (today through the exam,
-// inclusive) to the front of the strip and marks them with an orange bar +
-// caption. streakCount instead marks the most recent `streakCount` days up
-// to today (no reordering) with a warm flame highlight, for a habit-streak
-// view — the two modes are never used together by any current caller.
+// examDay marks the days counting down to it (today through the exam,
+// inclusive) with an orange bar + caption, in their normal calendar
+// position — reordering them to the front used to break the day-of-week
+// reading order and looked broken (e.g. "20 21 22 16 17"). streakCount
+// marks the most recent `streakCount` days up to today with a warm flame
+// highlight, for a habit-streak view — the two modes are never used
+// together by any current caller.
 // pageable adds ‹ › arrows that shift the whole 7-day window by a week;
 // weekOffset/onOffsetChange let a parent (e.g. Calendar) keep its own
 // exam/activity lookups in sync with which week is showing, instead of
@@ -28,9 +30,6 @@ export default function WeekStrip({
   const streakSet = streakCount > 0
     ? new Set(baseWeek.filter((d) => d.num <= REFERENCE_DAY && d.num > REFERENCE_DAY - streakCount).map((d) => d.num))
     : null;
-  const orderedDays = countdownSet
-    ? baseWeek.filter((d) => countdownSet.has(d.num)).concat(baseWeek.filter((d) => !countdownSet.has(d.num)))
-    : baseWeek;
   const daysUntilExam = examDay != null ? examDay - REFERENCE_DAY : null;
 
   const arrowStyle = {
@@ -43,7 +42,7 @@ export default function WeekStrip({
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: topMargin }}>
         {pageable && <span onClick={() => setWeekOffset(weekOffset - 1)} style={arrowStyle}>‹</span>}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 3, flex: 1 }}>
-          {orderedDays.map(({ num, label, short }) => {
+          {baseWeek.map(({ num, label, short }) => {
             const on = num === selectedDay;
             const hasEvent = eventDays ? eventDays.has(num) : num % 2 === 0;
             const isCountdown = countdownSet ? countdownSet.has(num) : false;
