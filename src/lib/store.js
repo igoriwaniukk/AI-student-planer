@@ -9,6 +9,9 @@ const KEYS = {
   energyLog: 'sp_energyLog',
   studyHistory: 'sp_studyHistory',
   recurringActivities: 'sp_recurringActivities',
+  seenAchievements: 'sp_seenAchievements',
+  lastSeenStreak: 'sp_lastSeenStreak',
+  language: 'sp_language',
 };
 
 export function useLocalStorage(key, initialValue) {
@@ -75,4 +78,21 @@ export function useStudyHistory() {
 // weekday name against every week rather than a single calendar date.
 export function useRecurringActivities() {
   return useLocalStorage(KEYS.recurringActivities, []);
+}
+
+// Ids of achievements already shown as a celebratory popup — so an unlocked
+// achievement is announced once, not on every reload.
+export function useSeenAchievements() {
+  return useLocalStorage(KEYS.seenAchievements, []);
+}
+
+// The streak value last shown to the student — compared against the live
+// streak to detect a just-broken streak or a freshly-hit milestone.
+export function useLastSeenStreak() {
+  return useLocalStorage(KEYS.lastSeenStreak, 0);
+}
+
+// UI language, 'pl' or 'en'.
+export function useLanguage() {
+  return useLocalStorage(KEYS.language, 'pl');
 }

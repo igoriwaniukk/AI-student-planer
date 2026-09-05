@@ -198,6 +198,16 @@ export function computeStreak(studyHistory) {
   return streak;
 }
 
+// A simple, transparent points score derived from real persisted history —
+// not a separately mutable counter — so it never drifts out of sync with
+// what actually happened: 20 pts per fully-completed study day, 2 pts per
+// energy check-in.
+export function computeTotalPoints(studyHistory, energyLog) {
+  const completedDays = Object.values(studyHistory || {}).filter((e) => e.completed).length;
+  const checkins = (energyLog || []).length;
+  return completedDays * 20 + checkins * 2;
+}
+
 // Planned vs. actual study time over the last 7 real-world days.
 export function weeklyReview(studyHistory) {
   const entries = [];

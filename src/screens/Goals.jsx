@@ -39,7 +39,7 @@ function ExamGoalCard({ exam, goal, progressMinutes, atRisk, onGrade, onImportan
         <span style={{ fontSize: 11.5, fontWeight: 650, color: '#2ee6c5' }}>{hm(progressMinutes)} z {hm(goal.studyMinutes)}</span>
       </div>
       <div style={{ marginTop: 7, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
-        <div style={{ width: pct + '%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#7c5cff,#2ee6c5)' }} />
+        <div style={{ width: pct + '%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#7c5cff,#2ee6c5)', transition: 'width .5s ease' }} />
       </div>
 
       {atRisk && (
@@ -172,7 +172,7 @@ export default function Goals({ planner, weeklyCapacity, setWeeklyCapacity }) {
           <span style={{ fontSize: 12.5, color: '#8a8a99' }}>z {hm(weeklyCapacity)} limitu</span>
         </div>
         <div style={{ marginTop: 9, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
-          <div style={{ width: Math.min(100, Math.round((weekGoalMinutes / weeklyCapacity) * 100)) + '%', height: '100%', borderRadius: 99, background: overCapacity ? '#f5a524' : 'linear-gradient(90deg,#7c5cff,#2ee6c5)' }} />
+          <div style={{ width: Math.min(100, Math.round((weekGoalMinutes / weeklyCapacity) * 100)) + '%', height: '100%', borderRadius: 99, background: overCapacity ? '#f5a524' : 'linear-gradient(90deg,#7c5cff,#2ee6c5)', transition: 'width .5s ease' }} />
         </div>
         {overCapacity && (
           <div style={{ fontSize: 12, lineHeight: 1.45, color: '#f7c46c', marginTop: 10 }}>Cele na najbliższy tydzień przekraczają Twój limit — ten tydzień może być przeciążony.</div>

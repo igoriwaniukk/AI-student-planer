@@ -1,8 +1,67 @@
 import { useEffect, useState } from 'react';
 import { STATUS_COLOR, STATUS_LABEL, GOALS, IMPORTANCE_OPTIONS, WEEK_DAYS, TENIS_DAY } from '../lib/plannerData';
-import { span, hm, upcomingExams, computeStreak } from '../lib/plannerLogic';
+import { span, hm, upcomingExams, computeStreak, computeTotalPoints } from '../lib/plannerLogic';
+import { computeUnlockedAchievements, computeLevel } from '../lib/achievements';
+import { useSeenAchievements, useLastSeenStreak } from '../lib/store';
 import WeekStrip from '../components/WeekStrip';
-import { Pill, BottomSheet, EnergyPicker, Chip } from '../components/ui';
+import { Pill, BottomSheet, EnergyPicker, Chip, AnimatedNumber } from '../components/ui';
+
+const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
+
+function LevelCard({ points }) {
+  const lvl = computeLevel(points);
+  return (
+    <div style={{ marginTop: 10, padding: '11px 14px', borderRadius: 15, background: 'rgba(139,109,255,.08)', border: '1px solid rgba(139,109,255,.25)', display: 'flex', alignItems: 'center', gap: 11 }}>
+      <span style={{ fontSize: 18 }}>🏅</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 12.5, fontWeight: 700 }}>Poziom {lvl.level} — {lvl.title}</div>
+        {lvl.nextAt != null && (
+          <div style={{ marginTop: 6, height: 5, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
+            <div style={{ width: lvl.progress + '%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#8b6dff,#6d4dff)', transition: 'width .5s ease' }} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AchievementModal({ achievement, onClose }) {
+  if (!achievement) return null;
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(6,6,10,.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ width: '100%', maxWidth: 340, padding: 28, borderRadius: 24, background: '#101018', border: '1px solid rgba(255,255,255,.1)', textAlign: 'center', animation: 'stepIconPop .4s cubic-bezier(.34,1.56,.64,1) both' }}>
+        <div style={{ fontSize: 44, marginBottom: 14 }}>{achievement.icon}</div>
+        <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.1em', color: '#f5a524' }}>NOWE OSIĄGNIĘCIE</div>
+        <div style={{ fontSize: 19, fontWeight: 750, marginTop: 8 }}>{achievement.title}</div>
+        <div style={{ fontSize: 13, color: '#a3a3b3', marginTop: 8, lineHeight: 1.5 }}>{achievement.desc}</div>
+        <div
+          onClick={onClose}
+          style={{ marginTop: 20, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+        >
+          Super!
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StreakNotice({ notice, onDismiss }) {
+  if (!notice) return null;
+  const broken = notice.type === 'broken';
+  return (
+    <div
+      style={{
+        marginTop: 12, padding: 14, borderRadius: 16, display: 'flex', alignItems: 'center', gap: 10, animation: 'fadeUp .3s ease both',
+        background: broken ? 'rgba(245,165,36,.08)' : 'rgba(46,230,197,.08)',
+        border: '1px solid ' + (broken ? 'rgba(245,165,36,.3)' : 'rgba(46,230,197,.3)'),
+      }}
+    >
+      <span style={{ fontSize: 18 }}>{broken ? '💔' : '🎉'}</span>
+      <div style={{ flex: 1, fontSize: 12.5, lineHeight: 1.4 }}>{notice.text}</div>
+      <span onClick={onDismiss} style={{ fontSize: 12, fontWeight: 650, color: broken ? '#f7c46c' : '#8ff0de', cursor: 'pointer', flex: 'none' }}>OK</span>
+    </div>
+  );
+}
 
 function dayLoad(state, dayNum) {
   const info = WEEK_DAYS.find((d) => d.num === dayNum);
@@ -12,7 +71,28 @@ function dayLoad(state, dayNum) {
   return load;
 }
 
-function MorningSummaryCard({ state, streak }) {
+function StatBadge({ icon, value, label, bg, border, pulse }) {
+  return (
+    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', borderRadius: 16, background: bg, border: '1px solid ' + border }}>
+      <span style={{ fontSize: 19, animation: pulse ? 'pulseGlow 1.8s ease-in-out infinite' : 'none' }}>{icon}</span>
+      <div>
+        <div style={{ fontSize: 16, fontWeight: 750, fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={value} /></div>
+        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.06em', color: '#8a8a99' }}>{label}</div>
+      </div>
+    </div>
+  );
+}
+
+function StatsBar({ streak, points }) {
+  return (
+    <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+      <StatBadge icon="🔥" value={streak} label="SERIA DNI" bg="rgba(245,165,36,.09)" border="rgba(245,165,36,.28)" pulse={streak > 0} />
+      <StatBadge icon="⭐" value={points} label="PUNKTY" bg="rgba(46,230,197,.08)" border="rgba(46,230,197,.25)" />
+    </div>
+  );
+}
+
+function MorningSummaryCard({ state }) {
   const sched = state.schedule || {};
   const ids = Object.keys(sched);
   const totalMin = ids.reduce((a, id) => a + sched[id].dur, 0);
@@ -39,12 +119,6 @@ function MorningSummaryCard({ state, streak }) {
           <span style={{ fontSize: 13 }}>📊</span>
           <span style={{ fontSize: 12.5, color: '#c9c9d6' }}>Najcięższy dzień: {heaviest.label} · najlżejszy: {lightest.label}</span>
         </div>
-        {streak > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-            <span style={{ fontSize: 13 }}>🔥</span>
-            <span style={{ fontSize: 12.5, color: '#c9c9d6' }}>Seria: {streak} {streak === 1 ? 'dzień z rzędu' : 'dni z rzędu'} z ukończonym planem</span>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -119,7 +193,7 @@ function SessionTimer({ state, dur, dismissBreakReminder }) {
         <span style={{ fontSize: 28, fontWeight: 750, fontVariantNumeric: 'tabular-nums', color: overtime ? '#f5a524' : '#f4f4f7' }}>{label}</span>
       </div>
       <div style={{ marginTop: 8, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.1)', overflow: 'hidden' }}>
-        <div style={{ width: pct + '%', height: '100%', borderRadius: 99, background: overtime ? '#f5a524' : 'linear-gradient(90deg,#7c5cff,#2ee6c5)' }} />
+        <div style={{ width: pct + '%', height: '100%', borderRadius: 99, background: overtime ? '#f5a524' : 'linear-gradient(90deg,#7c5cff,#2ee6c5)', transition: 'width .5s ease' }} />
       </div>
       {showBreak && (
         <div style={{ marginTop: 11, padding: 11, borderRadius: 13, background: 'rgba(46,230,197,.08)', border: '1px solid rgba(46,230,197,.25)', display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -338,7 +412,7 @@ function EnergyHistory({ energyLog }) {
   );
 }
 
-export default function Home({ planner, studentName, energyLog = [], logEnergy = () => {}, studyHistory = {} }) {
+export default function Home({ planner, studentName, energyLog = [], logEnergy = () => {}, studyHistory = {}, recurringActivities = [] }) {
   const { state, ts, openEnergySheet } = planner;
   const goalExam = planner.nextGoalPrompt();
   const dayIds = state.taskDefs.filter((_, i) => state.tasks[i]).map((t) => t.id);
@@ -348,6 +422,26 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
   const dateLong = state.selectedDay === 20 ? 'Poniedziałek, 20 lipca 2026' : 'Niedziela, 19 lipca 2026';
   const parts = (studentName || 'Ty').trim().split(/\s+/);
   const initials = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
+
+  const streak = computeStreak(studyHistory);
+  const points = computeTotalPoints(studyHistory, energyLog);
+  const [seenAchievements, setSeenAchievements] = useSeenAchievements();
+  const [lastSeenStreak, setLastSeenStreak] = useLastSeenStreak();
+  const stats = {
+    streak,
+    points,
+    completedDays: Object.values(studyHistory).filter((e) => e.completed).length,
+    energyCheckins: energyLog.length,
+    recurringCount: recurringActivities.length,
+  };
+  const newlyUnlocked = computeUnlockedAchievements(stats).filter((a) => !seenAchievements.includes(a.id));
+  const pendingAchievement = newlyUnlocked[0] || null;
+  const streakNotice =
+    lastSeenStreak > 0 && streak < lastSeenStreak
+      ? { type: 'broken', text: `Twoja seria ${lastSeenStreak} ${lastSeenStreak === 1 ? 'dnia' : 'dni'} z rzędu się zakończyła. Zacznij nową dziś!` }
+      : streak > lastSeenStreak && STREAK_MILESTONES.includes(streak)
+        ? { type: 'milestone', text: `Nowy rekord serii: ${streak} dni z rzędu! Tak trzymaj!` }
+        : null;
 
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px' }}>
@@ -369,7 +463,11 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
         </div>
       </div>
 
-      <MorningSummaryCard state={state} streak={computeStreak(studyHistory)} />
+      <StatsBar streak={streak} points={points} />
+      <LevelCard points={points} />
+      <StreakNotice notice={streakNotice} onDismiss={() => setLastSeenStreak(streak)} />
+
+      <MorningSummaryCard state={state} />
 
       {state.rescueApplied && (
         <div style={{ marginTop: 18, padding: 15, borderRadius: 18, background: 'rgba(53,208,127,.06)', border: '1px solid rgba(53,208,127,.22)' }}>
@@ -405,7 +503,7 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
         </div>
         <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 3 }}>{doneCount} z {totalCount} {totalCount === 1 ? 'sesji ukończona' : 'sesji ukończone'}</div>
         <div style={{ marginTop: 12, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
-          <div style={{ width: pct + '%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#7c5cff,#2ee6c5)' }} />
+          <div style={{ width: pct + '%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#7c5cff,#2ee6c5)', transition: 'width .5s ease' }} />
         </div>
       </div>
 
@@ -467,12 +565,13 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
         </div>
         <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 6 }}>3 z 5 bloków wykonane</div>
         <div style={{ marginTop: 11, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
-          <div style={{ width: '60%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#7c5cff,#2ee6c5)' }} />
+          <div style={{ width: '60%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#7c5cff,#2ee6c5)', transition: 'width .5s ease' }} />
         </div>
       </div>
 
       <FinishSheet planner={planner} />
       <EnergySheet planner={planner} logEnergy={logEnergy} />
+      <AchievementModal achievement={pendingAchievement} onClose={() => setSeenAchievements(seenAchievements.concat(pendingAchievement.id))} />
     </div>
   );
 }

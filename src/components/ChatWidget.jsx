@@ -203,6 +203,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
           position: 'absolute', right: 16, bottom: 100, width: 54, height: 54, borderRadius: '50%',
           background: 'linear-gradient(155deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 22, cursor: 'pointer', boxShadow: '0 10px 28px rgba(109,77,255,.45), 0 0 0 1px rgba(255,255,255,.08) inset', zIndex: 45,
+          animation: open ? 'none' : 'fabAttention 4.5s ease-in-out infinite',
         }}
       >
         ✨

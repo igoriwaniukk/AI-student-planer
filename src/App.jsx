@@ -15,24 +15,33 @@ import Profile from './screens/Profile';
 import Onboarding from './screens/Onboarding';
 import {
   useStudentName, useSchoolPlan, useActivities, useProfileDefaults,
-  useWeeklyCapacity, useEnergyLog, useStudyHistory, useRecurringActivities,
+  useWeeklyCapacity, useEnergyLog, useStudyHistory, useRecurringActivities, useLanguage,
 } from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
+import { LanguageProvider } from './lib/LanguageContext';
 
 const TAB_SCREENS = new Set(['home', 'calendar', 'goals', 'profile']);
 
 // Mounted only once onboarding is done, so usePlanner's initial state (a lazy
 // useState initializer, which only ever runs on first mount) picks up the
 // profile defaults onboarding just saved instead of whatever was there before.
-function MainApp({ name, schoolPlan, activities, profileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities }) {
+function MainApp({ name, schoolPlan, activities, profileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities, lang, setLang }) {
   const planner = usePlanner(profileDefaults);
   const { state } = planner;
   const screen = state.screen;
 
   return (
+    <LanguageProvider lang={lang} setLang={setLang}>
     <div className="app-shell">
       {screen === 'home' && (
-        <Home planner={planner} studentName={name} energyLog={energyLog} logEnergy={logEnergy} studyHistory={studyHistory} />
+        <Home
+          planner={planner}
+          studentName={name}
+          energyLog={energyLog}
+          logEnergy={logEnergy}
+          studyHistory={studyHistory}
+          recurringActivities={recurringActivities}
+        />
       )}
       {screen === 'calendar' && <Calendar planner={planner} activities={activities} recurringActivities={recurringActivities} />}
       {screen === 'goals' && <Goals planner={planner} weeklyCapacity={weeklyCapacity} setWeeklyCapacity={setWeeklyCapacity} />}
@@ -71,6 +80,7 @@ function MainApp({ name, schoolPlan, activities, profileDefaults, weeklyCapacity
 
       {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} />}
     </div>
+    </LanguageProvider>
   );
 }
 
@@ -83,6 +93,7 @@ export default function App() {
   const [energyLog, setEnergyLog] = useEnergyLog();
   const [studyHistory, setStudyHistory] = useStudyHistory();
   const [recurringActivities, setRecurringActivities] = useRecurringActivities();
+  const [lang, setLang] = useLanguage();
 
   function logEnergy(level) {
     setEnergyLog((log) => log.concat({ at: new Date().toISOString(), level }).slice(-30));
@@ -120,6 +131,8 @@ export default function App() {
       recordStudyDay={recordStudyDay}
       recurringActivities={recurringActivities}
       setRecurringActivities={setRecurringActivities}
+      lang={lang}
+      setLang={setLang}
     />
   );
 }

@@ -48,6 +48,16 @@ a { color: #8b6dff; }
   0%, 60%, 100% { transform: translateY(0); opacity: .5; }
   30% { transform: translateY(-4px); opacity: 1; }
 }
+@keyframes fabAttention {
+  0%, 82%, 100% { transform: scale(1) rotate(0deg); }
+  86% { transform: scale(1.1) rotate(-8deg); }
+  90% { transform: scale(1.1) rotate(8deg); }
+  94% { transform: scale(1.04) rotate(-3deg); }
+}
+@keyframes confettiBurst {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(.4); opacity: 0; }
+}
 
 .card {
   border-radius: 18px;

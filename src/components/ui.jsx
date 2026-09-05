@@ -1,3 +1,34 @@
+import { useEffect, useRef, useState } from 'react';
+
+// Animates a numeric value counting up (or down) to its new value whenever
+// it changes, instead of jumping instantly — used for streak/points badges.
+export function AnimatedNumber({ value }) {
+  const [display, setDisplay] = useState(value);
+  const fromRef = useRef(value);
+
+  useEffect(() => {
+    const from = fromRef.current;
+    const to = value;
+    if (from === to) return undefined;
+    const start = performance.now();
+    const duration = 500;
+    let raf;
+    function step(now) {
+      const t = Math.min(1, (now - start) / duration);
+      setDisplay(Math.round(from + (to - from) * t));
+      if (t < 1) {
+        raf = requestAnimationFrame(step);
+      } else {
+        fromRef.current = to;
+      }
+    }
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+
+  return display;
+}
+
 export function Chip({ label, active, onClick, style }) {
   return (
     <div

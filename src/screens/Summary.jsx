@@ -21,7 +21,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
   const hasObservation = mathDelta !== 0;
 
   if (state.daySaved) {
-    return <DaySaved planner={planner} doneCount={doneCount} movedCount={movedCount} />;
+    return <DaySaved planner={planner} doneCount={doneCount} movedCount={movedCount} celebrate={totalCount > 0 && doneCount === totalCount} />;
   }
 
   return (
@@ -238,12 +238,38 @@ function EngTimeSheet({ planner }) {
   );
 }
 
-function DaySaved({ planner, doneCount, movedCount }) {
+const CONFETTI_EMOJI = ['🎉', '⭐', '🔥', '✨', '🏆', '💜'];
+
+function Confetti() {
+  const particles = Array.from({ length: 14 }, (_, i) => {
+    const angle = (i / 14) * Math.PI * 2;
+    const dist = 80 + (i % 3) * 30;
+    return {
+      id: i,
+      emoji: CONFETTI_EMOJI[i % CONFETTI_EMOJI.length],
+      dx: Math.round(Math.cos(angle) * dist),
+      dy: Math.round(Math.sin(angle) * dist - 40),
+      delay: (i % 5) * 0.03,
+    };
+  });
+  return (
+    <div style={{ position: 'absolute', top: 96, left: '50%', width: 0, height: 0, pointerEvents: 'none' }}>
+      {particles.map((p) => (
+        <span key={p.id} style={{ position: 'absolute', fontSize: 20, '--dx': p.dx + 'px', '--dy': p.dy + 'px', animation: `confettiBurst 1.1s ease-out ${p.delay}s both` }}>
+          {p.emoji}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function DaySaved({ planner, doneCount, movedCount, celebrate }) {
   const { state, goHomeSummarized } = planner;
   const doneShort = zad(doneCount) + (doneCount >= 2 && doneCount <= 4 ? ' wykonane' : doneCount === 1 ? ' wykonane' : ' wykonanych');
   const movedShort = zad(movedCount) + (movedCount >= 2 && movedCount <= 4 ? ' przeniesione' : movedCount === 1 ? ' przeniesione' : ' przeniesionych');
   return (
     <div className="sc" style={{ position: 'absolute', inset: 0, zIndex: 80, background: '#08080c', overflowY: 'auto', padding: '80px 20px 40px' }}>
+      {celebrate && <Confetti />}
       <div style={{ width: 52, height: 52, borderRadius: 17, background: 'rgba(53,208,127,.14)', border: '1px solid rgba(53,208,127,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="20" height="15" viewBox="0 0 13 11" fill="none"><path d="M1 5.6L4.6 9.4 12 1.6" stroke="#35d07f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
       <div style={{ fontSize: 28, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>Dzień podsumowany</div>
       <div style={{ fontSize: 13.5, lineHeight: 1.5, color: '#a3a3b3', marginTop: 10 }}>Zapisaliśmy rzeczywisty czas nauki i informacje potrzebne do lepszego planowania.</div>
