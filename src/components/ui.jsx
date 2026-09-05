@@ -186,21 +186,41 @@ export function ConfirmCard({ title, sub, onDone, buttonLabel = 'Wróć na start
 
 export function GeneratingOverlay({ labels, step }) {
   const last = labels.length - 1;
+  const finished = step >= last;
+
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 80, background: 'rgba(6,6,10,.82)', backdropFilter: 'blur(3px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 22 }}>
-      <div style={{ width: 58, height: 58, borderRadius: 20, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', animation: 'pulseGlow 1.4s ease-in-out infinite', boxShadow: '0 0 40px rgba(124,92,255,.5)' }} />
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-        {labels.map((l, i) => {
-          const done = i < step || (i === last && step >= last);
-          const active = i === step;
-          const color = i === last ? (done ? '#f4f4f7' : '#6b6b7a') : (done ? '#35d07f' : active ? '#f4f4f7' : '#6b6b7a');
-          const text = i === last ? (done ? l + ' ✓' : l) : (done ? '✓ ' + l : active ? '› ' + l : l);
-          return (
-            <div key={i} style={{ fontSize: 14.5, fontWeight: done || active ? 700 : 500, color, animation: 'fadeUp .35s ease both', opacity: i > step ? 0.45 : 1 }}>
-              {text}
-            </div>
-          );
-        })}
+    <div style={{ position: 'absolute', inset: 0, zIndex: 80, background: 'rgba(6,6,10,.88)', backdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28, padding: '0 36px' }}>
+      <div
+        key={finished ? 'done' : 'busy'}
+        style={{
+          width: 64, height: 64, borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          background: finished ? 'linear-gradient(160deg,#35d07f,#2ee6c5)' : 'linear-gradient(160deg,#8b6dff,#6d4dff)',
+          boxShadow: finished ? '0 0 40px rgba(53,208,127,.45)' : '0 0 40px rgba(124,92,255,.5)',
+          animation: finished ? 'stepIconPop .4s cubic-bezier(.34,1.56,.64,1) both' : 'pulseGlow 1.4s ease-in-out infinite',
+        }}
+      >
+        {finished && (
+          <svg width="26" height="20" viewBox="0 0 13 11" fill="none">
+            <path d="M1 5.6L4.6 9.4 12 1.6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        )}
+      </div>
+
+      <div key={step} style={{ fontSize: 17, fontWeight: 700, color: '#f4f4f7', textAlign: 'center', lineHeight: 1.4, animation: 'stepIn .4s ease both' }}>
+        {labels[step]}
+      </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+        {labels.map((_, i) => (
+          <span
+            key={i}
+            style={{
+              width: i === step ? 20 : 6, height: 6, borderRadius: 99,
+              background: i < step ? '#35d07f' : i === step ? '#8b6dff' : 'rgba(255,255,255,.15)',
+              transition: 'width .3s ease, background .3s ease',
+            }}
+          />
+        ))}
       </div>
     </div>
   );
