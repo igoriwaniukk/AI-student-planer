@@ -2,7 +2,7 @@ import { config } from 'dotenv';
 import express from 'express';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { GOALS, IMPORTANCE_OPTIONS } from '../src/lib/plannerData.js';
+import { GOALS, IMPORTANCE_OPTIONS, ENERGY_OPTIONS, RECUR_DAYS } from '../src/lib/plannerData.js';
 
 // Load server/.env explicitly by file location, not by resolving against
 // process.cwd() (dotenv's default) — `npm run server` runs with cwd set to
@@ -56,6 +56,58 @@ const TOOLS = [
           required: ['examId'],
         },
       },
+      {
+        name: 'complete_session',
+        description:
+          'Oznacza dzisiejszą sesję nauki jako wykonaną. Użyj, gdy uczeń mówi, że skończył albo zrobił daną sesję z listy "Dzisiejsze sesje nauki".',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            sessionId: { type: 'STRING', description: 'Identyfikator sesji (id) z listy dzisiejszych sesji w danych ucznia.' },
+            actualMinutes: { type: 'INTEGER', description: 'Ile minut faktycznie trwała sesja. Jeśli uczeń nie poda, pomiń to pole.' },
+          },
+          required: ['sessionId'],
+        },
+      },
+      {
+        name: 'reschedule_session',
+        description:
+          'Przekłada dzisiejszą sesję nauki na inną godzinę tego samego dnia. Użyj, gdy uczeń prosi o zmianę godziny konkretnej sesji z listy "Dzisiejsze sesje nauki".',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            sessionId: { type: 'STRING', description: 'Identyfikator sesji (id) z listy dzisiejszych sesji w danych ucznia.' },
+            newStart: { type: 'STRING', description: 'Nowa godzina rozpoczęcia w formacie GG:MM, np. "18:30".' },
+          },
+          required: ['sessionId', 'newStart'],
+        },
+      },
+      {
+        name: 'log_energy',
+        description: 'Zapisuje aktualny poziom energii ucznia. Użyj, gdy uczeń mówi, jak się czuje/ile ma energii.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            level: { type: 'STRING', enum: ENERGY_OPTIONS, description: 'Poziom energii ucznia.' },
+          },
+          required: ['level'],
+        },
+      },
+      {
+        name: 'add_recurring_activity',
+        description:
+          'Dodaje cotygodniowe stałe zajęcie (np. basen, korepetycje) do planu ucznia, powtarzające się co tydzień w ten sam dzień i o tę samą godzinę.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            name: { type: 'STRING', description: 'Nazwa zajęcia, np. "Basen".' },
+            day: { type: 'STRING', enum: RECUR_DAYS, description: 'Dzień tygodnia, w który zajęcie się odbywa.' },
+            start: { type: 'STRING', description: 'Godzina rozpoczęcia w formacie GG:MM, np. "18:00".' },
+            durationMinutes: { type: 'INTEGER', description: 'Czas trwania zajęcia w minutach.' },
+          },
+          required: ['name', 'day', 'start', 'durationMinutes'],
+        },
+      },
     ],
   },
 ];
@@ -65,9 +117,10 @@ function buildSystemPrompt(context) {
     'Jesteś asystentem AI w polskiej aplikacji Student Planner. Pomagasz uczniowi planować naukę, ' +
       'przygotowywać się do sprawdzianów i radzić sobie z napiętymi dniami.',
     'Odpowiadaj zawsze po polsku, konkretnie i zwięźle. Gdy to pomocne, odnoś się do danych ucznia podanych niżej.',
-    'Gdy uczeń prosi o dodanie sprawdzianu albo o zmianę celu/oceny/czasu nauki dla istniejącego sprawdzianu, ' +
-      'użyj odpowiedniej funkcji (add_exam lub update_exam_goal) zamiast tylko opisywać to słowami — ' +
-      'aplikacja poprosi ucznia o potwierdzenie przed zapisaniem zmiany.',
+    'Gdy uczeń prosi o dodanie/zmianę sprawdzianu, oznaczenie sesji jako wykonanej, przełożenie sesji na inną ' +
+      'godzinę, zapisanie poziomu energii albo dodanie cotygodniowego zajęcia — użyj odpowiedniej funkcji zamiast ' +
+      'tylko opisywać to słowami. Aplikacja zawsze poprosi ucznia o potwierdzenie przed zapisaniem zmiany, więc ' +
+      'możesz swobodnie proponować konkretne wartości, a nie tylko pytać co zrobić.',
   ];
   if (context) {
     lines.push('--- Dane ucznia ---');
@@ -77,6 +130,13 @@ function buildSystemPrompt(context) {
           context.exams
             .map((e) => `[id: ${e.id}] ${e.subject}${e.title ? ' (' + e.title + ')' : ''} za ${e.daysUntil} dni${e.goal ? ', cel: ' + e.goal : ''}`)
             .join('; ') +
+          '.'
+      );
+    }
+    if (context.todaySessions?.length) {
+      lines.push(
+        'Dzisiejsze sesje nauki: ' +
+          context.todaySessions.map((s) => `[id: ${s.id}] ${s.label}, ${s.start}, ${s.durationMinutes} min, status: ${s.status}`).join('; ') +
           '.'
       );
     }

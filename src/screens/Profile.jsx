@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { hm, weeklyReview } from '../lib/plannerLogic';
+import { RECUR_DAYS } from '../lib/plannerData';
 import { Chip } from '../components/ui';
-
-const RECUR_DAYS = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela'];
 
 function RecurringActivities({ recurringActivities, setRecurringActivities }) {
   const [name, setName] = useState('');

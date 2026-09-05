@@ -1,4 +1,4 @@
-import { upcomingExams, computeStreak } from './plannerLogic';
+import { upcomingExams, computeStreak, fmt } from './plannerLogic';
 
 // Compact snapshot of the student's plan/goals sent to the AI chat backend
 // with each message, instead of the full app state (keeps the request small
@@ -22,8 +22,20 @@ export function buildChatContext({ state, weeklyCapacity, profileDefaults, study
     .filter((e) => e.daysUntil >= 0 && e.daysUntil <= 7)
     .reduce((a, e) => a + (state.examGoals?.[e.id]?.studyMinutes || 0), 0);
 
+  const sched = state.schedule || {};
+  const todaySessions = (state.taskDefs || [])
+    .filter((d) => sched[d.id])
+    .map((d) => ({
+      id: d.id,
+      label: d.short || d.subject,
+      status: state.taskState?.[d.id]?.status || 'planned',
+      start: fmt(sched[d.id].start),
+      durationMinutes: sched[d.id].dur,
+    }));
+
   return {
     exams,
+    todaySessions,
     weeklyCapacityMinutes: weeklyCapacity,
     weekGoalMinutes,
     energy: state.energy,

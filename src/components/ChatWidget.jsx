@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useChat } from '../hooks/useChat';
 import { buildChatContext } from '../lib/chatContext';
-import { upcomingExams, hm } from '../lib/plannerLogic';
+import { upcomingExams, hm, toMinutes, checkBlockConflict } from '../lib/plannerLogic';
 import { BottomSheet, Chip } from './ui';
 
 const SUGGESTIONS = [
@@ -45,7 +45,7 @@ function Avatar({ role, studentName }) {
 
 // Turns a Gemini function-call proposal into a human-readable summary and
 // the planner call that actually applies it, once the student confirms.
-function describeAction(action, planner) {
+function describeAction(action, planner, deps) {
   const { name, args } = action;
   if (name === 'add_exam') {
     const label = args.subject + (args.title ? ' — ' + args.title : '');
@@ -72,11 +72,64 @@ function describeAction(action, planner) {
       },
     };
   }
+  if (name === 'complete_session') {
+    const d = planner.def(args.sessionId);
+    const label = d?.short || d?.subject || args.sessionId;
+    return {
+      summary: `Oznaczyć „${label}” jako wykonaną${args.actualMinutes != null ? ' (' + hm(args.actualMinutes) + ')' : ''}.`,
+      confirmedSummary: `✅ Oznaczono „${label}” jako wykonaną.`,
+      run: () =>
+        planner.update((s) => {
+          const b = (s.schedule || {})[args.sessionId];
+          const actual = args.actualMinutes != null ? args.actualMinutes : b ? b.dur : d?.dur || 30;
+          return { taskState: { ...s.taskState, [args.sessionId]: { ...s.taskState[args.sessionId], status: 'completed', actual } } };
+        }),
+    };
+  }
+  if (name === 'reschedule_session') {
+    const d = planner.def(args.sessionId);
+    const label = d?.short || d?.subject || args.sessionId;
+    const startMin = toMinutes(args.newStart);
+    const sched = planner.state.schedule || {};
+    const dur = (sched[args.sessionId] || {}).dur || d?.dur || 30;
+    const conflict = checkBlockConflict(args.sessionId, startMin, dur, sched, planner.def);
+    return {
+      summary: `Przełożyć „${label}” na ${args.newStart}.`,
+      confirmedSummary: conflict ? `⚠️ Nie udało się przełożyć „${label}”: ${conflict}` : `✅ Przełożono „${label}” na ${args.newStart}.`,
+      run: () => {
+        if (conflict) return;
+        planner.update((s) => ({
+          schedule: { ...s.schedule, [args.sessionId]: { start: startMin, dur } },
+          durOverride: { ...s.durOverride, [args.sessionId]: dur },
+        }));
+      },
+    };
+  }
+  if (name === 'log_energy') {
+    return {
+      summary: `Zapisać poziom energii: ${args.level}.`,
+      confirmedSummary: `✅ Zapisano poziom energii: ${args.level}.`,
+      run: () => {
+        planner.update({ energy: args.level });
+        deps.logEnergy(args.level);
+      },
+    };
+  }
+  if (name === 'add_recurring_activity') {
+    return {
+      summary: `Dodać cotygodniowe zajęcie: ${args.name}, ${args.day}, ${args.start}, ${args.durationMinutes} min.`,
+      confirmedSummary: `✅ Dodano cotygodniowe zajęcie: ${args.name} (${args.day}, ${args.start}).`,
+      run: () =>
+        deps.setRecurringActivities(
+          (deps.recurringActivities || []).concat({ id: Date.now(), name: args.name, day: args.day, start: args.start, dur: args.durationMinutes })
+        ),
+    };
+  }
   return null;
 }
 
-function ActionConfirmCard({ action, planner, onResolve }) {
-  const described = describeAction(action, planner);
+function ActionConfirmCard({ action, planner, deps, onResolve }) {
+  const described = describeAction(action, planner, deps);
   if (!described) return null;
   return (
     <div style={{ padding: 14, borderRadius: 16, background: 'rgba(124,92,255,.1)', border: '1.5px solid rgba(124,92,255,.4)', animation: 'fadeUp .25s ease both' }}>
@@ -113,11 +166,12 @@ function TypingBubble() {
   );
 }
 
-export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, studyHistory, studentName }) {
+export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, studyHistory, studentName, logEnergy, recurringActivities, setRecurringActivities }) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const { messages, sending, error, send, action, clearAction, appendAssistantMessage } = useChat();
   const bottomRef = useRef(null);
+  const deps = { logEnergy, recurringActivities, setRecurringActivities };
 
   useEffect(() => {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -207,7 +261,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
 
             {sending && <TypingBubble />}
 
-            {action && <ActionConfirmCard action={action} planner={planner} onResolve={handleResolveAction} />}
+            {action && <ActionConfirmCard action={action} planner={planner} deps={deps} onResolve={handleResolveAction} />}
 
             {error && (
               <div style={{ padding: 12, borderRadius: 14, background: 'rgba(245,165,36,.08)', border: '1px solid rgba(245,165,36,.3)', fontSize: 12, lineHeight: 1.45, color: '#f7c46c' }}>

@@ -58,7 +58,16 @@ function MainApp({ name, schoolPlan, activities, profileDefaults, weeklyCapacity
 
       {state.generating && <GeneratingOverlay labels={state.genLabels} step={state.genStep} />}
 
-      <ChatWidget planner={planner} weeklyCapacity={weeklyCapacity} profileDefaults={profileDefaults} studyHistory={studyHistory} studentName={name} />
+      <ChatWidget
+        planner={planner}
+        weeklyCapacity={weeklyCapacity}
+        profileDefaults={profileDefaults}
+        studyHistory={studyHistory}
+        studentName={name}
+        logEnergy={logEnergy}
+        recurringActivities={recurringActivities}
+        setRecurringActivities={setRecurringActivities}
+      />
 
       {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} />}
     </div>
