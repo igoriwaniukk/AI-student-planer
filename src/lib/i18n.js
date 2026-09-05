@@ -20,6 +20,13 @@ export const dict = {
   pl: {
     'ui.required': 'wymagane',
 
+    // Option value display labels (see VALUE_KEY) — identical to the
+    // stored PL string, so this is a no-op in Polish.
+    'val.energyLow': 'Niska', 'val.energyNormal': 'Normalna', 'val.energyHigh': 'Wysoka',
+    'val.timeMorning': 'Rano', 'val.timeAfternoon': 'Popołudniu', 'val.timeEvening': 'Wieczorem',
+    'val.prefFreeEvening': 'Wolny wieczór', 'val.prefHardestFirst': 'Najpierw najtrudniejsze', 'val.prefShortBreaks': 'Więcej krótkich przerw',
+    'val.impLow': 'Niski', 'val.impMedium': 'Średni', 'val.impHigh': 'Wysoki',
+
     // Notification bell
     'notif.title': 'Powiadomienia',
     'notif.close': 'Zamknij',
@@ -574,6 +581,12 @@ export const dict = {
   en: {
     'ui.required': 'required',
 
+    // Option value display labels (see VALUE_KEY)
+    'val.energyLow': 'Low', 'val.energyNormal': 'Normal', 'val.energyHigh': 'High',
+    'val.timeMorning': 'Morning', 'val.timeAfternoon': 'Afternoon', 'val.timeEvening': 'Evening',
+    'val.prefFreeEvening': 'Free evening', 'val.prefHardestFirst': 'Hardest first', 'val.prefShortBreaks': 'More short breaks',
+    'val.impLow': 'Low', 'val.impMedium': 'Medium', 'val.impHigh': 'High',
+
     // Notification bell
     'notif.title': 'Notifications',
     'notif.close': 'Close',
@@ -1117,6 +1130,16 @@ export const dict = {
 export const DAY_KEY = {
   Poniedziałek: 'day.mon', Wtorek: 'day.tue', Środa: 'day.wed', Czwartek: 'day.thu',
   Piątek: 'day.fri', Sobota: 'day.sat', Niedziela: 'day.sun',
+};
+
+// Same pattern as DAY_KEY: energy/pref/study-time/importance options are
+// stored and matched as canonical Polish strings (profile defaults, the
+// AI's tool schema) — only their on-screen label changes with language.
+export const VALUE_KEY = {
+  Niska: 'val.energyLow', Normalna: 'val.energyNormal', Wysoka: 'val.energyHigh',
+  Rano: 'val.timeMorning', Popołudniu: 'val.timeAfternoon', Wieczorem: 'val.timeEvening',
+  'Wolny wieczór': 'val.prefFreeEvening', 'Najpierw najtrudniejsze': 'val.prefHardestFirst', 'Więcej krótkich przerw': 'val.prefShortBreaks',
+  Niski: 'val.impLow', Średni: 'val.impMedium', Wysoki: 'val.impHigh',
 };
 
 export function translate(lang, key, vars) {

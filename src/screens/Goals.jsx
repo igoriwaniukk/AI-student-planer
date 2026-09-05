@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BackButton, SectionTitle, Pill, BottomSheet, Chip } from '../components/ui';
 import { GOALS, IMPORTANCE_OPTIONS, SUBJECTS } from '../lib/plannerData';
 import { upcomingExams, hm, examProgressMinutes, examAtRisk } from '../lib/plannerLogic';
+import { VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 
 function Card({ children, style }) {
@@ -53,7 +54,7 @@ function ExamGoalCard({ exam, goal, progressMinutes, atRisk, onGrade, onImportan
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '16px 0 9px' }}>{t('goals.howImportantQ')}</div>
       <div style={{ display: 'flex', gap: 8 }}>
         {IMPORTANCE_OPTIONS.map((imp) => (
-          <Chip key={imp} label={imp} active={goal.importance === imp} onClick={() => onImportance(imp)} style={{ flex: 1, textAlign: 'center' }} />
+          <Chip key={imp} label={t(VALUE_KEY[imp]) || imp} active={goal.importance === imp} onClick={() => onImportance(imp)} style={{ flex: 1, textAlign: 'center' }} />
         ))}
       </div>
 
@@ -124,7 +125,7 @@ function AddGoalSheet({ onCancel, onSave }) {
 
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('goals.howImportantQ')}</div>
       <div style={{ display: 'flex', gap: 8 }}>
-        {IMPORTANCE_OPTIONS.map((imp) => <Chip key={imp} label={imp} active={importance === imp} onClick={() => setImportance(imp)} style={{ flex: 1, textAlign: 'center' }} />)}
+        {IMPORTANCE_OPTIONS.map((imp) => <Chip key={imp} label={t(VALUE_KEY[imp]) || imp} active={importance === imp} onClick={() => setImportance(imp)} style={{ flex: 1, textAlign: 'center' }} />)}
       </div>
 
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('goals.whatGradeQ')}</div>

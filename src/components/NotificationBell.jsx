@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { upcomingExams } from '../lib/plannerLogic';
 import { useCustomReminders } from '../lib/store';
 import { useLang } from '../lib/useLang';
-import { BottomSheet } from './ui';
 
 // Browser-side "push": while this tab stays open, it can pop a real OS
 // notification banner. There's no service worker or backend here, so it
@@ -55,7 +54,16 @@ export default function NotificationBell({ state }) {
       </div>
 
       {open && (
-        <BottomSheet>
+        <>
+          <div onClick={() => setOpen(false)} style={{ position: 'absolute', inset: 0, zIndex: 74 }} />
+          <div
+            className="sc"
+            style={{
+              position: 'absolute', top: 64, right: 20, zIndex: 76, width: 300, maxHeight: '65%', overflowY: 'auto',
+              padding: 16, borderRadius: 20, background: '#101018', border: '1px solid rgba(255,255,255,.12)',
+              boxShadow: '0 16px 40px rgba(0,0,0,.5)', animation: 'fadeUp .22s ease both',
+            }}
+          >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{t('notif.title')}</div>
             <span onClick={() => setOpen(false)} style={{ fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('notif.close')}</span>
@@ -111,7 +119,8 @@ export default function NotificationBell({ state }) {
               {browserStatus === 'granted' ? t('notif.browserEnabled') : browserStatus === 'denied' ? t('notif.browserDenied') : t('notif.enableBrowserNote')}
             </div>
           </div>
-        </BottomSheet>
+          </div>
+        </>
       )}
     </>
   );

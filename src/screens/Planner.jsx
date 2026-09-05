@@ -1,6 +1,7 @@
 import { PRIO_STYLE } from '../lib/plannerData';
 import { durOf, hm } from '../lib/plannerLogic';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
+import { VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import TaskEditSheet from '../components/TaskEditSheet';
 
@@ -106,7 +107,7 @@ export default function Planner({ planner }) {
       <div style={{ fontSize: 14.5, fontWeight: 700, margin: '20px 0 11px' }}>{t('planner.prefQ')}</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
         {PREFS.map((p) => (
-          <Chip key={p} label={p} active={state.pref === p} onClick={() => update({ pref: p })} />
+          <Chip key={p} label={t(VALUE_KEY[p]) || p} active={state.pref === p} onClick={() => update({ pref: p })} />
         ))}
       </div>
 
@@ -125,8 +126,8 @@ export default function Planner({ planner }) {
           <Row label={t('planner.tasks')} value={nTasks === 1 ? t('planner.oneTask') : t('planner.nTasks', { n: nTasks })} />
           <Row label={t('planner.studyTime')} value={sumTime} />
           <Row label={t('planner.availableTime')} value={t('planner.availableTimeValue')} />
-          <Row label={t('planner.energy')} value={state.energy} />
-          <Row label={t('planner.preference')} value={state.pref} />
+          <Row label={t('planner.energy')} value={t(VALUE_KEY[state.energy]) || state.energy} />
+          <Row label={t('planner.preference')} value={t(VALUE_KEY[state.pref]) || state.pref} />
         </div>
         <div style={{ height: 1, background: 'rgba(255,255,255,.07)', margin: '15px -16px' }} />
         <div style={{ display: 'flex', gap: 9 }}>

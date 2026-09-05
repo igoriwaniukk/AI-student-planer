@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLang } from '../lib/useLang';
+import { VALUE_KEY } from '../lib/i18n';
 
 // Animates a numeric value counting up (or down) to its new value whenever
 // it changes, instead of jumping instantly — used for streak/points badges.
@@ -139,6 +140,7 @@ export function Toggle({ on, onClick }) {
 }
 
 export function EnergyPicker({ value, onChange, emoji = false }) {
+  const { t } = useLang();
   const opts = emoji
     ? [['Niska', '🔋'], ['Normalna', '⚡'], ['Wysoka', '🔥']]
     : [['Niska', null], ['Normalna', null], ['Wysoka', null]];
@@ -166,7 +168,7 @@ export function EnergyPicker({ value, onChange, emoji = false }) {
                 <BatteryIcon level={name} />
               </>
             )}
-            <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: icon ? 6 : 8 }}>{name}</div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: icon ? 6 : 8 }}>{t(VALUE_KEY[name]) || name}</div>
           </div>
         );
       })}

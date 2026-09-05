@@ -6,8 +6,12 @@ import { REFERENCE_DAY, WEEK_DAYS, TENIS_DAY } from '../lib/plannerData';
 import { DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 
+// Weekday info repeats on a 7-day cycle from WEEK_DAYS' base range (16-22),
+// so this works for any day number — not just the ones in the initial week —
+// once the strip can page forward/backward.
 function dayInfo(num) {
-  return WEEK_DAYS.find((d) => d.num === num) || WEEK_DAYS[0];
+  const idx = (((num - 16) % 7) + 7) % 7;
+  return { ...WEEK_DAYS[idx], num };
 }
 
 function Card({ children, style }) {
@@ -35,10 +39,13 @@ export default function Calendar({ planner, activities, recurringActivities = []
   const { t } = useLang();
   const { state, go } = planner;
   const [calDay, setCalDay] = useState(state.selectedDay || REFERENCE_DAY);
+  const [weekOffset, setWeekOffset] = useState(0);
   const info = dayInfo(calDay);
   const dayLabel = t(DAY_KEY[info.label]) || info.label;
 
-  const weekExams = upcomingExams(state).filter((e) => e.day >= 16 && e.day <= 22);
+  const weekStart = 16 + weekOffset * 7;
+  const weekEnd = weekStart + 6;
+  const weekExams = upcomingExams(state).filter((e) => e.day >= weekStart && e.day <= weekEnd);
   const eventDays = new Set(weekExams.map((e) => e.day));
   if (info.school) eventDays.add(TENIS_DAY);
   const nearestExamDay = weekExams.filter((e) => e.daysUntil >= 0).sort((a, b) => a.day - b.day)[0]?.day ?? null;
@@ -50,7 +57,10 @@ export default function Calendar({ planner, activities, recurringActivities = []
 
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px' }}>
-      <WeekStrip selectedDay={calDay} onSelect={setCalDay} eventDays={eventDays} examDay={nearestExamDay} topMargin={44} />
+      <WeekStrip
+        selectedDay={calDay} onSelect={setCalDay} eventDays={eventDays} examDay={nearestExamDay} topMargin={44}
+        pageable weekOffset={weekOffset} onOffsetChange={setWeekOffset}
+      />
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 20 }}>
         <BackButton onClick={() => go('home')} />

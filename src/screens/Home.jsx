@@ -3,7 +3,7 @@ import { STATUS_COLOR, GOALS, IMPORTANCE_OPTIONS, WEEK_DAYS, TENIS_DAY } from '.
 import { span, hm, upcomingExams, computeStreak, computeTotalPoints } from '../lib/plannerLogic';
 import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak } from '../lib/store';
-import { DAY_KEY } from '../lib/i18n';
+import { DAY_KEY, VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import WeekStrip from '../components/WeekStrip';
 import { Pill, BottomSheet, EnergyPicker, Chip, AnimatedNumber } from '../components/ui';
@@ -64,7 +64,7 @@ function dayLoad(state, dayNum) {
 function StreakCard({ streak, selectedDay }) {
   const { t } = useLang();
   return (
-    <div style={{ marginTop: 14, padding: '13px 15px 10px', borderRadius: 18, background: 'rgba(245,101,36,.055)', border: '1px solid rgba(245,101,36,.22)' }}>
+    <div style={{ marginTop: 14, padding: '13px 15px 10px', borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.streak')}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 999, background: 'rgba(245,165,36,.14)', border: '1px solid rgba(245,165,36,.3)' }}>
@@ -135,7 +135,7 @@ function GoalPromptCard({ planner, exam }) {
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '14px 0 8px' }}>{t('goals.howImportantQ')}</div>
       <div style={{ display: 'flex', gap: 8 }}>
         {IMPORTANCE_OPTIONS.map((imp) => (
-          <Chip key={imp} label={imp} active={importance === imp} onClick={() => setImportance(imp)} style={{ flex: 1, textAlign: 'center' }} />
+          <Chip key={imp} label={t(VALUE_KEY[imp]) || imp} active={importance === imp} onClick={() => setImportance(imp)} style={{ flex: 1, textAlign: 'center' }} />
         ))}
       </div>
 
@@ -483,7 +483,7 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
         <div style={{ width: 36, height: 36, borderRadius: 11, background: 'rgba(124,92,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="14" height="14" viewBox="0 0 14 14"><path d="M8 1L3 8h3.2L6 13l5-7.2H7.6L8 1z" fill="#a58cff" /></svg></div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 11.5, color: '#8a8a99' }}>{t('home.energyLevel')}</div>
-          <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{t('home.energyValue', { level: state.energy })}</div>
+          <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{t('home.energyValue', { level: t(VALUE_KEY[state.energy]) || state.energy })}</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 11, background: 'rgba(124,92,255,.18)', border: '1px solid rgba(124,92,255,.35)', fontSize: 12.5, fontWeight: 650, color: '#c9baff' }}>{t('home.change')} <span style={{ fontSize: 9 }}>▼</span></div>
       </div>

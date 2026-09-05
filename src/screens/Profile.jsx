@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { hm, weeklyReview } from '../lib/plannerLogic';
 import { RECUR_DAYS } from '../lib/plannerData';
-import { DAY_KEY } from '../lib/i18n';
+import { DAY_KEY, VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { Chip } from '../components/ui';
 
@@ -91,7 +91,7 @@ function RhythmCard({ profileDefaults }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 14 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
           <span style={{ color: '#9a9aab' }}>{t('profile.bestStudyTime')}</span>
-          <span style={{ fontWeight: 700 }}>{studyTime}</span>
+          <span style={{ fontWeight: 700 }}>{t(VALUE_KEY[studyTime]) || studyTime}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
           <span style={{ color: '#9a9aab' }}>{t('profile.sleep')}</span>
@@ -99,7 +99,7 @@ function RhythmCard({ profileDefaults }) {
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
           <span style={{ color: '#9a9aab' }}>{t('profile.planningStyle')}</span>
-          <span style={{ fontWeight: 700 }}>{pref}</span>
+          <span style={{ fontWeight: 700 }}>{t(VALUE_KEY[pref]) || pref}</span>
         </div>
       </div>
       {prioritySubjects?.length > 0 && (
@@ -141,7 +141,7 @@ export default function Profile({ studentName, schoolPlan, activities, energy, p
         <div style={{ width: 58, height: 58, borderRadius: '50%', background: 'linear-gradient(150deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700 }}>{initials}</div>
         <div>
           <div style={{ fontSize: 22, fontWeight: 750, letterSpacing: '-.01em' }}>{studentName || 'Ty'}</div>
-          <div style={{ fontSize: 12.5, color: '#8a8a99', marginTop: 2 }}>{t('profile.defaultEnergy', { energy })}</div>
+          <div style={{ fontSize: 12.5, color: '#8a8a99', marginTop: 2 }}>{t('profile.defaultEnergy', { energy: t(VALUE_KEY[energy]) || energy })}</div>
         </div>
       </div>
 

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ENERGY_OPTIONS, PREF_OPTIONS, STUDY_TIME_OPTIONS, SUBJECTS } from '../lib/plannerData';
+import { VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 
 const ACTIVITY_OPTIONS = [
@@ -176,7 +177,7 @@ export default function Onboarding({ onComplete }) {
           <div style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6', marginTop: 18 }}>{t('onb.step3.studyTimeQ')}</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
             {STUDY_TIME_OPTIONS.map((opt) => (
-              <Chip key={opt} label={opt} active={studyTime === opt} onClick={() => setStudyTime(opt)} />
+              <Chip key={opt} label={t(VALUE_KEY[opt]) || opt} active={studyTime === opt} onClick={() => setStudyTime(opt)} />
             ))}
           </div>
 
@@ -207,14 +208,14 @@ export default function Onboarding({ onComplete }) {
           <div style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6', marginTop: 18 }}>{t('onb.step4.energyQ')}</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
             {ENERGY_OPTIONS.map((opt) => (
-              <Chip key={opt} label={opt} active={energy === opt} onClick={() => setEnergy(opt)} />
+              <Chip key={opt} label={t(VALUE_KEY[opt]) || opt} active={energy === opt} onClick={() => setEnergy(opt)} />
             ))}
           </div>
 
           <div style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6', marginTop: 18 }}>{t('onb.step4.prefQ')}</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
             {PREF_OPTIONS.map((opt) => (
-              <Chip key={opt} label={opt} active={pref === opt} onClick={() => setPref(opt)} />
+              <Chip key={opt} label={t(VALUE_KEY[opt]) || opt} active={pref === opt} onClick={() => setPref(opt)} />
             ))}
           </div>
 
