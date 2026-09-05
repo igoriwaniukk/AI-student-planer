@@ -20,7 +20,12 @@ export function useChat() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: next, context }),
       });
-      const data = await res.json();
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        throw new Error('Serwer czatu nie odpowiedział poprawnie. Upewnij się, że jest uruchomiony (npm run dev:full).');
+      }
       if (!res.ok) throw new Error(data.error || 'Błąd serwera czatu.');
       setMessages(next.concat({ role: 'assistant', content: data.reply }));
     } catch (err) {
