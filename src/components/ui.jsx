@@ -264,11 +264,12 @@ export function SectionTitle({ children, style }) {
   return <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px', ...style }}>{children}</div>;
 }
 
-export function LabelRequired({ label, tag = 'wymagane', tagColor = '#a58cff' }) {
+export function LabelRequired({ label, tag, tagColor = '#a58cff' }) {
+  const { t } = useLang();
   return (
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, margin: '22px 0 11px' }}>
       <span style={{ fontSize: 15, fontWeight: 700 }}>{label}</span>
-      <span style={{ fontSize: 11.5, color: tagColor }}>{tag}</span>
+      <span style={{ fontSize: 11.5, color: tagColor }}>{tag || t('ui.required')}</span>
     </div>
   );
 }

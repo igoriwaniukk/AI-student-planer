@@ -18,6 +18,8 @@ export function getCurrentLang() {
 
 export const dict = {
   pl: {
+    'ui.required': 'wymagane',
+
     // Tab bar
     'tab.home': 'Start',
     'tab.calendar': 'Kalendarz',
@@ -565,6 +567,8 @@ export const dict = {
     'month.july': 'lipca',
   },
   en: {
+    'ui.required': 'required',
+
     'tab.home': 'Home',
     'tab.calendar': 'Calendar',
     'tab.deadline': 'Deadlines',
