@@ -5,6 +5,7 @@ const KEYS = {
   schoolPlan: 'sp_schoolPlan',
   activities: 'sp_activities',
   vulcanSession: 'sp_vulcanSession',
+  focusShortcut: 'sp_focusShortcut',
 };
 
 export function useLocalStorage(key, initialValue) {
@@ -42,4 +43,9 @@ export function useActivities() {
 // next request will come back as "session expired".
 export function useVulcanSession() {
   return useLocalStorage(KEYS.vulcanSession, null);
+}
+
+// Opt-in: which iOS Shortcut (if any) to trigger when a study session starts.
+export function useFocusShortcut() {
+  return useLocalStorage(KEYS.focusShortcut, { enabled: false, name: 'Sesja nauki' });
 }

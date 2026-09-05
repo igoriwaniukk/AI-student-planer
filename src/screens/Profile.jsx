@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { pairVulcan, disconnectVulcan } from '../lib/vulcanClient';
+import { triggerFocusShortcut } from '../lib/focusShortcut';
+import { Toggle } from '../components/ui';
 
 function VulcanCard({ vulcanSession, setVulcanSession }) {
   const [token, setToken] = useState('');
@@ -65,7 +67,37 @@ function VulcanCard({ vulcanSession, setVulcanSession }) {
   );
 }
 
-export default function Profile({ studentName, schoolPlan, activities, energy, vulcanSession, setVulcanSession }) {
+function FocusShortcutCard({ focusShortcut, setFocusShortcut }) {
+  return (
+    <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
+      <div onClick={() => setFocusShortcut((s) => ({ ...s, enabled: !s.enabled }))} style={{ display: 'flex', gap: 13, cursor: 'pointer' }}>
+        <Toggle on={focusShortcut.enabled} />
+        <div>
+          <div style={{ fontSize: 13.5, fontWeight: 700 }}>Tryb Skupienie przy starcie sesji (iPhone)</div>
+          <div style={{ fontSize: 11.5, lineHeight: 1.45, color: '#7a7a8a', marginTop: 4 }}>Kliknięcie "Rozpocznij sesję" uruchomi Twój Skrót o podanej nazwie — np. taki, który włącza tryb Skupienie i wycisza powiadomienia.</div>
+        </div>
+      </div>
+      {focusShortcut.enabled && (
+        <>
+          <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '16px 0 9px' }}>NAZWA SKRÓTU</div>
+          <input
+            value={focusShortcut.name}
+            onChange={(e) => setFocusShortcut((s) => ({ ...s, name: e.target.value }))}
+            placeholder="Sesja nauki"
+          />
+          <div
+            onClick={() => triggerFocusShortcut(focusShortcut)}
+            style={{ marginTop: 12, height: 42, borderRadius: 13, background: 'rgba(124,92,255,.16)', border: '1px solid rgba(124,92,255,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, color: '#c9baff', cursor: 'pointer' }}
+          >
+            Uruchom teraz (test)
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+export default function Profile({ studentName, schoolPlan, activities, energy, vulcanSession, setVulcanSession, focusShortcut, setFocusShortcut }) {
   const parts = (studentName || 'Ty').trim().split(/\s+/);
   const initials = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 
@@ -102,6 +134,7 @@ export default function Profile({ studentName, schoolPlan, activities, energy, v
       )}
 
       <VulcanCard vulcanSession={vulcanSession} setVulcanSession={setVulcanSession} />
+      <FocusShortcutCard focusShortcut={focusShortcut} setFocusShortcut={setFocusShortcut} />
 
       <div style={{ marginTop: 16, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
         <div style={{ fontSize: 13.5, fontWeight: 700 }}>Student Planner</div>

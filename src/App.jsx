@@ -12,7 +12,7 @@ import Prep from './screens/Prep';
 import Summary from './screens/Summary';
 import Profile from './screens/Profile';
 import Onboarding from './screens/Onboarding';
-import { useStudentName, useSchoolPlan, useActivities, useVulcanSession } from './lib/store';
+import { useStudentName, useSchoolPlan, useActivities, useVulcanSession, useFocusShortcut } from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
 import { useVulcanData } from './hooks/useVulcanData';
 
@@ -24,6 +24,7 @@ export default function App() {
   const [activities, setActivities] = useActivities();
   const [vulcanSession, setVulcanSession] = useVulcanSession();
   const vulcanData = useVulcanData(vulcanSession);
+  const [focusShortcut, setFocusShortcut] = useFocusShortcut();
   const planner = usePlanner();
 
   if (!name) {
@@ -43,7 +44,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      {screen === 'home' && <Home planner={planner} studentName={name} vulcanExams={vulcanSession ? vulcanData.exams : []} />}
+      {screen === 'home' && <Home planner={planner} studentName={name} vulcanExams={vulcanSession ? vulcanData.exams : []} focusShortcut={focusShortcut} />}
       {screen === 'calendar' && <Calendar planner={planner} activities={activities} vulcanData={vulcanSession ? vulcanData : null} />}
       {screen === 'goals' && <Goals planner={planner} vulcanExams={vulcanSession ? vulcanData.exams : []} />}
       {screen === 'planner' && <Planner planner={planner} />}
@@ -61,6 +62,8 @@ export default function App() {
           energy={state.energy}
           vulcanSession={vulcanSession}
           setVulcanSession={setVulcanSession}
+          focusShortcut={focusShortcut}
+          setFocusShortcut={setFocusShortcut}
         />
       )}
 
