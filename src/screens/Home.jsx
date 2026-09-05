@@ -58,23 +58,21 @@ function dayLoad(state, dayNum) {
   return load;
 }
 
-function StatBadge({ icon, value, label, bg, border, pulse }) {
-  return (
-    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 9, padding: '11px 13px', borderRadius: 16, background: bg, border: '1px solid ' + border }}>
-      <span style={{ fontSize: 19, animation: pulse ? 'pulseGlow 1.8s ease-in-out infinite' : 'none' }}>{icon}</span>
-      <div>
-        <div style={{ fontSize: 16, fontWeight: 750, fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={value} /></div>
-        <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.06em', color: '#8a8a99' }}>{label}</div>
-      </div>
-    </div>
-  );
-}
-
-function StatsBar({ streak }) {
+// Combines the streak count with the week strip so the days that make up
+// the streak are visible right where the count is, instead of a plain
+// number with the calendar buried further down the page.
+function StreakCard({ streak, selectedDay }) {
   const { t } = useLang();
   return (
-    <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-      <StatBadge icon="🔥" value={streak} label={t('home.streak')} bg="rgba(245,165,36,.09)" border="rgba(245,165,36,.28)" pulse={streak > 0} />
+    <div style={{ marginTop: 14, padding: '13px 15px 10px', borderRadius: 18, background: 'rgba(245,101,36,.055)', border: '1px solid rgba(245,101,36,.22)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.streak')}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 999, background: 'rgba(245,165,36,.14)', border: '1px solid rgba(245,165,36,.3)' }}>
+          <span style={{ fontSize: 12.5, animation: streak > 0 ? 'pulseGlow 1.8s ease-in-out infinite' : 'none' }}>🔥</span>
+          <span style={{ fontSize: 13, fontWeight: 750, fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={streak} /></span>
+        </div>
+      </div>
+      <WeekStrip selectedDay={selectedDay} streakCount={streak} topMargin={12} />
     </div>
   );
 }
@@ -462,7 +460,7 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
         </div>
       </div>
 
-      <StatsBar streak={streak} />
+      <StreakCard streak={streak} selectedDay={state.selectedDay} />
       <StreakNotice notice={streakNotice} onDismiss={() => setLastSeenStreak(streak)} />
 
       <MorningSummaryCard state={state} />
@@ -478,8 +476,6 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
       )}
 
       {goalExam && <GoalPromptCard key={goalExam.id} planner={planner} exam={goalExam} />}
-
-      <WeekStrip selectedDay={state.selectedDay} />
 
       <NextSessionCard planner={planner} />
 
