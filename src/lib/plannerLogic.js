@@ -220,8 +220,11 @@ export function upcomingExams(state) {
 // Consecutive real-world days (ending today or yesterday) with a fully
 // completed study day recorded in studyHistory (keyed by real ISO date).
 export function computeStreak(studyHistory) {
-  let streak = 0;
   const d = new Date();
+  if (!studyHistory[d.toISOString().slice(0, 10)]?.completed) {
+    d.setDate(d.getDate() - 1); // today not logged yet — count from yesterday instead
+  }
+  let streak = 0;
   for (;;) {
     const entry = studyHistory[d.toISOString().slice(0, 10)];
     if (!entry || !entry.completed) break;
