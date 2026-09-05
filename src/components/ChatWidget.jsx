@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useChat } from '../hooks/useChat';
 import { buildChatContext } from '../lib/chatContext';
+import { upcomingExams, hm } from '../lib/plannerLogic';
 import { BottomSheet, Chip } from './ui';
 
 const SUGGESTIONS = [
@@ -42,6 +43,63 @@ function Avatar({ role, studentName }) {
   );
 }
 
+// Turns a Gemini function-call proposal into a human-readable summary and
+// the planner call that actually applies it, once the student confirms.
+function describeAction(action, planner) {
+  const { name, args } = action;
+  if (name === 'add_exam') {
+    const label = args.subject + (args.title ? ' — ' + args.title : '');
+    return {
+      summary: `Dodać sprawdzian: ${label}, za ${args.daysUntil} dni. Cel: ${args.grade} (${args.importance}), ${hm(args.studyMinutes)} nauki.`,
+      confirmedSummary: `✅ Dodano sprawdzian: ${label}, za ${args.daysUntil} dni.`,
+      run: () => planner.addCustomExam(args),
+    };
+  }
+  if (name === 'update_exam_goal') {
+    const exam = upcomingExams(planner.state).find((e) => e.id === args.examId);
+    const label = exam ? exam.subject + (exam.title ? ' — ' + exam.title : '') : args.examId;
+    const changes = [];
+    if (args.grade) changes.push(`ocena: ${args.grade}`);
+    if (args.importance) changes.push(`ważność: ${args.importance}`);
+    if (args.studyMinutes != null) changes.push(`czas nauki: ${hm(args.studyMinutes)}`);
+    return {
+      summary: `Zmienić cel dla „${label}” — ${changes.join(', ')}.`,
+      confirmedSummary: `✅ Zaktualizowano cel dla „${label}”.`,
+      run: () => {
+        if (args.grade) planner.setExamGrade(args.examId, args.grade);
+        if (args.importance) planner.setExamImportance(args.examId, args.importance);
+        if (args.studyMinutes != null) planner.setExamStudyMinutes(args.examId, args.studyMinutes);
+      },
+    };
+  }
+  return null;
+}
+
+function ActionConfirmCard({ action, planner, onResolve }) {
+  const described = describeAction(action, planner);
+  if (!described) return null;
+  return (
+    <div style={{ padding: 14, borderRadius: 16, background: 'rgba(124,92,255,.1)', border: '1.5px solid rgba(124,92,255,.4)', animation: 'fadeUp .25s ease both' }}>
+      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.06em', color: '#c9baff', marginBottom: 7 }}>AI PROPONUJE ZMIANĘ</div>
+      <div style={{ fontSize: 13, lineHeight: 1.5, color: '#f4f4f7' }}>{described.summary}</div>
+      <div style={{ display: 'flex', gap: 9, marginTop: 13 }}>
+        <div
+          onClick={() => onResolve(false)}
+          style={{ flex: 1, height: 40, borderRadius: 12, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 650, cursor: 'pointer' }}
+        >
+          Anuluj
+        </div>
+        <div
+          onClick={() => onResolve(true, described)}
+          style={{ flex: 1.3, height: 40, borderRadius: 12, background: 'linear-gradient(155deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
+        >
+          Zatwierdź
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TypingBubble() {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, alignSelf: 'flex-start', animation: 'fadeUp .25s ease both' }}>
@@ -58,12 +116,12 @@ function TypingBubble() {
 export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, studyHistory, studentName }) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
-  const { messages, sending, error, send } = useChat();
+  const { messages, sending, error, send, action, clearAction, appendAssistantMessage } = useChat();
   const bottomRef = useRef(null);
 
   useEffect(() => {
     if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, sending, error, open]);
+  }, [messages, sending, error, action, open]);
 
   function handleSend(text) {
     const toSend = text ?? input;
@@ -71,6 +129,16 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
     const context = buildChatContext({ state: planner.state, weeklyCapacity, profileDefaults, studyHistory });
     send(toSend, context);
     setInput('');
+  }
+
+  function handleResolveAction(confirmed, described) {
+    if (confirmed && described) {
+      described.run();
+      appendAssistantMessage(described.confirmedSummary);
+    } else {
+      appendAssistantMessage('Anulowano — nic nie zostało zmienione.');
+    }
+    clearAction();
   }
 
   return (
@@ -138,6 +206,8 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
             ))}
 
             {sending && <TypingBubble />}
+
+            {action && <ActionConfirmCard action={action} planner={planner} onResolve={handleResolveAction} />}
 
             {error && (
               <div style={{ padding: 12, borderRadius: 14, background: 'rgba(245,165,36,.08)', border: '1px solid rgba(245,165,36,.3)', fontSize: 12, lineHeight: 1.45, color: '#f7c46c' }}>

@@ -10,6 +10,7 @@ export function buildChatContext({ state, weeklyCapacity, profileDefaults, study
     .map((e) => {
       const goal = state.examGoals?.[e.id];
       return {
+        id: e.id,
         subject: e.subject,
         title: e.title,
         daysUntil: e.daysUntil,

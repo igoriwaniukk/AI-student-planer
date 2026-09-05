@@ -534,6 +534,12 @@ export function usePlanner(defaults) {
       return { examGoals: { ...s.examGoals, [examId]: { ...cur, studyMinutes: Math.max(15, cur.studyMinutes + delta) } } };
     });
   }
+  function setExamStudyMinutes(examId, minutes) {
+    update((s) => {
+      const cur = s.examGoals[examId] || DEFAULT_EXAM_GOAL;
+      return { examGoals: { ...s.examGoals, [examId]: { ...cur, studyMinutes: Math.max(15, minutes) } } };
+    });
+  }
   function addCustomExam({ subject, title, daysUntil, grade, importance, studyMinutes, color }) {
     const id = 'custom-' + Date.now();
     const exam = { id, subject, title, color: color || '#8fbaff', day: REFERENCE_DAY + daysUntil };
@@ -581,7 +587,7 @@ export function usePlanner(defaults) {
     finishDay, goHomeSummarized, saveLater, bioAdjust, mathAdjust,
     keepEngTomorrow, openEngTime, pickEngTime, cancelEngTime, saveEngTime,
     applyAdaptive, declineAdaptive,
-    setExamGrade, setExamImportance, adjustExamStudyMinutes,
+    setExamGrade, setExamImportance, adjustExamStudyMinutes, setExamStudyMinutes,
     addCustomExam, removeCustomExam, dismissGoalPrompt, answerGoalPrompt, nextGoalPrompt,
     computeActiveIds,
   };

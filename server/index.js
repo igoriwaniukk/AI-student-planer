@@ -2,6 +2,7 @@ import { config } from 'dotenv';
 import express from 'express';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { GOALS, IMPORTANCE_OPTIONS } from '../src/lib/plannerData.js';
 
 // Load server/.env explicitly by file location, not by resolving against
 // process.cwd() (dotenv's default) — `npm run server` runs with cwd set to
@@ -20,11 +21,53 @@ const PORT = process.env.PORT || 8787;
 const app = express();
 app.use(express.json({ limit: '1mb' }));
 
+const TOOLS = [
+  {
+    functionDeclarations: [
+      {
+        name: 'add_exam',
+        description:
+          'Dodaje nowy sprawdzian/egzamin do planu ucznia razem z celem nauki. Użyj, gdy uczeń prosi o dodanie sprawdzianu, kartkówki lub egzaminu, który nie jest jeszcze na liście najbliższych sprawdzianów.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            subject: { type: 'STRING', description: 'Przedmiot, np. "Chemia".' },
+            title: { type: 'STRING', description: 'Krótki opis, np. "Sprawdzian z kwasów". Jeśli nieznany, użyj "Sprawdzian".' },
+            daysUntil: { type: 'INTEGER', description: 'Za ile dni jest sprawdzian, liczba całkowita (dziś = 0).' },
+            grade: { type: 'STRING', enum: GOALS, description: 'Docelowa ocena/cel ucznia.' },
+            importance: { type: 'STRING', enum: IMPORTANCE_OPTIONS, description: 'Jak ważny jest ten sprawdzian dla ucznia.' },
+            studyMinutes: { type: 'INTEGER', description: 'Łączna liczba minut nauki, jaką zaplanować na ten sprawdzian.' },
+          },
+          required: ['subject', 'daysUntil', 'grade', 'importance', 'studyMinutes'],
+        },
+      },
+      {
+        name: 'update_exam_goal',
+        description:
+          'Zmienia cel (ocenę, ważność lub łączną liczbę minut nauki) dla sprawdzianu, który już istnieje na liście "Najbliższe sprawdziany" w danych ucznia. Podaj tylko pola, które mają się zmienić.',
+        parameters: {
+          type: 'OBJECT',
+          properties: {
+            examId: { type: 'STRING', description: 'Identyfikator sprawdzianu (id) z listy najbliższych sprawdzianów w danych ucznia.' },
+            grade: { type: 'STRING', enum: GOALS },
+            importance: { type: 'STRING', enum: IMPORTANCE_OPTIONS },
+            studyMinutes: { type: 'INTEGER', description: 'Nowa łączna liczba minut nauki (wartość docelowa, nie różnica).' },
+          },
+          required: ['examId'],
+        },
+      },
+    ],
+  },
+];
+
 function buildSystemPrompt(context) {
   const lines = [
     'Jesteś asystentem AI w polskiej aplikacji Student Planner. Pomagasz uczniowi planować naukę, ' +
       'przygotowywać się do sprawdzianów i radzić sobie z napiętymi dniami.',
     'Odpowiadaj zawsze po polsku, konkretnie i zwięźle. Gdy to pomocne, odnoś się do danych ucznia podanych niżej.',
+    'Gdy uczeń prosi o dodanie sprawdzianu albo o zmianę celu/oceny/czasu nauki dla istniejącego sprawdzianu, ' +
+      'użyj odpowiedniej funkcji (add_exam lub update_exam_goal) zamiast tylko opisywać to słowami — ' +
+      'aplikacja poprosi ucznia o potwierdzenie przed zapisaniem zmiany.',
   ];
   if (context) {
     lines.push('--- Dane ucznia ---');
@@ -32,7 +75,7 @@ function buildSystemPrompt(context) {
       lines.push(
         'Najbliższe sprawdziany: ' +
           context.exams
-            .map((e) => `${e.subject}${e.title ? ' (' + e.title + ')' : ''} za ${e.daysUntil} dni${e.goal ? ', cel: ' + e.goal : ''}`)
+            .map((e) => `[id: ${e.id}] ${e.subject}${e.title ? ' (' + e.title + ')' : ''} za ${e.daysUntil} dni${e.goal ? ', cel: ' + e.goal : ''}`)
             .join('; ') +
           '.'
       );
@@ -80,6 +123,7 @@ app.post('/api/chat', async (req, res) => {
       body: JSON.stringify({
         contents: toGeminiContents(messages),
         systemInstruction: { parts: [{ text: buildSystemPrompt(context) }] },
+        tools: TOOLS,
       }),
     });
 
@@ -89,8 +133,11 @@ app.post('/api/chat', async (req, res) => {
       return;
     }
 
-    const reply = data.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
-    res.json({ reply });
+    const parts = data.candidates?.[0]?.content?.parts || [];
+    const reply = parts.map((p) => p.text).filter(Boolean).join('');
+    const functionCall = parts.find((p) => p.functionCall)?.functionCall;
+    const action = functionCall ? { name: functionCall.name, args: functionCall.args } : null;
+    res.json({ reply, action });
   } catch (err) {
     res.status(502).json({ error: 'Nie udało się połączyć z Gemini: ' + err.message });
   }

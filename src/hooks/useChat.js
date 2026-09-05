@@ -4,6 +4,7 @@ export function useChat() {
   const [messages, setMessages] = useState([]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [action, setAction] = useState(null);
 
   async function send(text, context) {
     const trimmed = text.trim();
@@ -27,7 +28,8 @@ export function useChat() {
         throw new Error('Serwer czatu nie odpowiedział poprawnie. Upewnij się, że jest uruchomiony (npm run dev:full).');
       }
       if (!res.ok) throw new Error(data.error || 'Błąd serwera czatu.');
-      setMessages(next.concat({ role: 'assistant', content: data.reply }));
+      if (data.reply) setMessages(next.concat({ role: 'assistant', content: data.reply }));
+      if (data.action) setAction(data.action);
     } catch (err) {
       setError(err.message || 'Nie udało się połączyć z czatem AI.');
     } finally {
@@ -35,5 +37,13 @@ export function useChat() {
     }
   }
 
-  return { messages, sending, error, send };
+  function clearAction() {
+    setAction(null);
+  }
+
+  function appendAssistantMessage(content) {
+    setMessages((prev) => prev.concat({ role: 'assistant', content }));
+  }
+
+  return { messages, sending, error, send, action, clearAction, appendAssistantMessage };
 }
