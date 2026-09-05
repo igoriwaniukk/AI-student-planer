@@ -163,6 +163,7 @@ export default function Prep({ planner }) {
           title={t('prep.savedTitle')}
           sub={state.bioSessionsSaved ? t('prep.savedSub') : ''}
           onDone={goHomeDeadline}
+          buttonLabel={t('sum.backToStart')}
         />
       )}
     </div>

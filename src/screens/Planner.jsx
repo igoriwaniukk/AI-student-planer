@@ -1,5 +1,5 @@
 import { PRIO_STYLE } from '../lib/plannerData';
-import { durOf } from '../lib/plannerLogic';
+import { durOf, hm } from '../lib/plannerLogic';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import { useLang } from '../lib/useLang';
 import TaskEditSheet from '../components/TaskEditSheet';
@@ -12,8 +12,7 @@ export default function Planner({ planner }) {
   const { state, toggleTask, openTaskEdit, update, generatePlan, go } = planner;
   const nTasks = state.tasks.filter(Boolean).length;
   const mins = [60, 45, 30].reduce((a, m, i) => a + (state.tasks[i] ? m : 0), 0);
-  const h = Math.floor(mins / 60), m = mins % 60;
-  const sumTime = h > 0 ? (m ? h + ' godz. ' + m + ' min' : h + ' godz.') : m + ' min';
+  const sumTime = hm(mins);
 
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 176px' }}>

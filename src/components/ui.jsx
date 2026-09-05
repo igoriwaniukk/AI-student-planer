@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLang } from '../lib/useLang';
 
 // Animates a numeric value counting up (or down) to its new value whenever
 // it changes, instead of jumping instantly — used for streak/points badges.
@@ -194,7 +195,9 @@ export function BottomSheet({ children, maxHeight = '86%' }) {
   );
 }
 
-export function ConfirmCard({ title, sub, onDone, buttonLabel = 'Wróć na start' }) {
+export function ConfirmCard({ title, sub, onDone, buttonLabel }) {
+  const { t } = useLang();
+  const label = buttonLabel || t('sum.backToStart');
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 78, background: 'rgba(6,6,10,.72)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end', padding: 20 }}>
       <div style={{ width: '100%', padding: 20, borderRadius: 24, background: '#101018', border: '1px solid rgba(255,255,255,.1)', boxShadow: '0 -20px 50px rgba(0,0,0,.5)', animation: 'fadeUp .3s ease both' }}>
@@ -208,7 +211,7 @@ export function ConfirmCard({ title, sub, onDone, buttonLabel = 'Wróć na start
           </div>
         </div>
         <div onClick={onDone} style={{ marginTop: 16, height: 52, borderRadius: 16, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15.5, fontWeight: 700, cursor: 'pointer' }}>
-          {buttonLabel}
+          {label}
         </div>
       </div>
     </div>

@@ -65,25 +65,45 @@ export function buildSchedule({ taskDefs, tasks, taskState, energy, pref, durOve
   return sched;
 }
 
+const TIMELINE_TEXT = {
+  pl: {
+    school: 'Szkoła', fixedEvent: 'Stałe wydarzenie', tennis: 'Tenis', sleep: 'Sen', fixedTime: 'Stała godzina',
+    gap: 'Przerwa', restMin: (n) => n + ' min odpoczynku',
+    bufferTitle: 'Bufor przed treningiem', bufferSub: 'Przygotowanie i dotarcie na tenis.',
+    dinnerTitle: 'Kolacja i odpoczynek', rest: 'Odpoczynek',
+    lunchTitle: 'Powrót i obiad',
+    eveningTitle: 'Wolny wieczór', freeTime: 'Czas wolny',
+  },
+  en: {
+    school: 'School', fixedEvent: 'Fixed event', tennis: 'Tennis', sleep: 'Sleep', fixedTime: 'Fixed time',
+    gap: 'Break', restMin: (n) => n + ' min rest',
+    bufferTitle: 'Buffer before training', bufferSub: 'Getting ready and traveling to tennis.',
+    dinnerTitle: 'Dinner and rest', rest: 'Rest',
+    lunchTitle: 'Back home and lunch',
+    eveningTitle: 'Free evening', freeTime: 'Free time',
+  },
+};
+
 // Fixed calendar events for the demo day: school, tennis, sleep.
 export function timeline(schedule) {
   const sched = schedule || {};
-  const items = [{ k: 'fixed', start: 480, end: 880, title: 'Szkoła', sub: 'Stałe wydarzenie' }];
+  const tx = TIMELINE_TEXT[getCurrentLang() === 'en' ? 'en' : 'pl'];
+  const items = [{ k: 'fixed', kind: 'school', start: 480, end: 880, title: tx.school, sub: tx.fixedEvent }];
   Object.keys(sched).forEach((id) => items.push({ k: 'study', id, start: sched[id].start, end: sched[id].start + sched[id].dur }));
-  items.push({ k: 'fixed', start: 1080, end: 1140, title: 'Tenis', sub: 'Stałe wydarzenie' });
-  items.push({ k: 'sleep', start: 1350, end: 1350, title: 'Sen', sub: 'Stała godzina' });
+  items.push({ k: 'fixed', kind: 'tennis', start: 1080, end: 1140, title: tx.tennis, sub: tx.fixedEvent });
+  items.push({ k: 'sleep', kind: 'sleep', start: 1350, end: 1350, title: tx.sleep, sub: tx.fixedTime });
   items.sort((a, b) => a.start - b.start);
   const out = [];
   for (let i = 0; i < items.length; i++) {
     const prev = out.length ? out[out.length - 1] : null;
     const it = items[i];
     if (prev && it.start > prev.end) {
-      let title = 'Przerwa';
-      let sub = (it.start - prev.end) + ' min odpoczynku';
-      if (it.k === 'fixed') { title = 'Bufor przed treningiem'; sub = 'Przygotowanie i dotarcie na tenis.'; }
-      else if (prev.k === 'fixed' && prev.title === 'Tenis') { title = 'Kolacja i odpoczynek'; sub = 'Odpoczynek'; }
-      else if (prev.k === 'fixed' && prev.title === 'Szkoła') { title = 'Powrót i obiad'; sub = 'Odpoczynek'; }
-      else if (it.k === 'sleep') { title = 'Wolny wieczór'; sub = 'Czas wolny'; }
+      let title = tx.gap;
+      let sub = tx.restMin(it.start - prev.end);
+      if (it.k === 'fixed') { title = tx.bufferTitle; sub = tx.bufferSub; }
+      else if (prev.k === 'fixed' && prev.kind === 'tennis') { title = tx.dinnerTitle; sub = tx.rest; }
+      else if (prev.k === 'fixed' && prev.kind === 'school') { title = tx.lunchTitle; sub = tx.rest; }
+      else if (it.k === 'sleep') { title = tx.eveningTitle; sub = tx.freeTime; }
       out.push({ k: 'gap', start: prev.end, end: it.start, title, sub });
     }
     out.push(it);

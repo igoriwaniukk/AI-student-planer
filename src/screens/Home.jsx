@@ -17,7 +17,7 @@ function LevelCard({ points }) {
     <div style={{ marginTop: 10, padding: '11px 14px', borderRadius: 15, background: 'rgba(139,109,255,.08)', border: '1px solid rgba(139,109,255,.25)', display: 'flex', alignItems: 'center', gap: 11 }}>
       <span style={{ fontSize: 18 }}>🏅</span>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 700 }}>{t('home.level', { level: lvl.level, title: lvl.title })}</div>
+        <div style={{ fontSize: 12.5, fontWeight: 700 }}>{t('home.level', { level: lvl.level, title: t(lvl.titleKey) })}</div>
         {lvl.nextAt != null && (
           <div style={{ marginTop: 6, height: 5, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
             <div style={{ width: lvl.progress + '%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#8b6dff,#6d4dff)', transition: 'width .5s ease' }} />

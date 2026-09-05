@@ -4,13 +4,17 @@ import { useLang } from '../lib/useLang';
 
 const DIFFICULTIES = ['Łatwy', 'Średni', 'Trudny'];
 
+function diffLabel(t, d) {
+  return d === 'Łatwy' ? t('dl.diffEasy') : d === 'Trudny' ? t('dl.diffHard') : t('dl.diffMedium');
+}
+
 export default function Deadline({ planner }) {
   const { t } = useLang();
   const { state, setField, addTopic, removeTopic, deadlineSubmit, goHomeDeadline } = planner;
   const nameEmpty = !state.nameValue.trim();
   const topicsMissing = state.autoPlan && state.topics.length === 0;
   const valid = !!state.kind && !!state.subject && !nameEmpty && state.dateValid && !topicsMissing;
-  const difficultyLabel = state.difficulty === 'Łatwy' ? t('dl.diffEasy') : state.difficulty === 'Trudny' ? t('dl.diffHard') : t('dl.diffMedium');
+  const difficultyLabel = diffLabel(t, state.difficulty);
 
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px' }}>
@@ -75,7 +79,7 @@ export default function Deadline({ planner }) {
       <div style={{ fontSize: 15, fontWeight: 700, margin: '22px 0 11px' }}>{t('dl.difficultyQ')}</div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
         {DIFFICULTIES.map((d) => (
-          <div key={d} onClick={() => setField('difficulty', d)} style={{ height: 48, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, cursor: 'pointer', background: state.difficulty === d ? 'rgba(124,92,255,.14)' : 'rgba(255,255,255,.035)', border: '1.5px solid ' + (state.difficulty === d ? 'rgba(124,92,255,.6)' : 'rgba(255,255,255,.1)'), color: state.difficulty === d ? '#e6dfff' : '#c9c9d6' }}>{d}</div>
+          <div key={d} onClick={() => setField('difficulty', d)} style={{ height: 48, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, cursor: 'pointer', background: state.difficulty === d ? 'rgba(124,92,255,.14)' : 'rgba(255,255,255,.035)', border: '1.5px solid ' + (state.difficulty === d ? 'rgba(124,92,255,.6)' : 'rgba(255,255,255,.1)'), color: state.difficulty === d ? '#e6dfff' : '#c9c9d6' }}>{diffLabel(t, d)}</div>
         ))}
       </div>
 
@@ -136,7 +140,7 @@ export default function Deadline({ planner }) {
       </StickyFooter>
 
       {state.deadlineOnlySaved && (
-        <ConfirmCard title={t('dl.savedTitle')} sub={t('dl.savedSub')} onDone={goHomeDeadline} />
+        <ConfirmCard title={t('dl.savedTitle')} sub={t('dl.savedSub')} onDone={goHomeDeadline} buttonLabel={t('sum.backToStart')} />
       )}
     </div>
   );

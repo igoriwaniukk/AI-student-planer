@@ -16,12 +16,12 @@ export function computeUnlockedAchievements(stats) {
 }
 
 export const LEVELS = [
-  { min: 0, title: 'Początkujący' },
-  { min: 100, title: 'Zdyscyplinowany' },
-  { min: 250, title: 'Wytrwały uczeń' },
-  { min: 500, title: 'Mistrz planowania' },
-  { min: 1000, title: 'Ekspert nauki' },
-  { min: 2000, title: 'Legenda nauki' },
+  { min: 0, titleKey: 'level.beginner' },
+  { min: 100, titleKey: 'level.disciplined' },
+  { min: 250, titleKey: 'level.persistent' },
+  { min: 500, titleKey: 'level.planningMaster' },
+  { min: 1000, titleKey: 'level.studyExpert' },
+  { min: 2000, titleKey: 'level.studyLegend' },
 ];
 
 export function computeLevel(points) {
@@ -32,5 +32,5 @@ export function computeLevel(points) {
   const current = LEVELS[idx];
   const next = LEVELS[idx + 1];
   const progress = next ? Math.round(((points - current.min) / (next.min - current.min)) * 100) : 100;
-  return { level: idx + 1, title: current.title, nextAt: next ? next.min : null, progress };
+  return { level: idx + 1, titleKey: current.titleKey, nextAt: next ? next.min : null, progress };
 }
