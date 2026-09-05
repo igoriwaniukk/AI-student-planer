@@ -1,4 +1,5 @@
 import TabBar from './components/TabBar';
+import ChatWidget from './components/ChatWidget';
 import { GeneratingOverlay } from './components/ui';
 import Home from './screens/Home';
 import Calendar from './screens/Calendar';
@@ -56,6 +57,8 @@ function MainApp({ name, schoolPlan, activities, profileDefaults, weeklyCapacity
       )}
 
       {state.generating && <GeneratingOverlay labels={state.genLabels} step={state.genStep} />}
+
+      <ChatWidget planner={planner} weeklyCapacity={weeklyCapacity} profileDefaults={profileDefaults} studyHistory={studyHistory} />
 
       {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} />}
     </div>
