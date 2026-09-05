@@ -1,5 +1,12 @@
-import 'dotenv/config';
+import { config } from 'dotenv';
 import express from 'express';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+
+// Load server/.env explicitly by file location, not by resolving against
+// process.cwd() (dotenv's default) — `npm run server` runs with cwd set to
+// the project root, so the default lookup would miss a .env placed here.
+config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '.env') });
 
 // Uses raw HTTPS calls to OpenAI's Chat Completions endpoint instead of the
 // official `openai` npm package: that SDK's exact method signatures could
