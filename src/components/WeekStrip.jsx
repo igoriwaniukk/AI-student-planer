@@ -31,7 +31,7 @@ export default function WeekStrip({ selectedDay, onSelect, eventDays, examDay })
             >
               <div
                 style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '9px 0 10px', width: '100%', borderRadius: 999,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '9px 13px 10px', borderRadius: 999,
                   background: on ? 'linear-gradient(160deg,#8b6dff,#6d4dff)' : (isCountdown ? 'rgba(245,165,36,.1)' : 'transparent'),
                   border: isCountdown && !on ? '1px solid rgba(245,165,36,.35)' : '1px solid transparent',
                   boxShadow: on ? '0 6px 18px rgba(109,77,255,.35)' : 'none',
