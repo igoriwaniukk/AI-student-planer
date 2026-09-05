@@ -5,7 +5,7 @@ import { useLang } from '../lib/useLang';
 // When examDay is given, the days counting down to it (today through the
 // exam, inclusive) are pulled to the front of the strip and get a colored
 // bar + a small caption, instead of sitting in their normal calendar slot.
-export default function WeekStrip({ selectedDay, onSelect, eventDays, examDay }) {
+export default function WeekStrip({ selectedDay, onSelect, eventDays, examDay, topMargin = 22 }) {
   const { t } = useLang();
   const countdownSet = examDay != null
     ? new Set(WEEK_DAYS.filter((d) => d.num >= REFERENCE_DAY && d.num <= examDay).map((d) => d.num))
@@ -17,7 +17,7 @@ export default function WeekStrip({ selectedDay, onSelect, eventDays, examDay })
 
   return (
     <div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginTop: 22 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginTop: topMargin }}>
         {orderedDays.map(({ num, label, short }) => {
           const on = num === selectedDay;
           const hasEvent = eventDays ? eventDays.has(num) : num % 2 === 0;
