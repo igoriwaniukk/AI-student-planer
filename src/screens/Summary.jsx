@@ -2,7 +2,7 @@ import { HARD_OPTIONS, KNOW_OPTIONS, DAY_HARD_OPTIONS } from '../lib/plannerData
 import { hm, toMinutes, fmt, zad } from '../lib/plannerLogic';
 import { BackButton, StickyFooter, PrimaryButton, EnergyPicker, OptionRow, ListRow, Chip, BottomSheet } from '../components/ui';
 
-export default function Summary({ planner }) {
+export default function Summary({ planner, recordStudyDay = () => {} }) {
   const { state, def, ts, go, finishDay, saveLater, bioAdjust, mathAdjust, update } = planner;
   const sched = state.schedule || {};
   const dayIds = state.taskDefs.filter((_, i) => state.tasks[i]).map((t) => t.id);
@@ -122,7 +122,18 @@ export default function Summary({ planner }) {
       <div onClick={saveLater} style={{ marginTop: 16, textAlign: 'center', fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>Zapisz i wróć później</div>
 
       <StickyFooter>
-        <PrimaryButton onClick={finishDay}>Zakończ dzień</PrimaryButton>
+        <PrimaryButton
+          onClick={() => {
+            recordStudyDay({
+              plannedMin: plannedMins,
+              actualMin: state.bioMinutes + state.mathMinutes,
+              completed: totalCount > 0 && doneCount === totalCount,
+            });
+            finishDay();
+          }}
+        >
+          Zakończ dzień
+        </PrimaryButton>
       </StickyFooter>
 
       <EngTimeSheet planner={planner} />

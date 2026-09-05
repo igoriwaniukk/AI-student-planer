@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { BackButton, SectionTitle, Pill, BottomSheet, Chip } from '../components/ui';
 import { GOALS, IMPORTANCE_OPTIONS, SUBJECTS } from '../lib/plannerData';
-import { upcomingExams, hm } from '../lib/plannerLogic';
+import { upcomingExams, hm, examProgressMinutes, examAtRisk } from '../lib/plannerLogic';
 
 function Card({ children, style }) {
   return (
@@ -21,7 +21,8 @@ function Stepper({ value, onAdjust, step = 15 }) {
   );
 }
 
-function ExamGoalCard({ exam, goal, onGrade, onImportance, onAdjust, onRemove }) {
+function ExamGoalCard({ exam, goal, progressMinutes, atRisk, onGrade, onImportance, onAdjust, onRemove }) {
+  const pct = goal.studyMinutes ? Math.min(100, Math.round((progressMinutes / goal.studyMinutes) * 100)) : 0;
   return (
     <Card>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
@@ -32,6 +33,20 @@ function ExamGoalCard({ exam, goal, onGrade, onImportance, onAdjust, onRemove })
         <div style={{ fontSize: 16, fontWeight: 700, marginTop: 6 }}>{exam.title}</div>
         {onRemove && <span onClick={onRemove} style={{ fontSize: 12, fontWeight: 650, color: '#8a8a99', cursor: 'pointer', marginTop: 8 }}>Usuń</span>}
       </div>
+
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
+        <span style={{ fontSize: 11.5, color: '#9a9aab' }}>Postęp nauki</span>
+        <span style={{ fontSize: 11.5, fontWeight: 650, color: '#2ee6c5' }}>{hm(progressMinutes)} z {hm(goal.studyMinutes)}</span>
+      </div>
+      <div style={{ marginTop: 7, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
+        <div style={{ width: pct + '%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#7c5cff,#2ee6c5)' }} />
+      </div>
+
+      {atRisk && (
+        <div style={{ marginTop: 12, padding: 11, borderRadius: 13, background: 'rgba(245,165,36,.08)', border: '1px solid rgba(245,165,36,.3)', fontSize: 12, lineHeight: 1.45, color: '#f7c46c' }}>
+          ⚠ Przy tylu dniach do sprawdzianu ten cel może się nie zmieścić w rozsądnym tempie nauki. Rozważ zmniejszenie celu albo więcej sesji dziennie.
+        </div>
+      )}
 
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '16px 0 9px' }}>JAK WAŻNY JEST TEN SPRAWDZIAN?</div>
       <div style={{ display: 'flex', gap: 8 }}>
@@ -130,11 +145,15 @@ function AddGoalSheet({ onCancel, onSave }) {
   );
 }
 
-export default function Goals({ planner }) {
+export default function Goals({ planner, weeklyCapacity, setWeeklyCapacity }) {
   const { state, go, setExamGrade, setExamImportance, adjustExamStudyMinutes, addCustomExam, removeCustomExam } = planner;
   const [adding, setAdding] = useState(false);
   const exams = upcomingExams(state);
   const DEFAULT_GOAL = { grade: GOALS[2], studyMinutes: 120, importance: 'Średni' };
+  const weekGoalMinutes = exams
+    .filter((e) => e.daysUntil >= 0 && e.daysUntil <= 7)
+    .reduce((a, e) => a + (state.examGoals[e.id]?.studyMinutes || 0), 0);
+  const overCapacity = weekGoalMinutes > weeklyCapacity;
 
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px' }}>
@@ -146,20 +165,44 @@ export default function Goals({ planner }) {
         </div>
       </div>
 
+      <Card style={{ marginTop: 22, background: overCapacity ? 'rgba(245,165,36,.07)' : 'rgba(255,255,255,.035)', border: '1px solid ' + (overCapacity ? 'rgba(245,165,36,.3)' : 'rgba(255,255,255,.07)') }}>
+        <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>LIMIT NAUKI NA TEN TYDZIEŃ</div>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 10 }}>
+          <span style={{ fontSize: 19, fontWeight: 750, color: overCapacity ? '#f5a524' : '#f4f4f7' }}>{hm(weekGoalMinutes)}</span>
+          <span style={{ fontSize: 12.5, color: '#8a8a99' }}>z {hm(weeklyCapacity)} limitu</span>
+        </div>
+        <div style={{ marginTop: 9, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
+          <div style={{ width: Math.min(100, Math.round((weekGoalMinutes / weeklyCapacity) * 100)) + '%', height: '100%', borderRadius: 99, background: overCapacity ? '#f5a524' : 'linear-gradient(90deg,#7c5cff,#2ee6c5)' }} />
+        </div>
+        {overCapacity && (
+          <div style={{ fontSize: 12, lineHeight: 1.45, color: '#f7c46c', marginTop: 10 }}>Cele na najbliższy tydzień przekraczają Twój limit — ten tydzień może być przeciążony.</div>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 12 }}>
+          <span style={{ fontSize: 11.5, color: '#8a8a99', flex: 1 }}>Zmień limit</span>
+          <div onClick={() => setWeeklyCapacity((m) => Math.max(60, m - 30))} style={{ width: 34, height: 34, borderRadius: 11, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, cursor: 'pointer' }}>−</div>
+          <div onClick={() => setWeeklyCapacity((m) => m + 30)} style={{ width: 34, height: 34, borderRadius: 11, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, cursor: 'pointer' }}>+</div>
+        </div>
+      </Card>
+
       <SectionTitle style={{ margin: '22px 0 12px' }}>Twoje sprawdziany</SectionTitle>
       {exams.length > 0 && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-          {exams.map((exam) => (
-            <ExamGoalCard
-              key={exam.id}
-              exam={exam}
-              goal={state.examGoals[exam.id] || DEFAULT_GOAL}
-              onGrade={(g) => setExamGrade(exam.id, g)}
-              onImportance={(imp) => setExamImportance(exam.id, imp)}
-              onAdjust={(delta) => adjustExamStudyMinutes(exam.id, delta)}
-              onRemove={exam.id.startsWith('custom-') ? () => removeCustomExam(exam.id) : null}
-            />
-          ))}
+          {exams.map((exam) => {
+            const goal = state.examGoals[exam.id] || DEFAULT_GOAL;
+            return (
+              <ExamGoalCard
+                key={exam.id}
+                exam={exam}
+                goal={goal}
+                progressMinutes={examProgressMinutes(state, exam.id)}
+                atRisk={examAtRisk(state, exam, goal)}
+                onGrade={(g) => setExamGrade(exam.id, g)}
+                onImportance={(imp) => setExamImportance(exam.id, imp)}
+                onAdjust={(delta) => adjustExamStudyMinutes(exam.id, delta)}
+                onRemove={exam.id.startsWith('custom-') ? () => removeCustomExam(exam.id) : null}
+              />
+            );
+          })}
         </div>
       )}
 

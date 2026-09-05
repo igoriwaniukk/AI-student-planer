@@ -1,8 +1,54 @@
-import { useState } from 'react';
-import { STATUS_COLOR, STATUS_LABEL, GOALS, IMPORTANCE_OPTIONS } from '../lib/plannerData';
-import { span } from '../lib/plannerLogic';
+import { useEffect, useState } from 'react';
+import { STATUS_COLOR, STATUS_LABEL, GOALS, IMPORTANCE_OPTIONS, WEEK_DAYS, TENIS_DAY } from '../lib/plannerData';
+import { span, hm, upcomingExams, computeStreak } from '../lib/plannerLogic';
 import WeekStrip from '../components/WeekStrip';
 import { Pill, BottomSheet, EnergyPicker, Chip } from '../components/ui';
+
+function dayLoad(state, dayNum) {
+  const info = WEEK_DAYS.find((d) => d.num === dayNum);
+  let load = info?.school ? 1 : 0;
+  if (dayNum === TENIS_DAY) load += 1;
+  load += upcomingExams(state).filter((e) => e.day === dayNum).length * 2;
+  return load;
+}
+
+function MorningSummaryCard({ state, streak }) {
+  const sched = state.schedule || {};
+  const ids = Object.keys(sched);
+  const totalMin = ids.reduce((a, id) => a + sched[id].dur, 0);
+  const nextExam = upcomingExams(state).filter((e) => e.daysUntil >= 0)[0];
+  const loads = WEEK_DAYS.map((d) => ({ ...d, load: dayLoad(state, d.num) }));
+  const heaviest = loads.reduce((a, b) => (b.load > a.load ? b : a));
+  const lightest = loads.reduce((a, b) => (b.load < a.load ? b : a));
+
+  return (
+    <div style={{ marginTop: 18, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
+      <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>PODSUMOWANIE PORANKA</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 11 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          <span style={{ fontSize: 13 }}>📅</span>
+          <span style={{ fontSize: 12.5, color: '#c9c9d6' }}>{ids.length ? ids.length + ' ' + (ids.length === 1 ? 'sesja' : 'sesje') + ' dziś · ' + hm(totalMin) + ' nauki' : 'Brak zaplanowanych sesji na dziś'}</span>
+        </div>
+        {nextExam && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+            <span style={{ fontSize: 13 }}>⏳</span>
+            <span style={{ fontSize: 12.5, color: '#c9c9d6' }}>Najbliższy sprawdzian: {nextExam.subject} — {nextExam.daysUntil === 0 ? 'dziś' : nextExam.daysUntil === 1 ? 'jutro' : 'za ' + nextExam.daysUntil + ' dni'}</span>
+          </div>
+        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+          <span style={{ fontSize: 13 }}>📊</span>
+          <span style={{ fontSize: 12.5, color: '#c9c9d6' }}>Najcięższy dzień: {heaviest.label} · najlżejszy: {lightest.label}</span>
+        </div>
+        {streak > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+            <span style={{ fontSize: 13 }}>🔥</span>
+            <span style={{ fontSize: 12.5, color: '#c9c9d6' }}>Seria: {streak} {streak === 1 ? 'dzień z rzędu' : 'dni z rzędu'} z ukończonym planem</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function GoalPromptCard({ planner, exam }) {
   const { answerGoalPrompt, dismissGoalPrompt } = planner;
@@ -41,6 +87,47 @@ function GoalPromptCard({ planner, exam }) {
           Zapisz cel
         </div>
       </div>
+    </div>
+  );
+}
+
+function SessionTimer({ state, dur, dismissBreakReminder }) {
+  const [now, setNow] = useState(() => Date.now());
+  const paused = !state.sessionStart;
+
+  useEffect(() => {
+    if (paused) return undefined;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [paused]);
+
+  const elapsedMs = state.sessionElapsedMs + (paused ? 0 : now - state.sessionStart);
+  const totalMs = dur * 60000;
+  const remainingMs = totalMs - elapsedMs;
+  const overtime = remainingMs < 0;
+  const displayMs = Math.abs(remainingMs);
+  const mm = Math.floor(displayMs / 60000);
+  const ss = Math.floor((displayMs % 60000) / 1000);
+  const label = (overtime ? '+' : '') + mm + ':' + (ss < 10 ? '0' : '') + ss;
+  const pct = Math.min(100, Math.round((elapsedMs / totalMs) * 100));
+  const showBreak = !paused && !overtime && !state.breakDismissed && elapsedMs >= 25 * 60000 && dur >= 40;
+
+  return (
+    <div style={{ marginTop: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+        <span style={{ fontSize: 11, color: '#8a8a99' }}>{overtime ? 'Po czasie' : 'Pozostało'}</span>
+        <span style={{ fontSize: 28, fontWeight: 750, fontVariantNumeric: 'tabular-nums', color: overtime ? '#f5a524' : '#f4f4f7' }}>{label}</span>
+      </div>
+      <div style={{ marginTop: 8, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.1)', overflow: 'hidden' }}>
+        <div style={{ width: pct + '%', height: '100%', borderRadius: 99, background: overtime ? '#f5a524' : 'linear-gradient(90deg,#7c5cff,#2ee6c5)' }} />
+      </div>
+      {showBreak && (
+        <div style={{ marginTop: 11, padding: 11, borderRadius: 13, background: 'rgba(46,230,197,.08)', border: '1px solid rgba(46,230,197,.25)', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ fontSize: 15 }}>🌿</span>
+          <div style={{ flex: 1, fontSize: 12, lineHeight: 1.4, color: '#c9c9d6' }}>Trwasz już 25 minut — może krótka przerwa na rozciągnięcie?</div>
+          <span onClick={dismissBreakReminder} style={{ fontSize: 12, fontWeight: 650, color: '#8ff0de', cursor: 'pointer' }}>OK</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -112,11 +199,14 @@ function NextSessionCard({ planner }) {
         {d.deadline && <Pill text={d.deadline} color="#f5a524" bg="rgba(245,165,36,.13)" />}
       </div>
       {running ? (
-        <div style={{ display: 'flex', gap: 9, marginTop: 14 }}>
-          <SmallBtn label={st.status === 'paused' ? 'Wznów' : 'Pauza'} onClick={() => togglePause(nextId)} />
-          <SmallBtn label="Przełóż" onClick={() => openBlockEdit(nextId)} />
-          <SmallBtn label="Zakończ" accent onClick={() => openFinish(nextId, b.dur)} />
-        </div>
+        <>
+          <SessionTimer state={state} dur={b.dur} dismissBreakReminder={planner.dismissBreakReminder} />
+          <div style={{ display: 'flex', gap: 9, marginTop: 14 }}>
+            <SmallBtn label={st.status === 'paused' ? 'Wznów' : 'Pauza'} onClick={() => togglePause(nextId)} />
+            <SmallBtn label="Przełóż" onClick={() => openBlockEdit(nextId)} />
+            <SmallBtn label="Zakończ" accent onClick={() => openFinish(nextId, b.dur)} />
+          </div>
+        </>
       ) : (
         <div
           onClick={() => startSession(nextId)}
@@ -202,7 +292,7 @@ function FinishSheet({ planner }) {
   );
 }
 
-function EnergySheet({ planner }) {
+function EnergySheet({ planner, logEnergy }) {
   const { state, cancelEnergySheet, saveEnergySheet, update } = planner;
   if (!state.energySheet) return null;
   return (
@@ -215,14 +305,40 @@ function EnergySheet({ planner }) {
         </div>
         <div style={{ display: 'flex', gap: 11, marginTop: 18, paddingBottom: 8 }}>
           <div onClick={cancelEnergySheet} style={{ flex: 1, height: 50, borderRadius: 15, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 650, cursor: 'pointer' }}>Anuluj</div>
-          <div onClick={saveEnergySheet} style={{ flex: 1.3, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>Zapisz</div>
+          <div
+            onClick={() => { logEnergy(state.energyDraft); saveEnergySheet(); }}
+            style={{ flex: 1.3, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+          >
+            Zapisz
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-export default function Home({ planner, studentName }) {
+const ENERGY_EMOJI = { Niska: '🔋', Normalna: '⚡', Wysoka: '🔥' };
+
+function EnergyHistory({ energyLog }) {
+  const today = new Date().toISOString().slice(0, 10);
+  const todays = energyLog.filter((e) => e.at.slice(0, 10) === today).slice(-5);
+  if (!todays.length) return null;
+  return (
+    <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
+      <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>DZISIEJSZE ZAMELDOWANIA ENERGII</div>
+      <div style={{ display: 'flex', gap: 9, marginTop: 11, overflowX: 'auto' }}>
+        {todays.map((e, i) => (
+          <div key={i} style={{ flex: 'none', textAlign: 'center', padding: '9px 12px', borderRadius: 13, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)' }}>
+            <div style={{ fontSize: 16 }}>{ENERGY_EMOJI[e.level]}</div>
+            <div style={{ fontSize: 10.5, color: '#8a8a99', marginTop: 4 }}>{new Date(e.at).toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function Home({ planner, studentName, energyLog = [], logEnergy = () => {}, studyHistory = {} }) {
   const { state, ts, openEnergySheet } = planner;
   const goalExam = planner.nextGoalPrompt();
   const dayIds = state.taskDefs.filter((_, i) => state.tasks[i]).map((t) => t.id);
@@ -253,6 +369,8 @@ export default function Home({ planner, studentName }) {
         </div>
       </div>
 
+      <MorningSummaryCard state={state} streak={computeStreak(studyHistory)} />
+
       {state.rescueApplied && (
         <div style={{ marginTop: 18, padding: 15, borderRadius: 18, background: 'rgba(53,208,127,.06)', border: '1px solid rgba(53,208,127,.22)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
@@ -277,6 +395,8 @@ export default function Home({ planner, studentName }) {
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 11, background: 'rgba(124,92,255,.18)', border: '1px solid rgba(124,92,255,.35)', fontSize: 12.5, fontWeight: 650, color: '#c9baff' }}>Zmień <span style={{ fontSize: 9 }}>▼</span></div>
       </div>
+
+      <EnergyHistory energyLog={energyLog} />
 
       <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
@@ -352,7 +472,7 @@ export default function Home({ planner, studentName }) {
       </div>
 
       <FinishSheet planner={planner} />
-      <EnergySheet planner={planner} />
+      <EnergySheet planner={planner} logEnergy={logEnergy} />
     </div>
   );
 }

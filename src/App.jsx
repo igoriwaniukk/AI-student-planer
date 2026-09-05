@@ -12,7 +12,10 @@ import Prep from './screens/Prep';
 import Summary from './screens/Summary';
 import Profile from './screens/Profile';
 import Onboarding from './screens/Onboarding';
-import { useStudentName, useSchoolPlan, useActivities, useProfileDefaults } from './lib/store';
+import {
+  useStudentName, useSchoolPlan, useActivities, useProfileDefaults,
+  useWeeklyCapacity, useEnergyLog, useStudyHistory, useRecurringActivities,
+} from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
 
 const TAB_SCREENS = new Set(['home', 'calendar', 'goals', 'profile']);
@@ -20,23 +23,25 @@ const TAB_SCREENS = new Set(['home', 'calendar', 'goals', 'profile']);
 // Mounted only once onboarding is done, so usePlanner's initial state (a lazy
 // useState initializer, which only ever runs on first mount) picks up the
 // profile defaults onboarding just saved instead of whatever was there before.
-function MainApp({ name, schoolPlan, activities, profileDefaults }) {
+function MainApp({ name, schoolPlan, activities, profileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities }) {
   const planner = usePlanner(profileDefaults);
   const { state } = planner;
   const screen = state.screen;
 
   return (
     <div className="app-shell">
-      {screen === 'home' && <Home planner={planner} studentName={name} />}
-      {screen === 'calendar' && <Calendar planner={planner} activities={activities} />}
-      {screen === 'goals' && <Goals planner={planner} />}
+      {screen === 'home' && (
+        <Home planner={planner} studentName={name} energyLog={energyLog} logEnergy={logEnergy} studyHistory={studyHistory} />
+      )}
+      {screen === 'calendar' && <Calendar planner={planner} activities={activities} recurringActivities={recurringActivities} />}
+      {screen === 'goals' && <Goals planner={planner} weeklyCapacity={weeklyCapacity} setWeeklyCapacity={setWeeklyCapacity} />}
       {screen === 'planner' && <Planner planner={planner} />}
       {screen === 'plan' && <Plan planner={planner} />}
       {screen === 'rescue' && <Rescue planner={planner} />}
       {screen === 'rescueResult' && <RescueResult planner={planner} />}
       {screen === 'deadline' && <Deadline planner={planner} />}
       {screen === 'prep' && <Prep planner={planner} />}
-      {screen === 'summary' && <Summary planner={planner} />}
+      {screen === 'summary' && <Summary planner={planner} recordStudyDay={recordStudyDay} />}
       {screen === 'profile' && (
         <Profile
           studentName={name}
@@ -44,6 +49,9 @@ function MainApp({ name, schoolPlan, activities, profileDefaults }) {
           activities={activities}
           energy={state.energy}
           profileDefaults={profileDefaults}
+          studyHistory={studyHistory}
+          recurringActivities={recurringActivities}
+          setRecurringActivities={setRecurringActivities}
         />
       )}
 
@@ -59,6 +67,19 @@ export default function App() {
   const [schoolPlan, setSchoolPlan] = useSchoolPlan();
   const [activities, setActivities] = useActivities();
   const [profileDefaults, setProfileDefaults] = useProfileDefaults();
+  const [weeklyCapacity, setWeeklyCapacity] = useWeeklyCapacity();
+  const [energyLog, setEnergyLog] = useEnergyLog();
+  const [studyHistory, setStudyHistory] = useStudyHistory();
+  const [recurringActivities, setRecurringActivities] = useRecurringActivities();
+
+  function logEnergy(level) {
+    setEnergyLog((log) => log.concat({ at: new Date().toISOString(), level }).slice(-30));
+  }
+
+  function recordStudyDay(entry) {
+    const today = new Date().toISOString().slice(0, 10);
+    setStudyHistory((h) => ({ ...h, [today]: entry }));
+  }
 
   if (!name) {
     return (
@@ -73,5 +94,20 @@ export default function App() {
     );
   }
 
-  return <MainApp name={name} schoolPlan={schoolPlan} activities={activities} profileDefaults={profileDefaults} />;
+  return (
+    <MainApp
+      name={name}
+      schoolPlan={schoolPlan}
+      activities={activities}
+      profileDefaults={profileDefaults}
+      weeklyCapacity={weeklyCapacity}
+      setWeeklyCapacity={setWeeklyCapacity}
+      energyLog={energyLog}
+      logEnergy={logEnergy}
+      studyHistory={studyHistory}
+      recordStudyDay={recordStudyDay}
+      recurringActivities={recurringActivities}
+      setRecurringActivities={setRecurringActivities}
+    />
+  );
 }

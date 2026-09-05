@@ -39,6 +39,16 @@ export const DEFAULT_START = { math: 930, bio: 1000, eng: 1170 };
 // "jutro" pivot used across the app (Poniedziałek, 20 lipca) — deadlines are
 // phrased ("za N dni") relative to this day.
 export const REFERENCE_DAY = 20;
+export const TENIS_DAY = 20;
+export const WEEK_DAYS = [
+  { num: 16, label: 'Czwartek', short: 'CZW', school: true },
+  { num: 17, label: 'Piątek', short: 'PT', school: true },
+  { num: 18, label: 'Sobota', short: 'SOB', school: false },
+  { num: 19, label: 'Niedziela', short: 'ND', school: false },
+  { num: 20, label: 'Poniedziałek', short: 'PN', school: true },
+  { num: 21, label: 'Wtorek', short: 'WT', school: true },
+  { num: 22, label: 'Środa', short: 'ŚR', school: true },
+];
 export const EXAMS = [
   { id: 'math', subject: 'Matematyka', title: 'Sprawdzian', color: '#a58cff', day: 22 },
   { id: 'bio', subject: 'Biologia', title: 'Sprawdzian', color: '#2ee6c5', day: 31, requires: 'bioDeadlineSaved' },

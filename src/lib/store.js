@@ -5,6 +5,10 @@ const KEYS = {
   schoolPlan: 'sp_schoolPlan',
   activities: 'sp_activities',
   profileDefaults: 'sp_profileDefaults',
+  weeklyCapacityMinutes: 'sp_weeklyCapacityMinutes',
+  energyLog: 'sp_energyLog',
+  studyHistory: 'sp_studyHistory',
+  recurringActivities: 'sp_recurringActivities',
 };
 
 export function useLocalStorage(key, initialValue) {
@@ -47,4 +51,28 @@ export function useProfileDefaults() {
     pref: 'Wolny wieczór',
     prioritySubjects: [],
   });
+}
+
+// How many minutes/week the student wants to cap study time at — used to warn
+// before a week gets overloaded rather than only reacting after the fact.
+export function useWeeklyCapacity() {
+  return useLocalStorage(KEYS.weeklyCapacityMinutes, 600);
+}
+
+// Real-world (not demo-day) log of energy check-ins: [{ at: ISOString, level }].
+export function useEnergyLog() {
+  return useLocalStorage(KEYS.energyLog, []);
+}
+
+// Real-world log of completed-study days, keyed by real ISO date, used for
+// streaks and the weekly review: { "2026-09-04": { plannedMin, actualMin, completed } }.
+export function useStudyHistory() {
+  return useLocalStorage(KEYS.studyHistory, {});
+}
+
+// Weekly-repeating activities the student adds themselves (e.g. "Basen,
+// Środa, 18:00, 60 min"): [{ id, name, day, start, dur }], matched by
+// weekday name against every week rather than a single calendar date.
+export function useRecurringActivities() {
+  return useLocalStorage(KEYS.recurringActivities, []);
 }

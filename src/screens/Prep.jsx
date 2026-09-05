@@ -1,5 +1,8 @@
-import { SESSIONS, SESSION_DATES } from '../lib/plannerData';
 import { BackButton, StickyFooter, PrimaryButton, BottomSheet, OptionRow, ConfirmCard } from '../components/ui';
+
+function sesji(n) {
+  return n + (n === 1 ? ' sesja' : (n >= 2 && n <= 4 ? ' sesje' : ' sesji'));
+}
 
 export default function Prep({ planner }) {
   const {
@@ -7,12 +10,16 @@ export default function Prep({ planner }) {
     togglePrepGcal, askOnlyDeadline, backToPrep, saveOnlyDeadline, confirmPrep, goHomeDeadline, go,
   } = planner;
 
+  const SESSIONS = state.prepSessions;
+  const SESSION_DATES = state.prepDates;
   const sIdx = state.sessionIdx;
   const sEdit = state.sessionEdits[sIdx] || {};
   const curDate = sEdit.date || SESSION_DATES[sIdx];
   const curStart = sEdit.start || (sEdit.time || SESSIONS[sIdx].time).split('–')[0];
   const curDur = sEdit.dur || SESSIONS[sIdx].dur;
   const dateOpts = [SESSION_DATES[sIdx], 'Środa, 22 lipca', 'Sobota, 1 sierpnia'];
+  const totalMin = SESSIONS.reduce((a, s) => a + parseInt(s.dur, 10), 0);
+  const totalLabel = totalMin >= 60 ? Math.floor(totalMin / 60) + ' godz.' + (totalMin % 60 ? ' ' + (totalMin % 60) + ' min' : '') : totalMin + ' min';
 
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px' }}>
@@ -21,13 +28,13 @@ export default function Prep({ planner }) {
         <span style={{ fontSize: 11, fontWeight: 650, color: '#c9baff', padding: '8px 14px', borderRadius: 999, background: 'rgba(124,92,255,.14)', border: '1px solid rgba(124,92,255,.45)' }}>Do zatwierdzenia</span>
       </div>
       <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>Plan przygotowania</div>
-      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>Biologia — 31 lipca</div>
+      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{state.subject} — 31 lipca</div>
 
       <div style={{ marginTop: 18, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.14)' }}>
         <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>Plan przygotowania jest gotowy</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-          <span style={{ fontSize: 12, fontWeight: 650, color: '#c9baff', padding: '7px 11px', borderRadius: 9, background: 'rgba(124,92,255,.2)' }}>6 sesji</span>
-          <span style={{ fontSize: 12, fontWeight: 650, color: '#e2e2ea', padding: '7px 11px', borderRadius: 9, background: 'rgba(255,255,255,.07)' }}>3 godz. 30 min nauki</span>
+          <span style={{ fontSize: 12, fontWeight: 650, color: '#c9baff', padding: '7px 11px', borderRadius: 9, background: 'rgba(124,92,255,.2)' }}>{sesji(SESSIONS.length)}</span>
+          <span style={{ fontSize: 12, fontWeight: 650, color: '#e2e2ea', padding: '7px 11px', borderRadius: 9, background: 'rgba(255,255,255,.07)' }}>{totalLabel} nauki</span>
           <span style={{ fontSize: 12, fontWeight: 650, color: '#e2e2ea', padding: '7px 11px', borderRadius: 9, background: 'rgba(255,255,255,.07)' }}>11 dni do sprawdzianu</span>
           <span style={{ fontSize: 12, fontWeight: 650, color: '#8ff0de', padding: '7px 11px', borderRadius: 9, background: 'rgba(46,230,197,.13)' }}>Ostatnia powtórka: dzień wcześniej</span>
         </div>

@@ -2,21 +2,10 @@ import { useState } from 'react';
 import WeekStrip from '../components/WeekStrip';
 import { BackButton, Pill, SectionTitle } from '../components/ui';
 import { span, upcomingExams, hm } from '../lib/plannerLogic';
-import { REFERENCE_DAY } from '../lib/plannerData';
-
-const DAYS = [
-  { num: 16, label: 'Czwartek', short: 'CZW', school: true },
-  { num: 17, label: 'Piątek', short: 'PT', school: true },
-  { num: 18, label: 'Sobota', short: 'SOB', school: false },
-  { num: 19, label: 'Niedziela', short: 'ND', school: false },
-  { num: 20, label: 'Poniedziałek', short: 'PN', school: true },
-  { num: 21, label: 'Wtorek', short: 'WT', school: true },
-  { num: 22, label: 'Środa', short: 'ŚR', school: true },
-];
-const TENIS_DAY = 20;
+import { REFERENCE_DAY, WEEK_DAYS, TENIS_DAY } from '../lib/plannerData';
 
 function dayInfo(num) {
-  return DAYS.find((d) => d.num === num) || DAYS[0];
+  return WEEK_DAYS.find((d) => d.num === num) || WEEK_DAYS[0];
 }
 
 function Card({ children, style }) {
@@ -40,7 +29,7 @@ function Row({ icon, title, sub, right }) {
   );
 }
 
-export default function Calendar({ planner, activities }) {
+export default function Calendar({ planner, activities, recurringActivities = [] }) {
   const { state, go } = planner;
   const [calDay, setCalDay] = useState(state.selectedDay || REFERENCE_DAY);
   const info = dayInfo(calDay);
@@ -52,6 +41,7 @@ export default function Calendar({ planner, activities }) {
   const sched = calDay === state.selectedDay ? (state.schedule || {}) : {};
   const sessionIds = Object.keys(sched).sort((a, b) => sched[a].start - sched[b].start);
   const selectedActivities = activities?.selected || [];
+  const dayRecurring = recurringActivities.filter((a) => a.day === info.label);
 
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px' }}>
@@ -127,6 +117,9 @@ export default function Calendar({ planner, activities }) {
         {info.num === TENIS_DAY && (
           <Card><Row icon="🎾" title="Tenis" sub="Stałe zajęcie" right="18:00–19:00" /></Card>
         )}
+        {dayRecurring.map((a) => (
+          <Card key={a.id}><Row icon="🔁" title={a.name} sub="Zajęcie cykliczne" right={a.start + ' · ' + a.dur + ' min'} /></Card>
+        ))}
         {selectedActivities.length > 0 && (
           <Card>
             <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', marginBottom: 10 }}>TWOJE STAŁE ZAJĘCIA</div>
@@ -137,7 +130,7 @@ export default function Calendar({ planner, activities }) {
             </div>
           </Card>
         )}
-        {info.num !== TENIS_DAY && selectedActivities.length === 0 && (
+        {info.num !== TENIS_DAY && dayRecurring.length === 0 && selectedActivities.length === 0 && (
           <Card><div style={{ fontSize: 12.5, color: '#8a8a99' }}>Brak dodatkowych zajęć na ten dzień.</div></Card>
         )}
       </div>

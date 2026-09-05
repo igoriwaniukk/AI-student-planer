@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  TASK_DEFS, PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, SESSIONS, SESSION_DATES, GOALS, REFERENCE_DAY,
+  TASK_DEFS, PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY,
 } from '../lib/plannerData';
-import { buildSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams } from '../lib/plannerLogic';
+import { buildSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates } from '../lib/plannerLogic';
 
 function initialState(defaults) {
+  const initialTopics = ['Prawa Mendla', 'Krzyżówki genetyczne', 'Dziedziczenie grup krwi'];
+  const initialPrepSessions = buildPrepSessions(initialTopics, 'Średni');
   return {
     screen: 'home',
     generating: false,
@@ -27,6 +29,9 @@ function initialState(defaults) {
     manualSnapshot: null,
     blockEdit: null,
     activeTask: null,
+    sessionStart: null,
+    sessionElapsedMs: 0,
+    breakDismissed: false,
     finishTask: null,
     finishDur: 60,
     finishHard: 'W sam raz',
@@ -59,7 +64,7 @@ function initialState(defaults) {
     goalsOpen: false,
     nameValue: 'Genetyka — dziedziczenie cech',
     dateValid: true,
-    topics: ['Prawa Mendla', 'Krzyżówki genetyczne', 'Dziedziczenie grup krwi'],
+    topics: initialTopics,
     topicErr: false,
     difficulty: 'Średni',
     level: 2,
@@ -71,6 +76,8 @@ function initialState(defaults) {
     prepGcal: false,
     bioDeadlineSaved: false,
     bioSessionsSaved: false,
+    prepSessions: initialPrepSessions,
+    prepDates: buildPrepDates(initialPrepSessions.length),
 
     sessionOpen: false,
     sessionIdx: 0,
@@ -172,7 +179,10 @@ export function usePlanner(defaults) {
   }
 
   function deadlineGenerate() {
-    update({ deadlineFailed: false });
+    update((s) => {
+      const sessions = buildPrepSessions(s.topics, s.difficulty);
+      return { deadlineFailed: false, prepSessions: sessions, prepDates: buildPrepDates(sessions.length), sessionEdits: {} };
+    });
     runGen(PREP_LABELS, 'prep');
   }
 
@@ -186,15 +196,22 @@ export function usePlanner(defaults) {
     update((s) => {
       const t = { ...s.taskState };
       t[id] = { ...t[id], status: 'in_progress' };
-      return { taskState: t, activeTask: id };
+      return { taskState: t, activeTask: id, sessionStart: Date.now(), sessionElapsedMs: 0, breakDismissed: false };
     });
   }
   function togglePause(id) {
     update((s) => {
       const t = { ...s.taskState };
-      t[id] = { ...t[id], status: t[id].status === 'paused' ? 'in_progress' : 'paused' };
-      return { taskState: t };
+      const pausing = t[id].status !== 'paused';
+      t[id] = { ...t[id], status: pausing ? 'paused' : 'in_progress' };
+      if (pausing) {
+        return { taskState: t, sessionElapsedMs: s.sessionElapsedMs + (Date.now() - s.sessionStart), sessionStart: null };
+      }
+      return { taskState: t, sessionStart: Date.now() };
     });
+  }
+  function dismissBreakReminder() {
+    update({ breakDismissed: true });
   }
   function openFinish(id, dur) {
     update({ finishTask: id, finishDur: dur, finishHard: 'W sam raz', finishKnow: 'Częściowo umiem' });
@@ -207,7 +224,7 @@ export function usePlanner(defaults) {
       const id = s.finishTask;
       const t = { ...s.taskState };
       t[id] = { status: 'completed', actual: s.finishDur, hard: s.finishHard, know: s.finishKnow };
-      const patch = { taskState: t, activeTask: null, finishTask: null };
+      const patch = { taskState: t, activeTask: null, finishTask: null, sessionStart: null, sessionElapsedMs: 0, breakDismissed: false };
       if (id === 'bio') Object.assign(patch, { bioMinutes: s.finishDur, bioHard: s.finishHard, bioKnow: s.finishKnow });
       if (id === 'math') Object.assign(patch, { mathMinutes: s.finishDur, mathHard: s.finishHard, mathKnow: s.finishKnow });
       return patch;
@@ -407,7 +424,7 @@ export function usePlanner(defaults) {
   function openSession(i) {
     update((s) => {
       const d = s.sessionEdits[i] || {};
-      snapRef.current = { i, date: d.date || SESSION_DATES[i], time: d.time || SESSIONS[i].time, dur: d.dur || SESSIONS[i].dur };
+      snapRef.current = { i, date: d.date || s.prepDates[i], time: d.time || s.prepSessions[i].time, dur: d.dur || s.prepSessions[i].dur };
       return { sessionOpen: true, sessionIdx: i, sessionMessage: '' };
     });
   }
@@ -423,7 +440,7 @@ export function usePlanner(defaults) {
   }
   function currentDur(i) {
     const d = state.sessionEdits[i] || {};
-    return d.dur || SESSIONS[i].dur;
+    return d.dur || state.prepSessions[i].dur;
   }
   function rangeLocal(start, durLabel) {
     const s = toMinutesLocal(start);
@@ -437,7 +454,7 @@ export function usePlanner(defaults) {
   function pickSessionDur(d) {
     const i = state.sessionIdx;
     const e = state.sessionEdits[i] || {};
-    const start = e.start || (e.time || SESSIONS[i].time).split('–')[0];
+    const start = e.start || (e.time || state.prepSessions[i].time).split('–')[0];
     applySession({ dur: d, start, time: rangeLocal(start, d) });
   }
   function cancelSession() {
@@ -551,7 +568,7 @@ export function usePlanner(defaults) {
   return {
     state, update, def, ts, go,
     toggleTask, generatePlan, deadlineGenerate, rescueGenerate,
-    startSession, togglePause, openFinish, cancelFinish, confirmFinish,
+    startSession, togglePause, dismissBreakReminder, openFinish, cancelFinish, confirmFinish,
     openBlockEdit, moveBlockEdit, cancelBlockEdit, saveBlockEdit, removeBlock,
     openTaskEdit, patchTaskEdit, stepTaskDur, cancelTaskEdit, saveTaskEdit,
     toggleManualMode, regenerateOrCancel, confirmPlan, goHomeSaved,
