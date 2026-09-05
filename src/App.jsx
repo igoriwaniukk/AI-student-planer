@@ -25,13 +25,12 @@ const TAB_SCREENS = new Set(['home', 'calendar', 'goals', 'profile']);
 // Mounted only once onboarding is done, so usePlanner's initial state (a lazy
 // useState initializer, which only ever runs on first mount) picks up the
 // profile defaults onboarding just saved instead of whatever was there before.
-function MainApp({ name, schoolPlan, activities, profileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities, lang, setLang }) {
+function MainApp({ name, schoolPlan, activities, profileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities }) {
   const planner = usePlanner(profileDefaults);
   const { state } = planner;
   const screen = state.screen;
 
   return (
-    <LanguageProvider lang={lang} setLang={setLang}>
     <div className="app-shell">
       {screen === 'home' && (
         <Home
@@ -80,7 +79,6 @@ function MainApp({ name, schoolPlan, activities, profileDefaults, weeklyCapacity
 
       {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} />}
     </div>
-    </LanguageProvider>
   );
 }
 
@@ -106,33 +104,35 @@ export default function App() {
 
   if (!name) {
     return (
-      <Onboarding
-        onComplete={({ name: newName, schoolPlan: plan, activities: acts, profile }) => {
-          setSchoolPlan(plan);
-          setActivities(acts);
-          setProfileDefaults(profile);
-          setName(newName);
-        }}
-      />
+      <LanguageProvider lang={lang} setLang={setLang}>
+        <Onboarding
+          onComplete={({ name: newName, schoolPlan: plan, activities: acts, profile }) => {
+            setSchoolPlan(plan);
+            setActivities(acts);
+            setProfileDefaults(profile);
+            setName(newName);
+          }}
+        />
+      </LanguageProvider>
     );
   }
 
   return (
-    <MainApp
-      name={name}
-      schoolPlan={schoolPlan}
-      activities={activities}
-      profileDefaults={profileDefaults}
-      weeklyCapacity={weeklyCapacity}
-      setWeeklyCapacity={setWeeklyCapacity}
-      energyLog={energyLog}
-      logEnergy={logEnergy}
-      studyHistory={studyHistory}
-      recordStudyDay={recordStudyDay}
-      recurringActivities={recurringActivities}
-      setRecurringActivities={setRecurringActivities}
-      lang={lang}
-      setLang={setLang}
-    />
+    <LanguageProvider lang={lang} setLang={setLang}>
+      <MainApp
+        name={name}
+        schoolPlan={schoolPlan}
+        activities={activities}
+        profileDefaults={profileDefaults}
+        weeklyCapacity={weeklyCapacity}
+        setWeeklyCapacity={setWeeklyCapacity}
+        energyLog={energyLog}
+        logEnergy={logEnergy}
+        studyHistory={studyHistory}
+        recordStudyDay={recordStudyDay}
+        recurringActivities={recurringActivities}
+        setRecurringActivities={setRecurringActivities}
+      />
+    </LanguageProvider>
   );
 }

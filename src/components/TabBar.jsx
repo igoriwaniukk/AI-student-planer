@@ -1,10 +1,12 @@
+import { useLang } from '../lib/useLang';
+
 const TABS = [
   {
-    key: 'Start', screens: ['home'],
+    key: 'home', labelKey: 'tab.home', screens: ['home'],
     icon: (c) => <path d="M3.4 9.2L11 3.2l7.6 6v8.4a1.6 1.6 0 01-1.6 1.6H5a1.6 1.6 0 01-1.6-1.6V9.2z" stroke={c} strokeWidth="1.5" strokeLinejoin="round" />,
   },
   {
-    key: 'Kalendarz', screens: ['calendar'],
+    key: 'calendar', labelKey: 'tab.calendar', screens: ['calendar'],
     icon: (c) => (
       <>
         <rect x="3.2" y="4.6" width="15.6" height="14.2" rx="3" stroke={c} strokeWidth="1.5" />
@@ -13,11 +15,11 @@ const TABS = [
     ),
   },
   {
-    key: 'Terminy', screens: ['deadline', 'prep'],
+    key: 'deadline', labelKey: 'tab.deadline', screens: ['deadline', 'prep'],
     icon: (c) => <path d="M11 4l8 14H3l8-14z" stroke={c} strokeWidth="1.5" strokeLinejoin="round" />,
   },
   {
-    key: 'Cele', screens: ['goals'],
+    key: 'goals', labelKey: 'tab.goals', screens: ['goals'],
     icon: (c) => (
       <>
         <circle cx="11" cy="11" r="7.6" stroke={c} strokeWidth="1.5" />
@@ -27,7 +29,7 @@ const TABS = [
     ),
   },
   {
-    key: 'Profil', screens: ['profile'],
+    key: 'profile', labelKey: 'tab.profile', screens: ['profile'],
     icon: (c) => (
       <>
         <circle cx="11" cy="7.6" r="3.4" stroke={c} strokeWidth="1.5" />
@@ -38,6 +40,7 @@ const TABS = [
 ];
 
 export default function TabBar({ screen, onNavigate }) {
+  const { t } = useLang();
   return (
     <div style={{
       position: 'absolute', left: 0, right: 0, bottom: 0, height: 88, padding: '10px 12px 0',
@@ -55,7 +58,7 @@ export default function TabBar({ screen, onNavigate }) {
             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'pointer' }}
           >
             <svg width="21" height="21" viewBox="0 0 22 22" fill="none">{tab.icon(color)}</svg>
-            <span style={{ fontSize: 10.5, fontWeight: 650, color }}>{tab.key}</span>
+            <span style={{ fontSize: 10.5, fontWeight: 650, color }}>{t(tab.labelKey)}</span>
           </div>
         );
       })}

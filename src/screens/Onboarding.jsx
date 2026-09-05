@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ENERGY_OPTIONS, PREF_OPTIONS, STUDY_TIME_OPTIONS, SUBJECTS } from '../lib/plannerData';
+import { useLang } from '../lib/useLang';
 
 const ACTIVITY_OPTIONS = [
   'Szkoła / liceum',
@@ -37,7 +38,18 @@ function Chip({ label, active, onClick }) {
   );
 }
 
+function LanguagePicker() {
+  const { lang, setLang } = useLang();
+  return (
+    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginBottom: 14 }}>
+      <Chip label="Polski" active={lang === 'pl'} onClick={() => setLang('pl')} />
+      <Chip label="English" active={lang === 'en'} onClick={() => setLang('en')} />
+    </div>
+  );
+}
+
 export default function Onboarding({ onComplete }) {
+  const { t } = useLang();
   const [step, setStep] = useState(0);
   const [nameDraft, setNameDraft] = useState('');
   const [planFile, setPlanFile] = useState(null);
@@ -60,7 +72,7 @@ export default function Onboarding({ onComplete }) {
     }
     if (file.size > MAX_STORED_FILE_SIZE) {
       setPlanFile({ name: file.name, type: file.type, size: file.size, dataUrl: null });
-      setPlanError('Plik jest duży — zapiszemy tylko jego nazwę.');
+      setPlanError(t('onb.fileSizeWarning'));
       return;
     }
     const dataUrl = await readFileAsDataURL(file);
@@ -82,14 +94,15 @@ export default function Onboarding({ onComplete }) {
 
   return (
     <div className="app-shell sc" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowY: 'auto', padding: '24px 20px' }}>
+      {step === 0 && <LanguagePicker />}
       <div style={{ fontSize: 11.5, color: '#6f6f7d', fontWeight: 650, marginBottom: 10 }}>
-        KROK {step + 1} Z {TOTAL_STEPS}
+        {t('onb.stepOf', { step: step + 1, total: TOTAL_STEPS })}
       </div>
 
       {step === 0 && (
         <>
-          <div style={{ fontSize: 24, fontWeight: 750 }}>Cześć! 👋</div>
-          <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 8 }}>Jak masz na imię?</div>
+          <div style={{ fontSize: 24, fontWeight: 750 }}>{t('onb.hey')}</div>
+          <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 8 }}>{t('onb.step0.q')}</div>
           <form
             style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}
             onSubmit={(e) => {
@@ -97,17 +110,17 @@ export default function Onboarding({ onComplete }) {
               if (nameDraft.trim()) setStep(1);
             }}
           >
-            <input value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} placeholder="Imię" autoFocus />
-            <button type="submit" className="btn btn-primary">Zaczynajmy</button>
+            <input value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} placeholder={t('onb.namePlaceholder')} autoFocus />
+            <button type="submit" className="btn btn-primary">{t('onb.letsStart')}</button>
           </form>
         </>
       )}
 
       {step === 1 && (
         <>
-          <div style={{ fontSize: 22, fontWeight: 750 }}>Twój plan lekcji</div>
+          <div style={{ fontSize: 22, fontWeight: 750 }}>{t('onb.step1.title')}</div>
           <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 8 }}>
-            Masz plan lekcji zapisany w pliku? Dodaj go, żebyśmy mogli lepiej dopasować Twój harmonogram.
+            {t('onb.step1.desc')}
           </div>
           <div className="card" style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <input type="file" accept="image/*,.pdf" onChange={handleFileChange} />
@@ -120,7 +133,7 @@ export default function Onboarding({ onComplete }) {
           </div>
           <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <button type="button" className="btn btn-primary" onClick={() => setStep(2)}>
-              {planFile ? 'Dalej' : 'Pomiń ten krok'}
+              {planFile ? t('onb.next') : t('onb.skip')}
             </button>
           </div>
         </>
@@ -128,9 +141,9 @@ export default function Onboarding({ onComplete }) {
 
       {step === 2 && (
         <>
-          <div style={{ fontSize: 22, fontWeight: 750 }}>Czym się teraz zajmujesz?</div>
+          <div style={{ fontSize: 22, fontWeight: 750 }}>{t('onb.step2.title')}</div>
           <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 8 }}>
-            Zaznacz, co już robisz — pomoże nam to lepiej zaplanować Twój czas.
+            {t('onb.step2.desc')}
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
             {ACTIVITY_OPTIONS.map((activity) => (
@@ -138,29 +151,29 @@ export default function Onboarding({ onComplete }) {
             ))}
           </div>
           <label style={{ fontSize: 12, color: '#8a8a99', marginTop: 16, display: 'block' }}>
-            Coś jeszcze, o czym powinniśmy wiedzieć? (opcjonalnie)
+            {t('onb.step2.noteLabel')}
             <textarea
               rows={3}
               value={activitiesNote}
               onChange={(e) => setActivitiesNote(e.target.value)}
-              placeholder="np. przygotowuję się do matury z matematyki"
+              placeholder={t('onb.step2.notePlaceholder')}
               style={{ marginTop: 4, resize: 'vertical' }}
             />
           </label>
           <button type="button" className="btn btn-primary" style={{ marginTop: 16 }} onClick={() => setStep(3)}>
-            Dalej
+            {t('onb.next')}
           </button>
         </>
       )}
 
       {step === 3 && (
         <>
-          <div style={{ fontSize: 22, fontWeight: 750 }}>Twój rytm dnia</div>
+          <div style={{ fontSize: 22, fontWeight: 750 }}>{t('onb.step3.title')}</div>
           <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 8 }}>
-            Dzięki temu plany nauki będą pasować do Twojego dnia, a nie z nim kolidować.
+            {t('onb.step3.desc')}
           </div>
 
-          <div style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6', marginTop: 18 }}>Kiedy najlepiej Ci się uczy?</div>
+          <div style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6', marginTop: 18 }}>{t('onb.step3.studyTimeQ')}</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
             {STUDY_TIME_OPTIONS.map((opt) => (
               <Chip key={opt} label={opt} active={studyTime === opt} onClick={() => setStudyTime(opt)} />
@@ -169,36 +182,36 @@ export default function Onboarding({ onComplete }) {
 
           <div style={{ display: 'flex', gap: 12, marginTop: 18 }}>
             <label style={{ flex: 1, fontSize: 12, color: '#8a8a99' }}>
-              Kładziesz się spać
+              {t('onb.step3.bedtimeLabel')}
               <input type="time" value={bedtime} onChange={(e) => setBedtime(e.target.value)} style={{ marginTop: 6 }} />
             </label>
             <label style={{ flex: 1, fontSize: 12, color: '#8a8a99' }}>
-              Wstajesz
+              {t('onb.step3.wakeLabel')}
               <input type="time" value={wake} onChange={(e) => setWake(e.target.value)} style={{ marginTop: 6 }} />
             </label>
           </div>
 
           <button type="button" className="btn btn-primary" style={{ marginTop: 18 }} onClick={() => setStep(4)}>
-            Dalej
+            {t('onb.next')}
           </button>
         </>
       )}
 
       {step === 4 && (
         <>
-          <div style={{ fontSize: 22, fontWeight: 750 }}>Energia i styl nauki</div>
+          <div style={{ fontSize: 22, fontWeight: 750 }}>{t('onb.step4.title')}</div>
           <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 8 }}>
-            To domyślne ustawienia dla nowych planów — zawsze będziesz mógł/mogła je zmienić dla konkretnego dnia.
+            {t('onb.step4.desc')}
           </div>
 
-          <div style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6', marginTop: 18 }}>Twój zwykły poziom energii</div>
+          <div style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6', marginTop: 18 }}>{t('onb.step4.energyQ')}</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
             {ENERGY_OPTIONS.map((opt) => (
               <Chip key={opt} label={opt} active={energy === opt} onClick={() => setEnergy(opt)} />
             ))}
           </div>
 
-          <div style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6', marginTop: 18 }}>Na czym najbardziej Ci zależy?</div>
+          <div style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6', marginTop: 18 }}>{t('onb.step4.prefQ')}</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
             {PREF_OPTIONS.map((opt) => (
               <Chip key={opt} label={opt} active={pref === opt} onClick={() => setPref(opt)} />
@@ -206,16 +219,16 @@ export default function Onboarding({ onComplete }) {
           </div>
 
           <button type="button" className="btn btn-primary" style={{ marginTop: 18 }} onClick={() => setStep(5)}>
-            Dalej
+            {t('onb.next')}
           </button>
         </>
       )}
 
       {step === 5 && (
         <>
-          <div style={{ fontSize: 22, fontWeight: 750 }}>Priorytetowe przedmioty</div>
+          <div style={{ fontSize: 22, fontWeight: 750 }}>{t('onb.step5.title')}</div>
           <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 8 }}>
-            Które przedmioty sprawiają Ci najwięcej trudności albo są dla Ciebie najważniejsze? AI będzie dawać im pierwszeństwo w planach.
+            {t('onb.step5.desc')}
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
             {PRIORITY_SUBJECT_OPTIONS.map((s) => (
@@ -223,7 +236,7 @@ export default function Onboarding({ onComplete }) {
             ))}
           </div>
           <button type="button" className="btn btn-primary" style={{ marginTop: 18 }} onClick={finish}>
-            Zakończ
+            {t('onb.finish')}
           </button>
         </>
       )}
