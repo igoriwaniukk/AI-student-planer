@@ -1,5 +1,6 @@
 import TabBar from './components/TabBar';
 import ChatWidget from './components/ChatWidget';
+import NotificationBell from './components/NotificationBell';
 import { GeneratingOverlay } from './components/ui';
 import Home from './screens/Home';
 import Calendar from './screens/Calendar';
@@ -65,6 +66,8 @@ function MainApp({ name, schoolPlan, activities, profileDefaults, weeklyCapacity
       )}
 
       {state.generating && <GeneratingOverlay labels={state.genLabels} step={state.genStep} />}
+
+      <NotificationBell state={state} />
 
       <ChatWidget
         planner={planner}

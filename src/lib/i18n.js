@@ -20,6 +20,20 @@ export const dict = {
   pl: {
     'ui.required': 'wymagane',
 
+    // Notification bell
+    'notif.title': 'Powiadomienia',
+    'notif.close': 'Zamknij',
+    'notif.examSection': 'ZBLIŻAJĄCE SIĘ SPRAWDZIANY',
+    'notif.remindersSection': 'TWOJE PRZYPOMNIENIA',
+    'notif.empty': 'Na razie brak powiadomień.',
+    'notif.addPlaceholder': 'Nowe przypomnienie...',
+    'notif.enableBrowser': 'Włącz powiadomienia w przeglądarce',
+    'notif.enableBrowserNote': 'Pokaże powiadomienie systemowe, dopóki ta karta przeglądarki jest otwarta.',
+    'notif.browserEnabled': 'Powiadomienia w przeglądarce włączone.',
+    'notif.browserDenied': 'Brak zgody na powiadomienia w przeglądarce.',
+    'notif.testTitle': 'Student Planner',
+    'notif.testBody': 'Powiadomienia działają, dopóki ta karta jest otwarta.',
+
     // Tab bar
     'tab.home': 'Start',
     'tab.calendar': 'Kalendarz',
@@ -59,8 +73,6 @@ export const dict = {
     'home.greeting': 'Cześć, {name}',
     'home.subtitle': 'Gotowy na produktywny dzień?',
     'home.streak': 'SERIA DNI',
-    'home.points': 'PUNKTY',
-    'home.level': 'Poziom {level} — {title}',
     'home.morningSummary': 'PODSUMOWANIE PORANKA',
     'home.sessionsToday': '{count} {word} dziś · {time} nauki',
     'home.noSessionsToday': 'Brak zaplanowanych sesji na dziś',
@@ -122,6 +134,7 @@ export const dict = {
     'cal.upcoming': 'Nadchodzące terminy',
     'cal.tomorrowPill': 'Jutro',
     'cal.inDaysPill': 'Za {n} dni',
+    'cal.examCountdown': 'Sprawdzian {when}',
     'cal.noUpcoming': 'Brak terminów w najbliższym tygodniu.',
     'cal.goal': 'Cel: {grade} · {time} nauki',
     'cal.noGoal': 'Nie ustawiono celu',
@@ -241,13 +254,6 @@ export const dict = {
     'ach.organized.desc': 'Dodaj swoje pierwsze cotygodniowe zajęcie.',
     'ach.points_100.title': '100 punktów',
     'ach.points_100.desc': 'Zdobądź 100 punktów.',
-
-    'level.beginner': 'Początkujący',
-    'level.disciplined': 'Zdyscyplinowany',
-    'level.persistent': 'Wytrwały uczeń',
-    'level.planningMaster': 'Mistrz planowania',
-    'level.studyExpert': 'Ekspert nauki',
-    'level.studyLegend': 'Legenda nauki',
 
     // Planner
     'planner.badge': 'AI PLANNER',
@@ -569,6 +575,20 @@ export const dict = {
   en: {
     'ui.required': 'required',
 
+    // Notification bell
+    'notif.title': 'Notifications',
+    'notif.close': 'Close',
+    'notif.examSection': 'UPCOMING EXAMS',
+    'notif.remindersSection': 'YOUR REMINDERS',
+    'notif.empty': 'No notifications yet.',
+    'notif.addPlaceholder': 'New reminder...',
+    'notif.enableBrowser': 'Enable browser notifications',
+    'notif.enableBrowserNote': 'Shows a system notification while this browser tab stays open.',
+    'notif.browserEnabled': 'Browser notifications enabled.',
+    'notif.browserDenied': 'Browser notification permission denied.',
+    'notif.testTitle': 'Student Planner',
+    'notif.testBody': 'Notifications work while this tab stays open.',
+
     'tab.home': 'Home',
     'tab.calendar': 'Calendar',
     'tab.deadline': 'Deadlines',
@@ -605,8 +625,6 @@ export const dict = {
     'home.greeting': 'Hi, {name}',
     'home.subtitle': 'Ready for a productive day?',
     'home.streak': 'DAY STREAK',
-    'home.points': 'POINTS',
-    'home.level': 'Level {level} — {title}',
     'home.morningSummary': 'MORNING SUMMARY',
     'home.sessionsToday': '{count} {word} today · {time} of studying',
     'home.noSessionsToday': 'No sessions planned for today',
@@ -667,6 +685,7 @@ export const dict = {
     'cal.upcoming': 'Upcoming deadlines',
     'cal.tomorrowPill': 'Tomorrow',
     'cal.inDaysPill': 'In {n} days',
+    'cal.examCountdown': 'Exam {when}',
     'cal.noUpcoming': 'No deadlines in the coming week.',
     'cal.goal': 'Goal: {grade} · {time} of studying',
     'cal.noGoal': 'No goal set',
@@ -752,13 +771,6 @@ export const dict = {
     'ach.organized.desc': 'Add your first weekly recurring activity.',
     'ach.points_100.title': '100 points',
     'ach.points_100.desc': 'Earn 100 points.',
-
-    'level.beginner': 'Beginner',
-    'level.disciplined': 'Disciplined',
-    'level.persistent': 'Persistent student',
-    'level.planningMaster': 'Planning master',
-    'level.studyExpert': 'Study expert',
-    'level.studyLegend': 'Study legend',
 
     'planner.badge': 'AI PLANNER',
     'planner.title': 'Plan tomorrow',

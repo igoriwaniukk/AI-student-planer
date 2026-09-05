@@ -163,7 +163,7 @@ export default function Goals({ planner, weeklyCapacity, setWeeklyCapacity }) {
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BackButton onClick={() => go('home')} />
-        <div style={{ textAlign: 'right' }}>
+        <div style={{ textAlign: 'right', paddingRight: 46 }}>
           <div style={{ fontSize: 20, fontWeight: 750, letterSpacing: '-.02em' }}>{t('goals.title')}</div>
           <div style={{ fontSize: 12, color: '#8a8a99' }}>{t('goals.subtitle2')}</div>
         </div>

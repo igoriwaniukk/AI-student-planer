@@ -41,6 +41,7 @@ export default function Calendar({ planner, activities, recurringActivities = []
   const weekExams = upcomingExams(state).filter((e) => e.day >= 16 && e.day <= 22);
   const eventDays = new Set(weekExams.map((e) => e.day));
   if (info.school) eventDays.add(TENIS_DAY);
+  const nearestExamDay = weekExams.filter((e) => e.daysUntil >= 0).sort((a, b) => a.day - b.day)[0]?.day ?? null;
 
   const sched = calDay === state.selectedDay ? (state.schedule || {}) : {};
   const sessionIds = Object.keys(sched).sort((a, b) => sched[a].start - sched[b].start);
@@ -51,13 +52,13 @@ export default function Calendar({ planner, activities, recurringActivities = []
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BackButton onClick={() => go('home')} />
-        <div style={{ textAlign: 'right' }}>
+        <div style={{ textAlign: 'right', paddingRight: 46 }}>
           <div style={{ fontSize: 20, fontWeight: 750, letterSpacing: '-.02em' }}>{t('cal.title')}</div>
           <div style={{ fontSize: 12, color: '#8a8a99' }}>{t('cal.subtitle')}</div>
         </div>
       </div>
 
-      <WeekStrip selectedDay={calDay} onSelect={setCalDay} eventDays={eventDays} />
+      <WeekStrip selectedDay={calDay} onSelect={setCalDay} eventDays={eventDays} examDay={nearestExamDay} />
 
       <SectionTitle style={{ margin: '22px 0 12px' }}>{t('cal.upcoming')}</SectionTitle>
       {weekExams.length ? (

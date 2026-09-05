@@ -12,6 +12,7 @@ const KEYS = {
   seenAchievements: 'sp_seenAchievements',
   lastSeenStreak: 'sp_lastSeenStreak',
   language: 'sp_language',
+  customReminders: 'sp_customReminders',
 };
 
 export function useLocalStorage(key, initialValue) {
@@ -95,4 +96,10 @@ export function useLastSeenStreak() {
 // UI language, 'pl' or 'en'.
 export function useLanguage() {
   return useLocalStorage(KEYS.language, 'pl');
+}
+
+// Reminders the student adds themselves via the notification bell, separate
+// from the automatic exam alerts: [{ id, text }].
+export function useCustomReminders() {
+  return useLocalStorage(KEYS.customReminders, []);
 }

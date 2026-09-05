@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { STATUS_COLOR, GOALS, IMPORTANCE_OPTIONS, WEEK_DAYS, TENIS_DAY } from '../lib/plannerData';
 import { span, hm, upcomingExams, computeStreak, computeTotalPoints } from '../lib/plannerLogic';
-import { computeUnlockedAchievements, computeLevel } from '../lib/achievements';
+import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak } from '../lib/store';
 import { DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
@@ -9,24 +9,6 @@ import WeekStrip from '../components/WeekStrip';
 import { Pill, BottomSheet, EnergyPicker, Chip, AnimatedNumber } from '../components/ui';
 
 const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
-
-function LevelCard({ points }) {
-  const { t } = useLang();
-  const lvl = computeLevel(points);
-  return (
-    <div style={{ marginTop: 10, padding: '11px 14px', borderRadius: 15, background: 'rgba(139,109,255,.08)', border: '1px solid rgba(139,109,255,.25)', display: 'flex', alignItems: 'center', gap: 11 }}>
-      <span style={{ fontSize: 18 }}>🏅</span>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 12.5, fontWeight: 700 }}>{t('home.level', { level: lvl.level, title: t(lvl.titleKey) })}</div>
-        {lvl.nextAt != null && (
-          <div style={{ marginTop: 6, height: 5, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
-            <div style={{ width: lvl.progress + '%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#8b6dff,#6d4dff)', transition: 'width .5s ease' }} />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
 
 function AchievementModal({ achievement, onClose }) {
   const { t } = useLang();
@@ -88,12 +70,11 @@ function StatBadge({ icon, value, label, bg, border, pulse }) {
   );
 }
 
-function StatsBar({ streak, points }) {
+function StatsBar({ streak }) {
   const { t } = useLang();
   return (
     <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
       <StatBadge icon="🔥" value={streak} label={t('home.streak')} bg="rgba(245,165,36,.09)" border="rgba(245,165,36,.28)" pulse={streak > 0} />
-      <StatBadge icon="⭐" value={points} label={t('home.points')} bg="rgba(46,230,197,.08)" border="rgba(46,230,197,.25)" />
     </div>
   );
 }
@@ -476,17 +457,12 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
           </div>
           <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 6 }}>{t('home.subtitle')}</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4 }}>
-          <div style={{ position: 'relative', width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6.5a4 4 0 018 0v3l1.2 2H2.8L4 9.5v-3z" stroke="#c9c9d6" strokeWidth="1.3" strokeLinejoin="round" /><path d="M6.5 13.4a1.6 1.6 0 003 0" stroke="#c9c9d6" strokeWidth="1.3" strokeLinecap="round" /></svg>
-            <div style={{ position: 'absolute', top: 7, right: 8, width: 7, height: 7, borderRadius: '50%', background: '#ff4d5e', border: '1.5px solid #08080c' }} />
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4, paddingRight: 46 }}>
           <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'linear-gradient(150deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, letterSpacing: '.02em' }}>{initials}</div>
         </div>
       </div>
 
-      <StatsBar streak={streak} points={points} />
-      <LevelCard points={points} />
+      <StatsBar streak={streak} />
       <StreakNotice notice={streakNotice} onDismiss={() => setLastSeenStreak(streak)} />
 
       <MorningSummaryCard state={state} />

@@ -1,0 +1,118 @@
+import { useState } from 'react';
+import { upcomingExams } from '../lib/plannerLogic';
+import { useCustomReminders } from '../lib/store';
+import { useLang } from '../lib/useLang';
+import { BottomSheet } from './ui';
+
+// Browser-side "push": while this tab stays open, it can pop a real OS
+// notification banner. There's no service worker or backend here, so it
+// can't reach the phone once the tab/app is closed — the note in the sheet
+// says so rather than overpromising.
+function requestBrowserPermission(t, setStatus) {
+  if (typeof window === 'undefined' || !('Notification' in window)) return;
+  Notification.requestPermission().then((perm) => {
+    if (perm === 'granted') {
+      setStatus('granted');
+      new Notification(t('notif.testTitle'), { body: t('notif.testBody') });
+    } else {
+      setStatus('denied');
+    }
+  });
+}
+
+export default function NotificationBell({ state }) {
+  const { t } = useLang();
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [browserStatus, setBrowserStatus] = useState(null);
+  const [reminders, setReminders] = useCustomReminders();
+
+  const examAlerts = upcomingExams(state)
+    .filter((e) => e.daysUntil >= 0 && e.daysUntil <= 14)
+    .sort((a, b) => a.daysUntil - b.daysUntil);
+
+  const hasNew = examAlerts.length > 0 || reminders.length > 0;
+
+  function addReminder() {
+    const text = draft.trim();
+    if (!text) return;
+    setReminders((list) => list.concat({ id: Date.now() + '-' + Math.random().toString(36).slice(2), text }));
+    setDraft('');
+  }
+
+  function removeReminder(id) {
+    setReminders((list) => list.filter((r) => r.id !== id));
+  }
+
+  return (
+    <>
+      <div
+        onClick={() => setOpen(true)}
+        style={{ position: 'absolute', top: 20, right: 20, zIndex: 60, width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6.5a4 4 0 018 0v3l1.2 2H2.8L4 9.5v-3z" stroke="#c9c9d6" strokeWidth="1.3" strokeLinejoin="round" /><path d="M6.5 13.4a1.6 1.6 0 003 0" stroke="#c9c9d6" strokeWidth="1.3" strokeLinecap="round" /></svg>
+        {hasNew && <div style={{ position: 'absolute', top: 7, right: 8, width: 7, height: 7, borderRadius: '50%', background: '#ff4d5e', border: '1.5px solid #08080c' }} />}
+      </div>
+
+      {open && (
+        <BottomSheet>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{t('notif.title')}</div>
+            <span onClick={() => setOpen(false)} style={{ fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('notif.close')}</span>
+          </div>
+
+          {examAlerts.length > 0 && (
+            <>
+              <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('notif.examSection')}</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                {examAlerts.map((e) => (
+                  <div key={e.id} style={{ padding: '12px 14px', borderRadius: 15, background: 'rgba(245,165,36,.08)', border: '1px solid rgba(245,165,36,.28)', display: 'flex', alignItems: 'center', gap: 11 }}>
+                    <span style={{ fontSize: 17 }}>⏰</span>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: e.color }}>{e.subject.toUpperCase()}</div>
+                      <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{e.title}</div>
+                    </div>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: '#f5a524', flex: 'none' }}>{e.daysUntil === 1 ? t('cal.tomorrowPill') : t('cal.inDaysPill', { n: e.daysUntil })}</span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
+
+          <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('notif.remindersSection')}</div>
+          {reminders.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              {reminders.map((r) => (
+                <div key={r.id} style={{ padding: '12px 14px', borderRadius: 15, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 11 }}>
+                  <span style={{ fontSize: 17 }}>📌</span>
+                  <div style={{ flex: 1, fontSize: 13.5, fontWeight: 650 }}>{r.text}</div>
+                  <span onClick={() => removeReminder(r.id)} style={{ fontSize: 12, fontWeight: 650, color: '#8a8a99', cursor: 'pointer', flex: 'none' }}>{t('dl.remove')}</span>
+                </div>
+              ))}
+            </div>
+          ) : examAlerts.length === 0 && (
+            <div style={{ fontSize: 12.5, color: '#8a8a99' }}>{t('notif.empty')}</div>
+          )}
+
+          <div style={{ display: 'flex', gap: 9, marginTop: 12 }}>
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addReminder()}
+              placeholder={t('notif.addPlaceholder')}
+              style={{ flex: 1 }}
+            />
+            <div onClick={addReminder} style={{ width: 46, height: 46, flex: 'none', borderRadius: 13, background: 'rgba(124,92,255,.16)', border: '1px solid rgba(124,92,255,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: '#c9baff', cursor: 'pointer' }}>+</div>
+          </div>
+
+          <div onClick={() => requestBrowserPermission(t, setBrowserStatus)} style={{ marginTop: 18, padding: '12px 14px', borderRadius: 15, background: 'rgba(124,92,255,.08)', border: '1px solid rgba(124,92,255,.25)', cursor: 'pointer' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: '#c9baff' }}>🔔 {t('notif.enableBrowser')}</div>
+            <div style={{ fontSize: 11, color: '#8a8a99', marginTop: 4, lineHeight: 1.4 }}>
+              {browserStatus === 'granted' ? t('notif.browserEnabled') : browserStatus === 'denied' ? t('notif.browserDenied') : t('notif.enableBrowserNote')}
+            </div>
+          </div>
+        </BottomSheet>
+      )}
+    </>
+  );
+}
