@@ -4,8 +4,7 @@ const KEYS = {
   name: 'sp_name',
   schoolPlan: 'sp_schoolPlan',
   activities: 'sp_activities',
-  vulcanSession: 'sp_vulcanSession',
-  focusShortcut: 'sp_focusShortcut',
+  profileDefaults: 'sp_profileDefaults',
 };
 
 export function useLocalStorage(key, initialValue) {
@@ -37,15 +36,15 @@ export function useActivities() {
   return useLocalStorage(KEYS.activities, null);
 }
 
-// Session id only — the actual Vulcan credentials never leave the backend
-// (see server/vulcanSessions.js). This just remembers "we were connected"
-// across reloads; if the dev server restarted, the id is stale and the
-// next request will come back as "session expired".
-export function useVulcanSession() {
-  return useLocalStorage(KEYS.vulcanSession, null);
-}
-
-// Opt-in: which iOS Shortcut (if any) to trigger when a study session starts.
-export function useFocusShortcut() {
-  return useLocalStorage(KEYS.focusShortcut, { enabled: false, name: 'Sesja nauki' });
+// Collected during onboarding: everyday rhythm and study preferences used to
+// seed each new daily plan, instead of asking the same questions every time.
+export function useProfileDefaults() {
+  return useLocalStorage(KEYS.profileDefaults, {
+    studyTime: 'Wieczorem',
+    bedtime: '22:30',
+    wake: '6:30',
+    energy: 'Normalna',
+    pref: 'Wolny wieczór',
+    prioritySubjects: [],
+  });
 }

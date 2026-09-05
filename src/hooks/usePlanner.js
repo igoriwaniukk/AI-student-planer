@@ -4,7 +4,7 @@ import {
 } from '../lib/plannerData';
 import { buildSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams } from '../lib/plannerLogic';
 
-function initialState() {
+function initialState(defaults) {
   return {
     screen: 'home',
     generating: false,
@@ -14,8 +14,8 @@ function initialState() {
 
     taskDefs: TASK_DEFS,
     tasks: [true, true, false],
-    energy: 'Normalna',
-    pref: 'Wolny wieczór',
+    energy: defaults?.energy || 'Normalna',
+    pref: defaults?.pref || 'Wolny wieczór',
     gcal: false,
     saved: false,
 
@@ -110,8 +110,8 @@ function initialState() {
   };
 }
 
-export function usePlanner() {
-  const [state, setState] = useState(initialState);
+export function usePlanner(defaults) {
+  const [state, setState] = useState(() => initialState(defaults));
   const timerRef = useRef(null);
   const toastTimerRef = useRef(null);
   const snapRef = useRef(null);
@@ -541,9 +541,9 @@ export function usePlanner() {
       examGoals: { ...s.examGoals, [examId]: { ...(s.examGoals[examId] || DEFAULT_EXAM_GOAL), grade, importance, answered: true } },
     }));
   }
-  function nextGoalPrompt(extraExams = []) {
+  function nextGoalPrompt() {
     const s = state;
-    return upcomingExams(s).concat(extraExams)
+    return upcomingExams(s)
       .filter((e) => e.daysUntil >= 0 && e.daysUntil <= 7 && !s.examGoals[e.id]?.answered && !s.dismissedGoalPrompts[e.id])
       .sort((a, b) => a.daysUntil - b.daysUntil)[0] || null;
   }

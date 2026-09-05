@@ -12,41 +12,24 @@ import Prep from './screens/Prep';
 import Summary from './screens/Summary';
 import Profile from './screens/Profile';
 import Onboarding from './screens/Onboarding';
-import { useStudentName, useSchoolPlan, useActivities, useVulcanSession, useFocusShortcut } from './lib/store';
+import { useStudentName, useSchoolPlan, useActivities, useProfileDefaults } from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
-import { useVulcanData } from './hooks/useVulcanData';
 
 const TAB_SCREENS = new Set(['home', 'calendar', 'goals', 'profile']);
 
-export default function App() {
-  const [name, setName] = useStudentName();
-  const [schoolPlan, setSchoolPlan] = useSchoolPlan();
-  const [activities, setActivities] = useActivities();
-  const [vulcanSession, setVulcanSession] = useVulcanSession();
-  const vulcanData = useVulcanData(vulcanSession);
-  const [focusShortcut, setFocusShortcut] = useFocusShortcut();
-  const planner = usePlanner();
-
-  if (!name) {
-    return (
-      <Onboarding
-        onComplete={({ name: newName, schoolPlan: plan, activities: acts }) => {
-          setSchoolPlan(plan);
-          setActivities(acts);
-          setName(newName);
-        }}
-      />
-    );
-  }
-
+// Mounted only once onboarding is done, so usePlanner's initial state (a lazy
+// useState initializer, which only ever runs on first mount) picks up the
+// profile defaults onboarding just saved instead of whatever was there before.
+function MainApp({ name, schoolPlan, activities, profileDefaults }) {
+  const planner = usePlanner(profileDefaults);
   const { state } = planner;
   const screen = state.screen;
 
   return (
     <div className="app-shell">
-      {screen === 'home' && <Home planner={planner} studentName={name} vulcanExams={vulcanSession ? vulcanData.exams : []} focusShortcut={focusShortcut} />}
-      {screen === 'calendar' && <Calendar planner={planner} activities={activities} vulcanData={vulcanSession ? vulcanData : null} />}
-      {screen === 'goals' && <Goals planner={planner} vulcanExams={vulcanSession ? vulcanData.exams : []} />}
+      {screen === 'home' && <Home planner={planner} studentName={name} />}
+      {screen === 'calendar' && <Calendar planner={planner} activities={activities} />}
+      {screen === 'goals' && <Goals planner={planner} />}
       {screen === 'planner' && <Planner planner={planner} />}
       {screen === 'plan' && <Plan planner={planner} />}
       {screen === 'rescue' && <Rescue planner={planner} />}
@@ -60,10 +43,7 @@ export default function App() {
           schoolPlan={schoolPlan}
           activities={activities}
           energy={state.energy}
-          vulcanSession={vulcanSession}
-          setVulcanSession={setVulcanSession}
-          focusShortcut={focusShortcut}
-          setFocusShortcut={setFocusShortcut}
+          profileDefaults={profileDefaults}
         />
       )}
 
@@ -72,4 +52,26 @@ export default function App() {
       {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} />}
     </div>
   );
+}
+
+export default function App() {
+  const [name, setName] = useStudentName();
+  const [schoolPlan, setSchoolPlan] = useSchoolPlan();
+  const [activities, setActivities] = useActivities();
+  const [profileDefaults, setProfileDefaults] = useProfileDefaults();
+
+  if (!name) {
+    return (
+      <Onboarding
+        onComplete={({ name: newName, schoolPlan: plan, activities: acts, profile }) => {
+          setSchoolPlan(plan);
+          setActivities(acts);
+          setProfileDefaults(profile);
+          setName(newName);
+        }}
+      />
+    );
+  }
+
+  return <MainApp name={name} schoolPlan={schoolPlan} activities={activities} profileDefaults={profileDefaults} />;
 }

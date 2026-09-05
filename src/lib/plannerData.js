@@ -69,5 +69,6 @@ export const KNOW_OPTIONS = ['Nie umiem', 'Częściowo umiem', 'Dobrze umiem', '
 export const DAY_HARD_OPTIONS = ['Lekki', 'W sam raz', 'Trudny', 'Bardzo trudny'];
 export const ENERGY_OPTIONS = ['Niska', 'Normalna', 'Wysoka'];
 export const PREF_OPTIONS = ['Wolny wieczór', 'Najpierw najtrudniejsze', 'Więcej krótkich przerw'];
+export const STUDY_TIME_OPTIONS = ['Rano', 'Popołudniu', 'Wieczorem'];
 export const REASON_OPTIONS = ['Mam mniej czasu', 'Mam mniej energii', 'Plan się opóźnił', 'Pojawiło się coś pilnego'];
 export const RESCUE_TIME_OPTIONS = ['45 min', '1 godz. 30 min', '2 godz.', 'Własny czas'];

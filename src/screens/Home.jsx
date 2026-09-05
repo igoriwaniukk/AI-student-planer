@@ -3,7 +3,6 @@ import { STATUS_COLOR, STATUS_LABEL, GOALS, IMPORTANCE_OPTIONS } from '../lib/pl
 import { span } from '../lib/plannerLogic';
 import WeekStrip from '../components/WeekStrip';
 import { Pill, BottomSheet, EnergyPicker, Chip } from '../components/ui';
-import { triggerFocusShortcut } from '../lib/focusShortcut';
 
 function GoalPromptCard({ planner, exam }) {
   const { answerGoalPrompt, dismissGoalPrompt } = planner;
@@ -62,7 +61,7 @@ function SmallBtn({ label, onClick, accent }) {
   );
 }
 
-function NextSessionCard({ planner, focusShortcut }) {
+function NextSessionCard({ planner }) {
   const { state, def, ts, startSession, togglePause, openFinish, openBlockEdit, update } = planner;
   const sched = state.schedule || {};
   const ids = Object.keys(sched).sort((a, b) => sched[a].start - sched[b].start);
@@ -120,7 +119,7 @@ function NextSessionCard({ planner, focusShortcut }) {
         </div>
       ) : (
         <div
-          onClick={() => { startSession(nextId); triggerFocusShortcut(focusShortcut); }}
+          onClick={() => startSession(nextId)}
           style={{ marginTop: 14, height: 52, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, fontSize: 15.5, fontWeight: 700, cursor: 'pointer', boxShadow: '0 10px 24px rgba(109,77,255,.3)' }}
         >
           Rozpocznij sesję
@@ -223,9 +222,9 @@ function EnergySheet({ planner }) {
   );
 }
 
-export default function Home({ planner, studentName, vulcanExams = [], focusShortcut }) {
+export default function Home({ planner, studentName }) {
   const { state, ts, openEnergySheet } = planner;
-  const goalExam = planner.nextGoalPrompt(vulcanExams);
+  const goalExam = planner.nextGoalPrompt();
   const dayIds = state.taskDefs.filter((_, i) => state.tasks[i]).map((t) => t.id);
   const doneCount = dayIds.filter((id) => ts(id).status === 'completed').length;
   const totalCount = dayIds.filter((id) => ts(id).status !== 'skipped').length;
@@ -268,7 +267,7 @@ export default function Home({ planner, studentName, vulcanExams = [], focusShor
 
       <WeekStrip selectedDay={state.selectedDay} />
 
-      <NextSessionCard planner={planner} focusShortcut={focusShortcut} />
+      <NextSessionCard planner={planner} />
 
       <div onClick={openEnergySheet} style={{ marginTop: 12, padding: '12px 14px', borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
         <div style={{ width: 36, height: 36, borderRadius: 11, background: 'rgba(124,92,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="14" height="14" viewBox="0 0 14 14"><path d="M8 1L3 8h3.2L6 13l5-7.2H7.6L8 1z" fill="#a58cff" /></svg></div>
