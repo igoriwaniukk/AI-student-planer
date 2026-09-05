@@ -8,13 +8,13 @@ import path from 'node:path';
 // the project root, so the default lookup would miss a .env placed here.
 config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '.env') });
 
-// Uses raw HTTPS calls to OpenAI's Chat Completions endpoint instead of the
-// official `openai` npm package: that SDK's exact method signatures could
-// not be verified from this environment (network access to openai.com is
-// blocked here), while the Chat Completions wire format itself has been
-// stable and documented for years.
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-const OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+// Uses raw HTTPS calls to Google's Gemini REST API instead of an official
+// SDK: SDK method signatures could not be verified from this environment
+// (network access to Google's own docs is blocked here), while the
+// generateContent REST endpoint's wire format has been stable and
+// documented for a long time.
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.0-flash';
 const PORT = process.env.PORT || 8787;
 
 const app = express();
@@ -48,9 +48,19 @@ function buildSystemPrompt(context) {
   return lines.join('\n');
 }
 
+// Gemini has no separate "system" message role: it takes systemInstruction
+// once, and turn history as {role: 'user'|'model', parts: [{text}]}
+// (our frontend uses OpenAI-style 'assistant', which needs mapping to 'model').
+function toGeminiContents(messages) {
+  return messages.map((m) => ({
+    role: m.role === 'assistant' ? 'model' : 'user',
+    parts: [{ text: m.content }],
+  }));
+}
+
 app.post('/api/chat', async (req, res) => {
-  if (!OPENAI_API_KEY) {
-    res.status(500).json({ error: 'Brak klucza OPENAI_API_KEY na serwerze. Ustaw go w server/.env i uruchom serwer ponownie.' });
+  if (!GEMINI_API_KEY) {
+    res.status(500).json({ error: 'Brak klucza GEMINI_API_KEY na serwerze. Ustaw go w server/.env i uruchom serwer ponownie.' });
     return;
   }
 
@@ -61,29 +71,28 @@ app.post('/api/chat', async (req, res) => {
   }
 
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${OPENAI_API_KEY}`,
+        'x-goog-api-key': GEMINI_API_KEY,
       },
       body: JSON.stringify({
-        model: OPENAI_MODEL,
-        messages: [{ role: 'system', content: buildSystemPrompt(context) }, ...messages],
-        temperature: 0.6,
+        contents: toGeminiContents(messages),
+        systemInstruction: { parts: [{ text: buildSystemPrompt(context) }] },
       }),
     });
 
     const data = await response.json();
     if (!response.ok) {
-      res.status(response.status).json({ error: data?.error?.message || 'Błąd po stronie OpenAI.' });
+      res.status(response.status).json({ error: data?.error?.message || 'Błąd po stronie Gemini.' });
       return;
     }
 
-    const reply = data.choices?.[0]?.message?.content || '';
+    const reply = data.candidates?.[0]?.content?.parts?.map((p) => p.text).join('') || '';
     res.json({ reply });
   } catch (err) {
-    res.status(502).json({ error: 'Nie udało się połączyć z OpenAI: ' + err.message });
+    res.status(502).json({ error: 'Nie udało się połączyć z Gemini: ' + err.message });
   }
 });
 
