@@ -544,15 +544,9 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
         </div>
         <span style={{ fontSize: 15, color: '#6b6b7a' }}>›</span>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
-        <div onClick={() => planner.go('deadline')} style={{ padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-          <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(255,255,255,.06)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.2" width="12" height="11" rx="2.4" stroke="#c9c9d6" strokeWidth="1.2" /><path d="M8 7v4.4M5.8 9.2h4.4" stroke="#c9c9d6" strokeWidth="1.2" strokeLinecap="round" /></svg></div>
-          <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.25 }}>{t('home.addDeadline')}</div>
-        </div>
-        <div onClick={() => planner.go('rescue')} style={{ padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-          <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(245,165,36,.13)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.2 8a5.2 5.2 0 01-8.9 3.7M2.8 8a5.2 5.2 0 018.9-3.7" stroke="#f5a524" strokeWidth="1.3" strokeLinecap="round" /><path d="M11.4 2.4v2.4H9M4.6 13.6v-2.4H7" stroke="#f5a524" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
-          <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.25 }}>{t('home.rescueDay')}</div>
-        </div>
+      <div onClick={() => planner.go('rescue')} style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
+        <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(245,165,36,.13)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.2 8a5.2 5.2 0 01-8.9 3.7M2.8 8a5.2 5.2 0 018.9-3.7" stroke="#f5a524" strokeWidth="1.3" strokeLinecap="round" /><path d="M11.4 2.4v2.4H9M4.6 13.6v-2.4H7" stroke="#f5a524" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
+        <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.25 }}>{t('home.rescueDay')}</div>
       </div>
 
       <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>

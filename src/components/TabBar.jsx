@@ -15,8 +15,7 @@ const TABS = [
     ),
   },
   {
-    key: 'deadline', labelKey: 'tab.deadline', screens: ['deadline', 'prep'],
-    icon: (c) => <path d="M11 4l8 14H3l8-14z" stroke={c} strokeWidth="1.5" strokeLinejoin="round" />,
+    key: 'deadline', labelKey: 'tab.deadline', screens: ['deadline', 'prep'], fab: true,
   },
   {
     key: 'goals', labelKey: 'tab.goals', screens: ['goals'],
@@ -49,6 +48,23 @@ export default function TabBar({ screen, onNavigate }) {
     }}
     >
       {TABS.map((tab) => {
+        if (tab.fab) {
+          return (
+            <div key={tab.key} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
+              <div
+                onClick={() => onNavigate(tab.screens[0])}
+                style={{
+                  width: 54, height: 54, marginTop: -26, borderRadius: '50%', flex: 'none',
+                  background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', border: '4px solid #08080c',
+                  boxShadow: '0 8px 20px rgba(109,77,255,.45)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                }}
+              >
+                <span style={{ fontSize: 27, fontWeight: 400, color: '#fff', lineHeight: 1, marginTop: -2 }}>+</span>
+              </div>
+            </div>
+          );
+        }
         const active = tab.screens.includes(screen);
         const color = active ? '#a58cff' : '#7a7a8a';
         return (

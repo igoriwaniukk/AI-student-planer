@@ -27,18 +27,21 @@ export default function WeekStrip({ selectedDay, onSelect, eventDays, examDay })
             <div
               key={num}
               onClick={onSelect ? () => onSelect(num) : undefined}
-              style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '8px 0 10px', borderRadius: 14,
-                background: on ? 'linear-gradient(160deg,#8b6dff,#6d4dff)' : (isCountdown ? 'rgba(245,165,36,.08)' : 'transparent'),
-                border: isCountdown && !on ? '1px solid rgba(245,165,36,.3)' : '1px solid transparent',
-                boxShadow: on ? '0 6px 18px rgba(109,77,255,.35)' : 'none',
-                cursor: onSelect ? 'pointer' : 'default',
-              }}
+              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: onSelect ? 'pointer' : 'default' }}
             >
-              <span style={{ fontSize: 10, fontWeight: 650, color: on ? 'rgba(255,255,255,.85)' : '#7a7a8a', letterSpacing: '.06em' }}>{shortLabel}</span>
-              <span style={{ fontSize: 17, fontWeight: on ? 750 : 700 }}>{num}</span>
-              <span style={{ width: 4, height: 4, borderRadius: '50%', background: on ? '#fff' : (hasEvent ? '#2ee6c5' : 'transparent') }} />
-              {isCountdown && <div style={{ marginTop: 2, width: '70%', height: 3, borderRadius: 2, background: on ? 'rgba(255,255,255,.7)' : '#f5a524' }} />}
+              <div
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '9px 0 10px', width: '100%', borderRadius: 999,
+                  background: on ? 'linear-gradient(160deg,#8b6dff,#6d4dff)' : (isCountdown ? 'rgba(245,165,36,.1)' : 'transparent'),
+                  border: isCountdown && !on ? '1px solid rgba(245,165,36,.35)' : '1px solid transparent',
+                  boxShadow: on ? '0 6px 18px rgba(109,77,255,.35)' : 'none',
+                }}
+              >
+                <span style={{ fontSize: 10, fontWeight: 650, color: on ? 'rgba(255,255,255,.85)' : '#7a7a8a', letterSpacing: '.06em' }}>{shortLabel}</span>
+                <span style={{ fontSize: 17, fontWeight: on ? 750 : 700 }}>{num}</span>
+              </div>
+              <span style={{ width: 4, height: 4, borderRadius: '50%', background: hasEvent && !on ? '#2ee6c5' : 'transparent' }} />
+              {isCountdown && <div style={{ marginTop: -2, width: '50%', height: 3, borderRadius: 2, background: '#f5a524' }} />}
             </div>
           );
         })}
