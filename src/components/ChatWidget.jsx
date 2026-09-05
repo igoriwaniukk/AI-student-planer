@@ -1,17 +1,75 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useChat } from '../hooks/useChat';
 import { buildChatContext } from '../lib/chatContext';
-import { BottomSheet } from './ui';
+import { BottomSheet, Chip } from './ui';
 
-export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, studyHistory }) {
+const SUGGESTIONS = [
+  'Jak rozłożyć naukę do najbliższego sprawdzianu?',
+  'Ile powinienem dziś jeszcze się uczyć?',
+  'Zmotywuj mnie do nauki 💪',
+];
+
+// Gemini replies use light Markdown (bold, line breaks) — render that
+// instead of showing literal "**...**" and losing paragraph breaks.
+function renderMarkdownLite(text) {
+  return text.split('\n').map((line, i, arr) => (
+    <span key={i}>
+      {line.split(/(\*\*[^*]+\*\*)/g).map((part, j) =>
+        part.startsWith('**') && part.endsWith('**') && part.length > 4 ? <strong key={j}>{part.slice(2, -2)}</strong> : part
+      )}
+      {i < arr.length - 1 && <br />}
+    </span>
+  ));
+}
+
+function initialsOf(name) {
+  const parts = (name || 'Ty').trim().split(/\s+/);
+  return parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
+}
+
+function Avatar({ role, studentName }) {
+  return (
+    <div
+      style={{
+        width: 26, height: 26, flex: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontSize: role === 'user' ? 10.5 : 13, fontWeight: 700,
+        background: role === 'user' ? 'linear-gradient(150deg,#8b6dff,#6d4dff)' : 'linear-gradient(150deg,#2ee6c5,#1fb8a3)',
+        color: role === 'user' ? '#fff' : '#04241f',
+      }}
+    >
+      {role === 'user' ? initialsOf(studentName) : '✨'}
+    </div>
+  );
+}
+
+function TypingBubble() {
+  return (
+    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, alignSelf: 'flex-start', animation: 'fadeUp .25s ease both' }}>
+      <Avatar role="assistant" />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '12px 14px', borderRadius: '4px 16px 16px 16px', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)' }}>
+        {[0, 1, 2].map((i) => (
+          <span key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: '#8a8a99', animation: 'typingBounce 1.1s ease-in-out infinite', animationDelay: i * 0.15 + 's' }} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, studyHistory, studentName }) {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const { messages, sending, error, send } = useChat();
+  const bottomRef = useRef(null);
 
-  function handleSend() {
-    if (!input.trim() || sending) return;
+  useEffect(() => {
+    if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, sending, error, open]);
+
+  function handleSend(text) {
+    const toSend = text ?? input;
+    if (!toSend.trim() || sending) return;
     const context = buildChatContext({ state: planner.state, weeklyCapacity, profileDefaults, studyHistory });
-    send(input, context);
+    send(toSend, context);
     setInput('');
   }
 
@@ -20,52 +78,73 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
       <div
         onClick={() => setOpen(true)}
         style={{
-          position: 'absolute', right: 16, bottom: 100, width: 52, height: 52, borderRadius: '50%',
-          background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 21, cursor: 'pointer', boxShadow: '0 10px 26px rgba(109,77,255,.4)', zIndex: 45,
+          position: 'absolute', right: 16, bottom: 100, width: 54, height: 54, borderRadius: '50%',
+          background: 'linear-gradient(155deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 22, cursor: 'pointer', boxShadow: '0 10px 28px rgba(109,77,255,.45), 0 0 0 1px rgba(255,255,255,.08) inset', zIndex: 45,
         }}
       >
-        💬
+        ✨
       </div>
 
       {open && (
-        <BottomSheet maxHeight="82%">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>Asystent AI</div>
+        <BottomSheet maxHeight="85%">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+            <div style={{ width: 38, height: 38, flex: 'none', borderRadius: 13, background: 'linear-gradient(155deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, boxShadow: '0 6px 16px rgba(109,77,255,.4)' }}>
+              ✨
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>Asystent AI</div>
+              <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 1 }}>Zna Twoje sprawdziany i cele nauki</div>
+            </div>
             <div
               onClick={() => setOpen(false)}
-              style={{ width: 32, height: 32, borderRadius: 11, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14 }}
+              style={{ width: 32, height: 32, flex: 'none', borderRadius: 11, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14 }}
             >
               ✕
             </div>
           </div>
-          <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 6, lineHeight: 1.45 }}>Zna Twoje najbliższe sprawdziany i cele nauki.</div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16, minHeight: 100 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 18, minHeight: 140 }}>
             {messages.length === 0 && (
-              <div style={{ fontSize: 12.5, color: '#7a7a8a', lineHeight: 1.5 }}>
-                Zapytaj np. „Jak rozłożyć naukę do sprawdzianu z matematyki?” albo „Ile powinienem dziś jeszcze się uczyć?”.
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, alignSelf: 'flex-start' }}>
+                  <Avatar role="assistant" />
+                  <div style={{ maxWidth: '85%', padding: '11px 14px', borderRadius: '4px 16px 16px 16px', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', fontSize: 13, lineHeight: 1.5, color: '#c9c9d6' }}>
+                    Cześć! Zapytaj mnie o naukę, sprawdziany albo plan dnia — na przykład:
+                  </div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 34 }}>
+                  {SUGGESTIONS.map((s) => (
+                    <Chip key={s} label={s} onClick={() => handleSend(s)} style={{ textAlign: 'left' }} />
+                  ))}
+                </div>
               </div>
             )}
+
             {messages.map((m, i) => (
-              <div
-                key={i}
-                style={{
-                  alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', maxWidth: '85%', padding: '10px 13px', borderRadius: 14,
-                  fontSize: 13, lineHeight: 1.45, whiteSpace: 'pre-wrap',
-                  background: m.role === 'user' ? 'rgba(124,92,255,.22)' : 'rgba(255,255,255,.05)',
-                  border: '1px solid ' + (m.role === 'user' ? 'rgba(124,92,255,.4)' : 'rgba(255,255,255,.08)'),
-                }}
-              >
-                {m.content}
+              <div key={i} style={{ display: 'flex', alignItems: 'flex-end', gap: 8, flexDirection: m.role === 'user' ? 'row-reverse' : 'row', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', animation: 'fadeUp .25s ease both' }}>
+                <Avatar role={m.role === 'user' ? 'user' : 'assistant'} studentName={studentName} />
+                <div
+                  style={{
+                    maxWidth: '78%', padding: '11px 14px', fontSize: 13, lineHeight: 1.55,
+                    borderRadius: m.role === 'user' ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
+                    background: m.role === 'user' ? 'linear-gradient(155deg,rgba(139,109,255,.35),rgba(109,77,255,.28))' : 'rgba(255,255,255,.05)',
+                    border: '1px solid ' + (m.role === 'user' ? 'rgba(139,109,255,.45)' : 'rgba(255,255,255,.08)'),
+                  }}
+                >
+                  {m.role === 'assistant' ? renderMarkdownLite(m.content) : m.content}
+                </div>
               </div>
             ))}
-            {sending && <div style={{ fontSize: 12.5, color: '#8a8a99' }}>Asystent pisze…</div>}
+
+            {sending && <TypingBubble />}
+
             {error && (
-              <div style={{ padding: 11, borderRadius: 13, background: 'rgba(245,165,36,.08)', border: '1px solid rgba(245,165,36,.3)', fontSize: 12, lineHeight: 1.45, color: '#f7c46c' }}>
+              <div style={{ padding: 12, borderRadius: 14, background: 'rgba(245,165,36,.08)', border: '1px solid rgba(245,165,36,.3)', fontSize: 12, lineHeight: 1.45, color: '#f7c46c' }}>
                 {error}
               </div>
             )}
+            <div ref={bottomRef} />
           </div>
 
           <div style={{ display: 'flex', gap: 9, marginTop: 16, paddingBottom: 8 }}>
@@ -74,13 +153,14 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
               placeholder="Napisz wiadomość…"
-              style={{ flex: 1, height: 46, borderRadius: 14, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', padding: '0 14px', fontSize: 13.5, color: '#f4f4f7', fontFamily: 'inherit' }}
+              style={{ flex: 1, height: 48, borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', padding: '0 15px', fontSize: 13.5, color: '#f4f4f7', fontFamily: 'inherit' }}
             />
             <div
-              onClick={handleSend}
+              onClick={() => handleSend()}
               style={{
-                width: 46, height: 46, flex: 'none', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
-                background: input.trim() ? 'linear-gradient(160deg,#8b6dff,#6d4dff)' : 'rgba(255,255,255,.06)',
+                width: 48, height: 48, flex: 'none', borderRadius: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
+                background: input.trim() ? 'linear-gradient(155deg,#8b6dff,#6d4dff)' : 'rgba(255,255,255,.06)',
+                boxShadow: input.trim() ? '0 6px 16px rgba(109,77,255,.4)' : 'none',
                 cursor: input.trim() ? 'pointer' : 'not-allowed',
               }}
             >

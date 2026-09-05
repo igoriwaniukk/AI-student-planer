@@ -44,6 +44,10 @@ a { color: #8b6dff; }
   65% { transform: scale(1.1); opacity: 1; }
   100% { transform: scale(1); }
 }
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: .5; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
 
 .card {
   border-radius: 18px;
