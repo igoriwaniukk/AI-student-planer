@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { STATUS_COLOR, GOALS, IMPORTANCE_OPTIONS, WEEK_DAYS, TENIS_DAY } from '../lib/plannerData';
-import { span, hm, upcomingExams, computeStreak, computeTotalPoints } from '../lib/plannerLogic';
+import { span, hm, upcomingExams, computeStreak, computeTotalPoints, dayInfo } from '../lib/plannerLogic';
 import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
@@ -61,7 +61,7 @@ function dayLoad(state, dayNum) {
 // Combines the streak count with the week strip so the days that make up
 // the streak are visible right where the count is, instead of a plain
 // number with the calendar buried further down the page.
-function StreakCard({ streak, selectedDay }) {
+function StreakCard({ streak, selectedDay, onSelectDay }) {
   const { t } = useLang();
   return (
     <div style={{ marginTop: 14, padding: '13px 15px 10px', borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
@@ -72,7 +72,7 @@ function StreakCard({ streak, selectedDay }) {
           <span style={{ fontSize: 13, fontWeight: 750, fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={streak} /></span>
         </div>
       </div>
-      <WeekStrip selectedDay={selectedDay} streakCount={streak} topMargin={12} pageable />
+      <WeekStrip selectedDay={selectedDay} onSelect={onSelectDay} streakCount={streak} topMargin={12} pageable />
     </div>
   );
 }
@@ -299,6 +299,22 @@ function NextSessionCard({ planner }) {
   );
 }
 
+function DayPlanPlaceholder({ info, onPlan }) {
+  const { t } = useLang();
+  return (
+    <div style={{ marginTop: 18, padding: 16, borderRadius: 20, border: '1.5px solid rgba(124,92,255,.55)', background: 'linear-gradient(165deg,rgba(124,92,255,.13),rgba(124,92,255,.03))' }}>
+      <div style={{ fontSize: 13, fontWeight: 650, color: '#c9baff' }}>{t(DAY_KEY[info.label]) || info.label}, {info.num}</div>
+      <div style={{ fontSize: 15, fontWeight: 700, marginTop: 8, lineHeight: 1.3 }}>{t('home.noPlanForDay')}</div>
+      <div
+        onClick={onPlan}
+        style={{ marginTop: 14, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+      >
+        {t('home.planThisDay')}
+      </div>
+    </div>
+  );
+}
+
 function TodayList({ planner }) {
   const { t } = useLang();
   const { state, def, ts } = planner;
@@ -426,11 +442,14 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
   const { t } = useLang();
   const { state, ts, openEnergySheet } = planner;
   const goalExam = planner.nextGoalPrompt();
+  const [viewDay, setViewDay] = useState(state.selectedDay);
+  const info = dayInfo(viewDay);
+  const isRealDay = viewDay === state.selectedDay;
   const dayIds = state.taskDefs.filter((_, i) => state.tasks[i]).map((t) => t.id);
   const doneCount = dayIds.filter((id) => ts(id).status === 'completed').length;
   const totalCount = dayIds.filter((id) => ts(id).status !== 'skipped').length;
   const pct = totalCount ? Math.round((doneCount / totalCount) * 100) : 0;
-  const dateLong = state.selectedDay === 20 ? t('home.dateLongMon') : t('home.dateLongSun');
+  const dateLong = t('home.dateLong', { day: t(DAY_KEY[info.label]) || info.label, num: viewDay });
   const parts = (studentName || 'Ty').trim().split(/\s+/);
   const initials = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 
@@ -470,7 +489,7 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
         </div>
       </div>
 
-      <StreakCard streak={streak} selectedDay={state.selectedDay} />
+      <StreakCard streak={streak} selectedDay={viewDay} onSelectDay={setViewDay} />
       <StreakNotice notice={streakNotice} onDismiss={() => setLastSeenStreak(streak)} />
 
       <MorningSummaryCard state={state} />
@@ -487,13 +506,19 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
 
       {goalExam && <GoalPromptCard key={goalExam.id} planner={planner} exam={goalExam} />}
 
-      <NextSessionCard planner={planner} />
+      {isRealDay ? (
+        <>
+          <NextSessionCard planner={planner} />
 
-      <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
-        <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.todayPlan')}</div>
-        <div style={{ marginTop: 12 }}><TodayList planner={planner} /></div>
-        <div onClick={() => planner.go('plan')} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('home.seeFullPlan')} <span style={{ fontSize: 11 }}>›</span></div>
-      </div>
+          <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
+            <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.todayPlan')}</div>
+            <div style={{ marginTop: 12 }}><TodayList planner={planner} /></div>
+            <div onClick={() => planner.go('plan')} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('home.seeFullPlan')} <span style={{ fontSize: 11 }}>›</span></div>
+          </div>
+        </>
+      ) : (
+        <DayPlanPlaceholder info={info} onPlan={() => planner.go('planner')} />
+      )}
 
       <div onClick={openEnergySheet} style={{ marginTop: 12, padding: '12px 14px', borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
         <div style={{ width: 36, height: 36, borderRadius: 11, background: 'rgba(124,92,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="14" height="14" viewBox="0 0 14 14"><path d="M8 1L3 8h3.2L6 13l5-7.2H7.6L8 1z" fill="#a58cff" /></svg></div>
@@ -506,16 +531,18 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
 
       <EnergyHistory energyLog={energyLog} />
 
-      <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <div style={{ fontSize: 14.5, fontWeight: 700 }}>{t('home.todayProgress')}</div>
-          <div style={{ fontSize: 19, fontWeight: 750, color: '#2ee6c5' }}>{pct}%</div>
+      {isRealDay && (
+        <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 14.5, fontWeight: 700 }}>{t('home.todayProgress')}</div>
+            <div style={{ fontSize: 19, fontWeight: 750, color: '#2ee6c5' }}>{pct}%</div>
+          </div>
+          <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 3 }}>{t('home.sessionsDone', { done: doneCount, total: totalCount, word: t(totalCount === 1 ? 'home.sessionsCompletedOne' : 'home.sessionsCompletedMany') })}</div>
+          <div style={{ marginTop: 12, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
+            <div style={{ width: pct + '%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#7c5cff,#2ee6c5)', transition: 'width .5s ease' }} />
+          </div>
         </div>
-        <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 3 }}>{t('home.sessionsDone', { done: doneCount, total: totalCount, word: t(totalCount === 1 ? 'home.sessionsCompletedOne' : 'home.sessionsCompletedMany') })}</div>
-        <div style={{ marginTop: 12, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
-          <div style={{ width: pct + '%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#7c5cff,#2ee6c5)', transition: 'width .5s ease' }} />
-        </div>
-      </div>
+      )}
 
       <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(245,165,36,.06)', border: '1px solid rgba(245,165,36,.22)', display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(245,165,36,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="16" height="15" viewBox="0 0 16 15" fill="none"><path d="M8 1.6l6.2 11H1.8L8 1.6z" stroke="#f5a524" strokeWidth="1.3" strokeLinejoin="round" /><path d="M8 5.6v3.2" stroke="#f5a524" strokeWidth="1.3" strokeLinecap="round" /><circle cx="8" cy="11" r=".8" fill="#f5a524" /></svg></div>

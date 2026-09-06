@@ -1,19 +1,11 @@
 import { useState } from 'react';
 import WeekStrip from '../components/WeekStrip';
 import { BackButton, Pill, SectionTitle } from '../components/ui';
-import { upcomingExams, hm } from '../lib/plannerLogic';
-import { REFERENCE_DAY, WEEK_DAYS, TENIS_DAY } from '../lib/plannerData';
+import { upcomingExams, hm, dayInfo } from '../lib/plannerLogic';
+import { REFERENCE_DAY, TENIS_DAY } from '../lib/plannerData';
 import { DAY_KEY, VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import DayTimeline from '../components/DayTimeline';
-
-// Weekday info repeats on a 7-day cycle from WEEK_DAYS' base range (16-22),
-// so this works for any day number — not just the ones in the initial week —
-// once the strip can page forward/backward.
-function dayInfo(num) {
-  const idx = (((num - 16) % 7) + 7) % 7;
-  return { ...WEEK_DAYS[idx], num };
-}
 
 function Card({ children, style }) {
   return (

@@ -1,5 +1,13 @@
-import { DEFAULT_START, EXAMS, REFERENCE_DAY } from './plannerData';
+import { DEFAULT_START, EXAMS, REFERENCE_DAY, WEEK_DAYS } from './plannerData';
 import { getCurrentLang } from './i18n';
+
+// Weekday info repeats on a 7-day cycle from WEEK_DAYS' base range (16-22),
+// so this works for any day number — not just the ones in the initial
+// week — once a strip can page forward/backward.
+export function dayInfo(num) {
+  const idx = (((num - 16) % 7) + 7) % 7;
+  return { ...WEEK_DAYS[idx], num };
+}
 
 export function fmt(totalMinutes) {
   const h = Math.floor(totalMinutes / 60) % 24;
