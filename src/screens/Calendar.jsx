@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import WeekStrip from '../components/WeekStrip';
 import { BackButton, Pill, SectionTitle } from '../components/ui';
-import { span, upcomingExams, hm } from '../lib/plannerLogic';
+import { upcomingExams, hm } from '../lib/plannerLogic';
 import { REFERENCE_DAY, WEEK_DAYS, TENIS_DAY } from '../lib/plannerData';
 import { DAY_KEY, VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
+import DayTimeline from '../components/DayTimeline';
 
 // Weekday info repeats on a 7-day cycle from WEEK_DAYS' base range (16-22),
 // so this works for any day number — not just the ones in the initial week —
@@ -113,13 +114,7 @@ export default function Calendar({ planner, activities, recurringActivities = []
 
       <SectionTitle style={{ margin: '22px 0 12px' }}>{t('cal.studySessions', { day: dayLabel })}</SectionTitle>
       {sessionIds.length ? (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-          {sessionIds.map((id) => {
-            const d = planner.def(id);
-            const b = sched[id];
-            return <Card key={id}><Row icon={d.subject[0]} title={d.short} sub={span(b.start, b.start + b.dur)} right={b.dur + ' min'} /></Card>;
-          })}
-        </div>
+        <DayTimeline schedule={sched} planner={planner} t={t} compact only={['study', 'gap']} />
       ) : (
         <Card>
           <div style={{ fontSize: 12.5, color: '#8a8a99', lineHeight: 1.5 }}>{t('cal.noSessions')}</div>
