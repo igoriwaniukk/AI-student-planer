@@ -14,6 +14,7 @@ const KEYS = {
   lastSeenStreak: 'sp_lastSeenStreak',
   language: 'sp_language',
   customReminders: 'sp_customReminders',
+  seenNotifSignature: 'sp_seenNotifSignature',
 };
 
 export function useLocalStorage(key, initialValue) {
@@ -103,6 +104,14 @@ export function useLastSeenStreak() {
 // UI language, 'pl' or 'en'.
 export function useLanguage() {
   return useLocalStorage(KEYS.language, 'pl');
+}
+
+// A signature (ids of exam alerts + custom reminders) of the notifications
+// the student last opened the bell to look at — compared against the
+// current set to know whether the "new" dot/shake should show, instead of
+// it staying on forever once anything exists.
+export function useSeenNotifSignature() {
+  return useLocalStorage(KEYS.seenNotifSignature, '');
 }
 
 // Reminders the student adds themselves via the notification bell, separate

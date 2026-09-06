@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { upcomingExams } from '../lib/plannerLogic';
-import { useCustomReminders } from '../lib/store';
+import { useCustomReminders, useSeenNotifSignature } from '../lib/store';
 import { useLang } from '../lib/useLang';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { VALUE_KEY } from '../lib/i18n';
@@ -10,14 +10,30 @@ export default function NotificationBell({ state, streak = 0 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [reminders, setReminders] = useCustomReminders();
+  const [seenSignature, setSeenSignature] = useSeenNotifSignature();
 
   const examAlerts = upcomingExams(state)
     .filter((e) => e.daysUntil >= 0 && e.daysUntil <= 14)
     .sort((a, b) => a.daysUntil - b.daysUntil);
   const hasUpcomingExam = examAlerts.length > 0;
-  const hasNew = hasUpcomingExam || reminders.length > 0;
+  // A signature of what's currently shown here — the dot/shake only shows
+  // when it differs from what the student last opened the bell to look at,
+  // instead of staying on forever as long as anything exists.
+  const currentSignature = examAlerts.map((e) => e.id).sort().join(',') + '|' + reminders.map((r) => r.id).sort().join(',');
+  const hasNew = (hasUpcomingExam || reminders.length > 0) && currentSignature !== seenSignature;
 
   const { pushStatus, togglePush } = usePushNotifications({ streak, hasUpcomingExam, reminders: reminders.map((r) => r.text), lang });
+
+  function handleOpen() {
+    setOpen(true);
+    setSeenSignature(currentSignature);
+  }
+
+  // Adding/removing a reminder while the panel is already open shouldn't
+  // bring the dot right back — the student is looking straight at it.
+  useEffect(() => {
+    if (open && currentSignature !== seenSignature) setSeenSignature(currentSignature);
+  }, [open, currentSignature, seenSignature, setSeenSignature]);
 
   function addReminder() {
     const text = draft.trim();
@@ -41,7 +57,7 @@ export default function NotificationBell({ state, streak = 0 }) {
   return (
     <>
       <div
-        onClick={() => setOpen(true)}
+        onClick={handleOpen}
         style={{ position: 'absolute', top: 20, right: 20, zIndex: 60, width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
       >
         <span style={{ display: 'inline-flex', transformOrigin: 'top center', animation: hasNew ? 'bellRing 4s ease-in-out infinite' : 'none' }}>

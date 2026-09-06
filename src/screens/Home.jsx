@@ -98,7 +98,7 @@ function GoalPromptCard({ planner, exam }) {
   const canSave = importance && grade;
 
   return (
-    <div style={{ marginTop: 18, padding: 16, borderRadius: 20, background: 'rgba(124,92,255,.08)', border: '1.5px solid rgba(124,92,255,.35)', animation: 'cardGlowPulse 3.4s ease-in-out infinite', '--glow-color': 'rgba(124,92,255,.4)' }}>
+    <div style={{ marginTop: 18, padding: 16, borderRadius: 20, background: 'rgba(124,92,255,.08)', border: '1.5px solid rgba(124,92,255,.35)', animation: step === 0 ? 'cardGlowPulse 3.4s ease-in-out infinite' : 'none', '--glow-color': 'rgba(124,92,255,.4)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
         <span style={{ fontSize: 16 }}>🎯</span>
         <div style={{ fontSize: 13.5, fontWeight: 700 }}>{t('home.examSoon', { subject: t(VALUE_KEY[exam.subject]) || exam.subject })}</div>
@@ -209,8 +209,11 @@ function NextSessionCard({ planner }) {
   const active = state.activeTask;
   const nextId = active || ids.filter((id) => ['planned', 'paused'].includes(ts(id).status))[0];
 
-  const box = (children) => (
-    <div style={{ marginTop: 18, padding: 16, borderRadius: 20, border: '1.5px solid rgba(124,92,255,.55)', background: 'linear-gradient(165deg,rgba(124,92,255,.13),rgba(124,92,255,.03))', animation: 'cardGlowPulse 3.4s ease-in-out infinite', '--glow-color': 'rgba(124,92,255,.5)' }}>
+  // The glow pulses to draw the eye to the session waiting to be started —
+  // once it's actually running (or paused mid-way), that's already been
+  // acted on, so the pulsing stops until a new session takes its place.
+  const box = (children, glow = true) => (
+    <div style={{ marginTop: 18, padding: 16, borderRadius: 20, border: '1.5px solid rgba(124,92,255,.55)', background: 'linear-gradient(165deg,rgba(124,92,255,.13),rgba(124,92,255,.03))', animation: glow ? 'cardGlowPulse 3.4s ease-in-out infinite' : 'none', '--glow-color': 'rgba(124,92,255,.5)' }}>
       {children}
     </div>
   );
@@ -269,7 +272,8 @@ function NextSessionCard({ planner }) {
           {t('home.startSession')}
         </div>
       )}
-    </>
+    </>,
+    !running,
   );
 }
 

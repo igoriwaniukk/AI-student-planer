@@ -214,7 +214,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
         <BottomSheet maxHeight="85%">
           <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
             <div style={{ width: 38, height: 38, flex: 'none', borderRadius: 13, background: 'linear-gradient(155deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, boxShadow: '0 6px 16px rgba(109,77,255,.4)' }}>
-              ✨
+              <span style={{ display: 'inline-block', animation: 'sparkleTwinkle 2.6s ease-in-out infinite' }}>✨</span>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>{t('chat.title')}</div>
@@ -231,15 +231,15 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 18, minHeight: 140 }}>
             {messages.length === 0 && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, alignSelf: 'flex-start' }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, alignSelf: 'flex-start', animation: 'fadeUp .3s ease both' }}>
                   <Avatar role="assistant" />
                   <div style={{ maxWidth: '85%', padding: '11px 14px', borderRadius: '4px 16px 16px 16px', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', fontSize: 13, lineHeight: 1.5, color: '#c9c9d6' }}>
                     {t('chat.greeting')}
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 34 }}>
-                  {[t('chat.suggestion1'), t('chat.suggestion2'), t('chat.suggestion3')].map((s) => (
-                    <Chip key={s} label={s} onClick={() => handleSend(s)} style={{ textAlign: 'left' }} />
+                  {[t('chat.suggestion1'), t('chat.suggestion2'), t('chat.suggestion3')].map((s, i) => (
+                    <Chip key={s} label={s} onClick={() => handleSend(s)} style={{ textAlign: 'left', animation: `fadeUp .3s ease ${.12 + i * 0.08}s both` }} />
                   ))}
                 </div>
               </div>

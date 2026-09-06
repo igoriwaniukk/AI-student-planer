@@ -114,6 +114,10 @@ a { color: #8b6dff; }
   0%, 100% { box-shadow: 0 6px 18px rgba(109,77,255,.35); }
   50% { box-shadow: 0 6px 26px rgba(109,77,255,.6), 0 0 14px 2px rgba(139,109,255,.5); }
 }
+@keyframes sparkleTwinkle {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.14) rotate(10deg); }
+}
 
 .card {
   border-radius: 18px;
