@@ -2,13 +2,9 @@ import { useEffect, useRef, useState } from 'react';
 import { useChat } from '../hooks/useChat';
 import { buildChatContext } from '../lib/chatContext';
 import { upcomingExams, hm, toMinutes, checkBlockConflict } from '../lib/plannerLogic';
+import { VALUE_KEY, DAY_KEY } from '../lib/i18n';
+import { useLang } from '../lib/useLang';
 import { BottomSheet, Chip } from './ui';
-
-const SUGGESTIONS = [
-  'Jak rozłożyć naukę do najbliższego sprawdzianu?',
-  'Ile powinienem dziś jeszcze się uczyć?',
-  'Zmotywuj mnie do nauki 💪',
-];
 
 // Gemini replies use light Markdown (bold, line breaks) — render that
 // instead of showing literal "**...**" and losing paragraph breaks.
@@ -45,26 +41,28 @@ function Avatar({ role, studentName }) {
 
 // Turns a Gemini function-call proposal into a human-readable summary and
 // the planner call that actually applies it, once the student confirms.
-function describeAction(action, planner, deps) {
+function describeAction(action, planner, deps, t) {
   const { name, args } = action;
+  const subj = (s) => t(VALUE_KEY[s]) || s;
+  const day = (d) => t(DAY_KEY[d]) || d;
   if (name === 'add_exam') {
-    const label = args.subject + (args.title ? ' — ' + args.title : '');
+    const label = subj(args.subject) + (args.title ? ' — ' + args.title : '');
     return {
-      summary: `Dodać sprawdzian: ${label}, za ${args.daysUntil} dni. Cel: ${args.grade} (${args.importance}), ${hm(args.studyMinutes)} nauki.`,
-      confirmedSummary: `✅ Dodano sprawdzian: ${label}, za ${args.daysUntil} dni.`,
+      summary: t('chat.actionAddExam', { label, days: args.daysUntil, grade: subj(args.grade), importance: subj(args.importance), time: hm(args.studyMinutes) }),
+      confirmedSummary: t('chat.actionAddExamDone', { label, days: args.daysUntil }),
       run: () => planner.addCustomExam(args),
     };
   }
   if (name === 'update_exam_goal') {
     const exam = upcomingExams(planner.state).find((e) => e.id === args.examId);
-    const label = exam ? exam.subject + (exam.title ? ' — ' + exam.title : '') : args.examId;
+    const label = exam ? subj(exam.subject) + (exam.title ? ' — ' + subj(exam.title) : '') : args.examId;
     const changes = [];
-    if (args.grade) changes.push(`ocena: ${args.grade}`);
-    if (args.importance) changes.push(`ważność: ${args.importance}`);
-    if (args.studyMinutes != null) changes.push(`czas nauki: ${hm(args.studyMinutes)}`);
+    if (args.grade) changes.push(t('chat.changeGrade', { grade: subj(args.grade) }));
+    if (args.importance) changes.push(t('chat.changeImportance', { importance: subj(args.importance) }));
+    if (args.studyMinutes != null) changes.push(t('chat.changeStudyTime', { time: hm(args.studyMinutes) }));
     return {
-      summary: `Zmienić cel dla „${label}” — ${changes.join(', ')}.`,
-      confirmedSummary: `✅ Zaktualizowano cel dla „${label}”.`,
+      summary: t('chat.actionUpdateGoal', { label, changes: changes.join(', ') }),
+      confirmedSummary: t('chat.actionUpdateGoalDone', { label }),
       run: () => {
         if (args.grade) planner.setExamGrade(args.examId, args.grade);
         if (args.importance) planner.setExamImportance(args.examId, args.importance);
@@ -74,10 +72,10 @@ function describeAction(action, planner, deps) {
   }
   if (name === 'complete_session') {
     const d = planner.def(args.sessionId);
-    const label = d?.short || d?.subject || args.sessionId;
+    const label = d?.short || subj(d?.subject) || args.sessionId;
     return {
-      summary: `Oznaczyć „${label}” jako wykonaną${args.actualMinutes != null ? ' (' + hm(args.actualMinutes) + ')' : ''}.`,
-      confirmedSummary: `✅ Oznaczono „${label}” jako wykonaną.`,
+      summary: t('chat.actionComplete', { label, time: args.actualMinutes != null ? ' (' + hm(args.actualMinutes) + ')' : '' }),
+      confirmedSummary: t('chat.actionCompleteDone', { label }),
       run: () =>
         planner.update((s) => {
           const b = (s.schedule || {})[args.sessionId];
@@ -88,14 +86,15 @@ function describeAction(action, planner, deps) {
   }
   if (name === 'reschedule_session') {
     const d = planner.def(args.sessionId);
-    const label = d?.short || d?.subject || args.sessionId;
+    const label = d?.short || subj(d?.subject) || args.sessionId;
     const startMin = toMinutes(args.newStart);
     const sched = planner.state.schedule || {};
     const dur = (sched[args.sessionId] || {}).dur || d?.dur || 30;
     const conflict = checkBlockConflict(args.sessionId, startMin, dur, sched, planner.def);
+    const conflictText = conflict ? t(conflict.key, { subject: conflict.vars?.subject ? subj(conflict.vars.subject) : '' }) : '';
     return {
-      summary: `Przełożyć „${label}” na ${args.newStart}.`,
-      confirmedSummary: conflict ? `⚠️ Nie udało się przełożyć „${label}”: ${conflict}` : `✅ Przełożono „${label}” na ${args.newStart}.`,
+      summary: t('chat.actionReschedule', { label, time: args.newStart }),
+      confirmedSummary: conflict ? t('chat.actionRescheduleFailed', { label, reason: conflictText }) : t('chat.actionRescheduleDone', { label, time: args.newStart }),
       run: () => {
         if (conflict) return;
         planner.update((s) => ({
@@ -107,8 +106,8 @@ function describeAction(action, planner, deps) {
   }
   if (name === 'log_energy') {
     return {
-      summary: `Zapisać poziom energii: ${args.level}.`,
-      confirmedSummary: `✅ Zapisano poziom energii: ${args.level}.`,
+      summary: t('chat.actionLogEnergy', { level: subj(args.level) }),
+      confirmedSummary: t('chat.actionLogEnergyDone', { level: subj(args.level) }),
       run: () => {
         planner.update({ energy: args.level });
         deps.logEnergy(args.level);
@@ -117,8 +116,8 @@ function describeAction(action, planner, deps) {
   }
   if (name === 'add_recurring_activity') {
     return {
-      summary: `Dodać cotygodniowe zajęcie: ${args.name}, ${args.day}, ${args.start}, ${args.durationMinutes} min.`,
-      confirmedSummary: `✅ Dodano cotygodniowe zajęcie: ${args.name} (${args.day}, ${args.start}).`,
+      summary: t('chat.actionAddRecurring', { name: args.name, day: day(args.day), start: args.start, min: args.durationMinutes }),
+      confirmedSummary: t('chat.actionAddRecurringDone', { name: args.name, day: day(args.day), start: args.start }),
       run: () =>
         deps.setRecurringActivities(
           (deps.recurringActivities || []).concat({ id: Date.now(), name: args.name, day: args.day, start: args.start, dur: args.durationMinutes })
@@ -129,24 +128,25 @@ function describeAction(action, planner, deps) {
 }
 
 function ActionConfirmCard({ action, planner, deps, onResolve }) {
-  const described = describeAction(action, planner, deps);
+  const { t } = useLang();
+  const described = describeAction(action, planner, deps, t);
   if (!described) return null;
   return (
     <div style={{ padding: 14, borderRadius: 16, background: 'rgba(124,92,255,.1)', border: '1.5px solid rgba(124,92,255,.4)', animation: 'fadeUp .25s ease both' }}>
-      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.06em', color: '#c9baff', marginBottom: 7 }}>AI PROPONUJE ZMIANĘ</div>
+      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.06em', color: '#c9baff', marginBottom: 7 }}>{t('chat.aiProposes')}</div>
       <div style={{ fontSize: 13, lineHeight: 1.5, color: '#f4f4f7' }}>{described.summary}</div>
       <div style={{ display: 'flex', gap: 9, marginTop: 13 }}>
         <div
           onClick={() => onResolve(false)}
           style={{ flex: 1, height: 40, borderRadius: 12, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 650, cursor: 'pointer' }}
         >
-          Anuluj
+          {t('chat.cancel')}
         </div>
         <div
           onClick={() => onResolve(true, described)}
           style={{ flex: 1.3, height: 40, borderRadius: 12, background: 'linear-gradient(155deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 700, cursor: 'pointer' }}
         >
-          Zatwierdź
+          {t('chat.confirm')}
         </div>
       </div>
     </div>
@@ -167,6 +167,7 @@ function TypingBubble() {
 }
 
 export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, studyHistory, studentName, logEnergy, recurringActivities, setRecurringActivities }) {
+  const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const { messages, sending, error, send, action, clearAction, appendAssistantMessage } = useChat();
@@ -190,7 +191,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
       described.run();
       appendAssistantMessage(described.confirmedSummary);
     } else {
-      appendAssistantMessage('Anulowano — nic nie zostało zmienione.');
+      appendAssistantMessage(t('chat.cancelledMessage'));
     }
     clearAction();
   }
@@ -216,8 +217,8 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
               ✨
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>Asystent AI</div>
-              <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 1 }}>Zna Twoje sprawdziany i cele nauki</div>
+              <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>{t('chat.title')}</div>
+              <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 1 }}>{t('chat.subtitle')}</div>
             </div>
             <div
               onClick={() => setOpen(false)}
@@ -233,11 +234,11 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, alignSelf: 'flex-start' }}>
                   <Avatar role="assistant" />
                   <div style={{ maxWidth: '85%', padding: '11px 14px', borderRadius: '4px 16px 16px 16px', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', fontSize: 13, lineHeight: 1.5, color: '#c9c9d6' }}>
-                    Cześć! Zapytaj mnie o naukę, sprawdziany albo plan dnia — na przykład:
+                    {t('chat.greeting')}
                   </div>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 34 }}>
-                  {SUGGESTIONS.map((s) => (
+                  {[t('chat.suggestion1'), t('chat.suggestion2'), t('chat.suggestion3')].map((s) => (
                     <Chip key={s} label={s} onClick={() => handleSend(s)} style={{ textAlign: 'left' }} />
                   ))}
                 </div>
@@ -277,7 +278,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
-              placeholder="Napisz wiadomość…"
+              placeholder={t('chat.inputPlaceholder')}
               style={{ flex: 1, height: 48, borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', padding: '0 15px', fontSize: 13.5, color: '#f4f4f7', fontFamily: 'inherit' }}
             />
             <div

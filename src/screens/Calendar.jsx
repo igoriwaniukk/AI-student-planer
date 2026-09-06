@@ -3,7 +3,7 @@ import WeekStrip from '../components/WeekStrip';
 import { BackButton, Pill, SectionTitle } from '../components/ui';
 import { span, upcomingExams, hm } from '../lib/plannerLogic';
 import { REFERENCE_DAY, WEEK_DAYS, TENIS_DAY } from '../lib/plannerData';
-import { DAY_KEY } from '../lib/i18n';
+import { DAY_KEY, VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 
 // Weekday info repeats on a 7-day cycle from WEEK_DAYS' base range (16-22),
@@ -78,10 +78,10 @@ export default function Calendar({ planner, activities, recurringActivities = []
             return (
               <Card key={e.id} style={{ background: 'rgba(245,165,36,.06)', border: '1px solid rgba(245,165,36,.28)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                  <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: e.color }}>{e.subject.toUpperCase()}</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: e.color }}>{(t(VALUE_KEY[e.subject]) || e.subject).toUpperCase()}</span>
                   <Pill text={e.daysUntil === 1 ? t('cal.tomorrowPill') : t('cal.inDaysPill', { n: e.daysUntil })} color="#f5a524" bg="rgba(245,165,36,.15)" />
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6 }}>{e.title}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6 }}>{t(VALUE_KEY[e.title]) || e.title}</div>
                 <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 3 }}>{t(DAY_KEY[dayInfo(e.day).label]) || dayInfo(e.day).label}, {e.day} {t('month.july')}</div>
                 <div
                   onClick={() => go('goals')}

@@ -1,4 +1,5 @@
 import { BackButton, StickyFooter, PrimaryButton, BottomSheet, OptionRow, ConfirmCard } from '../components/ui';
+import { VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 
 function sesji(n) {
@@ -34,7 +35,7 @@ export default function Prep({ planner }) {
         <span style={{ fontSize: 11, fontWeight: 650, color: '#c9baff', padding: '8px 14px', borderRadius: 999, background: 'rgba(124,92,255,.14)', border: '1px solid rgba(124,92,255,.45)' }}>{t('prep.toConfirm')}</span>
       </div>
       <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>{t('prep.title')}</div>
-      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('prep.subtitle', { subject: state.subject })}</div>
+      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('prep.subtitle', { subject: t(VALUE_KEY[state.subject]) || state.subject })}</div>
 
       <div style={{ marginTop: 18, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.14)' }}>
         <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>{t('prep.ready')}</div>

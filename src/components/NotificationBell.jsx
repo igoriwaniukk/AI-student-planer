@@ -3,6 +3,7 @@ import { upcomingExams } from '../lib/plannerLogic';
 import { useCustomReminders } from '../lib/store';
 import { useLang } from '../lib/useLang';
 import { isPushSupported, getExistingSubscription, subscribeToPush, unsubscribeFromPush, syncPushState } from '../lib/pushNotifications';
+import { VALUE_KEY } from '../lib/i18n';
 
 export default function NotificationBell({ state, streak = 0 }) {
   const { t, lang } = useLang();
@@ -97,8 +98,8 @@ export default function NotificationBell({ state, streak = 0 }) {
                     <div key={e.id} style={{ padding: '12px 14px', borderRadius: 15, background: 'rgba(245,165,36,.08)', border: '1px solid rgba(245,165,36,.28)', display: 'flex', alignItems: 'center', gap: 11 }}>
                       <span style={{ fontSize: 17 }}>⏰</span>
                       <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: e.color }}>{e.subject.toUpperCase()}</div>
-                        <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{e.title}</div>
+                        <div style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: e.color }}>{(t(VALUE_KEY[e.subject]) || e.subject).toUpperCase()}</div>
+                        <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{t(VALUE_KEY[e.title]) || e.title}</div>
                       </div>
                       <span style={{ fontSize: 12, fontWeight: 700, color: '#f5a524', flex: 'none' }}>{e.daysUntil === 1 ? t('cal.tomorrowPill') : t('cal.inDaysPill', { n: e.daysUntil })}</span>
                     </div>

@@ -1,5 +1,6 @@
 import { HARD_OPTIONS, KNOW_OPTIONS, DAY_HARD_OPTIONS } from '../lib/plannerData';
 import { hm, toMinutes, fmt, zad } from '../lib/plannerLogic';
+import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, PrimaryButton, EnergyPicker, OptionRow, ListRow, Chip, BottomSheet } from '../components/ui';
 import { useLang } from '../lib/useLang';
 
@@ -51,7 +52,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
       <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('sum.howSessions')}</div>
 
       <SessionReview
-        subject="BIOLOGIA" subjectColor="#2ee6c5" title={t('sum.biology') === 'Biology' ? 'Photosynthesis review' : 'Powtórka z fotosyntezy'}
+        subject={(t(VALUE_KEY.Biologia) || 'Biologia').toUpperCase()} subjectColor="#2ee6c5" title={t(TASK_TEXT_KEY.bio.title)}
         planned={t('sum.plan', { min: bioPlan })} actual={state.bioMinutes + ' min'} diff={sign(bioDiffVal) + ' min'}
         onMinus={() => bioAdjust(-5)} onPlus={() => bioAdjust(5)}
         hard={state.bioHard} onHard={(x) => update({ bioHard: x })}
@@ -60,7 +61,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
       />
       <div style={{ height: 12 }} />
       <SessionReview
-        subject="MATEMATYKA" subjectColor="#a58cff" title={t('sum.biology') === 'Biology' ? 'Exam prep' : 'Przygotowanie do sprawdzianu'} deadline={t('sum.biology') === 'Biology' ? 'Exam in 2 days' : 'Sprawdzian za 2 dni'}
+        subject={(t(VALUE_KEY.Matematyka) || 'Matematyka').toUpperCase()} subjectColor="#a58cff" title={t(TASK_TEXT_KEY.math.title)} deadline={t(TASK_TEXT_KEY.math.deadline)}
         planned={t('sum.plan', { min: mathPlan })} actual={state.mathMinutes + ' min'} diff={sign(mathDiffVal) + ' min'}
         onMinus={() => mathAdjust(-5)} onPlus={() => mathAdjust(5)}
         hard={state.mathHard} onHard={(x) => update({ mathHard: x })}
@@ -72,7 +73,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
 
       <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('sum.howHardDay')}</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
-        {DAY_HARD_OPTIONS.map((x) => <Chip key={x} label={x} active={state.dayHard === x} onClick={() => update({ dayHard: x })} />)}
+        {DAY_HARD_OPTIONS.map((x) => <Chip key={x} label={t(VALUE_KEY[x]) || x} active={state.dayHard === x} onClick={() => update({ dayHard: x })} />)}
       </div>
 
       <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('sum.howMuchEnergy')}</div>
@@ -114,8 +115,8 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
           <Row label={t('sum.biology')} value={t('sum.doneIn', { min: state.bioMinutes })} />
           <Row label={t('sum.math')} value={t('sum.doneIn', { min: state.mathMinutes })} />
           {movedCount > 0 && <Row label={t('sum.english2')} value={t('sum.tomorrowAt', { time: state.engStart })} />}
-          <Row label={t('sum.day')} value={t('sum.dayValue', { value: state.dayHard })} />
-          <Row label={t('sum.energy')} value={t('sum.energyValue', { value: state.dayEnergy })} />
+          <Row label={t('sum.day')} value={t('sum.dayValue', { value: t(VALUE_KEY[state.dayHard]) || state.dayHard })} />
+          <Row label={t('sum.energy')} value={t('sum.energyValue', { value: t(VALUE_KEY[state.dayEnergy]) || state.dayEnergy })} />
         </div>
         <div style={{ height: 1, background: 'rgba(255,255,255,.07)', margin: '15px -16px' }} />
         <div style={{ fontSize: 12.5, lineHeight: 1.45, color: state.adaptive ? '#c9baff' : '#a3a3b3' }}>
@@ -177,11 +178,11 @@ function SessionReview({ subject, subjectColor, title, deadline, planned, actual
       </div>
       <div style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6', margin: '16px 0 9px' }}>{t('sum.howHardSession')}</div>
       <div style={{ display: 'flex', gap: 9 }}>
-        {HARD_OPTIONS.map((x) => <OptionRow key={x} label={x} active={hard === x} onClick={() => onHard(x)} />)}
+        {HARD_OPTIONS.map((x) => <OptionRow key={x} label={t(VALUE_KEY[x]) || x} active={hard === x} onClick={() => onHard(x)} />)}
       </div>
       <div style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6', margin: '16px 0 9px' }}>{t('sum.howWellNow')}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-        {KNOW_OPTIONS.map((x, i) => <ListRow key={x} label={x} active={know === x} onClick={() => onKnow(x)} last={i === KNOW_OPTIONS.length - 1} />)}
+        {KNOW_OPTIONS.map((x, i) => <ListRow key={x} label={t(VALUE_KEY[x]) || x} active={know === x} onClick={() => onKnow(x)} last={i === KNOW_OPTIONS.length - 1} />)}
       </div>
     </div>
   );

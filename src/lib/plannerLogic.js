@@ -260,13 +260,16 @@ export function weeklyReview(studyHistory) {
   return { plannedMin, actualMin, completedDays, trackedDays: entries.length, rate };
 }
 
+// Returns null when the proposed time is fine, or {key, vars} for the
+// translated conflict message shown in BlockEditSheet — not a prebuilt
+// string, since this is plain logic with no access to the UI's language.
 export function checkBlockConflict(id, start, dur, schedule, def) {
   const end = start + dur;
-  if (start < 880) return 'Ten czas koliduje ze szkołą 8:00–14:40. Wybierz późniejszą godzinę.';
-  if (start < 1140 && end > 1080) return 'Ten czas koliduje z tenisem 18:00–19:00. Wybierz inną godzinę.';
-  if (end > 1350) return 'Ta zmiana skróciłaby sen o 22:30. Wybierz wcześniejszą godzinę lub krótszy blok.';
+  if (start < 880) return { key: 'block.conflictSchool' };
+  if (start < 1140 && end > 1080) return { key: 'block.conflictTennis' };
+  if (end > 1350) return { key: 'block.conflictSleep' };
   const sched = schedule || {};
   const clash = Object.keys(sched).filter((k) => k !== id && start < sched[k].start + sched[k].dur && end > sched[k].start);
-  if (clash.length) return 'Ten blok nachodzi na inny blok nauki (' + def(clash[0]).subject + '). Wybierz inną godzinę.';
-  return '';
+  if (clash.length) return { key: 'block.conflictOther', vars: { subject: def(clash[0]).subject } };
+  return null;
 }

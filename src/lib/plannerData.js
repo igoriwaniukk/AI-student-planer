@@ -60,9 +60,11 @@ export const IMPORTANCE_OPTIONS = ['Niski', 'Średni', 'Wysoki'];
 export const LEVELS = ['Nie znam', 'Znam podstawy', 'Średnio', 'Dobrze', 'Bardzo dobrze'];
 export const KINDS = ['Sprawdzian', 'Kartkówka', 'Praca domowa', 'Projekt', 'Prezentacja', 'Egzamin próbny'];
 
-export const PREP_LABELS = ['Sprawdzam Twój kalendarz', 'Dzielę materiał na etapy', 'Dodaję powtórki', 'Planuję samosprawdzenie', 'Plan przygotowania jest gotowy'];
-export const RESCUE_LABELS = ['Sprawdzam pozostały czas', 'Chronię najważniejsze zadanie', 'Skracam mniej ważne bloki', 'Przenoszę to, co się nie zmieści', 'Nowy plan jest gotowy'];
-export const PLAN_LABELS = ['Sprawdzam wolny czas...', 'Ustalam priorytety...', 'Dodaję przerwy i bufor...', 'Plan jest gotowy'];
+// Loading-step captions for GeneratingOverlay — i18n keys, not raw text,
+// since they're translated at render time (see GeneratingOverlay in ui.jsx).
+export const PREP_LABELS = ['gen.prep.1', 'gen.prep.2', 'gen.prep.3', 'gen.prep.4', 'gen.prep.5'];
+export const RESCUE_LABELS = ['gen.rescue.1', 'gen.rescue.2', 'gen.rescue.3', 'gen.rescue.4', 'gen.rescue.5'];
+export const PLAN_LABELS = ['gen.plan.1', 'gen.plan.2', 'gen.plan.3', 'gen.plan.4'];
 
 export const SESSION_DATES = ['Wtorek, 21 lipca', 'Czwartek, 23 lipca', 'Sobota, 25 lipca', 'Poniedziałek, 27 lipca', 'Środa, 29 lipca', 'Czwartek, 30 lipca'];
 export const SESSIONS = [

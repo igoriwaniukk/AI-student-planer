@@ -221,6 +221,7 @@ export function ConfirmCard({ title, sub, onDone, buttonLabel }) {
 }
 
 export function GeneratingOverlay({ labels, step }) {
+  const { t } = useLang();
   const last = labels.length - 1;
   const finished = step >= last;
 
@@ -243,7 +244,7 @@ export function GeneratingOverlay({ labels, step }) {
       </div>
 
       <div key={step} style={{ fontSize: 17, fontWeight: 700, color: '#f4f4f7', textAlign: 'center', lineHeight: 1.4, animation: 'stepIn .4s ease both' }}>
-        {labels[step]}
+        {t(labels[step])}
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>

@@ -1,7 +1,7 @@
 import { PRIO_STYLE } from '../lib/plannerData';
 import { durOf, hm } from '../lib/plannerLogic';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
-import { VALUE_KEY } from '../lib/i18n';
+import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import TaskEditSheet from '../components/TaskEditSheet';
 
@@ -63,12 +63,12 @@ export default function Planner({ planner }) {
               <div style={{ width: 20, textAlign: 'center', fontSize: 14 }}>{TASK_ICONS[d.id]}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: d.color, textTransform: 'uppercase' }}>{d.subject}</span>
-                  <span style={{ fontSize: 10, fontWeight: 650, padding: '3px 8px', borderRadius: 7, color: ps.color, background: ps.bg }}>{d.priority}</span>
+                  <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: d.color, textTransform: 'uppercase' }}>{t(VALUE_KEY[d.subject]) || d.subject}</span>
+                  <span style={{ fontSize: 10, fontWeight: 650, padding: '3px 8px', borderRadius: 7, color: ps.color, background: ps.bg }}>{t(VALUE_KEY[d.priority]) || d.priority}</span>
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3, marginTop: 6 }}>{d.title}</div>
+                <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3, marginTop: 6 }}>{t(TASK_TEXT_KEY[d.id]?.title) || d.title}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', marginTop: 9 }}>
-                  {d.deadline && <span style={{ fontSize: 10.5, fontWeight: 650, color: '#f5a524', padding: '4px 8px', borderRadius: 8, background: 'rgba(245,165,36,.13)', border: '1px solid rgba(245,165,36,.28)' }}>⚠ {d.deadline}</span>}
+                  {d.deadline && <span style={{ fontSize: 10.5, fontWeight: 650, color: '#f5a524', padding: '4px 8px', borderRadius: 8, background: 'rgba(245,165,36,.13)', border: '1px solid rgba(245,165,36,.28)' }}>⚠ {t(TASK_TEXT_KEY[d.id]?.deadline) || d.deadline}</span>}
                   <span style={{ fontSize: 11.5, color: '#8a8a99' }}>🕐 {durOf(d.id, state.taskDefs, state.durOverride)} min</span>
                 </div>
                 {d.id === 'math' && <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 8 }}>{t('planner.readiness')}</div>}

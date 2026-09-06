@@ -1,5 +1,6 @@
 import { timeline, span, hm, fmt } from '../lib/plannerLogic';
 import { STATUS_COLOR } from '../lib/plannerData';
+import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, PrimaryButton, ConfirmCard, Pill } from '../components/ui';
 import { useLang } from '../lib/useLang';
 import TaskEditSheet from '../components/TaskEditSheet';
@@ -48,8 +49,8 @@ function StudyCard({ it, planner, t }) {
             <Pill text={(it.end - it.start) + ' min'} color="#c9baff" bg="rgba(124,92,255,.2)" />
             <span style={{ fontSize: 10.5, fontWeight: 700, color: STATUS_COLOR[st.status] }}>{t('status.' + st.status)}</span>
           </div>
-          <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.06em', color: d.color, marginTop: 8, textTransform: 'uppercase' }}>{d.subject}</div>
-          <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.28, marginTop: 5 }}>{d.title}</div>
+          <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.06em', color: d.color, marginTop: 8, textTransform: 'uppercase' }}>{t(VALUE_KEY[d.subject]) || d.subject}</div>
+          <div style={{ fontSize: 16, fontWeight: 700, lineHeight: 1.28, marginTop: 5 }}>{t(TASK_TEXT_KEY[d.id]?.title) || d.title}</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
           <EditBtn label={t('plan.change')} onClick={() => openBlockEdit(it.id)} />
@@ -57,10 +58,10 @@ function StudyCard({ it, planner, t }) {
         </div>
       </div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginTop: 11 }}>
-        <Pill text={d.priority} color="#c9baff" bg="rgba(124,92,255,.2)" />
-        {d.deadline && <Pill text={d.deadline} color="#f5a524" bg="rgba(245,165,36,.13)" />}
+        <Pill text={t(VALUE_KEY[d.priority]) || d.priority} color="#c9baff" bg="rgba(124,92,255,.2)" />
+        {d.deadline && <Pill text={t(TASK_TEXT_KEY[d.id]?.deadline) || d.deadline} color="#f5a524" bg="rgba(245,165,36,.13)" />}
       </div>
-      <div style={{ fontSize: 12.5, lineHeight: 1.5, color: '#a3a3b3', marginTop: 10 }}>{d.why}</div>
+      <div style={{ fontSize: 12.5, lineHeight: 1.5, color: '#a3a3b3', marginTop: 10 }}>{t(TASK_TEXT_KEY[d.id]?.why) || d.why}</div>
       <div onClick={() => openTaskEdit(it.id)} style={{ fontSize: 11.5, fontWeight: 650, color: '#a58cff', cursor: 'pointer', marginTop: 8 }}>{t('plan.editTaskDetails')}</div>
     </div>
   );

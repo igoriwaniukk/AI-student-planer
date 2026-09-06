@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useLang } from '../lib/useLang';
 
 export function useChat() {
+  const { t } = useLang();
   const [messages, setMessages] = useState([]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
@@ -25,13 +27,13 @@ export function useChat() {
       try {
         data = await res.json();
       } catch {
-        throw new Error('Serwer czatu nie odpowiedział poprawnie. Upewnij się, że jest uruchomiony (npm run dev:full).');
+        throw new Error(t('chat.serverBadResponse'));
       }
-      if (!res.ok) throw new Error(data.error || 'Błąd serwera czatu.');
+      if (!res.ok) throw new Error(data.error || t('chat.serverError'));
       if (data.reply) setMessages(next.concat({ role: 'assistant', content: data.reply }));
       if (data.action) setAction(data.action);
     } catch (err) {
-      setError(err.message || 'Nie udało się połączyć z czatem AI.');
+      setError(err.message || t('chat.connectionError'));
     } finally {
       setSending(false);
     }

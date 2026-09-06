@@ -1,4 +1,5 @@
 import { KINDS, SUBJECTS, GOALS, LEVELS } from '../lib/plannerData';
+import { VALUE_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, Chip, ListRow, ConfirmCard, LabelRequired } from '../components/ui';
 import { useLang } from '../lib/useLang';
 
@@ -24,17 +25,17 @@ export default function Deadline({ planner }) {
 
       <LabelRequired label={t('dl.kindLabel')} />
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
-        {KINDS.map((k) => <Chip key={k} label={k} active={state.kind === k} onClick={() => setField('kind', k)} />)}
+        {KINDS.map((k) => <Chip key={k} label={t(VALUE_KEY[k]) || k} active={state.kind === k} onClick={() => setField('kind', k)} />)}
       </div>
 
       <LabelRequired label={t('dl.subjectLabel')} />
       <div onClick={() => setField('subjectsOpen', !state.subjectsOpen)} style={{ height: 54, borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 15px', cursor: 'pointer' }}>
-        <span style={{ fontSize: 15, fontWeight: 650 }}>{state.subject}</span>
+        <span style={{ fontSize: 15, fontWeight: 650 }}>{t(VALUE_KEY[state.subject]) || state.subject}</span>
         <span style={{ fontSize: 10, color: '#8a8a99' }}>▼</span>
       </div>
       {state.subjectsOpen && (
         <div style={{ marginTop: 9, borderRadius: 15, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.09)', overflow: 'hidden' }}>
-          {SUBJECTS.map((s, i) => <ListRow key={s} label={s} active={state.subject === s} onClick={() => planner.update({ subject: s, subjectsOpen: false })} last={i === SUBJECTS.length - 1} />)}
+          {SUBJECTS.map((s, i) => <ListRow key={s} label={t(VALUE_KEY[s]) || s} active={state.subject === s} onClick={() => planner.update({ subject: s, subjectsOpen: false })} last={i === SUBJECTS.length - 1} />)}
         </div>
       )}
 
@@ -85,18 +86,18 @@ export default function Deadline({ planner }) {
 
       <div style={{ fontSize: 15, fontWeight: 700, margin: '22px 0 11px' }}>{t('dl.knowledgeQ')}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-        {LEVELS.map((l, i) => <ListRow key={l} label={(i + 1) + '. ' + l} active={state.level === i + 1} onClick={() => setField('level', i + 1)} last={i === LEVELS.length - 1} />)}
+        {LEVELS.map((l, i) => <ListRow key={l} label={(i + 1) + '. ' + (t(VALUE_KEY[l]) || l)} active={state.level === i + 1} onClick={() => setField('level', i + 1)} last={i === LEVELS.length - 1} />)}
       </div>
       <div style={{ fontSize: 11.5, lineHeight: 1.45, color: '#7a7a8a', marginTop: 10 }}>{t('dl.knowledgeNote')}</div>
 
       <div style={{ fontSize: 15, fontWeight: 700, margin: '22px 0 11px' }}>{t('dl.goalQ')}</div>
       <div onClick={() => setField('goalsOpen', !state.goalsOpen)} style={{ height: 54, borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 15px', cursor: 'pointer' }}>
-        <span style={{ fontSize: 15, fontWeight: 650 }}>{state.goal}</span>
+        <span style={{ fontSize: 15, fontWeight: 650 }}>{t(VALUE_KEY[state.goal]) || state.goal}</span>
         <span style={{ fontSize: 10, color: '#8a8a99' }}>▼</span>
       </div>
       {state.goalsOpen && (
         <div style={{ marginTop: 9, borderRadius: 15, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.09)', overflow: 'hidden' }}>
-          {GOALS.map((g, i) => <ListRow key={g} label={g} active={state.goal === g} onClick={() => planner.update({ goal: g, goalsOpen: false })} last={i === GOALS.length - 1} />)}
+          {GOALS.map((g, i) => <ListRow key={g} label={t(VALUE_KEY[g]) || g} active={state.goal === g} onClick={() => planner.update({ goal: g, goalsOpen: false })} last={i === GOALS.length - 1} />)}
         </div>
       )}
       <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 10 }}>{t('dl.goalNote')}</div>
@@ -114,14 +115,14 @@ export default function Deadline({ planner }) {
       <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)' }}>
         <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('dl.summary')}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 14 }}>
-          <Row label={t('dl.kind')} value={state.kind} />
-          <Row label={t('dl.subject')} value={state.subject} />
+          <Row label={t('dl.kind')} value={t(VALUE_KEY[state.kind]) || state.kind} />
+          <Row label={t('dl.subject')} value={t(VALUE_KEY[state.subject]) || state.subject} />
           <Row label={t('dl.deadline')} value={t('dl.deadlineValue')} />
           <Row label={t('dl.left')} value={state.dateValid ? t('dl.inDays11') : t('dl.datePassed')} />
           <Row label={t('dl.scope')} value={state.topics.length === 1 ? t('dl.oneTopic') : t('dl.nTopics', { n: state.topics.length })} />
           <Row label={t('dl.difficulty')} value={t('dl.difficultyValue', { level: difficultyLabel })} />
           <Row label={t('dl.knowledge')} value={t('dl.knowledgeValue', { level: state.level })} />
-          <Row label={t('dl.goal')} value={t('dl.goalValue', { goal: state.goal })} />
+          <Row label={t('dl.goal')} value={t('dl.goalValue', { goal: t(VALUE_KEY[state.goal]) || state.goal })} />
         </div>
         <div style={{ height: 1, background: 'rgba(255,255,255,.07)', margin: '15px -16px' }} />
         <div style={{ display: 'flex', gap: 9 }}>

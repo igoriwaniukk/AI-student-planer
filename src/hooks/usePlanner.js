@@ -1,11 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLang } from '../lib/useLang';
+import { getCurrentLang, TASK_TEXT_KEY } from '../lib/i18n';
 import {
   TASK_DEFS, PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY,
 } from '../lib/plannerData';
 import { buildSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates } from '../lib/plannerLogic';
 
 function initialState(defaults) {
-  const initialTopics = ['Prawa Mendla', 'Krzyżówki genetyczne', 'Dziedziczenie grup krwi'];
+  const initialTopics = getCurrentLang() === 'en'
+    ? ['Mendelian genetics', 'Genetic crosses', 'Blood type inheritance']
+    : ['Prawa Mendla', 'Krzyżówki genetyczne', 'Dziedziczenie grup krwi'];
   const initialPrepSessions = buildPrepSessions(initialTopics, 'Średni');
   return {
     screen: 'home',
@@ -118,6 +122,9 @@ function initialState(defaults) {
 }
 
 export function usePlanner(defaults) {
+  // Aliased (not `t`) since several functions below use `t` as a local
+  // parameter name for a time string, which would otherwise shadow this.
+  const { t: translate } = useLang();
   const [state, setState] = useState(() => initialState(defaults));
   const timerRef = useRef(null);
   const toastTimerRef = useRef(null);
@@ -233,7 +240,7 @@ export function usePlanner(defaults) {
 
   // ---- block edit (plan screen, manual mode) ----
   function openBlockEdit(id) {
-    update((s) => ({ blockEdit: { id, start: s.schedule[id].start, dur: s.schedule[id].dur, msg: '' } }));
+    update((s) => ({ blockEdit: { id, start: s.schedule[id].start, dur: s.schedule[id].dur, msg: null } }));
   }
   function moveBlockEdit(patch) {
     update((s) => {
@@ -269,7 +276,7 @@ export function usePlanner(defaults) {
       const dur = (s.durOverride && s.durOverride[id]) || d.dur;
       const start = s.startOverride && s.startOverride[id] != null ? s.startOverride[id] : (s.schedule && s.schedule[id] ? s.schedule[id].start : 930);
       return {
-        taskEdit: { id, name: d.title, subject: d.subject, dur, start: fmtLocal(start), priority: d.priority, note: d.note || '' },
+        taskEdit: { id, name: translate(TASK_TEXT_KEY[id]?.title) || d.title, subject: d.subject, dur, start: fmtLocal(start), priority: d.priority, note: d.note || '' },
         editErrors: {}, teToast: false,
       };
     });
@@ -292,10 +299,10 @@ export function usePlanner(defaults) {
       const fm = s.taskEdit;
       if (!fm) return {};
       const errs = {};
-      if (!fm.name || !fm.name.trim()) errs.name = 'Podaj nazwę zadania.';
-      if (!(fm.dur >= 5 && fm.dur <= 240)) errs.dur = 'Czas nauki może wynosić od 5 do 240 minut.';
+      if (!fm.name || !fm.name.trim()) errs.name = translate('taskEdit.nameRequired');
+      if (!(fm.dur >= 5 && fm.dur <= 240)) errs.dur = translate('taskEdit.durRequired');
       const m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec((fm.start || '').trim());
-      if (!m) errs.start = 'Podaj godzinę w formacie 20:00.';
+      if (!m) errs.start = translate('taskEdit.startRequired');
       if (Object.keys(errs).length) return { editErrors: errs };
       const startMin = (+m[1]) * 60 + (+m[2]);
       const name = fm.name.trim();
@@ -353,19 +360,19 @@ export function usePlanner(defaults) {
     update({ rescueTime: label, rescueMoved: false });
   }
   function pickMath(slot) {
-    if (slot === '17:30–18:30') { update({ editMessage: 'Ten czas koliduje z tenisem 18:00–19:00. Wybierz inną godzinę.' }); return; }
-    if (slot === '21:45–22:45') { update({ editMessage: 'Ta zmiana skróciłaby sen. Wybierz wcześniejszą godzinę lub przenieś zadanie.' }); return; }
+    if (slot === '17:30–18:30') { update({ editMessage: translate('block.conflictTennis') }); return; }
+    if (slot === '21:45–22:45') { update({ editMessage: translate('msg.sleepConflictAlt') }); return; }
     update({ mathSlot: slot, editMessage: '' });
   }
   function setBioMin(val) {
-    if (val === 45) { update({ editMessage: 'Blok 45 min nie zmieści się przed dojazdem na tenis. Wybierz krótszy blok.' }); return; }
+    if (val === 45) { update({ editMessage: translate('msg.bioBlockTooLong') }); return; }
     update({ bioMin: val, editMessage: '' });
   }
   function returnEnglish() {
     update((s) => {
       if (s.engToday) return { engToday: false, editMessage: '' };
       const free = s.rescueTime === '2 godz.';
-      if (!free) return { editMessage: 'Dziś nie ma wolnego bloku 30 min przed snem. Zwiększ dostępny czas, aby wrócić z angielskim na dzisiaj.' };
+      if (!free) return { editMessage: translate('msg.noFreeSlotForEnglish') };
       return { engToday: true, editMessage: '' };
     });
   }
@@ -435,7 +442,7 @@ export function usePlanner(defaults) {
     });
   }
   function pickSessionDate(d) {
-    if (d === 'Sobota, 1 sierpnia') { update({ sessionMessage: 'Sesja przygotowawcza musi odbyć się przed sprawdzianem.' }); return; }
+    if (d === 'Sobota, 1 sierpnia') { update({ sessionMessage: translate('msg.sessionBeforeExam') }); return; }
     applySession({ date: d });
   }
   function currentDur(i) {
@@ -447,8 +454,8 @@ export function usePlanner(defaults) {
     return start + '–' + fmtLocal(s + parseInt(durLabel, 10));
   }
   function pickSessionTime(t) {
-    if (t === '18:15') { update({ sessionMessage: 'Ten czas koliduje z tenisem 18:00–19:00. Wybierz inną godzinę.' }); return; }
-    if (t === '22:15') { update({ sessionMessage: 'Ta zmiana skróciłaby sen. Wybierz wcześniejszą godzinę.' }); return; }
+    if (t === '18:15') { update({ sessionMessage: translate('block.conflictTennis') }); return; }
+    if (t === '22:15') { update({ sessionMessage: translate('msg.sleepConflictShort') }); return; }
     applySession({ start: t, time: rangeLocal(t, currentDur(state.sessionIdx)) });
   }
   function pickSessionDur(d) {
@@ -507,8 +514,8 @@ export function usePlanner(defaults) {
     });
   }
   function pickEngTime(t) {
-    if (t === '18:15') { update({ engMessage: 'Ten czas koliduje z istniejącym wydarzeniem. Wybierz inną godzinę.' }); return; }
-    if (t === '22:45') { update({ engMessage: 'Ta zmiana skróciłaby sen. Wybierz wcześniejszą godzinę.' }); return; }
+    if (t === '18:15') { update({ engMessage: translate('msg.engEventConflict') }); return; }
+    if (t === '22:45') { update({ engMessage: translate('msg.sleepConflictShort') }); return; }
     update({ engStart: t, engMessage: '' });
   }
   function cancelEngTime() {

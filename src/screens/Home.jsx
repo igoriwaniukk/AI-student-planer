@@ -3,7 +3,7 @@ import { STATUS_COLOR, GOALS, IMPORTANCE_OPTIONS, WEEK_DAYS, TENIS_DAY } from '.
 import { span, hm, upcomingExams, computeStreak, computeTotalPoints } from '../lib/plannerLogic';
 import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak } from '../lib/store';
-import { DAY_KEY, VALUE_KEY } from '../lib/i18n';
+import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import WeekStrip from '../components/WeekStrip';
 import { Pill, BottomSheet, EnergyPicker, Chip, AnimatedNumber } from '../components/ui';
@@ -103,7 +103,7 @@ function MorningSummaryCard({ state }) {
         {nextExam && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
             <span style={{ fontSize: 13 }}>⏳</span>
-            <span style={{ fontSize: 12.5, color: '#c9c9d6' }}>{t('home.nextExam', { subject: nextExam.subject, when: whenText(nextExam.daysUntil) })}</span>
+            <span style={{ fontSize: 12.5, color: '#c9c9d6' }}>{t('home.nextExam', { subject: t(VALUE_KEY[nextExam.subject]) || nextExam.subject, when: whenText(nextExam.daysUntil) })}</span>
           </div>
         )}
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
@@ -126,10 +126,10 @@ function GoalPromptCard({ planner, exam }) {
     <div style={{ marginTop: 18, padding: 16, borderRadius: 20, background: 'rgba(124,92,255,.08)', border: '1.5px solid rgba(124,92,255,.35)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
         <span style={{ fontSize: 16 }}>🎯</span>
-        <div style={{ fontSize: 13.5, fontWeight: 700 }}>{t('home.examSoon', { subject: exam.subject })}</div>
+        <div style={{ fontSize: 13.5, fontWeight: 700 }}>{t('home.examSoon', { subject: t(VALUE_KEY[exam.subject]) || exam.subject })}</div>
       </div>
       <div style={{ fontSize: 12, color: '#a3a3b3', marginTop: 6, lineHeight: 1.45 }}>
-        {t('home.examSoonDesc', { title: exam.title, when: exam.daysUntil === 1 ? t('cal.tomorrowPill').toLowerCase() : t('cal.inDaysPill', { n: exam.daysUntil }).toLowerCase() })}
+        {t('home.examSoonDesc', { title: t(VALUE_KEY[exam.title]) || exam.title, when: exam.daysUntil === 1 ? t('cal.tomorrowPill').toLowerCase() : t('cal.inDaysPill', { n: exam.daysUntil }).toLowerCase() })}
       </div>
 
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '14px 0 8px' }}>{t('goals.howImportantQ')}</div>
@@ -142,7 +142,7 @@ function GoalPromptCard({ planner, exam }) {
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '14px 0 8px' }}>{t('home.whatGradeWant')}</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         {GOALS.map((g) => (
-          <Chip key={g} label={g} active={grade === g} onClick={() => setGrade(g)} />
+          <Chip key={g} label={t(VALUE_KEY[g]) || g} active={grade === g} onClick={() => setGrade(g)} />
         ))}
       </div>
 
@@ -262,11 +262,11 @@ function NextSessionCard({ planner }) {
           {st.status === 'paused' ? t('home.paused') : span(b.start, b.start + b.dur)}
         </span>
       </div>
-      <div style={{ fontSize: 13, fontWeight: 650, color: d.color, marginTop: 14 }}>{d.subject}</div>
-      <div style={{ fontSize: 22, fontWeight: 750, lineHeight: 1.22, letterSpacing: '-.02em', marginTop: 8 }}>{d.title}</div>
+      <div style={{ fontSize: 13, fontWeight: 650, color: d.color, marginTop: 14 }}>{t(VALUE_KEY[d.subject]) || d.subject}</div>
+      <div style={{ fontSize: 22, fontWeight: 750, lineHeight: 1.22, letterSpacing: '-.02em', marginTop: 8 }}>{t(TASK_TEXT_KEY[d.id]?.title) || d.title}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginTop: 12 }}>
         <Pill text={b.dur + ' min'} color="#2ee6c5" bg="rgba(46,230,197,.13)" />
-        {d.deadline && <Pill text={d.deadline} color="#f5a524" bg="rgba(245,165,36,.13)" />}
+        {d.deadline && <Pill text={t(TASK_TEXT_KEY[d.id]?.deadline) || d.deadline} color="#f5a524" bg="rgba(245,165,36,.13)" />}
       </div>
       {running ? (
         <>
@@ -302,7 +302,7 @@ function TodayList({ planner }) {
       <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 11, borderRadius: 14, background: st.status === 'in_progress' ? 'rgba(124,92,255,.08)' : 'rgba(255,255,255,.03)', border: st.status === 'in_progress' ? '1.5px solid rgba(124,92,255,.5)' : '1px solid rgba(255,255,255,.06)' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 11, color: '#8a8a99' }}>{span(b.start, b.start + b.dur)}</div>
-          <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{d.short}</div>
+          <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{t(TASK_TEXT_KEY[d.id]?.short) || d.short}</div>
         </div>
         <span style={{ fontSize: 10.5, fontWeight: 650, color: STATUS_COLOR[st.status], padding: '5px 9px', borderRadius: 8, background: 'rgba(255,255,255,.06)' }}>{t('status.' + st.status)}</span>
       </div>
@@ -315,7 +315,7 @@ function TodayList({ planner }) {
       <div key={'x' + d.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 11, borderRadius: 14, background: 'rgba(255,255,255,.025)', border: '1px solid rgba(255,255,255,.06)' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 11, color: '#8a8a99' }}>{st.status === 'moved' ? t('home.movedTo', { time: planner.state.engStart }) : t('home.notInPlan')}</div>
-          <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{d.short}</div>
+          <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{t(TASK_TEXT_KEY[d.id]?.short) || d.short}</div>
         </div>
         <span style={{ fontSize: 10.5, fontWeight: 650, color: STATUS_COLOR[st.status], padding: '5px 9px', borderRadius: 8, background: 'rgba(255,255,255,.06)' }}>{t('status.' + st.status)}</span>
       </div>
@@ -334,7 +334,7 @@ function FinishSheet({ planner }) {
   const KNOW = ['Nie umiem', 'Częściowo umiem', 'Dobrze umiem', 'Opanowane'];
   return (
     <BottomSheet>
-      <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{t('home.finishSession', { title: d.title })}</div>
+      <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{t('home.finishSession', { title: t(TASK_TEXT_KEY[d.id]?.title) || d.title })}</div>
       <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 6 }}>{t('home.finishSessionSub')}</div>
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('home.actualTime')}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
@@ -345,14 +345,14 @@ function FinishSheet({ planner }) {
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('home.howHard')}</div>
       <div style={{ display: 'flex', gap: 9 }}>
         {HARD.map((x) => (
-          <div key={x} onClick={() => update({ finishHard: x })} style={{ flex: 1, height: 44, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, cursor: 'pointer', background: state.finishHard === x ? 'rgba(124,92,255,.14)' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (state.finishHard === x ? 'rgba(124,92,255,.6)' : 'rgba(255,255,255,.09)'), color: state.finishHard === x ? '#e6dfff' : '#c9c9d6' }}>{x}</div>
+          <div key={x} onClick={() => update({ finishHard: x })} style={{ flex: 1, height: 44, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, cursor: 'pointer', background: state.finishHard === x ? 'rgba(124,92,255,.14)' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (state.finishHard === x ? 'rgba(124,92,255,.6)' : 'rgba(255,255,255,.09)'), color: state.finishHard === x ? '#e6dfff' : '#c9c9d6' }}>{t(VALUE_KEY[x]) || x}</div>
         ))}
       </div>
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('home.howWell')}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
         {KNOW.map((x) => (
           <div key={x} onClick={() => update({ finishKnow: x })} style={{ padding: '14px 15px', fontSize: 14, fontWeight: state.finishKnow === x ? 700 : 550, cursor: 'pointer', color: state.finishKnow === x ? '#e6dfff' : '#c9c9d6', background: state.finishKnow === x ? 'rgba(124,92,255,.14)' : 'rgba(255,255,255,.03)', borderRadius: 13, border: '1px solid rgba(255,255,255,.06)', display: 'flex', justifyContent: 'space-between' }}>
-            {x}{state.finishKnow === x && <span style={{ color: '#a58cff' }}>✓</span>}
+            {t(VALUE_KEY[x]) || x}{state.finishKnow === x && <span style={{ color: '#a58cff' }}>✓</span>}
           </div>
         ))}
       </div>

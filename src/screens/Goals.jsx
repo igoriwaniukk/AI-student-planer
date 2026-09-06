@@ -29,11 +29,11 @@ function ExamGoalCard({ exam, goal, progressMinutes, atRisk, onGrade, onImportan
   return (
     <Card>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: exam.color }}>{exam.subject.toUpperCase()}</span>
+        <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: exam.color }}>{(t(VALUE_KEY[exam.subject]) || exam.subject).toUpperCase()}</span>
         <Pill text={exam.daysUntil === 1 ? t('cal.tomorrowPill') : t('cal.inDaysPill', { n: exam.daysUntil })} color="#f5a524" bg="rgba(245,165,36,.15)" />
       </div>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 10 }}>
-        <div style={{ fontSize: 16, fontWeight: 700, marginTop: 6 }}>{exam.title}</div>
+        <div style={{ fontSize: 16, fontWeight: 700, marginTop: 6 }}>{t(VALUE_KEY[exam.title]) || exam.title}</div>
         {onRemove && <span onClick={onRemove} style={{ fontSize: 12, fontWeight: 650, color: '#8a8a99', cursor: 'pointer', marginTop: 8 }}>{t('goals.remove')}</span>}
       </div>
 
@@ -74,7 +74,7 @@ function ExamGoalCard({ exam, goal, progressMinutes, atRisk, onGrade, onImportan
                 border: '1px solid ' + (active ? 'rgba(124,92,255,.5)' : 'rgba(255,255,255,.07)'),
               }}
             >
-              {g}
+              {t(VALUE_KEY[g]) || g}
               {active && <span style={{ color: '#a58cff' }}>✓</span>}
             </div>
           );
@@ -105,7 +105,7 @@ function AddGoalSheet({ onCancel, onSave }) {
 
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('goals.subjectLabel')}</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {SUBJECTS.map((s) => <Chip key={s} label={s} active={subject === s} onClick={() => setSubject(s)} />)}
+        {SUBJECTS.map((s) => <Chip key={s} label={t(VALUE_KEY[s]) || s} active={subject === s} onClick={() => setSubject(s)} />)}
       </div>
 
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('goals.nameLabel')}</div>
@@ -130,7 +130,7 @@ function AddGoalSheet({ onCancel, onSave }) {
 
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('goals.whatGradeQ')}</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {GOALS.map((g) => <Chip key={g} label={g} active={grade === g} onClick={() => setGrade(g)} />)}
+        {GOALS.map((g) => <Chip key={g} label={t(VALUE_KEY[g]) || g} active={grade === g} onClick={() => setGrade(g)} />)}
       </div>
 
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('goals.howMuchQ')}</div>

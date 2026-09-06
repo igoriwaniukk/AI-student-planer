@@ -1,5 +1,6 @@
 import { REASON_OPTIONS, RESCUE_TIME_OPTIONS, PRIO_STYLE } from '../lib/plannerData';
 import { durOf, startOf, span } from '../lib/plannerLogic';
+import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import { useLang } from '../lib/useLang';
 
@@ -31,7 +32,7 @@ export default function Rescue({ planner }) {
       <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('rescue.whatChanged')}</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
         {REASON_OPTIONS.map((r) => (
-          <Chip key={r} label={r} active={state.reasons.includes(r)} onClick={() => toggleReason(r)} />
+          <Chip key={r} label={t(VALUE_KEY[r]) || r} active={state.reasons.includes(r)} onClick={() => toggleReason(r)} />
         ))}
       </div>
 
@@ -47,13 +48,13 @@ export default function Rescue({ planner }) {
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: d.color, textTransform: 'uppercase' }}>{d.subject}</span>
-                    <span style={{ fontSize: 10, fontWeight: 650, padding: '3px 8px', borderRadius: 7, color: ps.color, background: ps.bg }}>{d.priority}</span>
+                    <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: d.color, textTransform: 'uppercase' }}>{t(VALUE_KEY[d.subject]) || d.subject}</span>
+                    <span style={{ fontSize: 10, fontWeight: 650, padding: '3px 8px', borderRadius: 7, color: ps.color, background: ps.bg }}>{t(VALUE_KEY[d.priority]) || d.priority}</span>
                   </div>
-                  <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3, marginTop: 6 }}>{d.title}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3, marginTop: 6 }}>{t(TASK_TEXT_KEY[d.id]?.title) || d.title}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', marginTop: 9 }}>
                     <span style={{ fontSize: 11.5, color: '#8a8a99' }}>{span(start, start + dur)} · {dur} min</span>
-                    {d.deadline && <span style={{ fontSize: 10.5, fontWeight: 650, color: '#f5a524', padding: '4px 8px', borderRadius: 7, background: 'rgba(245,165,36,.13)', border: '1px solid rgba(245,165,36,.28)' }}>{d.deadline}</span>}
+                    {d.deadline && <span style={{ fontSize: 10.5, fontWeight: 650, color: '#f5a524', padding: '4px 8px', borderRadius: 7, background: 'rgba(245,165,36,.13)', border: '1px solid rgba(245,165,36,.28)' }}>{t(TASK_TEXT_KEY[d.id]?.deadline) || d.deadline}</span>}
                   </div>
                   <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 8 }}>{t('status.' + st.status)}</div>
                 </div>
@@ -80,7 +81,7 @@ export default function Rescue({ planner }) {
       <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', lineHeight: 1.3, margin: '22px 0 12px' }}>{t('rescue.timeLeftQ')}</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
         {RESCUE_TIME_OPTIONS.map((rt) => (
-          <Chip key={rt} label={rt} active={state.rescueTime === rt} onClick={() => setRescueTime(rt)} />
+          <Chip key={rt} label={t(VALUE_KEY[rt]) || rt} active={state.rescueTime === rt} onClick={() => setRescueTime(rt)} />
         ))}
       </div>
 
@@ -115,8 +116,8 @@ export default function Rescue({ planner }) {
         <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('rescue.summary')}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 14 }}>
           <Row label={t('rescue.remainingTasks')} value={t('rescue.remainingTasksValue')} />
-          <Row label={t('rescue.availableStudy')} value={state.rescueTime} />
-          <Row label={t('rescue.energy')} value={t('rescue.energyValue', { level: state.rescueEnergy })} />
+          <Row label={t('rescue.availableStudy')} value={t(VALUE_KEY[state.rescueTime]) || state.rescueTime} />
+          <Row label={t('rescue.energy')} value={t('rescue.energyValue', { level: t(VALUE_KEY[state.rescueEnergy]) || state.rescueEnergy })} />
           <Row label={t('rescue.tennis')} value={t('rescue.tennisUnchanged')} color="#8fbaff" />
           <Row label={t('rescue.sleepLabel')} value={t('rescue.sleepValue')} color="#8fbaff" />
         </div>
