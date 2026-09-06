@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BackButton, SectionTitle, Pill, BottomSheet, Chip } from '../components/ui';
+import { BackButton, SectionTitle, Pill, BottomSheet, Chip, ProgressBar } from '../components/ui';
 import { GOALS, IMPORTANCE_OPTIONS, SUBJECTS } from '../lib/plannerData';
 import { upcomingExams, hm, examProgressMinutes, examAtRisk } from '../lib/plannerLogic';
 import { VALUE_KEY } from '../lib/i18n';
@@ -41,9 +41,7 @@ function ExamGoalCard({ exam, goal, progressMinutes, atRisk, onGrade, onImportan
         <span style={{ fontSize: 11.5, color: '#9a9aab' }}>{t('goals.studyProgress')}</span>
         <span style={{ fontSize: 11.5, fontWeight: 650, color: '#2ee6c5' }}>{hm(progressMinutes)} / {hm(goal.studyMinutes)}</span>
       </div>
-      <div style={{ marginTop: 7, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
-        <div style={{ width: pct + '%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#7c5cff,#2ee6c5)', transition: 'width .5s ease' }} />
-      </div>
+      <ProgressBar pct={pct} style={{ marginTop: 7 }} />
 
       {atRisk && (
         <div style={{ marginTop: 12, padding: 11, borderRadius: 13, background: 'rgba(245,165,36,.08)', border: '1px solid rgba(245,165,36,.3)', fontSize: 12, lineHeight: 1.45, color: '#f7c46c' }}>
@@ -176,9 +174,11 @@ export default function Goals({ planner, weeklyCapacity, setWeeklyCapacity }) {
           <span style={{ fontSize: 19, fontWeight: 750, color: overCapacity ? '#f5a524' : '#f4f4f7' }}>{hm(weekGoalMinutes)}</span>
           <span style={{ fontSize: 12.5, color: '#8a8a99' }}>{t('goals.ofLimit', { limit: hm(weeklyCapacity) })}</span>
         </div>
-        <div style={{ marginTop: 9, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
-          <div style={{ width: Math.min(100, Math.round((weekGoalMinutes / weeklyCapacity) * 100)) + '%', height: '100%', borderRadius: 99, background: overCapacity ? '#f5a524' : 'linear-gradient(90deg,#7c5cff,#2ee6c5)', transition: 'width .5s ease' }} />
-        </div>
+        <ProgressBar
+          pct={Math.min(100, Math.round((weekGoalMinutes / weeklyCapacity) * 100))}
+          fill={overCapacity ? '#f5a524' : undefined}
+          style={{ marginTop: 9 }}
+        />
         {overCapacity && (
           <div style={{ fontSize: 12, lineHeight: 1.45, color: '#f7c46c', marginTop: 10 }}>{t('goals.overCapacityShort')}</div>
         )}

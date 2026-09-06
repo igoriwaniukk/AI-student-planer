@@ -38,8 +38,9 @@ const TABS = [
   },
 ];
 
-export default function TabBar({ screen, onNavigate, onFabClick }) {
+export default function TabBar({ screen, onNavigate, onFabClick, fabActive = false }) {
   const { t } = useLang();
+  const activeIndex = TABS.findIndex((tab) => !tab.fab && tab.screens.includes(screen));
   return (
     <div style={{
       position: 'absolute', left: 0, right: 0, bottom: 0, height: 88, padding: '10px 12px 0',
@@ -47,6 +48,16 @@ export default function TabBar({ screen, onNavigate, onFabClick }) {
       display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', zIndex: 40,
     }}
     >
+      {activeIndex >= 0 && (
+        <div
+          style={{
+            position: 'absolute', bottom: 6, width: 22, height: 3, borderRadius: 99,
+            background: 'linear-gradient(90deg,#8b6dff,#6d4dff)',
+            left: `calc(${activeIndex} * 20% + 10% - 11px)`,
+            transition: 'left .25s ease',
+          }}
+        />
+      )}
       {TABS.map((tab) => {
         if (tab.fab) {
           return (
@@ -60,7 +71,14 @@ export default function TabBar({ screen, onNavigate, onFabClick }) {
                   display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
                 }}
               >
-                <span style={{ fontSize: 27, fontWeight: 400, color: '#fff', lineHeight: 1, marginTop: -2 }}>+</span>
+                <span
+                  style={{
+                    fontSize: 27, fontWeight: 400, color: '#fff', lineHeight: 1, marginTop: -2,
+                    display: 'inline-block', transform: fabActive ? 'rotate(45deg)' : 'rotate(0deg)', transition: 'transform .25s ease',
+                  }}
+                >
+                  +
+                </span>
               </div>
             </div>
           );

@@ -1,7 +1,7 @@
 import { HARD_OPTIONS, KNOW_OPTIONS, DAY_HARD_OPTIONS } from '../lib/plannerData';
 import { hm, toMinutes, fmt, zad } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
-import { BackButton, StickyFooter, PrimaryButton, EnergyPicker, OptionRow, ListRow, Chip, BottomSheet } from '../components/ui';
+import { BackButton, StickyFooter, PrimaryButton, EnergyPicker, OptionRow, ListRow, Chip, BottomSheet, Confetti } from '../components/ui';
 import { useLang } from '../lib/useLang';
 
 export default function Summary({ planner, recordStudyDay = () => {} }) {
@@ -241,31 +241,6 @@ function EngTimeSheet({ planner }) {
         <div onClick={saveEngTime} style={{ flex: 1.3, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>{t('sum.saveChanges')}</div>
       </div>
     </BottomSheet>
-  );
-}
-
-const CONFETTI_EMOJI = ['🎉', '⭐', '🔥', '✨', '🏆', '💜'];
-
-function Confetti() {
-  const particles = Array.from({ length: 14 }, (_, i) => {
-    const angle = (i / 14) * Math.PI * 2;
-    const dist = 80 + (i % 3) * 30;
-    return {
-      id: i,
-      emoji: CONFETTI_EMOJI[i % CONFETTI_EMOJI.length],
-      dx: Math.round(Math.cos(angle) * dist),
-      dy: Math.round(Math.sin(angle) * dist - 40),
-      delay: (i % 5) * 0.03,
-    };
-  });
-  return (
-    <div style={{ position: 'absolute', top: 96, left: '50%', width: 0, height: 0, pointerEvents: 'none' }}>
-      {particles.map((p) => (
-        <span key={p.id} style={{ position: 'absolute', fontSize: 20, '--dx': p.dx + 'px', '--dy': p.dy + 'px', animation: `confettiBurst 1.1s ease-out ${p.delay}s both` }}>
-          {p.emoji}
-        </span>
-      ))}
-    </div>
   );
 }
 

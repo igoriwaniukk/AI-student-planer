@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
-import { STATUS_COLOR, GOALS, IMPORTANCE_OPTIONS, WEEK_DAYS, TENIS_DAY } from '../lib/plannerData';
+import { useEffect, useRef, useState } from 'react';
+import { GOALS, IMPORTANCE_OPTIONS, WEEK_DAYS, TENIS_DAY } from '../lib/plannerData';
 import { span, hm, upcomingExams, computeStreak, computeTotalPoints, dayInfo } from '../lib/plannerLogic';
 import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import WeekStrip from '../components/WeekStrip';
-import { Pill, BottomSheet, EnergyPicker, Chip, AnimatedNumber } from '../components/ui';
+import { Pill, BottomSheet, EnergyPicker, Chip, AnimatedNumber, Confetti, StatusPill, ProgressBar } from '../components/ui';
 
 const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
 
@@ -16,7 +16,10 @@ function AchievementModal({ achievement, onClose }) {
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(6,6,10,.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 340, padding: 28, borderRadius: 24, background: '#101018', border: '1px solid rgba(255,255,255,.1)', textAlign: 'center', animation: 'stepIconPop .4s cubic-bezier(.34,1.56,.64,1) both' }}>
-        <div style={{ fontSize: 44, marginBottom: 14 }}>{achievement.icon}</div>
+        <div style={{ position: 'relative' }}>
+          <div style={{ fontSize: 44, marginBottom: 14 }}>{achievement.icon}</div>
+          <Confetti top={20} />
+        </div>
         <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.1em', color: '#f5a524' }}>{t('home.newAchievement')}</div>
         <div style={{ fontSize: 19, fontWeight: 750, marginTop: 8 }}>{t(achievement.titleKey)}</div>
         <div style={{ fontSize: 13, color: '#a3a3b3', marginTop: 8, lineHeight: 1.5 }}>{t(achievement.descKey)}</div>
@@ -63,12 +66,29 @@ function dayLoad(state, dayNum) {
 // number with the calendar buried further down the page.
 function StreakCard({ streak, selectedDay, onSelectDay }) {
   const { t } = useLang();
+  // Bumps the flame with a bigger, one-shot bounce right when the streak
+  // ticks up, on top of its constant gentle pulse — a small reward beat
+  // instead of the count just silently changing.
+  const [bumping, setBumping] = useState(false);
+  const prevStreak = useRef(streak);
+
+  useEffect(() => {
+    if (streak > prevStreak.current) {
+      setBumping(true);
+      const id = setTimeout(() => setBumping(false), 700);
+      prevStreak.current = streak;
+      return () => clearTimeout(id);
+    }
+    prevStreak.current = streak;
+    return undefined;
+  }, [streak]);
+
   return (
     <div style={{ marginTop: 14, padding: '13px 15px 10px', borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.streak')}</span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 999, background: 'rgba(245,165,36,.14)', border: '1px solid rgba(245,165,36,.3)' }}>
-          <span style={{ fontSize: 12.5, animation: streak > 0 ? 'pulseGlow 1.8s ease-in-out infinite' : 'none' }}>🔥</span>
+          <span style={{ fontSize: 12.5, animation: bumping ? 'streakBump .7s ease' : (streak > 0 ? 'pulseGlow 1.8s ease-in-out infinite' : 'none') }}>🔥</span>
           <span style={{ fontSize: 13, fontWeight: 750, fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={streak} /></span>
         </div>
       </div>
@@ -330,7 +350,7 @@ function TodayList({ planner }) {
           <div style={{ fontSize: 11, color: '#8a8a99' }}>{span(b.start, b.start + b.dur)}</div>
           <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{t(TASK_TEXT_KEY[d.id]?.short) || d.short}</div>
         </div>
-        <span style={{ fontSize: 10.5, fontWeight: 650, color: STATUS_COLOR[st.status], padding: '5px 9px', borderRadius: 8, background: 'rgba(255,255,255,.06)' }}>{t('status.' + st.status)}</span>
+        <StatusPill status={st.status} />
       </div>
     );
   });
@@ -343,7 +363,7 @@ function TodayList({ planner }) {
           <div style={{ fontSize: 11, color: '#8a8a99' }}>{st.status === 'moved' ? t('home.movedTo', { time: planner.state.engStart }) : t('home.notInPlan')}</div>
           <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{t(TASK_TEXT_KEY[d.id]?.short) || d.short}</div>
         </div>
-        <span style={{ fontSize: 10.5, fontWeight: 650, color: STATUS_COLOR[st.status], padding: '5px 9px', borderRadius: 8, background: 'rgba(255,255,255,.06)' }}>{t('status.' + st.status)}</span>
+        <StatusPill status={st.status} />
       </div>
     );
   });
@@ -438,7 +458,7 @@ function EnergyHistory({ energyLog }) {
   );
 }
 
-export default function Home({ planner, studentName, energyLog = [], logEnergy = () => {}, studyHistory = {}, recurringActivities = [] }) {
+export default function Home({ planner, studentName, profilePhoto, energyLog = [], logEnergy = () => {}, studyHistory = {}, recurringActivities = [] }) {
   const { t } = useLang();
   const { state, ts, openEnergySheet } = planner;
   const goalExam = planner.nextGoalPrompt();
@@ -487,9 +507,13 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4, paddingRight: 46 }}>
           <div
             onClick={() => planner.go('profile')}
-            style={{ width: 38, height: 38, borderRadius: '50%', background: 'linear-gradient(150deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, letterSpacing: '.02em', cursor: 'pointer' }}
+            style={{
+              width: 38, height: 38, borderRadius: '50%', overflow: 'hidden', cursor: 'pointer',
+              background: profilePhoto ? `center/cover no-repeat url(${profilePhoto})` : 'linear-gradient(150deg,#8b6dff,#6d4dff)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, letterSpacing: '.02em',
+            }}
           >
-            {initials}
+            {!profilePhoto && initials}
           </div>
         </div>
       </div>
@@ -543,9 +567,7 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
             <div style={{ fontSize: 19, fontWeight: 750, color: '#2ee6c5' }}>{pct}%</div>
           </div>
           <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 3 }}>{t('home.sessionsDone', { done: doneCount, total: totalCount, word: t(totalCount === 1 ? 'home.sessionsCompletedOne' : 'home.sessionsCompletedMany') })}</div>
-          <div style={{ marginTop: 12, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
-            <div style={{ width: pct + '%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#7c5cff,#2ee6c5)', transition: 'width .5s ease' }} />
-          </div>
+          <ProgressBar pct={pct} style={{ marginTop: 12 }} />
         </div>
       )}
 
@@ -594,9 +616,7 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
           <div style={{ fontSize: 19, fontWeight: 750, color: '#2ee6c5' }}>60%</div>
         </div>
         <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 6 }}>{t('home.blocksdone')}</div>
-        <div style={{ marginTop: 11, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
-          <div style={{ width: '60%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#7c5cff,#2ee6c5)', transition: 'width .5s ease' }} />
-        </div>
+        <ProgressBar pct={60} style={{ marginTop: 11 }} />
       </div>
 
       <FinishSheet planner={planner} />

@@ -62,6 +62,34 @@ a { color: #8b6dff; }
   0% { transform: translate(0, 0) scale(1); opacity: 1; }
   100% { transform: translate(var(--dx), var(--dy)) scale(.4); opacity: 0; }
 }
+@keyframes streakBump {
+  0% { transform: scale(1) rotate(0deg); }
+  35% { transform: scale(1.45) rotate(-8deg); }
+  60% { transform: scale(1.15) rotate(6deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+@keyframes checkDraw {
+  from { stroke-dashoffset: 16; opacity: 0; }
+  30% { opacity: 1; }
+  to { stroke-dashoffset: 0; opacity: 1; }
+}
+@keyframes chipPop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+@keyframes shimmerSweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(220%); }
+}
+@keyframes weekSlideIn {
+  from { opacity: 0; transform: translateX(var(--slide-from, 14px)); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes spinRing {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 
 .card {
   border-radius: 18px;

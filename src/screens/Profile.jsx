@@ -1,11 +1,65 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { hm, weeklyReview, upcomingExams, computeStreak } from '../lib/plannerLogic';
 import { STUDY_TIME_OPTIONS, PREF_OPTIONS, PRIORITY_SUBJECT_OPTIONS } from '../lib/plannerData';
 import { VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { useCustomReminders, resetAppData } from '../lib/store';
 import { usePushNotifications } from '../hooks/usePushNotifications';
+import { resizeImageToDataURL } from '../lib/image';
 import { Chip, EnergyPicker } from '../components/ui';
+
+// Clicking the avatar (or its camera badge) opens the device's photo/file
+// picker; the chosen image is downscaled client-side (see lib/image.js)
+// before being stored, so a multi-MB phone photo doesn't blow up
+// localStorage. The small ✕ badge clears it back to the initials avatar.
+function AvatarPicker({ photo, setPhoto, initials }) {
+  const { t } = useLang();
+  const inputRef = useRef(null);
+  const [error, setError] = useState('');
+
+  async function handleFile(e) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setError('');
+    try {
+      setPhoto(await resizeImageToDataURL(file));
+    } catch {
+      setError(t('profile.photoError'));
+    }
+  }
+
+  return (
+    <div style={{ position: 'relative', flex: 'none' }}>
+      <div
+        onClick={() => inputRef.current?.click()}
+        style={{
+          width: 58, height: 58, borderRadius: '50%', cursor: 'pointer', overflow: 'hidden',
+          background: photo ? `center/cover no-repeat url(${photo})` : 'linear-gradient(150deg,#8b6dff,#6d4dff)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700,
+        }}
+      >
+        {!photo && initials}
+      </div>
+      <div
+        onClick={() => inputRef.current?.click()}
+        style={{ position: 'absolute', bottom: -2, right: -2, width: 22, height: 22, borderRadius: '50%', background: '#7c5cff', border: '2px solid #08080c', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 11 }}
+      >
+        📷
+      </div>
+      {photo && (
+        <span
+          onClick={(e) => { e.stopPropagation(); setPhoto(null); }}
+          style={{ position: 'absolute', top: -4, right: -4, width: 18, height: 18, borderRadius: '50%', background: '#1a1a24', border: '1px solid rgba(255,255,255,.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 10, color: '#c9c9d6' }}
+        >
+          ✕
+        </span>
+      )}
+      <input ref={inputRef} type="file" accept="image/*" onChange={handleFile} style={{ display: 'none' }} />
+      {error && <div style={{ position: 'absolute', top: 64, left: 0, width: 170, fontSize: 10.5, color: '#ff9a9a' }}>{error}</div>}
+    </div>
+  );
+}
 
 function NameField({ studentName, setStudentName }) {
   const { t } = useLang();
@@ -188,7 +242,7 @@ function LanguageCard() {
   );
 }
 
-export default function Profile({ studentName, setStudentName, schoolPlan, activities, planner, profileDefaults, setProfileDefaults, studyHistory }) {
+export default function Profile({ studentName, setStudentName, profilePhoto, setProfilePhoto, schoolPlan, activities, planner, profileDefaults, setProfileDefaults, studyHistory }) {
   const { t } = useLang();
   const parts = (studentName || 'Ty').trim().split(/\s+/);
   const initials = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
@@ -196,7 +250,7 @@ export default function Profile({ studentName, setStudentName, schoolPlan, activ
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 8 }}>
-        <div style={{ width: 58, height: 58, flex: 'none', borderRadius: '50%', background: 'linear-gradient(150deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700 }}>{initials}</div>
+        <AvatarPicker photo={profilePhoto} setPhoto={setProfilePhoto} initials={initials} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <NameField studentName={studentName} setStudentName={setStudentName} />
           <div style={{ fontSize: 12.5, color: '#8a8a99', marginTop: 2 }}>{t('profile.defaultEnergy', { energy: t(VALUE_KEY[planner.state.energy]) || planner.state.energy })}</div>

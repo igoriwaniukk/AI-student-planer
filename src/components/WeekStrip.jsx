@@ -28,6 +28,7 @@ export default function WeekStrip({
   const setWeekOffset = onOffsetChange ?? setInternalOffset;
   const dragStartX = useRef(null);
   const dragged = useRef(false);
+  const [slideDir, setSlideDir] = useState(1);
 
   const baseWeek = weekOffset ? WEEK_DAYS.map((d) => ({ ...d, num: d.num + weekOffset * 7 })) : WEEK_DAYS;
   const countdownSet = examDay != null
@@ -50,7 +51,11 @@ export default function WeekStrip({
     if (dragStartX.current == null) return;
     const dx = e.clientX - dragStartX.current;
     dragStartX.current = null;
-    if (Math.abs(dx) > SWIPE_THRESHOLD) setWeekOffset(weekOffset + (dx < 0 ? 1 : -1));
+    if (Math.abs(dx) > SWIPE_THRESHOLD) {
+      const dir = dx < 0 ? 1 : -1;
+      setSlideDir(dir);
+      setWeekOffset(weekOffset + dir);
+    }
   }
   function handleClickCapture(e) {
     if (dragged.current) {
@@ -63,7 +68,11 @@ export default function WeekStrip({
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: topMargin }}>
         <div
-          style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 3, flex: 1, touchAction: pageable ? 'pan-y' : undefined }}
+          key={pageable ? weekOffset : undefined}
+          style={{
+            display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 3, flex: 1, touchAction: pageable ? 'pan-y' : undefined,
+            animation: pageable ? 'weekSlideIn .28s ease' : 'none', '--slide-from': (slideDir * 16) + 'px',
+          }}
           {...(pageable ? {
             onPointerDown: handlePointerDown,
             onPointerMove: handlePointerMove,

@@ -17,7 +17,7 @@ import Summary from './screens/Summary';
 import Profile from './screens/Profile';
 import Onboarding from './screens/Onboarding';
 import {
-  useStudentName, useSchoolPlan, useActivities, useProfileDefaults,
+  useStudentName, useProfilePhoto, useSchoolPlan, useActivities, useProfileDefaults,
   useWeeklyCapacity, useEnergyLog, useStudyHistory, useRecurringActivities, useLanguage,
 } from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
@@ -29,7 +29,7 @@ const TAB_SCREENS = new Set(['home', 'calendar', 'goals', 'profile']);
 // Mounted only once onboarding is done, so usePlanner's initial state (a lazy
 // useState initializer, which only ever runs on first mount) picks up the
 // profile defaults onboarding just saved instead of whatever was there before.
-function MainApp({ name, setName, schoolPlan, activities, profileDefaults, setProfileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities }) {
+function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, activities, profileDefaults, setProfileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities }) {
   const planner = usePlanner(profileDefaults);
   const { state } = planner;
   const screen = state.screen;
@@ -42,6 +42,7 @@ function MainApp({ name, setName, schoolPlan, activities, profileDefaults, setPr
         <Home
           planner={planner}
           studentName={name}
+          profilePhoto={profilePhoto}
           energyLog={energyLog}
           logEnergy={logEnergy}
           studyHistory={studyHistory}
@@ -61,6 +62,8 @@ function MainApp({ name, setName, schoolPlan, activities, profileDefaults, setPr
         <Profile
           studentName={name}
           setStudentName={setName}
+          profilePhoto={profilePhoto}
+          setProfilePhoto={setProfilePhoto}
           schoolPlan={schoolPlan}
           activities={activities}
           planner={planner}
@@ -93,13 +96,14 @@ function MainApp({ name, setName, schoolPlan, activities, profileDefaults, setPr
         setRecurringActivities={setRecurringActivities}
       />
 
-      {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} onFabClick={() => setQuickAddOpen(true)} />}
+      {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} onFabClick={() => setQuickAddOpen(true)} fabActive={quickAddOpen} />}
     </div>
   );
 }
 
 export default function App() {
   const [name, setName] = useStudentName();
+  const [profilePhoto, setProfilePhoto] = useProfilePhoto();
   const [schoolPlan, setSchoolPlan] = useSchoolPlan();
   const [activities, setActivities] = useActivities();
   const [profileDefaults, setProfileDefaults] = useProfileDefaults();
@@ -138,6 +142,8 @@ export default function App() {
       <MainApp
         name={name}
         setName={setName}
+        profilePhoto={profilePhoto}
+        setProfilePhoto={setProfilePhoto}
         schoolPlan={schoolPlan}
         activities={activities}
         profileDefaults={profileDefaults}

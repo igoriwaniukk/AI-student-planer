@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLang } from '../lib/useLang';
 import { VALUE_KEY } from '../lib/i18n';
+import { STATUS_COLOR } from '../lib/plannerData';
 
 // Animates a numeric value counting up (or down) to its new value whenever
 // it changes, instead of jumping instantly — used for streak/points badges.
@@ -40,10 +41,38 @@ export function Chip({ label, active, onClick, style }) {
         background: active ? 'rgba(124,92,255,.14)' : 'rgba(255,255,255,.035)',
         border: '1.5px solid ' + (active ? 'rgba(124,92,255,.6)' : 'rgba(255,255,255,.1)'),
         color: active ? '#e6dfff' : '#c9c9d6',
+        animation: active ? 'chipPop .22s ease' : 'none',
         ...style,
       }}
     >
       {label}
+    </div>
+  );
+}
+
+const CONFETTI_EMOJI = ['🎉', '⭐', '🔥', '✨', '🏆', '💜'];
+
+// A one-shot burst of emoji particles flying outward from the trigger point
+// — used for celebratory moments (day summary, unlocking an achievement).
+export function Confetti({ top = 96 }) {
+  const particles = Array.from({ length: 14 }, (_, i) => {
+    const angle = (i / 14) * Math.PI * 2;
+    const dist = 80 + (i % 3) * 30;
+    return {
+      id: i,
+      emoji: CONFETTI_EMOJI[i % CONFETTI_EMOJI.length],
+      dx: Math.round(Math.cos(angle) * dist),
+      dy: Math.round(Math.sin(angle) * dist - 40),
+      delay: (i % 5) * 0.03,
+    };
+  });
+  return (
+    <div style={{ position: 'absolute', top, left: '50%', width: 0, height: 0, pointerEvents: 'none' }}>
+      {particles.map((p) => (
+        <span key={p.id} style={{ position: 'absolute', fontSize: 20, '--dx': p.dx + 'px', '--dy': p.dy + 'px', animation: `confettiBurst 1.1s ease-out ${p.delay}s both` }}>
+          {p.emoji}
+        </span>
+      ))}
     </div>
   );
 }
@@ -87,6 +116,36 @@ export function Pill({ text, color, bg }) {
   return (
     <span style={{ fontSize: 10.5, fontWeight: 650, color, padding: '3px 7px', borderRadius: 7, background: bg }}>
       {text}
+    </span>
+  );
+}
+
+// A progress track with a soft shimmer sweeping across the filled portion,
+// so a bar that's just sitting there mid-value still reads as "alive"
+// instead of static.
+export function ProgressBar({ pct, fill = 'linear-gradient(90deg,#7c5cff,#2ee6c5)', height = 6, style }) {
+  return (
+    <div style={{ height, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden', ...style }}>
+      <div style={{ width: pct + '%', height: '100%', borderRadius: 99, background: fill, transition: 'width .5s ease', position: 'relative', overflow: 'hidden' }}>
+        <span style={{ position: 'absolute', inset: 0, width: '40%', background: 'linear-gradient(100deg, transparent, rgba(255,255,255,.45), transparent)', animation: 'shimmerSweep 2.4s ease-in-out infinite' }} />
+      </div>
+    </div>
+  );
+}
+
+// The session-status pill used on the day's task lists — draws in a small
+// checkmark the moment a task's status becomes 'completed', instead of the
+// pill just silently switching color and label.
+export function StatusPill({ status }) {
+  const { t } = useLang();
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10.5, fontWeight: 650, color: STATUS_COLOR[status], padding: '5px 9px', borderRadius: 8, background: 'rgba(255,255,255,.06)' }}>
+      {status === 'completed' && (
+        <svg width="9" height="7" viewBox="0 0 10 8" fill="none">
+          <path d="M1 4l2.8 2.8L9 1.4" stroke={STATUS_COLOR.completed} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="16" style={{ animation: 'checkDraw .4s ease .05s both' }} />
+        </svg>
+      )}
+      {t('status.' + status)}
     </span>
   );
 }
@@ -227,20 +286,31 @@ export function GeneratingOverlay({ labels, step }) {
 
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 80, background: 'rgba(6,6,10,.88)', backdropFilter: 'blur(4px)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 28, padding: '0 36px' }}>
-      <div
-        key={finished ? 'done' : 'busy'}
-        style={{
-          width: 64, height: 64, borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: finished ? 'linear-gradient(160deg,#35d07f,#2ee6c5)' : 'linear-gradient(160deg,#8b6dff,#6d4dff)',
-          boxShadow: finished ? '0 0 40px rgba(53,208,127,.45)' : '0 0 40px rgba(124,92,255,.5)',
-          animation: finished ? 'stepIconPop .4s cubic-bezier(.34,1.56,.64,1) both' : 'pulseGlow 1.4s ease-in-out infinite',
-        }}
-      >
-        {finished && (
-          <svg width="26" height="20" viewBox="0 0 13 11" fill="none">
-            <path d="M1 5.6L4.6 9.4 12 1.6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
+      <div style={{ position: 'relative', width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {!finished && (
+          <div
+            style={{
+              position: 'absolute', inset: -9, borderRadius: '50%',
+              border: '3px solid rgba(139,109,255,.18)', borderTopColor: '#c9baff',
+              animation: 'spinRing 1s linear infinite',
+            }}
+          />
         )}
+        <div
+          key={finished ? 'done' : 'busy'}
+          style={{
+            width: 64, height: 64, borderRadius: 22, display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: finished ? 'linear-gradient(160deg,#35d07f,#2ee6c5)' : 'linear-gradient(160deg,#8b6dff,#6d4dff)',
+            boxShadow: finished ? '0 0 40px rgba(53,208,127,.45)' : '0 0 40px rgba(124,92,255,.5)',
+            animation: finished ? 'stepIconPop .4s cubic-bezier(.34,1.56,.64,1) both' : 'pulseGlow 1.4s ease-in-out infinite',
+          }}
+        >
+          {finished && (
+            <svg width="26" height="20" viewBox="0 0 13 11" fill="none">
+              <path d="M1 5.6L4.6 9.4 12 1.6" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          )}
+        </div>
       </div>
 
       <div key={step} style={{ fontSize: 17, fontWeight: 700, color: '#f4f4f7', textAlign: 'center', lineHeight: 1.4, animation: 'stepIn .4s ease both' }}>

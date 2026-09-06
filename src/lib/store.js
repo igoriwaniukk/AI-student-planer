@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 const KEYS = {
   name: 'sp_name',
+  profilePhoto: 'sp_profilePhoto',
   schoolPlan: 'sp_schoolPlan',
   activities: 'sp_activities',
   profileDefaults: 'sp_profileDefaults',
@@ -34,6 +35,12 @@ export function useLocalStorage(key, initialValue) {
 
 export function useStudentName() {
   return useLocalStorage(KEYS.name, '');
+}
+
+// A small resized (see lib/image.js) JPEG data URL, or null to fall back to
+// the initials avatar.
+export function useProfilePhoto() {
+  return useLocalStorage(KEYS.profilePhoto, null);
 }
 
 export function useSchoolPlan() {
