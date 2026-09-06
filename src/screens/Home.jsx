@@ -72,7 +72,7 @@ function StreakCard({ streak, selectedDay }) {
           <span style={{ fontSize: 13, fontWeight: 750, fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={streak} /></span>
         </div>
       </div>
-      <WeekStrip selectedDay={selectedDay} streakCount={streak} topMargin={12} />
+      <WeekStrip selectedDay={selectedDay} streakCount={streak} topMargin={12} pageable />
     </div>
   );
 }
@@ -118,6 +118,7 @@ function MorningSummaryCard({ state }) {
 function GoalPromptCard({ planner, exam }) {
   const { t } = useLang();
   const { answerGoalPrompt, dismissGoalPrompt } = planner;
+  const [step, setStep] = useState(0);
   const [importance, setImportance] = useState('');
   const [grade, setGrade] = useState('');
   const canSave = importance && grade;
@@ -132,29 +133,38 @@ function GoalPromptCard({ planner, exam }) {
         {t('home.examSoonDesc', { title: t(VALUE_KEY[exam.title]) || exam.title, when: exam.daysUntil === 1 ? t('cal.tomorrowPill').toLowerCase() : t('cal.inDaysPill', { n: exam.daysUntil }).toLowerCase() })}
       </div>
 
-      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '14px 0 8px' }}>{t('goals.howImportantQ')}</div>
-      <div style={{ display: 'flex', gap: 8 }}>
-        {IMPORTANCE_OPTIONS.map((imp) => (
-          <Chip key={imp} label={t(VALUE_KEY[imp]) || imp} active={importance === imp} onClick={() => setImportance(imp)} style={{ flex: 1, textAlign: 'center' }} />
-        ))}
-      </div>
-
-      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '14px 0 8px' }}>{t('home.whatGradeWant')}</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {GOALS.map((g) => (
-          <Chip key={g} label={t(VALUE_KEY[g]) || g} active={grade === g} onClick={() => setGrade(g)} />
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', gap: 11, marginTop: 16 }}>
-        <div onClick={() => dismissGoalPrompt(exam.id)} style={{ flex: 1, height: 44, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, cursor: 'pointer' }}>{t('home.later')}</div>
-        <div
-          onClick={() => canSave && answerGoalPrompt(exam.id, { importance, grade })}
-          style={{ flex: 1.3, height: 44, borderRadius: 14, background: canSave ? 'linear-gradient(160deg,#8b6dff,#6d4dff)' : 'rgba(255,255,255,.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: canSave ? '#fff' : '#6b6b7a', cursor: canSave ? 'pointer' : 'not-allowed' }}
-        >
-          {t('home.saveGoal')}
-        </div>
-      </div>
+      {step === 0 ? (
+        <>
+          <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '14px 0 8px' }}>{t('goals.howImportantQ')}</div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {IMPORTANCE_OPTIONS.map((imp) => (
+              <Chip key={imp} label={t(VALUE_KEY[imp]) || imp} active={importance === imp} onClick={() => { setImportance(imp); setStep(1); }} style={{ flex: 1, textAlign: 'center' }} />
+            ))}
+          </div>
+          <div onClick={() => dismissGoalPrompt(exam.id)} style={{ marginTop: 16, height: 44, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, cursor: 'pointer' }}>{t('home.later')}</div>
+        </>
+      ) : (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '14px 0 8px' }}>
+            <span style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a' }}>{t('home.whatGradeWant')}</span>
+            <span onClick={() => setStep(0)} style={{ fontSize: 11.5, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>‹ {t('home.back')}</span>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {GOALS.map((g) => (
+              <Chip key={g} label={t(VALUE_KEY[g]) || g} active={grade === g} onClick={() => setGrade(g)} />
+            ))}
+          </div>
+          <div style={{ display: 'flex', gap: 11, marginTop: 16 }}>
+            <div onClick={() => dismissGoalPrompt(exam.id)} style={{ flex: 1, height: 44, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, cursor: 'pointer' }}>{t('home.later')}</div>
+            <div
+              onClick={() => canSave && answerGoalPrompt(exam.id, { importance, grade })}
+              style={{ flex: 1.3, height: 44, borderRadius: 14, background: canSave ? 'linear-gradient(160deg,#8b6dff,#6d4dff)' : 'rgba(255,255,255,.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: canSave ? '#fff' : '#6b6b7a', cursor: canSave ? 'pointer' : 'not-allowed' }}
+            >
+              {t('home.saveGoal')}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -479,6 +489,12 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
 
       <NextSessionCard planner={planner} />
 
+      <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
+        <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.todayPlan')}</div>
+        <div style={{ marginTop: 12 }}><TodayList planner={planner} /></div>
+        <div onClick={() => planner.go('plan')} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('home.seeFullPlan')} <span style={{ fontSize: 11 }}>›</span></div>
+      </div>
+
       <div onClick={openEnergySheet} style={{ marginTop: 12, padding: '12px 14px', borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
         <div style={{ width: 36, height: 36, borderRadius: 11, background: 'rgba(124,92,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="14" height="14" viewBox="0 0 14 14"><path d="M8 1L3 8h3.2L6 13l5-7.2H7.6L8 1z" fill="#a58cff" /></svg></div>
         <div style={{ flex: 1 }}>
@@ -499,12 +515,6 @@ export default function Home({ planner, studentName, energyLog = [], logEnergy =
         <div style={{ marginTop: 12, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
           <div style={{ width: pct + '%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#7c5cff,#2ee6c5)', transition: 'width .5s ease' }} />
         </div>
-      </div>
-
-      <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
-        <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.todayPlan')}</div>
-        <div style={{ marginTop: 12 }}><TodayList planner={planner} /></div>
-        <div onClick={() => planner.go('plan')} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('home.seeFullPlan')} <span style={{ fontSize: 11 }}>›</span></div>
       </div>
 
       <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(245,165,36,.06)', border: '1px solid rgba(245,165,36,.22)', display: 'flex', alignItems: 'center', gap: 12 }}>
