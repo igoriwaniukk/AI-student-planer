@@ -31,9 +31,92 @@ a { color: #8b6dff; }
   0%, 100% { transform: scale(1); opacity: .9; }
   50% { transform: scale(1.08); opacity: 1; }
 }
+@keyframes dayGlow {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 10px 2px var(--glow-color, transparent); }
+}
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: none; }
+}
+@keyframes stepIn {
+  from { opacity: 0; transform: translateY(10px) scale(.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes stepIconPop {
+  0% { transform: scale(.7); opacity: 0; }
+  65% { transform: scale(1.1); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes typingBounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: .5; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+@keyframes fabAttention {
+  0%, 82%, 100% { transform: scale(1) rotate(0deg); }
+  86% { transform: scale(1.1) rotate(-8deg); }
+  90% { transform: scale(1.1) rotate(8deg); }
+  94% { transform: scale(1.04) rotate(-3deg); }
+}
+@keyframes confettiBurst {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(.4); opacity: 0; }
+}
+@keyframes streakBump {
+  0% { transform: scale(1) rotate(0deg); }
+  35% { transform: scale(1.45) rotate(-8deg); }
+  60% { transform: scale(1.15) rotate(6deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+@keyframes checkDraw {
+  from { stroke-dashoffset: 16; opacity: 0; }
+  30% { opacity: 1; }
+  to { stroke-dashoffset: 0; opacity: 1; }
+}
+@keyframes chipPop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.08); }
+  100% { transform: scale(1); }
+}
+@keyframes shimmerSweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(220%); }
+}
+@keyframes weekSlideIn {
+  from { opacity: 0; transform: translateX(var(--slide-from, 14px)); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes spinRing {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@keyframes handWave {
+  0%, 74%, 100% { transform: rotate(0deg); }
+  6% { transform: rotate(16deg); }
+  12% { transform: rotate(-6deg); }
+  18% { transform: rotate(16deg); }
+  24% { transform: rotate(-4deg); }
+  30% { transform: rotate(10deg); }
+  36% { transform: rotate(0deg); }
+}
+@keyframes cardGlowPulse {
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50% { box-shadow: 0 0 20px 2px var(--glow-color, transparent); }
+}
+@keyframes bellRing {
+  0%, 84%, 100% { transform: rotate(0deg); }
+  87% { transform: rotate(-12deg); }
+  90% { transform: rotate(10deg); }
+  93% { transform: rotate(-8deg); }
+  96% { transform: rotate(4deg); }
+}
+@keyframes selectedDayPulse {
+  0%, 100% { box-shadow: 0 6px 18px rgba(109,77,255,.35); }
+  50% { box-shadow: 0 6px 26px rgba(109,77,255,.6), 0 0 14px 2px rgba(139,109,255,.5); }
+}
+@keyframes sparkleTwinkle {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.14) rotate(10deg); }
 }
 
 .card {
@@ -41,6 +124,24 @@ a { color: #8b6dff; }
   background: rgba(255, 255, 255, 0.035);
   border: 1px solid rgba(255, 255, 255, 0.07);
   padding: 14px;
+}
+
+/* Every clickable element in this app is a plain div/span/button styled
+   with cursor:pointer rather than a shared button component, so this is
+   the one place that can give all of them the same "grows slightly on
+   hover" feedback without touching every call site. */
+.btn, button, [style*="cursor: pointer"] {
+  transition: transform .12s ease;
+}
+.btn:hover, button:hover, [style*="cursor: pointer"]:hover {
+  transform: scale(1.035);
+}
+
+/* The FABs run a continuous idle "look at me" animation on transform,
+   which otherwise wins over the plain :hover rule above every frame. */
+.fab-btn:hover {
+  animation: none !important;
+  transform: scale(1.08);
 }
 
 .btn {

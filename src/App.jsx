@@ -1,6 +1,12 @@
+import { useState } from 'react';
 import TabBar from './components/TabBar';
+import ChatWidget from './components/ChatWidget';
+import NotificationBell from './components/NotificationBell';
+import QuickAddSheet from './components/QuickAddSheet';
 import { GeneratingOverlay } from './components/ui';
 import Home from './screens/Home';
+import Calendar from './screens/Calendar';
+import Goals from './screens/Goals';
 import Planner from './screens/Planner';
 import Plan from './screens/Plan';
 import Rescue from './screens/Rescue';
@@ -10,47 +16,147 @@ import Prep from './screens/Prep';
 import Summary from './screens/Summary';
 import Profile from './screens/Profile';
 import Onboarding from './screens/Onboarding';
-import { useStudentName, useSchoolPlan, useActivities } from './lib/store';
+import {
+  useStudentName, useProfilePhoto, useSchoolPlan, useActivities, useProfileDefaults,
+  useWeeklyCapacity, useEnergyLog, useStudyHistory, useRecurringActivities, useLanguage,
+} from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
+import { LanguageProvider } from './lib/LanguageContext';
+import { computeStreak } from './lib/plannerLogic';
 
-const TAB_SCREENS = new Set(['home', 'profile']);
+const TAB_SCREENS = new Set(['home', 'calendar', 'goals', 'profile']);
 
-export default function App() {
-  const [name, setName] = useStudentName();
-  const [schoolPlan, setSchoolPlan] = useSchoolPlan();
-  const [activities, setActivities] = useActivities();
-  const planner = usePlanner();
-
-  if (!name) {
-    return (
-      <Onboarding
-        onComplete={({ name: newName, schoolPlan: plan, activities: acts }) => {
-          setSchoolPlan(plan);
-          setActivities(acts);
-          setName(newName);
-        }}
-      />
-    );
-  }
-
+// Mounted only once onboarding is done, so usePlanner's initial state (a lazy
+// useState initializer, which only ever runs on first mount) picks up the
+// profile defaults onboarding just saved instead of whatever was there before.
+function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, activities, profileDefaults, setProfileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities }) {
+  const planner = usePlanner(profileDefaults);
   const { state } = planner;
   const screen = state.screen;
+  const streak = computeStreak(studyHistory);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   return (
     <div className="app-shell">
-      {screen === 'home' && <Home planner={planner} studentName={name} />}
+      {screen === 'home' && (
+        <Home
+          planner={planner}
+          studentName={name}
+          profilePhoto={profilePhoto}
+          energyLog={energyLog}
+          logEnergy={logEnergy}
+          studyHistory={studyHistory}
+          recurringActivities={recurringActivities}
+        />
+      )}
+      {screen === 'calendar' && <Calendar planner={planner} activities={activities} recurringActivities={recurringActivities} />}
+      {screen === 'goals' && <Goals planner={planner} weeklyCapacity={weeklyCapacity} setWeeklyCapacity={setWeeklyCapacity} />}
       {screen === 'planner' && <Planner planner={planner} />}
       {screen === 'plan' && <Plan planner={planner} />}
       {screen === 'rescue' && <Rescue planner={planner} />}
       {screen === 'rescueResult' && <RescueResult planner={planner} />}
       {screen === 'deadline' && <Deadline planner={planner} />}
       {screen === 'prep' && <Prep planner={planner} />}
-      {screen === 'summary' && <Summary planner={planner} />}
-      {screen === 'profile' && <Profile studentName={name} schoolPlan={schoolPlan} activities={activities} energy={state.energy} />}
+      {screen === 'summary' && <Summary planner={planner} recordStudyDay={recordStudyDay} />}
+      {screen === 'profile' && (
+        <Profile
+          studentName={name}
+          setStudentName={setName}
+          profilePhoto={profilePhoto}
+          setProfilePhoto={setProfilePhoto}
+          schoolPlan={schoolPlan}
+          activities={activities}
+          planner={planner}
+          profileDefaults={profileDefaults}
+          setProfileDefaults={setProfileDefaults}
+          studyHistory={studyHistory}
+        />
+      )}
 
       {state.generating && <GeneratingOverlay labels={state.genLabels} step={state.genStep} />}
 
-      {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} />}
+      <NotificationBell state={state} streak={streak} />
+
+      <ChatWidget
+        planner={planner}
+        weeklyCapacity={weeklyCapacity}
+        profileDefaults={profileDefaults}
+        studyHistory={studyHistory}
+        studentName={name}
+        logEnergy={logEnergy}
+        recurringActivities={recurringActivities}
+        setRecurringActivities={setRecurringActivities}
+      />
+
+      <QuickAddSheet
+        open={quickAddOpen}
+        onClose={() => setQuickAddOpen(false)}
+        onAddExam={() => planner.go('deadline')}
+        recurringActivities={recurringActivities}
+        setRecurringActivities={setRecurringActivities}
+      />
+
+      {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} onFabClick={() => setQuickAddOpen(true)} fabActive={quickAddOpen} />}
     </div>
+  );
+}
+
+export default function App() {
+  const [name, setName] = useStudentName();
+  const [profilePhoto, setProfilePhoto] = useProfilePhoto();
+  const [schoolPlan, setSchoolPlan] = useSchoolPlan();
+  const [activities, setActivities] = useActivities();
+  const [profileDefaults, setProfileDefaults] = useProfileDefaults();
+  const [weeklyCapacity, setWeeklyCapacity] = useWeeklyCapacity();
+  const [energyLog, setEnergyLog] = useEnergyLog();
+  const [studyHistory, setStudyHistory] = useStudyHistory();
+  const [recurringActivities, setRecurringActivities] = useRecurringActivities();
+  const [lang, setLang] = useLanguage();
+
+  function logEnergy(level) {
+    setEnergyLog((log) => log.concat({ at: new Date().toISOString(), level }).slice(-30));
+  }
+
+  function recordStudyDay(entry) {
+    const today = new Date().toISOString().slice(0, 10);
+    setStudyHistory((h) => ({ ...h, [today]: entry }));
+  }
+
+  if (!name) {
+    return (
+      <LanguageProvider lang={lang} setLang={setLang}>
+        <Onboarding
+          onComplete={({ name: newName, schoolPlan: plan, activities: acts, profile }) => {
+            setSchoolPlan(plan);
+            setActivities(acts);
+            setProfileDefaults(profile);
+            setName(newName);
+          }}
+        />
+      </LanguageProvider>
+    );
+  }
+
+  return (
+    <LanguageProvider lang={lang} setLang={setLang}>
+      <MainApp
+        name={name}
+        setName={setName}
+        profilePhoto={profilePhoto}
+        setProfilePhoto={setProfilePhoto}
+        schoolPlan={schoolPlan}
+        activities={activities}
+        profileDefaults={profileDefaults}
+        setProfileDefaults={setProfileDefaults}
+        weeklyCapacity={weeklyCapacity}
+        setWeeklyCapacity={setWeeklyCapacity}
+        energyLog={energyLog}
+        logEnergy={logEnergy}
+        studyHistory={studyHistory}
+        recordStudyDay={recordStudyDay}
+        recurringActivities={recurringActivities}
+        setRecurringActivities={setRecurringActivities}
+      />
+    </LanguageProvider>
   );
 }

@@ -36,14 +36,36 @@ export const PRIO_STYLE = {
 };
 export const DEFAULT_START = { math: 930, bio: 1000, eng: 1170 };
 
+// "jutro" pivot used across the app (Poniedziałek, 20 lipca) — deadlines are
+// phrased ("za N dni") relative to this day.
+export const REFERENCE_DAY = 20;
+export const TENIS_DAY = 20;
+export const WEEK_DAYS = [
+  { num: 16, label: 'Czwartek', short: 'CZW', school: true },
+  { num: 17, label: 'Piątek', short: 'PT', school: true },
+  { num: 18, label: 'Sobota', short: 'SOB', school: false },
+  { num: 19, label: 'Niedziela', short: 'ND', school: false },
+  { num: 20, label: 'Poniedziałek', short: 'PN', school: true },
+  { num: 21, label: 'Wtorek', short: 'WT', school: true },
+  { num: 22, label: 'Środa', short: 'ŚR', school: true },
+];
+export const EXAMS = [
+  { id: 'math', subject: 'Matematyka', title: 'Sprawdzian', color: '#a58cff', day: 22 },
+  { id: 'bio', subject: 'Biologia', title: 'Sprawdzian', color: '#2ee6c5', day: 31, requires: 'bioDeadlineSaved' },
+];
+
 export const SUBJECTS = ['Matematyka', 'Biologia', 'Angielski', 'Polski', 'Historia', 'Geografia', 'Fizyka', 'Chemia', 'Inny'];
+export const PRIORITY_SUBJECT_OPTIONS = SUBJECTS.filter((s) => s !== 'Inny');
 export const GOALS = ['Zaliczyć', 'Ocena co najmniej 3', 'Ocena co najmniej 4', 'Ocena co najmniej 5', 'Bez konkretnego celu'];
+export const IMPORTANCE_OPTIONS = ['Niski', 'Średni', 'Wysoki'];
 export const LEVELS = ['Nie znam', 'Znam podstawy', 'Średnio', 'Dobrze', 'Bardzo dobrze'];
 export const KINDS = ['Sprawdzian', 'Kartkówka', 'Praca domowa', 'Projekt', 'Prezentacja', 'Egzamin próbny'];
 
-export const PREP_LABELS = ['Sprawdzam Twój kalendarz', 'Dzielę materiał na etapy', 'Dodaję powtórki', 'Planuję samosprawdzenie', 'Plan przygotowania jest gotowy'];
-export const RESCUE_LABELS = ['Sprawdzam pozostały czas', 'Chronię najważniejsze zadanie', 'Skracam mniej ważne bloki', 'Przenoszę to, co się nie zmieści', 'Nowy plan jest gotowy'];
-export const PLAN_LABELS = ['Sprawdzam wolny czas...', 'Ustalam priorytety...', 'Dodaję przerwy i bufor...', 'Plan jest gotowy'];
+// Loading-step captions for GeneratingOverlay — i18n keys, not raw text,
+// since they're translated at render time (see GeneratingOverlay in ui.jsx).
+export const PREP_LABELS = ['gen.prep.1', 'gen.prep.2', 'gen.prep.3', 'gen.prep.4', 'gen.prep.5'];
+export const RESCUE_LABELS = ['gen.rescue.1', 'gen.rescue.2', 'gen.rescue.3', 'gen.rescue.4', 'gen.rescue.5'];
+export const PLAN_LABELS = ['gen.plan.1', 'gen.plan.2', 'gen.plan.3', 'gen.plan.4'];
 
 export const SESSION_DATES = ['Wtorek, 21 lipca', 'Czwartek, 23 lipca', 'Sobota, 25 lipca', 'Poniedziałek, 27 lipca', 'Środa, 29 lipca', 'Czwartek, 30 lipca'];
 export const SESSIONS = [
@@ -60,5 +82,7 @@ export const KNOW_OPTIONS = ['Nie umiem', 'Częściowo umiem', 'Dobrze umiem', '
 export const DAY_HARD_OPTIONS = ['Lekki', 'W sam raz', 'Trudny', 'Bardzo trudny'];
 export const ENERGY_OPTIONS = ['Niska', 'Normalna', 'Wysoka'];
 export const PREF_OPTIONS = ['Wolny wieczór', 'Najpierw najtrudniejsze', 'Więcej krótkich przerw'];
+export const STUDY_TIME_OPTIONS = ['Rano', 'Popołudniu', 'Wieczorem'];
+export const RECUR_DAYS = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela'];
 export const REASON_OPTIONS = ['Mam mniej czasu', 'Mam mniej energii', 'Plan się opóźnił', 'Pojawiło się coś pilnego'];
 export const RESCUE_TIME_OPTIONS = ['45 min', '1 godz. 30 min', '2 godz.', 'Własny czas'];

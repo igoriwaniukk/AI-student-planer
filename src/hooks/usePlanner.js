@@ -1,10 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLang } from '../lib/useLang';
+import { getCurrentLang, TASK_TEXT_KEY } from '../lib/i18n';
 import {
-  TASK_DEFS, PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, SESSIONS, SESSION_DATES,
+  TASK_DEFS, PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY,
 } from '../lib/plannerData';
-import { buildSchedule, activeIds as computeActiveIds, checkBlockConflict } from '../lib/plannerLogic';
+import { buildSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates } from '../lib/plannerLogic';
 
-function initialState() {
+function initialState(defaults) {
+  const initialTopics = getCurrentLang() === 'en'
+    ? ['Mendelian genetics', 'Genetic crosses', 'Blood type inheritance']
+    : ['Prawa Mendla', 'Krzyżówki genetyczne', 'Dziedziczenie grup krwi'];
+  const initialPrepSessions = buildPrepSessions(initialTopics, 'Średni');
   return {
     screen: 'home',
     generating: false,
@@ -14,8 +20,8 @@ function initialState() {
 
     taskDefs: TASK_DEFS,
     tasks: [true, true, false],
-    energy: 'Normalna',
-    pref: 'Wolny wieczór',
+    energy: defaults?.energy || 'Normalna',
+    pref: defaults?.pref || 'Wolny wieczór',
     gcal: false,
     saved: false,
 
@@ -27,6 +33,9 @@ function initialState() {
     manualSnapshot: null,
     blockEdit: null,
     activeTask: null,
+    sessionStart: null,
+    sessionElapsedMs: 0,
+    breakDismissed: false,
     finishTask: null,
     finishDur: 60,
     finishHard: 'W sam raz',
@@ -59,7 +68,7 @@ function initialState() {
     goalsOpen: false,
     nameValue: 'Genetyka — dziedziczenie cech',
     dateValid: true,
-    topics: ['Prawa Mendla', 'Krzyżówki genetyczne', 'Dziedziczenie grup krwi'],
+    topics: initialTopics,
     topicErr: false,
     difficulty: 'Średni',
     level: 2,
@@ -71,6 +80,8 @@ function initialState() {
     prepGcal: false,
     bioDeadlineSaved: false,
     bioSessionsSaved: false,
+    prepSessions: initialPrepSessions,
+    prepDates: buildPrepDates(initialPrepSessions.length),
 
     sessionOpen: false,
     sessionIdx: 0,
@@ -101,11 +112,20 @@ function initialState() {
     planApproved: false,
     dayEnded: false,
     calendarEvents: [],
+
+    examGoals: {
+      math: { grade: 'Ocena co najmniej 4', studyMinutes: 180, importance: 'Wysoki', answered: false },
+    },
+    customExams: [],
+    dismissedGoalPrompts: {},
   };
 }
 
-export function usePlanner() {
-  const [state, setState] = useState(initialState);
+export function usePlanner(defaults) {
+  // Aliased (not `t`) since several functions below use `t` as a local
+  // parameter name for a time string, which would otherwise shadow this.
+  const { t: translate } = useLang();
+  const [state, setState] = useState(() => initialState(defaults));
   const timerRef = useRef(null);
   const toastTimerRef = useRef(null);
   const snapRef = useRef(null);
@@ -166,7 +186,10 @@ export function usePlanner() {
   }
 
   function deadlineGenerate() {
-    update({ deadlineFailed: false });
+    update((s) => {
+      const sessions = buildPrepSessions(s.topics, s.difficulty);
+      return { deadlineFailed: false, prepSessions: sessions, prepDates: buildPrepDates(sessions.length), sessionEdits: {} };
+    });
     runGen(PREP_LABELS, 'prep');
   }
 
@@ -180,15 +203,22 @@ export function usePlanner() {
     update((s) => {
       const t = { ...s.taskState };
       t[id] = { ...t[id], status: 'in_progress' };
-      return { taskState: t, activeTask: id };
+      return { taskState: t, activeTask: id, sessionStart: Date.now(), sessionElapsedMs: 0, breakDismissed: false };
     });
   }
   function togglePause(id) {
     update((s) => {
       const t = { ...s.taskState };
-      t[id] = { ...t[id], status: t[id].status === 'paused' ? 'in_progress' : 'paused' };
-      return { taskState: t };
+      const pausing = t[id].status !== 'paused';
+      t[id] = { ...t[id], status: pausing ? 'paused' : 'in_progress' };
+      if (pausing) {
+        return { taskState: t, sessionElapsedMs: s.sessionElapsedMs + (Date.now() - s.sessionStart), sessionStart: null };
+      }
+      return { taskState: t, sessionStart: Date.now() };
     });
+  }
+  function dismissBreakReminder() {
+    update({ breakDismissed: true });
   }
   function openFinish(id, dur) {
     update({ finishTask: id, finishDur: dur, finishHard: 'W sam raz', finishKnow: 'Częściowo umiem' });
@@ -201,7 +231,7 @@ export function usePlanner() {
       const id = s.finishTask;
       const t = { ...s.taskState };
       t[id] = { status: 'completed', actual: s.finishDur, hard: s.finishHard, know: s.finishKnow };
-      const patch = { taskState: t, activeTask: null, finishTask: null };
+      const patch = { taskState: t, activeTask: null, finishTask: null, sessionStart: null, sessionElapsedMs: 0, breakDismissed: false };
       if (id === 'bio') Object.assign(patch, { bioMinutes: s.finishDur, bioHard: s.finishHard, bioKnow: s.finishKnow });
       if (id === 'math') Object.assign(patch, { mathMinutes: s.finishDur, mathHard: s.finishHard, mathKnow: s.finishKnow });
       return patch;
@@ -210,7 +240,7 @@ export function usePlanner() {
 
   // ---- block edit (plan screen, manual mode) ----
   function openBlockEdit(id) {
-    update((s) => ({ blockEdit: { id, start: s.schedule[id].start, dur: s.schedule[id].dur, msg: '' } }));
+    update((s) => ({ blockEdit: { id, start: s.schedule[id].start, dur: s.schedule[id].dur, msg: null } }));
   }
   function moveBlockEdit(patch) {
     update((s) => {
@@ -246,7 +276,7 @@ export function usePlanner() {
       const dur = (s.durOverride && s.durOverride[id]) || d.dur;
       const start = s.startOverride && s.startOverride[id] != null ? s.startOverride[id] : (s.schedule && s.schedule[id] ? s.schedule[id].start : 930);
       return {
-        taskEdit: { id, name: d.title, subject: d.subject, dur, start: fmtLocal(start), priority: d.priority, note: d.note || '' },
+        taskEdit: { id, name: translate(TASK_TEXT_KEY[id]?.title) || d.title, subject: d.subject, dur, start: fmtLocal(start), priority: d.priority, note: d.note || '' },
         editErrors: {}, teToast: false,
       };
     });
@@ -269,10 +299,10 @@ export function usePlanner() {
       const fm = s.taskEdit;
       if (!fm) return {};
       const errs = {};
-      if (!fm.name || !fm.name.trim()) errs.name = 'Podaj nazwę zadania.';
-      if (!(fm.dur >= 5 && fm.dur <= 240)) errs.dur = 'Czas nauki może wynosić od 5 do 240 minut.';
+      if (!fm.name || !fm.name.trim()) errs.name = translate('taskEdit.nameRequired');
+      if (!(fm.dur >= 5 && fm.dur <= 240)) errs.dur = translate('taskEdit.durRequired');
       const m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec((fm.start || '').trim());
-      if (!m) errs.start = 'Podaj godzinę w formacie 20:00.';
+      if (!m) errs.start = translate('taskEdit.startRequired');
       if (Object.keys(errs).length) return { editErrors: errs };
       const startMin = (+m[1]) * 60 + (+m[2]);
       const name = fm.name.trim();
@@ -330,19 +360,19 @@ export function usePlanner() {
     update({ rescueTime: label, rescueMoved: false });
   }
   function pickMath(slot) {
-    if (slot === '17:30–18:30') { update({ editMessage: 'Ten czas koliduje z tenisem 18:00–19:00. Wybierz inną godzinę.' }); return; }
-    if (slot === '21:45–22:45') { update({ editMessage: 'Ta zmiana skróciłaby sen. Wybierz wcześniejszą godzinę lub przenieś zadanie.' }); return; }
+    if (slot === '17:30–18:30') { update({ editMessage: translate('block.conflictTennis') }); return; }
+    if (slot === '21:45–22:45') { update({ editMessage: translate('msg.sleepConflictAlt') }); return; }
     update({ mathSlot: slot, editMessage: '' });
   }
   function setBioMin(val) {
-    if (val === 45) { update({ editMessage: 'Blok 45 min nie zmieści się przed dojazdem na tenis. Wybierz krótszy blok.' }); return; }
+    if (val === 45) { update({ editMessage: translate('msg.bioBlockTooLong') }); return; }
     update({ bioMin: val, editMessage: '' });
   }
   function returnEnglish() {
     update((s) => {
       if (s.engToday) return { engToday: false, editMessage: '' };
       const free = s.rescueTime === '2 godz.';
-      if (!free) return { editMessage: 'Dziś nie ma wolnego bloku 30 min przed snem. Zwiększ dostępny czas, aby wrócić z angielskim na dzisiaj.' };
+      if (!free) return { editMessage: translate('msg.noFreeSlotForEnglish') };
       return { engToday: true, editMessage: '' };
     });
   }
@@ -401,7 +431,7 @@ export function usePlanner() {
   function openSession(i) {
     update((s) => {
       const d = s.sessionEdits[i] || {};
-      snapRef.current = { i, date: d.date || SESSION_DATES[i], time: d.time || SESSIONS[i].time, dur: d.dur || SESSIONS[i].dur };
+      snapRef.current = { i, date: d.date || s.prepDates[i], time: d.time || s.prepSessions[i].time, dur: d.dur || s.prepSessions[i].dur };
       return { sessionOpen: true, sessionIdx: i, sessionMessage: '' };
     });
   }
@@ -412,26 +442,26 @@ export function usePlanner() {
     });
   }
   function pickSessionDate(d) {
-    if (d === 'Sobota, 1 sierpnia') { update({ sessionMessage: 'Sesja przygotowawcza musi odbyć się przed sprawdzianem.' }); return; }
+    if (d === 'Sobota, 1 sierpnia') { update({ sessionMessage: translate('msg.sessionBeforeExam') }); return; }
     applySession({ date: d });
   }
   function currentDur(i) {
     const d = state.sessionEdits[i] || {};
-    return d.dur || SESSIONS[i].dur;
+    return d.dur || state.prepSessions[i].dur;
   }
   function rangeLocal(start, durLabel) {
     const s = toMinutesLocal(start);
     return start + '–' + fmtLocal(s + parseInt(durLabel, 10));
   }
   function pickSessionTime(t) {
-    if (t === '18:15') { update({ sessionMessage: 'Ten czas koliduje z tenisem 18:00–19:00. Wybierz inną godzinę.' }); return; }
-    if (t === '22:15') { update({ sessionMessage: 'Ta zmiana skróciłaby sen. Wybierz wcześniejszą godzinę.' }); return; }
+    if (t === '18:15') { update({ sessionMessage: translate('block.conflictTennis') }); return; }
+    if (t === '22:15') { update({ sessionMessage: translate('msg.sleepConflictShort') }); return; }
     applySession({ start: t, time: rangeLocal(t, currentDur(state.sessionIdx)) });
   }
   function pickSessionDur(d) {
     const i = state.sessionIdx;
     const e = state.sessionEdits[i] || {};
-    const start = e.start || (e.time || SESSIONS[i].time).split('–')[0];
+    const start = e.start || (e.time || state.prepSessions[i].time).split('–')[0];
     applySession({ dur: d, start, time: rangeLocal(start, d) });
   }
   function cancelSession() {
@@ -484,8 +514,8 @@ export function usePlanner() {
     });
   }
   function pickEngTime(t) {
-    if (t === '18:15') { update({ engMessage: 'Ten czas koliduje z istniejącym wydarzeniem. Wybierz inną godzinę.' }); return; }
-    if (t === '22:45') { update({ engMessage: 'Ta zmiana skróciłaby sen. Wybierz wcześniejszą godzinę.' }); return; }
+    if (t === '18:15') { update({ engMessage: translate('msg.engEventConflict') }); return; }
+    if (t === '22:45') { update({ engMessage: translate('msg.sleepConflictShort') }); return; }
     update({ engStart: t, engMessage: '' });
   }
   function cancelEngTime() {
@@ -497,10 +527,61 @@ export function usePlanner() {
   function applyAdaptive() { update({ adaptive: true }); }
   function declineAdaptive() { update({ adaptive: false }); }
 
+  // ---- goals (per-exam target grade, importance, and planned study time) ----
+  const DEFAULT_EXAM_GOAL = { grade: GOALS[2], studyMinutes: 120, importance: 'Średni', answered: false };
+  function setExamGrade(examId, grade) {
+    update((s) => ({ examGoals: { ...s.examGoals, [examId]: { ...(s.examGoals[examId] || DEFAULT_EXAM_GOAL), grade, answered: true } } }));
+  }
+  function setExamImportance(examId, importance) {
+    update((s) => ({ examGoals: { ...s.examGoals, [examId]: { ...(s.examGoals[examId] || DEFAULT_EXAM_GOAL), importance, answered: true } } }));
+  }
+  function adjustExamStudyMinutes(examId, delta) {
+    update((s) => {
+      const cur = s.examGoals[examId] || DEFAULT_EXAM_GOAL;
+      return { examGoals: { ...s.examGoals, [examId]: { ...cur, studyMinutes: Math.max(15, cur.studyMinutes + delta) } } };
+    });
+  }
+  function setExamStudyMinutes(examId, minutes) {
+    update((s) => {
+      const cur = s.examGoals[examId] || DEFAULT_EXAM_GOAL;
+      return { examGoals: { ...s.examGoals, [examId]: { ...cur, studyMinutes: Math.max(15, minutes) } } };
+    });
+  }
+  function addCustomExam({ subject, title, daysUntil, grade, importance, studyMinutes, color }) {
+    const id = 'custom-' + Date.now();
+    const exam = { id, subject, title, color: color || '#8fbaff', day: REFERENCE_DAY + daysUntil };
+    update((s) => ({
+      customExams: s.customExams.concat(exam),
+      examGoals: { ...s.examGoals, [id]: { grade, importance, studyMinutes, answered: true } },
+    }));
+    return id;
+  }
+  function removeCustomExam(id) {
+    update((s) => {
+      const examGoals = { ...s.examGoals };
+      delete examGoals[id];
+      return { customExams: s.customExams.filter((e) => e.id !== id), examGoals };
+    });
+  }
+  function dismissGoalPrompt(examId) {
+    update((s) => ({ dismissedGoalPrompts: { ...s.dismissedGoalPrompts, [examId]: true } }));
+  }
+  function answerGoalPrompt(examId, { grade, importance }) {
+    update((s) => ({
+      examGoals: { ...s.examGoals, [examId]: { ...(s.examGoals[examId] || DEFAULT_EXAM_GOAL), grade, importance, answered: true } },
+    }));
+  }
+  function nextGoalPrompt() {
+    const s = state;
+    return upcomingExams(s)
+      .filter((e) => e.daysUntil >= 0 && e.daysUntil <= 7 && !s.examGoals[e.id]?.answered && !s.dismissedGoalPrompts[e.id])
+      .sort((a, b) => a.daysUntil - b.daysUntil)[0] || null;
+  }
+
   return {
     state, update, def, ts, go,
     toggleTask, generatePlan, deadlineGenerate, rescueGenerate,
-    startSession, togglePause, openFinish, cancelFinish, confirmFinish,
+    startSession, togglePause, dismissBreakReminder, openFinish, cancelFinish, confirmFinish,
     openBlockEdit, moveBlockEdit, cancelBlockEdit, saveBlockEdit, removeBlock,
     openTaskEdit, patchTaskEdit, stepTaskDur, cancelTaskEdit, saveTaskEdit,
     toggleManualMode, regenerateOrCancel, confirmPlan, goHomeSaved,
@@ -513,6 +594,8 @@ export function usePlanner() {
     finishDay, goHomeSummarized, saveLater, bioAdjust, mathAdjust,
     keepEngTomorrow, openEngTime, pickEngTime, cancelEngTime, saveEngTime,
     applyAdaptive, declineAdaptive,
+    setExamGrade, setExamImportance, adjustExamStudyMinutes, setExamStudyMinutes,
+    addCustomExam, removeCustomExam, dismissGoalPrompt, answerGoalPrompt, nextGoalPrompt,
     computeActiveIds,
   };
 }
