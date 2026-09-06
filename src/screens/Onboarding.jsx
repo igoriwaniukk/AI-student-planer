@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ENERGY_OPTIONS, PREF_OPTIONS, STUDY_TIME_OPTIONS, SUBJECTS } from '../lib/plannerData';
+import { ENERGY_OPTIONS, PREF_OPTIONS, STUDY_TIME_OPTIONS, PRIORITY_SUBJECT_OPTIONS } from '../lib/plannerData';
 import { VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 
@@ -11,8 +11,6 @@ const ACTIVITY_OPTIONS = [
   'Praca',
   'Kurs językowy',
 ];
-
-const PRIORITY_SUBJECT_OPTIONS = SUBJECTS.filter((s) => s !== 'Inny');
 
 const MAX_STORED_FILE_SIZE = 4_000_000;
 const TOTAL_STEPS = 6;

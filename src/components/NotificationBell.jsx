@@ -1,16 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { upcomingExams } from '../lib/plannerLogic';
 import { useCustomReminders } from '../lib/store';
 import { useLang } from '../lib/useLang';
-import { isPushSupported, getExistingSubscription, subscribeToPush, unsubscribeFromPush, syncPushState } from '../lib/pushNotifications';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 import { VALUE_KEY } from '../lib/i18n';
 
 export default function NotificationBell({ state, streak = 0 }) {
   const { t, lang } = useLang();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
-  // idle | subscribed | denied | error | unsupported
-  const [pushStatus, setPushStatus] = useState(() => (isPushSupported() ? 'idle' : 'unsupported'));
   const [reminders, setReminders] = useCustomReminders();
 
   const examAlerts = upcomingExams(state)
@@ -19,31 +17,7 @@ export default function NotificationBell({ state, streak = 0 }) {
   const hasUpcomingExam = examAlerts.length > 0;
   const hasNew = hasUpcomingExam || reminders.length > 0;
 
-  useEffect(() => {
-    if (!isPushSupported()) return;
-    getExistingSubscription().then((sub) => setPushStatus(sub ? 'subscribed' : 'idle'));
-  }, []);
-
-  // Keeps the server's last-known snapshot fresh so its scheduled push text
-  // (streak / exam / reminder) stays accurate — a no-op until subscribed.
-  useEffect(() => {
-    if (pushStatus !== 'subscribed') return;
-    syncPushState({ streak, hasUpcomingExam, reminders: reminders.map((r) => r.text), lang });
-  }, [pushStatus, streak, hasUpcomingExam, reminders, lang]);
-
-  async function togglePush() {
-    if (pushStatus === 'subscribed') {
-      await unsubscribeFromPush();
-      setPushStatus('idle');
-      return;
-    }
-    try {
-      await subscribeToPush({ streak, hasUpcomingExam, reminders: reminders.map((r) => r.text), lang });
-      setPushStatus('subscribed');
-    } catch (err) {
-      setPushStatus(err.message === 'denied' ? 'denied' : 'error');
-    }
-  }
+  const { pushStatus, togglePush } = usePushNotifications({ streak, hasUpcomingExam, reminders: reminders.map((r) => r.text), lang });
 
   function addReminder() {
     const text = draft.trim();

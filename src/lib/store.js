@@ -103,3 +103,10 @@ export function useLanguage() {
 export function useCustomReminders() {
   return useLocalStorage(KEYS.customReminders, []);
 }
+
+// Wipes every bit of this app's local data and reloads to a fresh
+// onboarding — used by the "reset app data" setting.
+export function resetAppData() {
+  Object.values(KEYS).forEach((key) => localStorage.removeItem(key));
+  window.location.reload();
+}

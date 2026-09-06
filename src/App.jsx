@@ -29,7 +29,7 @@ const TAB_SCREENS = new Set(['home', 'calendar', 'goals', 'profile']);
 // Mounted only once onboarding is done, so usePlanner's initial state (a lazy
 // useState initializer, which only ever runs on first mount) picks up the
 // profile defaults onboarding just saved instead of whatever was there before.
-function MainApp({ name, schoolPlan, activities, profileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities }) {
+function MainApp({ name, setName, schoolPlan, activities, profileDefaults, setProfileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities }) {
   const planner = usePlanner(profileDefaults);
   const { state } = planner;
   const screen = state.screen;
@@ -60,10 +60,12 @@ function MainApp({ name, schoolPlan, activities, profileDefaults, weeklyCapacity
       {screen === 'profile' && (
         <Profile
           studentName={name}
+          setStudentName={setName}
           schoolPlan={schoolPlan}
           activities={activities}
-          energy={state.energy}
+          planner={planner}
           profileDefaults={profileDefaults}
+          setProfileDefaults={setProfileDefaults}
           studyHistory={studyHistory}
         />
       )}
@@ -135,9 +137,11 @@ export default function App() {
     <LanguageProvider lang={lang} setLang={setLang}>
       <MainApp
         name={name}
+        setName={setName}
         schoolPlan={schoolPlan}
         activities={activities}
         profileDefaults={profileDefaults}
+        setProfileDefaults={setProfileDefaults}
         weeklyCapacity={weeklyCapacity}
         setWeeklyCapacity={setWeeklyCapacity}
         energyLog={energyLog}

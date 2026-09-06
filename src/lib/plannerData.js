@@ -55,6 +55,7 @@ export const EXAMS = [
 ];
 
 export const SUBJECTS = ['Matematyka', 'Biologia', 'Angielski', 'Polski', 'Historia', 'Geografia', 'Fizyka', 'Chemia', 'Inny'];
+export const PRIORITY_SUBJECT_OPTIONS = SUBJECTS.filter((s) => s !== 'Inny');
 export const GOALS = ['Zaliczyć', 'Ocena co najmniej 3', 'Ocena co najmniej 4', 'Ocena co najmniej 5', 'Bez konkretnego celu'];
 export const IMPORTANCE_OPTIONS = ['Niski', 'Średni', 'Wysoki'];
 export const LEVELS = ['Nie znam', 'Znam podstawy', 'Średnio', 'Dobrze', 'Bardzo dobrze'];
