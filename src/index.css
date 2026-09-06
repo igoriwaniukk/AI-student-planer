@@ -126,6 +126,24 @@ a { color: #8b6dff; }
   padding: 14px;
 }
 
+/* Every clickable element in this app is a plain div/span/button styled
+   with cursor:pointer rather than a shared button component, so this is
+   the one place that can give all of them the same "grows slightly on
+   hover" feedback without touching every call site. */
+.btn, button, [style*="cursor: pointer"] {
+  transition: transform .12s ease;
+}
+.btn:hover, button:hover, [style*="cursor: pointer"]:hover {
+  transform: scale(1.035);
+}
+
+/* The FABs run a continuous idle "look at me" animation on transform,
+   which otherwise wins over the plain :hover rule above every frame. */
+.fab-btn:hover {
+  animation: none !important;
+  transform: scale(1.08);
+}
+
 .btn {
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.1);

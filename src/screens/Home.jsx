@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { GOALS, IMPORTANCE_OPTIONS } from '../lib/plannerData';
-import { span, computeStreak, computeTotalPoints, dayInfo } from '../lib/plannerLogic';
+import { span, computeStreak, computeTotalPoints, dayInfo, upcomingExams, examProgressMinutes } from '../lib/plannerLogic';
 import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
@@ -9,6 +9,9 @@ import WeekStrip from '../components/WeekStrip';
 import { Pill, BottomSheet, EnergyPicker, Chip, AnimatedNumber, Confetti, StatusPill, ProgressBar } from '../components/ui';
 
 const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
+// Matches Goals.jsx's DEFAULT_GOAL — an exam without a saved goal still gets
+// a sensible study-time target so its readiness % here isn't just stuck at 0.
+const DEFAULT_EXAM_GOAL = { grade: GOALS[2], studyMinutes: 120, importance: 'Średni' };
 
 function AchievementModal({ achievement, onClose }) {
   const { t } = useLang();
@@ -451,6 +454,14 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
         ? { type: 'milestone', text: t('home.streakMilestone', { n: streak }) }
         : null;
 
+  const [deadlinesOpen, setDeadlinesOpen] = useState(false);
+  const upcoming = upcomingExams(state).filter((e) => e.daysUntil >= 0);
+  const nearestExam = upcoming[0] || null;
+  const examPct = (exam) => {
+    const goal = state.examGoals?.[exam.id] || DEFAULT_EXAM_GOAL;
+    return goal.studyMinutes ? Math.min(100, Math.round((examProgressMinutes(state, exam.id) / goal.studyMinutes) * 100)) : 0;
+  };
+
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px' }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
@@ -527,18 +538,50 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
         </div>
       )}
 
-      <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(245,165,36,.06)', border: '1px solid rgba(245,165,36,.22)', display: 'flex', alignItems: 'center', gap: 12, animation: 'cardGlowPulse 3.4s ease-in-out infinite', '--glow-color': 'rgba(245,165,36,.4)' }}>
-        <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(245,165,36,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="16" height="15" viewBox="0 0 16 15" fill="none"><path d="M8 1.6l6.2 11H1.8L8 1.6z" stroke="#f5a524" strokeWidth="1.3" strokeLinejoin="round" /><path d="M8 5.6v3.2" stroke="#f5a524" strokeWidth="1.3" strokeLinecap="round" /><circle cx="8" cy="11" r=".8" fill="#f5a524" /></svg></div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.nextDeadline')}</div>
-          <div style={{ fontSize: 14, fontWeight: 700, marginTop: 4 }}>{t('home.mathExam')}</div>
-          <div style={{ fontSize: 12, fontWeight: 650, color: '#f5a524', marginTop: 2 }}>{t('cal.inDaysPill', { n: 3 })}</div>
+      {nearestExam && (
+        <div
+          onClick={() => setDeadlinesOpen(true)}
+          style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(245,165,36,.06)', border: '1px solid rgba(245,165,36,.22)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', animation: 'cardGlowPulse 3.4s ease-in-out infinite', '--glow-color': 'rgba(245,165,36,.4)' }}
+        >
+          <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(245,165,36,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="16" height="15" viewBox="0 0 16 15" fill="none"><path d="M8 1.6l6.2 11H1.8L8 1.6z" stroke="#f5a524" strokeWidth="1.3" strokeLinejoin="round" /><path d="M8 5.6v3.2" stroke="#f5a524" strokeWidth="1.3" strokeLinecap="round" /><circle cx="8" cy="11" r=".8" fill="#f5a524" /></svg></div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.nextDeadline')}</div>
+            <div style={{ fontSize: 14, fontWeight: 700, marginTop: 4 }}>{t(VALUE_KEY[nearestExam.title]) || nearestExam.title}</div>
+            <div style={{ fontSize: 12, fontWeight: 650, color: '#f5a524', marginTop: 2 }}>{nearestExam.daysUntil === 1 ? t('cal.tomorrowPill') : t('cal.inDaysPill', { n: nearestExam.daysUntil })}</div>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: 21, fontWeight: 750 }}>{examPct(nearestExam)}%</div>
+            <div style={{ fontSize: 10.5, color: '#8a8a99' }}>{t('home.readiness')}</div>
+          </div>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 21, fontWeight: 750 }}>45%</div>
-          <div style={{ fontSize: 10.5, color: '#8a8a99' }}>{t('home.readiness')}</div>
-        </div>
-      </div>
+      )}
+
+      {deadlinesOpen && (
+        <BottomSheet>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{t('home.allDeadlines')}</div>
+            <span onClick={() => setDeadlinesOpen(false)} style={{ fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('notif.close')}</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 16, paddingBottom: 8 }}>
+            {upcoming.length ? upcoming.map((exam) => (
+              <div key={exam.id} style={{ padding: 14, borderRadius: 16, background: 'rgba(245,165,36,.06)', border: '1px solid rgba(245,165,36,.22)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: exam.color }}>{(t(VALUE_KEY[exam.subject]) || exam.subject).toUpperCase()}</span>
+                  <Pill text={exam.daysUntil === 1 ? t('cal.tomorrowPill') : t('cal.inDaysPill', { n: exam.daysUntil })} color="#f5a524" bg="rgba(245,165,36,.15)" />
+                </div>
+                <div style={{ fontSize: 14.5, fontWeight: 700, marginTop: 6 }}>{t(VALUE_KEY[exam.title]) || exam.title}</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+                  <span style={{ fontSize: 11, color: '#8a8a99' }}>{t('home.readiness')}</span>
+                  <span style={{ fontSize: 12.5, fontWeight: 700, color: '#f5a524' }}>{examPct(exam)}%</span>
+                </div>
+                <ProgressBar pct={examPct(exam)} fill="#f5a524" style={{ marginTop: 6 }} />
+              </div>
+            )) : (
+              <div style={{ fontSize: 12.5, color: '#8a8a99' }}>{t('cal.noUpcoming')}</div>
+            )}
+          </div>
+        </BottomSheet>
+      )}
 
       {state.bioDeadlineSaved && (
         <div style={{ marginTop: 12, padding: 14, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 12 }}>

@@ -64,6 +64,7 @@ export default function TabBar({ screen, onNavigate, onFabClick, fabActive = fal
             <div key={tab.key} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
               <div
                 onClick={onFabClick}
+                className="fab-btn"
                 style={{
                   width: 54, height: 54, marginTop: -26, borderRadius: '50%', flex: 'none',
                   background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', border: '4px solid #08080c',

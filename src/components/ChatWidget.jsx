@@ -200,6 +200,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
     <>
       <div
         onClick={() => setOpen(true)}
+        className="fab-btn"
         style={{
           position: 'absolute', right: 16, bottom: 100, width: 54, height: 54, borderRadius: '50%',
           background: 'linear-gradient(155deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center',

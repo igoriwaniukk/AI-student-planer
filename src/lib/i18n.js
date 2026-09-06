@@ -374,8 +374,8 @@ export const dict = {
     'home.noSessionsToday2': 'Brak zaplanowanych sesji tego dnia.',
     'home.englishMoved': 'Angielski przeniesiono na jutro o {time}.',
     'home.nextDeadline': 'NAJBLIŻSZY TERMIN',
-    'home.mathExam': 'Matematyka — sprawdzian',
     'home.readiness': 'gotowość',
+    'home.allDeadlines': 'Wszystkie zbliżające się terminy',
     'home.nextUp': 'KOLEJNY TERMIN',
     'home.bioExam': 'Biologia — sprawdzian, 31 lipca',
     'home.prepSessionsInPlan': '6 sesji przygotowania w planie',
@@ -717,6 +717,8 @@ export const dict = {
     'sum.realStudyTime': '{time} rzeczywistej nauki',
     'sum.mathReadinessUpdated': 'Gotowość z matematyki została zaktualizowana na podstawie wykonanej sesji i Twojej samooceny.',
     'sum.similarMathTasks': 'Podobne zadania z matematyki będą otrzymywać {min} minut.',
+    'sum.planTomorrowTitle': 'Świetna robota! Co z jutrem?',
+    'sum.planTomorrowDesc': 'Skoro dziś wszystko poszło zgodnie z planem, ułóżmy teraz plan na jutro.',
     'sum.backToStart': 'Wróć na start',
 
     // Days of week (short + full), used in several screens
@@ -1381,6 +1383,8 @@ export const dict = {
     'sum.realStudyTime': '{time} of actual studying',
     'sum.mathReadinessUpdated': 'Math readiness was updated based on the completed session and your self-assessment.',
     'sum.similarMathTasks': 'Similar math tasks will now get {min} minutes.',
+    'sum.planTomorrowTitle': 'Great work! What about tomorrow?',
+    'sum.planTomorrowDesc': "Since today went exactly as planned, let's set up a plan for tomorrow too.",
     'sum.backToStart': 'Back to start',
 
     'day.mon': 'Monday', 'day.tue': 'Tuesday', 'day.wed': 'Wednesday', 'day.thu': 'Thursday',
@@ -1401,8 +1405,8 @@ export const dict = {
     'home.noSessionsToday2': 'No study sessions planned for this day.',
     'home.englishMoved': 'English was moved to tomorrow at {time}.',
     'home.nextDeadline': 'NEXT DEADLINE',
-    'home.mathExam': 'Math — exam',
     'home.readiness': 'readiness',
+    'home.allDeadlines': 'All upcoming deadlines',
     'home.nextUp': 'COMING UP NEXT',
     'home.bioExam': 'Biology — exam, July 31',
     'home.prepSessionsInPlan': '6 prep sessions in the plan',

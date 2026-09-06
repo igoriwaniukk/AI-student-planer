@@ -246,7 +246,7 @@ function EngTimeSheet({ planner }) {
 
 function DaySaved({ planner, doneCount, movedCount, celebrate }) {
   const { t, lang } = useLang();
-  const { state, goHomeSummarized } = planner;
+  const { state, goHomeSummarized, go } = planner;
   const doneShort = lang === 'en'
     ? doneCount + ' ' + (doneCount === 1 ? 'task' : 'tasks') + ' ' + t('sum.doneWord')
     : zad(doneCount) + (doneCount >= 2 && doneCount <= 4 ? ' wykonane' : doneCount === 1 ? ' wykonane' : ' wykonanych');
@@ -273,7 +273,15 @@ function DaySaved({ planner, doneCount, movedCount, celebrate }) {
         </div>
       )}
 
-      <div onClick={goHomeSummarized} style={{ marginTop: 22, height: 56, borderRadius: 17, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16.5, fontWeight: 700, cursor: 'pointer', boxShadow: '0 12px 30px rgba(109,77,255,.35)' }}>{t('sum.backToStart')}</div>
+      {celebrate && (
+        <div style={{ marginTop: 12, padding: 16, borderRadius: 20, border: '1.5px solid rgba(124,92,255,.4)', background: 'linear-gradient(165deg,rgba(124,92,255,.13),rgba(124,92,255,.03))' }}>
+          <div style={{ fontSize: 14.5, fontWeight: 700 }}>{t('sum.planTomorrowTitle')}</div>
+          <div style={{ fontSize: 12.5, color: '#a3a3b3', marginTop: 6, lineHeight: 1.45 }}>{t('sum.planTomorrowDesc')}</div>
+          <div onClick={() => go('planner')} style={{ marginTop: 13, height: 48, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14.5, fontWeight: 700, cursor: 'pointer' }}>{t('home.planTomorrow')}</div>
+        </div>
+      )}
+
+      <div onClick={goHomeSummarized} style={{ marginTop: 12, height: 56, borderRadius: 17, background: celebrate ? 'rgba(255,255,255,.055)' : 'linear-gradient(160deg,#8b6dff,#6d4dff)', border: celebrate ? '1px solid rgba(255,255,255,.1)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16.5, fontWeight: 700, cursor: 'pointer', boxShadow: celebrate ? 'none' : '0 12px 30px rgba(109,77,255,.35)' }}>{t('sum.backToStart')}</div>
     </div>
   );
 }
