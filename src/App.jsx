@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import TabBar from './components/TabBar';
 import ChatWidget from './components/ChatWidget';
 import NotificationBell from './components/NotificationBell';
+import QuickAddSheet from './components/QuickAddSheet';
 import { GeneratingOverlay } from './components/ui';
 import Home from './screens/Home';
 import Calendar from './screens/Calendar';
@@ -32,6 +34,7 @@ function MainApp({ name, schoolPlan, activities, profileDefaults, weeklyCapacity
   const { state } = planner;
   const screen = state.screen;
   const streak = computeStreak(studyHistory);
+  const [quickAddOpen, setQuickAddOpen] = useState(false);
 
   return (
     <div className="app-shell">
@@ -62,8 +65,6 @@ function MainApp({ name, schoolPlan, activities, profileDefaults, weeklyCapacity
           energy={state.energy}
           profileDefaults={profileDefaults}
           studyHistory={studyHistory}
-          recurringActivities={recurringActivities}
-          setRecurringActivities={setRecurringActivities}
         />
       )}
 
@@ -82,7 +83,15 @@ function MainApp({ name, schoolPlan, activities, profileDefaults, weeklyCapacity
         setRecurringActivities={setRecurringActivities}
       />
 
-      {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} />}
+      <QuickAddSheet
+        open={quickAddOpen}
+        onClose={() => setQuickAddOpen(false)}
+        onAddExam={() => planner.go('deadline')}
+        recurringActivities={recurringActivities}
+        setRecurringActivities={setRecurringActivities}
+      />
+
+      {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} onFabClick={() => setQuickAddOpen(true)} />}
     </div>
   );
 }

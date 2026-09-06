@@ -15,7 +15,7 @@ const TABS = [
     ),
   },
   {
-    key: 'deadline', labelKey: 'tab.deadline', screens: ['deadline', 'prep'], fab: true,
+    key: 'deadline', labelKey: 'tab.deadline', fab: true,
   },
   {
     key: 'goals', labelKey: 'tab.goals', screens: ['goals'],
@@ -38,7 +38,7 @@ const TABS = [
   },
 ];
 
-export default function TabBar({ screen, onNavigate }) {
+export default function TabBar({ screen, onNavigate, onFabClick }) {
   const { t } = useLang();
   return (
     <div style={{
@@ -52,7 +52,7 @@ export default function TabBar({ screen, onNavigate }) {
           return (
             <div key={tab.key} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
               <div
-                onClick={() => onNavigate(tab.screens[0])}
+                onClick={onFabClick}
                 style={{
                   width: 54, height: 54, marginTop: -26, borderRadius: '50%', flex: 'none',
                   background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', border: '4px solid #08080c',
