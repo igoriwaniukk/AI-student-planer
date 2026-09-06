@@ -1,7 +1,10 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { WEEK_DAYS, REFERENCE_DAY } from '../lib/plannerData';
 import { DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
+
+const SWIPE_THRESHOLD = 40;
+const DRAG_THRESHOLD = 8;
 
 // examDay marks the days counting down to it (today through the exam,
 // inclusive) with an orange bar + caption, in their normal calendar
@@ -10,7 +13,8 @@ import { useLang } from '../lib/useLang';
 // marks the most recent `streakCount` days up to today with a warm flame
 // highlight, for a habit-streak view — the two modes are never used
 // together by any current caller.
-// pageable adds ‹ › arrows that shift the whole 7-day window by a week;
+// pageable lets the whole 7-day window be dragged/swiped left or right by
+// a week — no arrow buttons, so the 7 days always fill the row evenly.
 // weekOffset/onOffsetChange let a parent (e.g. Calendar) keep its own
 // exam/activity lookups in sync with which week is showing, instead of
 // this component silently owning that state.
@@ -22,6 +26,8 @@ export default function WeekStrip({
   const [internalOffset, setInternalOffset] = useState(0);
   const weekOffset = controlledOffset ?? internalOffset;
   const setWeekOffset = onOffsetChange ?? setInternalOffset;
+  const dragStartX = useRef(null);
+  const dragged = useRef(false);
 
   const baseWeek = weekOffset ? WEEK_DAYS.map((d) => ({ ...d, num: d.num + weekOffset * 7 })) : WEEK_DAYS;
   const countdownSet = examDay != null
@@ -32,16 +38,40 @@ export default function WeekStrip({
     : null;
   const daysUntilExam = examDay != null ? examDay - REFERENCE_DAY : null;
 
-  const arrowStyle = {
-    flex: 'none', width: 26, height: 26, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-    fontSize: 14, fontWeight: 700, color: '#9a9aab', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.09)', cursor: 'pointer',
-  };
+  function handlePointerDown(e) {
+    dragStartX.current = e.clientX;
+    dragged.current = false;
+  }
+  function handlePointerMove(e) {
+    if (dragStartX.current == null) return;
+    if (Math.abs(e.clientX - dragStartX.current) > DRAG_THRESHOLD) dragged.current = true;
+  }
+  function handlePointerUp(e) {
+    if (dragStartX.current == null) return;
+    const dx = e.clientX - dragStartX.current;
+    dragStartX.current = null;
+    if (Math.abs(dx) > SWIPE_THRESHOLD) setWeekOffset(weekOffset + (dx < 0 ? 1 : -1));
+  }
+  function handleClickCapture(e) {
+    if (dragged.current) {
+      e.stopPropagation();
+      dragged.current = false;
+    }
+  }
 
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: topMargin }}>
-        {pageable && <span onClick={() => setWeekOffset(weekOffset - 1)} style={arrowStyle}>‹</span>}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 3, flex: 1 }}>
+        <div
+          style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 3, flex: 1, touchAction: pageable ? 'pan-y' : undefined }}
+          {...(pageable ? {
+            onPointerDown: handlePointerDown,
+            onPointerMove: handlePointerMove,
+            onPointerUp: handlePointerUp,
+            onPointerCancel: handlePointerUp,
+            onClickCapture: handleClickCapture,
+          } : {})}
+        >
           {baseWeek.map(({ num, label, short }) => {
             const on = num === selectedDay;
             const hasEvent = eventDays ? eventDays.has(num) : num % 2 === 0;
@@ -81,7 +111,6 @@ export default function WeekStrip({
             );
           })}
         </div>
-        {pageable && <span onClick={() => setWeekOffset(weekOffset + 1)} style={arrowStyle}>›</span>}
       </div>
       {countdownSet && daysUntilExam >= 0 && (
         <div style={{ marginTop: 9, fontSize: 11.5, fontWeight: 650, color: '#f5a524', textAlign: 'center' }}>

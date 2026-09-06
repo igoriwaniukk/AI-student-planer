@@ -135,7 +135,7 @@ export default function Calendar({ planner, activities, recurringActivities = []
             <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', marginBottom: 10 }}>{t('cal.yourActivities')}</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {selectedActivities.map((a) => (
-                <span key={a} style={{ fontSize: 12, color: '#c9c9d6', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 999, padding: '6px 12px' }}>{a}</span>
+                <span key={a} style={{ fontSize: 12, color: '#c9c9d6', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', borderRadius: 999, padding: '6px 12px' }}>{t(VALUE_KEY[a]) || a}</span>
               ))}
             </div>
           </Card>

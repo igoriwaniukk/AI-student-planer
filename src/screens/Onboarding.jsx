@@ -148,7 +148,7 @@ export default function Onboarding({ onComplete }) {
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
             {ACTIVITY_OPTIONS.map((activity) => (
-              <Chip key={activity} label={activity} active={selectedActivities.includes(activity)} onClick={() => toggleInList(activity, selectedActivities, setSelectedActivities)} />
+              <Chip key={activity} label={t(VALUE_KEY[activity]) || activity} active={selectedActivities.includes(activity)} onClick={() => toggleInList(activity, selectedActivities, setSelectedActivities)} />
             ))}
           </div>
           <label style={{ fontSize: 12, color: '#8a8a99', marginTop: 16, display: 'block' }}>
@@ -233,7 +233,7 @@ export default function Onboarding({ onComplete }) {
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
             {PRIORITY_SUBJECT_OPTIONS.map((s) => (
-              <Chip key={s} label={s} active={prioritySubjects.includes(s)} onClick={() => toggleInList(s, prioritySubjects, setPrioritySubjects)} />
+              <Chip key={s} label={t(VALUE_KEY[s]) || s} active={prioritySubjects.includes(s)} onClick={() => toggleInList(s, prioritySubjects, setPrioritySubjects)} />
             ))}
           </div>
           <button type="button" className="btn btn-primary" style={{ marginTop: 18 }} onClick={finish}>
