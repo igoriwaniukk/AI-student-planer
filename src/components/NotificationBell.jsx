@@ -1,36 +1,48 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { upcomingExams } from '../lib/plannerLogic';
 import { useCustomReminders } from '../lib/store';
 import { useLang } from '../lib/useLang';
+import { isPushSupported, getExistingSubscription, subscribeToPush, unsubscribeFromPush, syncPushState } from '../lib/pushNotifications';
 
-// Browser-side "push": while this tab stays open, it can pop a real OS
-// notification banner. There's no service worker or backend here, so it
-// can't reach the phone once the tab/app is closed — the note in the sheet
-// says so rather than overpromising.
-function requestBrowserPermission(t, setStatus) {
-  if (typeof window === 'undefined' || !('Notification' in window)) return;
-  Notification.requestPermission().then((perm) => {
-    if (perm === 'granted') {
-      setStatus('granted');
-      new Notification(t('notif.testTitle'), { body: t('notif.testBody') });
-    } else {
-      setStatus('denied');
-    }
-  });
-}
-
-export default function NotificationBell({ state }) {
-  const { t } = useLang();
+export default function NotificationBell({ state, streak = 0 }) {
+  const { t, lang } = useLang();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
-  const [browserStatus, setBrowserStatus] = useState(null);
+  // idle | subscribed | denied | error | unsupported
+  const [pushStatus, setPushStatus] = useState(() => (isPushSupported() ? 'idle' : 'unsupported'));
   const [reminders, setReminders] = useCustomReminders();
 
   const examAlerts = upcomingExams(state)
     .filter((e) => e.daysUntil >= 0 && e.daysUntil <= 14)
     .sort((a, b) => a.daysUntil - b.daysUntil);
+  const hasUpcomingExam = examAlerts.length > 0;
+  const hasNew = hasUpcomingExam || reminders.length > 0;
 
-  const hasNew = examAlerts.length > 0 || reminders.length > 0;
+  useEffect(() => {
+    if (!isPushSupported()) return;
+    getExistingSubscription().then((sub) => setPushStatus(sub ? 'subscribed' : 'idle'));
+  }, []);
+
+  // Keeps the server's last-known snapshot fresh so its scheduled push text
+  // (streak / exam / reminder) stays accurate — a no-op until subscribed.
+  useEffect(() => {
+    if (pushStatus !== 'subscribed') return;
+    syncPushState({ streak, hasUpcomingExam, reminders: reminders.map((r) => r.text), lang });
+  }, [pushStatus, streak, hasUpcomingExam, reminders, lang]);
+
+  async function togglePush() {
+    if (pushStatus === 'subscribed') {
+      await unsubscribeFromPush();
+      setPushStatus('idle');
+      return;
+    }
+    try {
+      await subscribeToPush({ streak, hasUpcomingExam, reminders: reminders.map((r) => r.text), lang });
+      setPushStatus('subscribed');
+    } catch (err) {
+      setPushStatus(err.message === 'denied' ? 'denied' : 'error');
+    }
+  }
 
   function addReminder() {
     const text = draft.trim();
@@ -42,6 +54,14 @@ export default function NotificationBell({ state }) {
   function removeReminder(id) {
     setReminders((list) => list.filter((r) => r.id !== id));
   }
+
+  const pushNote = {
+    unsupported: t('notif.pushUnsupported'),
+    denied: t('notif.pushDenied'),
+    error: t('notif.pushError'),
+    subscribed: t('notif.pushOnNote'),
+    idle: t('notif.pushOffNote'),
+  }[pushStatus];
 
   return (
     <>
@@ -64,61 +84,64 @@ export default function NotificationBell({ state }) {
               boxShadow: '0 16px 40px rgba(0,0,0,.5)', animation: 'fadeUp .22s ease both',
             }}
           >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{t('notif.title')}</div>
-            <span onClick={() => setOpen(false)} style={{ fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('notif.close')}</span>
-          </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{t('notif.title')}</div>
+              <span onClick={() => setOpen(false)} style={{ fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('notif.close')}</span>
+            </div>
 
-          {examAlerts.length > 0 && (
-            <>
-              <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('notif.examSection')}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                {examAlerts.map((e) => (
-                  <div key={e.id} style={{ padding: '12px 14px', borderRadius: 15, background: 'rgba(245,165,36,.08)', border: '1px solid rgba(245,165,36,.28)', display: 'flex', alignItems: 'center', gap: 11 }}>
-                    <span style={{ fontSize: 17 }}>⏰</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: e.color }}>{e.subject.toUpperCase()}</div>
-                      <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{e.title}</div>
+            {examAlerts.length > 0 && (
+              <>
+                <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('notif.examSection')}</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                  {examAlerts.map((e) => (
+                    <div key={e.id} style={{ padding: '12px 14px', borderRadius: 15, background: 'rgba(245,165,36,.08)', border: '1px solid rgba(245,165,36,.28)', display: 'flex', alignItems: 'center', gap: 11 }}>
+                      <span style={{ fontSize: 17 }}>⏰</span>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: e.color }}>{e.subject.toUpperCase()}</div>
+                        <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{e.title}</div>
+                      </div>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#f5a524', flex: 'none' }}>{e.daysUntil === 1 ? t('cal.tomorrowPill') : t('cal.inDaysPill', { n: e.daysUntil })}</span>
                     </div>
-                    <span style={{ fontSize: 12, fontWeight: 700, color: '#f5a524', flex: 'none' }}>{e.daysUntil === 1 ? t('cal.tomorrowPill') : t('cal.inDaysPill', { n: e.daysUntil })}</span>
+                  ))}
+                </div>
+              </>
+            )}
+
+            <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('notif.remindersSection')}</div>
+            {reminders.length > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+                {reminders.map((r) => (
+                  <div key={r.id} style={{ padding: '12px 14px', borderRadius: 15, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 11 }}>
+                    <span style={{ fontSize: 17 }}>📌</span>
+                    <div style={{ flex: 1, fontSize: 13.5, fontWeight: 650 }}>{r.text}</div>
+                    <span onClick={() => removeReminder(r.id)} style={{ fontSize: 12, fontWeight: 650, color: '#8a8a99', cursor: 'pointer', flex: 'none' }}>{t('dl.remove')}</span>
                   </div>
                 ))}
               </div>
-            </>
-          )}
+            ) : examAlerts.length === 0 && (
+              <div style={{ fontSize: 12.5, color: '#8a8a99' }}>{t('notif.empty')}</div>
+            )}
 
-          <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('notif.remindersSection')}</div>
-          {reminders.length > 0 ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-              {reminders.map((r) => (
-                <div key={r.id} style={{ padding: '12px 14px', borderRadius: 15, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 11 }}>
-                  <span style={{ fontSize: 17 }}>📌</span>
-                  <div style={{ flex: 1, fontSize: 13.5, fontWeight: 650 }}>{r.text}</div>
-                  <span onClick={() => removeReminder(r.id)} style={{ fontSize: 12, fontWeight: 650, color: '#8a8a99', cursor: 'pointer', flex: 'none' }}>{t('dl.remove')}</span>
-                </div>
-              ))}
+            <div style={{ display: 'flex', gap: 9, marginTop: 12 }}>
+              <input
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addReminder()}
+                placeholder={t('notif.addPlaceholder')}
+                style={{ flex: 1 }}
+              />
+              <div onClick={addReminder} style={{ width: 46, height: 46, flex: 'none', borderRadius: 13, background: 'rgba(124,92,255,.16)', border: '1px solid rgba(124,92,255,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: '#c9baff', cursor: 'pointer' }}>+</div>
             </div>
-          ) : examAlerts.length === 0 && (
-            <div style={{ fontSize: 12.5, color: '#8a8a99' }}>{t('notif.empty')}</div>
-          )}
 
-          <div style={{ display: 'flex', gap: 9, marginTop: 12 }}>
-            <input
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && addReminder()}
-              placeholder={t('notif.addPlaceholder')}
-              style={{ flex: 1 }}
-            />
-            <div onClick={addReminder} style={{ width: 46, height: 46, flex: 'none', borderRadius: 13, background: 'rgba(124,92,255,.16)', border: '1px solid rgba(124,92,255,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: '#c9baff', cursor: 'pointer' }}>+</div>
-          </div>
-
-          <div onClick={() => requestBrowserPermission(t, setBrowserStatus)} style={{ marginTop: 18, padding: '12px 14px', borderRadius: 15, background: 'rgba(124,92,255,.08)', border: '1px solid rgba(124,92,255,.25)', cursor: 'pointer' }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#c9baff' }}>🔔 {t('notif.enableBrowser')}</div>
-            <div style={{ fontSize: 11, color: '#8a8a99', marginTop: 4, lineHeight: 1.4 }}>
-              {browserStatus === 'granted' ? t('notif.browserEnabled') : browserStatus === 'denied' ? t('notif.browserDenied') : t('notif.enableBrowserNote')}
+            <div
+              onClick={pushStatus === 'unsupported' ? undefined : togglePush}
+              style={{ marginTop: 18, padding: '12px 14px', borderRadius: 15, background: 'rgba(124,92,255,.08)', border: '1px solid rgba(124,92,255,.25)', cursor: pushStatus === 'unsupported' ? 'default' : 'pointer' }}
+            >
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#c9baff' }}>
+                🔔 {pushStatus === 'subscribed' ? t('notif.disablePush') : t('notif.enablePush')}
+              </div>
+              <div style={{ fontSize: 11, color: '#8a8a99', marginTop: 4, lineHeight: 1.4 }}>{pushNote}</div>
             </div>
-          </div>
           </div>
         </>
       )}

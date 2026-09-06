@@ -1,8 +1,11 @@
 import { config } from 'dotenv';
 import express from 'express';
+import webpush from 'web-push';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { GOALS, IMPORTANCE_OPTIONS, ENERGY_OPTIONS, RECUR_DAYS } from '../src/lib/plannerData.js';
+import { saveSubscription, updateState, removeSubscription, allSubscriptions, bumpTick } from './pushStore.js';
+import { composeMessage } from './pushMessages.js';
 
 // Load server/.env explicitly by file location, not by resolving against
 // process.cwd() (dotenv's default) — `npm run server` runs with cwd set to
@@ -17,6 +20,15 @@ config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '.env') }
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
 const PORT = process.env.PORT || 8787;
+
+const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
+const VAPID_PRIVATE_KEY = process.env.VAPID_PRIVATE_KEY;
+const VAPID_CONTACT = process.env.VAPID_CONTACT || 'mailto:example@example.com';
+const PUSH_INTERVAL_MINUTES = Number(process.env.PUSH_INTERVAL_MINUTES) || 60;
+const pushEnabled = !!(VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY);
+if (pushEnabled) {
+  webpush.setVapidDetails(VAPID_CONTACT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+}
 
 const app = express();
 app.use(express.json({ limit: '1mb' }));
@@ -203,6 +215,67 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+app.get('/api/push/vapid-public-key', (req, res) => {
+  if (!pushEnabled) {
+    res.status(500).json({ error: 'Brak VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY na serwerze. Wygeneruj je: npx web-push generate-vapid-keys' });
+    return;
+  }
+  res.json({ publicKey: VAPID_PUBLIC_KEY });
+});
+
+app.post('/api/push/subscribe', (req, res) => {
+  const { subscription, state } = req.body || {};
+  if (!subscription?.endpoint) {
+    res.status(400).json({ error: 'Brak subskrypcji push.' });
+    return;
+  }
+  saveSubscription(subscription, state);
+  res.json({ ok: true });
+});
+
+app.post('/api/push/state', (req, res) => {
+  const { endpoint, state } = req.body || {};
+  if (!endpoint) {
+    res.status(400).json({ error: 'Brak endpoint.' });
+    return;
+  }
+  updateState(endpoint, state);
+  res.json({ ok: true });
+});
+
+app.post('/api/push/unsubscribe', (req, res) => {
+  const { endpoint } = req.body || {};
+  if (endpoint) removeSubscription(endpoint);
+  res.json({ ok: true });
+});
+
+// Periodically sends every subscribed device one push built from the state
+// it last reported (streak, upcoming-exam flag, custom reminders) — the
+// server never sees the app's localStorage directly, only this snapshot.
+async function sendScheduledPushes() {
+  if (!pushEnabled) return;
+  for (const { subscription, state } of allSubscriptions()) {
+    const tick = bumpTick(subscription.endpoint);
+    const message = composeMessage(state || {}, tick);
+    try {
+      await webpush.sendNotification(subscription, JSON.stringify(message));
+    } catch (err) {
+      if (err.statusCode === 404 || err.statusCode === 410) {
+        removeSubscription(subscription.endpoint);
+      } else {
+        console.error('Push send failed:', err.message);
+      }
+    }
+  }
+}
+
+if (pushEnabled) {
+  setInterval(sendScheduledPushes, PUSH_INTERVAL_MINUTES * 60 * 1000);
+}
+
 app.listen(PORT, () => {
   console.log(`Chat AI server listening on http://localhost:${PORT}`);
+  console.log(pushEnabled
+    ? `Push notifications enabled, checking every ${PUSH_INTERVAL_MINUTES} min.`
+    : 'Push notifications disabled (set VAPID_PUBLIC_KEY/VAPID_PRIVATE_KEY in server/.env to enable).');
 });

@@ -20,6 +20,7 @@ import {
 } from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
 import { LanguageProvider } from './lib/LanguageContext';
+import { computeStreak } from './lib/plannerLogic';
 
 const TAB_SCREENS = new Set(['home', 'calendar', 'goals', 'profile']);
 
@@ -30,6 +31,7 @@ function MainApp({ name, schoolPlan, activities, profileDefaults, weeklyCapacity
   const planner = usePlanner(profileDefaults);
   const { state } = planner;
   const screen = state.screen;
+  const streak = computeStreak(studyHistory);
 
   return (
     <div className="app-shell">
@@ -67,7 +69,7 @@ function MainApp({ name, schoolPlan, activities, profileDefaults, weeklyCapacity
 
       {state.generating && <GeneratingOverlay labels={state.genLabels} step={state.genStep} />}
 
-      <NotificationBell state={state} />
+      <NotificationBell state={state} streak={streak} />
 
       <ChatWidget
         planner={planner}
