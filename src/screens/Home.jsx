@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { GOALS, IMPORTANCE_OPTIONS, WEEK_DAYS, TENIS_DAY } from '../lib/plannerData';
-import { span, hm, upcomingExams, computeStreak, computeTotalPoints, dayInfo } from '../lib/plannerLogic';
+import { GOALS, IMPORTANCE_OPTIONS } from '../lib/plannerData';
+import { span, computeStreak, computeTotalPoints, dayInfo } from '../lib/plannerLogic';
 import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
@@ -53,14 +53,6 @@ function StreakNotice({ notice, onDismiss }) {
   );
 }
 
-function dayLoad(state, dayNum) {
-  const info = WEEK_DAYS.find((d) => d.num === dayNum);
-  let load = info?.school ? 1 : 0;
-  if (dayNum === TENIS_DAY) load += 1;
-  load += upcomingExams(state).filter((e) => e.day === dayNum).length * 2;
-  return load;
-}
-
 // Combines the streak count with the week strip so the days that make up
 // the streak are visible right where the count is, instead of a plain
 // number with the calendar buried further down the page.
@@ -97,44 +89,6 @@ function StreakCard({ streak, selectedDay, onSelectDay }) {
   );
 }
 
-function MorningSummaryCard({ state }) {
-  const { t } = useLang();
-  const sched = state.schedule || {};
-  const ids = Object.keys(sched);
-  const totalMin = ids.reduce((a, id) => a + sched[id].dur, 0);
-  const nextExam = upcomingExams(state).filter((e) => e.daysUntil >= 0)[0];
-  const loads = WEEK_DAYS.map((d) => ({ ...d, load: dayLoad(state, d.num) }));
-  const heaviest = loads.reduce((a, b) => (b.load > a.load ? b : a));
-  const lightest = loads.reduce((a, b) => (b.load < a.load ? b : a));
-  const whenText = (n) => (n === 0 ? t('home.today') : n === 1 ? t('home.tomorrow') : t('home.inDays', { n }));
-
-  return (
-    <div style={{ marginTop: 18, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
-      <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.morningSummary')}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 11 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <span style={{ fontSize: 13 }}>📅</span>
-          <span style={{ fontSize: 12.5, color: '#c9c9d6' }}>
-            {ids.length
-              ? t('home.sessionsToday', { count: ids.length, word: t(ids.length === 1 ? 'home.sessionWord' : 'home.sessionsWordPl'), time: hm(totalMin) })
-              : t('home.noSessionsToday')}
-          </span>
-        </div>
-        {nextExam && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-            <span style={{ fontSize: 13 }}>⏳</span>
-            <span style={{ fontSize: 12.5, color: '#c9c9d6' }}>{t('home.nextExam', { subject: t(VALUE_KEY[nextExam.subject]) || nextExam.subject, when: whenText(nextExam.daysUntil) })}</span>
-          </div>
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <span style={{ fontSize: 13 }}>📊</span>
-          <span style={{ fontSize: 12.5, color: '#c9c9d6' }}>{t('home.heaviestLightest', { heavy: t(DAY_KEY[heaviest.label]) || heaviest.label, light: t(DAY_KEY[lightest.label]) || lightest.label })}</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function GoalPromptCard({ planner, exam }) {
   const { t } = useLang();
   const { answerGoalPrompt, dismissGoalPrompt } = planner;
@@ -144,7 +98,7 @@ function GoalPromptCard({ planner, exam }) {
   const canSave = importance && grade;
 
   return (
-    <div style={{ marginTop: 18, padding: 16, borderRadius: 20, background: 'rgba(124,92,255,.08)', border: '1.5px solid rgba(124,92,255,.35)' }}>
+    <div style={{ marginTop: 18, padding: 16, borderRadius: 20, background: 'rgba(124,92,255,.08)', border: '1.5px solid rgba(124,92,255,.35)', animation: 'cardGlowPulse 3.4s ease-in-out infinite', '--glow-color': 'rgba(124,92,255,.4)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
         <span style={{ fontSize: 16 }}>🎯</span>
         <div style={{ fontSize: 13.5, fontWeight: 700 }}>{t('home.examSoon', { subject: t(VALUE_KEY[exam.subject]) || exam.subject })}</div>
@@ -256,7 +210,7 @@ function NextSessionCard({ planner }) {
   const nextId = active || ids.filter((id) => ['planned', 'paused'].includes(ts(id).status))[0];
 
   const box = (children) => (
-    <div style={{ marginTop: 18, padding: 16, borderRadius: 20, border: '1.5px solid rgba(124,92,255,.55)', background: 'linear-gradient(165deg,rgba(124,92,255,.13),rgba(124,92,255,.03))' }}>
+    <div style={{ marginTop: 18, padding: 16, borderRadius: 20, border: '1.5px solid rgba(124,92,255,.55)', background: 'linear-gradient(165deg,rgba(124,92,255,.13),rgba(124,92,255,.03))', animation: 'cardGlowPulse 3.4s ease-in-out infinite', '--glow-color': 'rgba(124,92,255,.5)' }}>
       {children}
     </div>
   );
@@ -500,7 +454,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
           <div style={{ fontSize: 12.5, color: '#8a8a99', letterSpacing: '.01em' }}>{dateLong}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
             <div style={{ fontSize: 28, fontWeight: 750, letterSpacing: '-.02em' }}>{t('home.greeting', { name: parts[0] })}</div>
-            <span style={{ fontSize: 22 }}>👋</span>
+            <span style={{ fontSize: 22, display: 'inline-block', transformOrigin: '70% 70%', animation: 'handWave 3.2s ease-in-out infinite' }}>👋</span>
           </div>
           <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 6 }}>{t('home.subtitle')}</div>
         </div>
@@ -520,8 +474,6 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
 
       <StreakCard streak={streak} selectedDay={viewDay} onSelectDay={setViewDay} />
       <StreakNotice notice={streakNotice} onDismiss={() => setLastSeenStreak(streak)} />
-
-      <MorningSummaryCard state={state} />
 
       {state.rescueApplied && (
         <div style={{ marginTop: 18, padding: 15, borderRadius: 18, background: 'rgba(53,208,127,.06)', border: '1px solid rgba(53,208,127,.22)' }}>
@@ -571,7 +523,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
         </div>
       )}
 
-      <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(245,165,36,.06)', border: '1px solid rgba(245,165,36,.22)', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(245,165,36,.06)', border: '1px solid rgba(245,165,36,.22)', display: 'flex', alignItems: 'center', gap: 12, animation: 'cardGlowPulse 3.4s ease-in-out infinite', '--glow-color': 'rgba(245,165,36,.4)' }}>
         <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(245,165,36,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="16" height="15" viewBox="0 0 16 15" fill="none"><path d="M8 1.6l6.2 11H1.8L8 1.6z" stroke="#f5a524" strokeWidth="1.3" strokeLinejoin="round" /><path d="M8 5.6v3.2" stroke="#f5a524" strokeWidth="1.3" strokeLinecap="round" /><circle cx="8" cy="11" r=".8" fill="#f5a524" /></svg></div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.nextDeadline')}</div>

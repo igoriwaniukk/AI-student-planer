@@ -69,6 +69,7 @@ export default function TabBar({ screen, onNavigate, onFabClick, fabActive = fal
                   background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', border: '4px solid #08080c',
                   boxShadow: '0 8px 20px rgba(109,77,255,.45)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                  animation: fabActive ? 'none' : 'fabAttention 4.5s ease-in-out infinite',
                 }}
               >
                 <span

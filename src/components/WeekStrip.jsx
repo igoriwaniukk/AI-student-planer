@@ -103,7 +103,9 @@ export default function WeekStrip({
                       ? '1px solid transparent'
                       : isCountdown ? '1px solid rgba(245,165,36,.35)' : isStreak ? '1px solid rgba(245,101,36,.38)' : '1px solid transparent',
                     boxShadow: on ? '0 6px 18px rgba(109,77,255,.35)' : 'none',
-                    animation: !on && (isCountdown || isStreak) ? 'dayGlow 2.6s ease-in-out infinite' : 'none',
+                    animation: on
+                      ? 'selectedDayPulse 2.4s ease-in-out infinite'
+                      : (isCountdown || isStreak) ? 'dayGlow 2.6s ease-in-out infinite' : 'none',
                     '--glow-color': isCountdown ? 'rgba(245,165,36,.55)' : 'rgba(245,101,36,.55)',
                   }}
                 >
