@@ -1,6 +1,8 @@
 import { BackButton, StickyFooter, PrimaryButton, BottomSheet, OptionRow, ConfirmCard } from '../components/ui';
 import { VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
+import { REFERENCE_DAY } from '../lib/plannerData';
+import { weekdayDateLabel, formatMonthDay } from '../lib/plannerLogic';
 
 function sesji(n) {
   return n + (n === 1 ? ' sesja' : (n >= 2 && n <= 4 ? ' sesje' : ' sesji'));
@@ -23,7 +25,7 @@ export default function Prep({ planner }) {
   const curDate = sEdit.date || SESSION_DATES[sIdx];
   const curStart = sEdit.start || (sEdit.time || SESSIONS[sIdx].time).split('–')[0];
   const curDur = sEdit.dur || SESSIONS[sIdx].dur;
-  const dateOpts = [SESSION_DATES[sIdx], t('prep.wedJuly22'), t('prep.satAug1')];
+  const dateOpts = [SESSION_DATES[sIdx], t('prep.wedJuly22', { date: weekdayDateLabel(REFERENCE_DAY + 2) }), t('prep.satAug1', { date: weekdayDateLabel(REFERENCE_DAY + 12) })];
   const totalMin = SESSIONS.reduce((a, s) => a + parseInt(s.dur, 10), 0);
   const hUnit = lang === 'en' ? 'hr' : 'godz.';
   const totalLabel = totalMin >= 60 ? Math.floor(totalMin / 60) + ' ' + hUnit + (totalMin % 60 ? ' ' + (totalMin % 60) + ' min' : '') : totalMin + ' min';
@@ -35,7 +37,7 @@ export default function Prep({ planner }) {
         <span style={{ fontSize: 11, fontWeight: 650, color: '#c9baff', padding: '8px 14px', borderRadius: 999, background: 'rgba(124,92,255,.14)', border: '1px solid rgba(124,92,255,.45)' }}>{t('prep.toConfirm')}</span>
       </div>
       <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>{t('prep.title')}</div>
-      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('prep.subtitle', { subject: t(VALUE_KEY[state.subject]) || state.subject })}</div>
+      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('prep.subtitle', { subject: t(VALUE_KEY[state.subject]) || state.subject, date: formatMonthDay(REFERENCE_DAY + 11) })}</div>
 
       <div style={{ marginTop: 18, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.14)' }}>
         <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>{t('prep.ready')}</div>
@@ -82,7 +84,7 @@ export default function Prep({ planner }) {
         <div style={{ padding: 14, borderRadius: 18, background: 'rgba(245,165,36,.06)', border: '1.5px solid rgba(245,165,36,.32)', display: 'flex', gap: 12 }}>
           <div style={{ width: 32, height: 32, flex: 'none', borderRadius: 10, background: 'rgba(245,165,36,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="11" height="13" viewBox="0 0 12 14" fill="none"><rect x="1.5" y="5.5" width="9" height="7.2" rx="1.8" stroke="#f5a524" strokeWidth="1.2" /><path d="M3.8 5.5V4a2.2 2.2 0 014.4 0v1.5" stroke="#f5a524" strokeWidth="1.2" /></svg></div>
           <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}><span style={{ fontSize: 11.5, color: '#8a8a99' }}>{t('prep.examLabel')}</span><span style={{ fontSize: 10.5, fontWeight: 650, color: '#f5a524' }}>{t('prep.deadlineTag')}</span></div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}><span style={{ fontSize: 11.5, color: '#8a8a99' }}>{t('prep.examLabel', { date: weekdayDateLabel(REFERENCE_DAY + 11) })}</span><span style={{ fontSize: 10.5, fontWeight: 650, color: '#f5a524' }}>{t('prep.deadlineTag')}</span></div>
             <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6 }}>{t('prep.examTitle')}</div>
             <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 3 }}>{t('prep.examNote')}</div>
           </div>

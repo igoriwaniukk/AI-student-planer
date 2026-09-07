@@ -1,4 +1,5 @@
-import { KINDS, SUBJECTS, GOALS, LEVELS } from '../lib/plannerData';
+import { KINDS, SUBJECTS, GOALS, LEVELS, REFERENCE_DAY } from '../lib/plannerData';
+import { weekdayDateLabel, formatMonthDay } from '../lib/plannerLogic';
 import { VALUE_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, Chip, ListRow, ConfirmCard, LabelRequired } from '../components/ui';
 import { useLang } from '../lib/useLang';
@@ -52,7 +53,7 @@ export default function Deadline({ planner }) {
       <div style={{ display: 'flex', gap: 10 }}>
         <div onClick={() => setField('dateValid', !state.dateValid)} style={{ flex: 2, height: 66, borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid ' + (state.dateValid ? 'rgba(255,255,255,.09)' : 'rgba(245,165,36,.5)'), padding: '0 14px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 4, cursor: 'pointer' }}>
           <span style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('dl.date')}</span>
-          <span style={{ fontSize: 14, fontWeight: 700, color: state.dateValid ? '#f4f4f7' : '#f5a524' }}>{state.dateValid ? t('dl.dateFuture') : t('dl.datePast')}</span>
+          <span style={{ fontSize: 14, fontWeight: 700, color: state.dateValid ? '#f4f4f7' : '#f5a524' }}>{state.dateValid ? t('dl.dateFuture', { date: weekdayDateLabel(REFERENCE_DAY + 11, { year: true }) }) : t('dl.datePast', { date: weekdayDateLabel(REFERENCE_DAY - 3, { year: true }) })}</span>
         </div>
         <div style={{ flex: 1, height: 66, borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', padding: '0 14px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 4 }}>
           <span style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('dl.time')}</span>
@@ -117,7 +118,7 @@ export default function Deadline({ planner }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 14 }}>
           <Row label={t('dl.kind')} value={t(VALUE_KEY[state.kind]) || state.kind} />
           <Row label={t('dl.subject')} value={t(VALUE_KEY[state.subject]) || state.subject} />
-          <Row label={t('dl.deadline')} value={t('dl.deadlineValue')} />
+          <Row label={t('dl.deadline')} value={t('dl.deadlineValue', { date: formatMonthDay(REFERENCE_DAY + 11) })} />
           <Row label={t('dl.left')} value={state.dateValid ? t('dl.inDays11') : t('dl.datePassed')} />
           <Row label={t('dl.scope')} value={state.topics.length === 1 ? t('dl.oneTopic') : t('dl.nTopics', { n: state.topics.length })} />
           <Row label={t('dl.difficulty')} value={t('dl.difficultyValue', { level: difficultyLabel })} />

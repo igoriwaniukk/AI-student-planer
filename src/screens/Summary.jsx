@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { HARD_OPTIONS, KNOW_OPTIONS, DAY_HARD_OPTIONS } from '../lib/plannerData';
-import { hm, toMinutes, fmt, zad } from '../lib/plannerLogic';
+import { HARD_OPTIONS, KNOW_OPTIONS, DAY_HARD_OPTIONS, REFERENCE_DAY } from '../lib/plannerData';
+import { hm, toMinutes, fmt, zad, weekdayDateLabel } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, PrimaryButton, EnergyPicker, OptionRow, ListRow, Chip, BottomSheet, Confetti } from '../components/ui';
 import { useLang } from '../lib/useLang';
@@ -32,7 +32,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px' }}>
       <BackButton onClick={() => go('home')} />
       <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>{t('sum.title')}</div>
-      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('sum.date')}</div>
+      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('sum.date', { date: weekdayDateLabel(REFERENCE_DAY) })}</div>
       <div style={{ fontSize: 13, lineHeight: 1.5, color: '#8a8a99', marginTop: 6 }}>{t('sum.subtitle')}</div>
 
       <div style={{ marginTop: 18, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)' }}>
@@ -226,7 +226,7 @@ function EngTimeSheet({ planner }) {
       <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 6 }}>{t('sum.changeEngDesc')}</div>
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('sum.dateLabel')}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-        {[t('sum.tueJuly21'), t('sum.wedJuly22')].map((d) => (
+        {[t('sum.tueJuly21', { date: weekdayDateLabel(REFERENCE_DAY + 1) }), t('sum.wedJuly22', { date: weekdayDateLabel(REFERENCE_DAY + 2) })].map((d) => (
           <div key={d} onClick={() => update({ engDate: d, engMessage: '' })} style={{ height: 46, borderRadius: 13, display: 'flex', alignItems: 'center', padding: '0 14px', fontSize: 13, fontWeight: 650, cursor: 'pointer', background: state.engDate === d ? 'rgba(124,92,255,.14)' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (state.engDate === d ? 'rgba(124,92,255,.6)' : 'rgba(255,255,255,.09)') }}>{d}</div>
         ))}
       </div>

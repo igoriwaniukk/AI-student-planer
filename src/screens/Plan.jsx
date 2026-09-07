@@ -1,4 +1,5 @@
-import { hm, fmt } from '../lib/plannerLogic';
+import { hm, fmt, formatMonthDay, weekdayOn } from '../lib/plannerLogic';
+import { REFERENCE_DAY } from '../lib/plannerData';
 import { BackButton, StickyFooter, PrimaryButton, ConfirmCard, Pill } from '../components/ui';
 import { useLang } from '../lib/useLang';
 import TaskEditSheet from '../components/TaskEditSheet';
@@ -24,8 +25,8 @@ export default function Plan({ planner }) {
         <BackButton onClick={() => go('planner')} />
         <span style={{ fontSize: 11, fontWeight: 650, color: '#c9baff', padding: '8px 14px', borderRadius: 999, background: 'rgba(124,92,255,.14)', border: '1px solid rgba(124,92,255,.45)' }}>{t('plan.readyToReview')}</span>
       </div>
-      <div style={{ fontSize: 12.5, color: '#8a8a99', marginTop: 20 }}>{t('plan.date')}</div>
-      <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 6 }}>{t('plan.title')}</div>
+      <div style={{ fontSize: 12.5, color: '#8a8a99', marginTop: 20 }}>{t('plan.date', { date: formatMonthDay(REFERENCE_DAY, { year: true }) })}</div>
+      <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 6 }}>{t('plan.title', { weekday: weekdayOn(REFERENCE_DAY) })}</div>
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '20px 0 12px 2px' }}>
         <span style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('plan.dayPlan')}</span>
@@ -72,7 +73,7 @@ export default function Plan({ planner }) {
 
       {state.saved && (
         <ConfirmCard
-          title={t('plan.savedTitle')}
+          title={t('plan.savedTitle', { weekday: weekdayOn(REFERENCE_DAY) })}
           sub={state.gcal ? t('plan.savedGcal', { n: schedIds.length }) : null}
           onDone={goHomeSaved}
           buttonLabel={t('plan.goToPlan')}

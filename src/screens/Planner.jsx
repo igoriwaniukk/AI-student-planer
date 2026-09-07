@@ -1,5 +1,5 @@
-import { PRIO_STYLE } from '../lib/plannerData';
-import { durOf, hm } from '../lib/plannerLogic';
+import { PRIO_STYLE, REFERENCE_DAY } from '../lib/plannerData';
+import { durOf, hm, weekdayDateLabel } from '../lib/plannerLogic';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
@@ -24,7 +24,7 @@ export default function Planner({ planner }) {
       </div>
 
       <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 22 }}>{t('planner.title')}</div>
-      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('planner.date')}</div>
+      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('planner.date', { date: weekdayDateLabel(REFERENCE_DAY) })}</div>
       <div style={{ fontSize: 13, color: '#8a8a99', lineHeight: 1.45, marginTop: 6 }}>{t('planner.subtitle')}</div>
 
       <div style={{ marginTop: 18, padding: 14, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>

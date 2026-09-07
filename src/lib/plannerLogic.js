@@ -146,6 +146,31 @@ export function startOf(id, { schedule, startOverride }) {
 const PREP_DIFFICULTY_DUR = { 'Łatwy': 25, 'Średni': 35, 'Trudny': 40 };
 const WEEKDAYS = { pl: ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'], en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] };
 
+// Just the weekday word for a logical day index — for copy that names a
+// weekday inline (e.g. "Plan na {weekday}") without a full date, so it
+// still tracks the real day instead of being stuck on a fixed weekday.
+export function weekdayName(num) {
+  const lang = getCurrentLang();
+  return WEEKDAYS[lang === 'en' ? 'en' : 'pl'][realDateForNum(num).getDay()];
+}
+
+// Polish "na {środę/sobotę/niedzielę}" declines those three weekdays to the
+// accusative — unlike English, so this isn't just a lowercased weekdayName.
+const WEEKDAY_ACCUSATIVE_PL = ['niedzielę', 'poniedziałek', 'wtorek', 'środę', 'czwartek', 'piątek', 'sobotę'];
+
+export function weekdayOn(num) {
+  if (getCurrentLang() === 'en') return weekdayName(num);
+  return WEEKDAY_ACCUSATIVE_PL[realDateForNum(num).getDay()];
+}
+
+// Full "Weekday, day month[, year]" label for a logical day index — shared
+// by every screen/default that shows a specific demo date, so they all
+// move together with the real "today" instead of drifting out of sync
+// (a fixed weekday name paired with a date that no longer falls on it).
+export function weekdayDateLabel(num, { year = false } = {}) {
+  return weekdayName(num) + ', ' + formatMonthDay(num, { year });
+}
+
 function prepDayLabel(day) {
   const lang = getCurrentLang();
   const idx = realDateForNum(day).getDay();

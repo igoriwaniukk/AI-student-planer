@@ -4,7 +4,7 @@ import { getCurrentLang, TASK_TEXT_KEY } from '../lib/i18n';
 import {
   TASK_DEFS, PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY,
 } from '../lib/plannerData';
-import { buildSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates } from '../lib/plannerLogic';
+import { buildSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, weekdayDateLabel } from '../lib/plannerLogic';
 
 function initialState(defaults) {
   const initialTopics = getCurrentLang() === 'en'
@@ -95,7 +95,7 @@ function initialState(defaults) {
     bioKnow: 'Dobrze umiem',
     mathKnow: 'Częściowo umiem',
     engChoice: 'keep',
-    engDate: 'Wtorek, 21 lipca',
+    engDate: weekdayDateLabel(REFERENCE_DAY + 1),
     engStart: '17:30',
     engTimeOpen: false,
     engMessage: '',
@@ -505,7 +505,7 @@ export function usePlanner(defaults) {
     update((s) => ({ mathMinutes: Math.max(5, s.mathMinutes + delta) }));
   }
   function keepEngTomorrow() {
-    update({ engChoice: 'keep', engDate: 'Wtorek, 21 lipca', engStart: '17:30' });
+    update({ engChoice: 'keep', engDate: weekdayDateLabel(REFERENCE_DAY + 1), engStart: '17:30' });
   }
   function openEngTime() {
     update((s) => {

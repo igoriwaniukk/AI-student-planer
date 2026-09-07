@@ -88,7 +88,6 @@ export const PREP_LABELS = ['gen.prep.1', 'gen.prep.2', 'gen.prep.3', 'gen.prep.
 export const RESCUE_LABELS = ['gen.rescue.1', 'gen.rescue.2', 'gen.rescue.3', 'gen.rescue.4', 'gen.rescue.5'];
 export const PLAN_LABELS = ['gen.plan.1', 'gen.plan.2', 'gen.plan.3', 'gen.plan.4'];
 
-export const SESSION_DATES = ['Wtorek, 21 lipca', 'Czwartek, 23 lipca', 'Sobota, 25 lipca', 'Poniedziałek, 27 lipca', 'Środa, 29 lipca', 'Czwartek, 30 lipca'];
 export const SESSIONS = [
   { time: '17:00–17:35', dur: '35 min', title: 'Prawa Mendla — podstawy', type: 'Pierwszy kontakt', why: 'Najpierw uporządkujemy podstawowe pojęcia potrzebne do kolejnych tematów.' },
   { time: '16:30–17:10', dur: '40 min', title: 'Krzyżówki genetyczne — wprowadzenie', type: 'Ćwiczenia', why: 'Pierwsze zadania pojawiają się po poznaniu zasad dziedziczenia.' },

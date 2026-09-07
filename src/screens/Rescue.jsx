@@ -1,5 +1,5 @@
-import { REASON_OPTIONS, RESCUE_TIME_OPTIONS, PRIO_STYLE } from '../lib/plannerData';
-import { durOf, startOf, span } from '../lib/plannerLogic';
+import { REASON_OPTIONS, RESCUE_TIME_OPTIONS, PRIO_STYLE, REFERENCE_DAY } from '../lib/plannerData';
+import { durOf, startOf, span, weekdayDateLabel } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import { useLang } from '../lib/useLang';
@@ -17,7 +17,7 @@ export default function Rescue({ planner }) {
         <span style={{ fontSize: 11, fontWeight: 650, color: '#c9c9d6', padding: '8px 13px', borderRadius: 999, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)' }}>{t('rescue.now')}</span>
       </div>
       <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>{t('rescue.title')}</div>
-      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('rescue.date')}</div>
+      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('rescue.date', { date: weekdayDateLabel(REFERENCE_DAY) })}</div>
 
       <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.09)' }}>
         <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>{t('rescue.delayedTitle')}</div>
