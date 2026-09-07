@@ -520,12 +520,24 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
             <span style={{ fontSize: 22, display: 'inline-block', transformOrigin: '70% 70%', animation: 'handWave 3.2s ease-in-out infinite' }}>👋</span>
           </div>
           <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 6 }}>{t('home.subtitle')}</div>
-          <div
-            onClick={() => planner.go('profile')}
-            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 9, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(240,169,60,.1)', border: '1px solid rgba(240,169,60,.28)', cursor: 'pointer' }}
-          >
-            <span style={{ fontSize: 12 }}>🎖️</span>
-            <span style={{ fontSize: 10.5, fontWeight: 700, color: '#f0c078' }}>{t('home.badgesCount', { n: unlockedAchievements.length, total: ACHIEVEMENTS.length })}</span>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 9 }}>
+            <div
+              onClick={() => planner.go('profile')}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(240,169,60,.1)', border: '1px solid rgba(240,169,60,.28)', cursor: 'pointer' }}
+            >
+              <span style={{ fontSize: 12 }}>🎖️</span>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: '#f0c078' }}>{t('home.badgesCount', { n: unlockedAchievements.length, total: ACHIEVEMENTS.length })}</span>
+            </div>
+            {isRealDay && (
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(46,230,197,.1)', border: '1px solid rgba(46,230,197,.28)' }}>
+                <span style={{ fontSize: 12 }}>📊</span>
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: '#7fe8cf' }}>{t('home.todayProgressBadge', { pct, done: doneCount, total: totalCount })}</span>
+              </div>
+            )}
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(165,140,255,.1)', border: '1px solid rgba(165,140,255,.28)' }}>
+              <span style={{ fontSize: 12 }}>🎯</span>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: '#c9baff' }}>{t('home.weekGoalBadge', { pct: 60 })}</span>
+            </div>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4, paddingRight: 46 }}>
@@ -581,17 +593,6 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
       </div>
 
       <EnergyHistory energyLog={energyLog} />
-
-      {isRealDay && (
-        <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-            <div style={{ fontSize: 14.5, fontWeight: 700 }}>{t('home.todayProgress')}</div>
-            <div style={{ fontSize: 19, fontWeight: 750, color: '#2ee6c5' }}>{pct}%</div>
-          </div>
-          <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 3 }}>{t('home.sessionsDone', { done: doneCount, total: totalCount, word: t(totalCount === 1 ? 'home.sessionsCompletedOne' : 'home.sessionsCompletedMany') })}</div>
-          <ProgressBar pct={pct} style={{ marginTop: 12 }} />
-        </div>
-      )}
 
       {nearestExam && (
         <div
@@ -661,16 +662,6 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
       <div onClick={() => planner.go('rescue')} style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
         <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(245,165,36,.13)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.2 8a5.2 5.2 0 01-8.9 3.7M2.8 8a5.2 5.2 0 018.9-3.7" stroke="#f5a524" strokeWidth="1.3" strokeLinecap="round" /><path d="M11.4 2.4v2.4H9M4.6 13.6v-2.4H7" stroke="#f5a524" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
         <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.25 }}>{t('home.rescueDay')}</div>
-      </div>
-
-      <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
-        <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.weekGoal')}</div>
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 14, marginTop: 10 }}>
-          <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3, letterSpacing: '-.01em' }}>{t('home.mathPrepGoal')}</div>
-          <div style={{ fontSize: 19, fontWeight: 750, color: '#2ee6c5' }}>60%</div>
-        </div>
-        <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 6 }}>{t('home.blocksdone')}</div>
-        <ProgressBar pct={60} style={{ marginTop: 11 }} />
       </div>
 
       <FinishSheet planner={planner} />
