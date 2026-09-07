@@ -23,6 +23,31 @@ export function formatMonthDay(num, { year = false } = {}) {
   return new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'pl-PL', opts).format(realDateForNum(num));
 }
 
+// The real wall-clock moment a schedule block's start-of-day-minutes value
+// falls on, for a given logical day index — schedule times are stored as
+// minutes-since-midnight on some day num, so this is the one place that
+// turns that into an actual Date to count down to.
+export function realTimeForDayMinute(num, minutes) {
+  const d = realDateForNum(num);
+  d.setMinutes(d.getMinutes() + minutes);
+  return d;
+}
+
+// Compact "Xd Yg"/"Xg Ymin"/"Xmin" countdown text for a millisecond
+// difference — null once it's already passed, so callers can just hide it
+// instead of showing a negative countdown.
+export function formatCountdown(diffMs) {
+  if (diffMs == null || diffMs <= 0) return null;
+  const totalMin = Math.ceil(diffMs / 60000);
+  const days = Math.floor(totalMin / 1440);
+  const hours = Math.floor((totalMin % 1440) / 60);
+  const mins = totalMin % 60;
+  const en = getCurrentLang() === 'en';
+  if (days > 0) return days + (en ? 'd ' : ' dni ') + hours + (en ? 'h' : ' godz.');
+  if (hours > 0) return hours + (en ? 'h ' : ' godz. ') + mins + (en ? 'm' : ' min');
+  return mins + (en ? 'm' : ' min');
+}
+
 export function fmt(totalMinutes) {
   const h = Math.floor(totalMinutes / 60) % 24;
   const m = totalMinutes % 60;
