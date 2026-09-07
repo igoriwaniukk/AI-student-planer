@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const KEYS = {
+export const KEYS = {
   name: 'sp_name',
   profilePhoto: 'sp_profilePhoto',
   schoolPlan: 'sp_schoolPlan',
@@ -18,6 +18,11 @@ const KEYS = {
   dismissedMissedSession: 'sp_dismissedMissedSession',
 };
 
+// Fired whenever any useLocalStorage value is written — cloudSync.js listens
+// for this (debounced) to push the change up to Supabase, instead of every
+// hook needing to know about sync itself.
+export const STORAGE_CHANGED_EVENT = 'sp:storage-changed';
+
 export function useLocalStorage(key, initialValue) {
   const [value, setValue] = useState(() => {
     try {
@@ -30,6 +35,7 @@ export function useLocalStorage(key, initialValue) {
 
   useEffect(() => {
     localStorage.setItem(key, JSON.stringify(value));
+    window.dispatchEvent(new Event(STORAGE_CHANGED_EVENT));
   }, [key, value]);
 
   return [value, setValue];

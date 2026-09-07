@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import TabBar from './components/TabBar';
 import ChatWidget from './components/ChatWidget';
 import NotificationBell from './components/NotificationBell';
@@ -16,20 +16,80 @@ import Prep from './screens/Prep';
 import Summary from './screens/Summary';
 import Profile from './screens/Profile';
 import Onboarding from './screens/Onboarding';
+import Auth from './screens/Auth';
 import {
   useStudentName, useProfilePhoto, useSchoolPlan, useActivities, useProfileDefaults,
   useWeeklyCapacity, useEnergyLog, useStudyHistory, useRecurringActivities, useLanguage,
+  KEYS, STORAGE_CHANGED_EVENT,
 } from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
 import { LanguageProvider } from './lib/LanguageContext';
 import { computeStreak } from './lib/plannerLogic';
+import { useAuth } from './lib/useAuth';
+import { isSupabaseConfigured } from './lib/supabaseClient';
+import { pullFromCloud, pushToCloud } from './lib/cloudSync';
+
+// Marks (per browser tab session, in sessionStorage so it survives the
+// reload a fresh pull triggers below) which signed-in user's cloud data has
+// already been pulled down — so a later reload for the SAME user (e.g.
+// after "reset app data") doesn't immediately re-pull and undo it, while
+// signing into a DIFFERENT account still triggers a fresh pull.
+const SYNCED_FLAG = 'sp_cloud_synced_uid';
+
+// Pulls the signed-in user's saved data into localStorage once per sign-in,
+// then pushes any later local change back up (debounced) — see cloudSync.js
+// for the actual read/write. Does nothing at all until real Supabase
+// credentials are configured, so the no-backend demo is unaffected.
+function useCloudSync(session) {
+  // Whether this browser tab already pulled this exact user's data down —
+  // derived straight from sessionStorage during render, so the common case
+  // (already synced) never needs an effect-triggered re-render at all.
+  const alreadySynced = isSupabaseConfigured && !!session && sessionStorage.getItem(SYNCED_FLAG) === session.user.id;
+  const [pulled, setPulled] = useState(false);
+  const ready = !isSupabaseConfigured || !session || alreadySynced || pulled;
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !session || alreadySynced) return undefined;
+    const uid = session.user.id;
+    let cancelled = false;
+    (async () => {
+      const hadCloudData = await pullFromCloud(uid);
+      if (cancelled) return;
+      sessionStorage.setItem(SYNCED_FLAG, uid);
+      if (hadCloudData) {
+        window.location.reload();
+        return;
+      }
+      await pushToCloud(uid);
+      if (!cancelled) setPulled(true);
+    })();
+    return () => { cancelled = true; };
+  }, [session, alreadySynced]);
+
+  useEffect(() => {
+    if (!isSupabaseConfigured || !session) return undefined;
+    const uid = session.user.id;
+    let timer = null;
+    const onChange = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => pushToCloud(uid), 1500);
+    };
+    window.addEventListener(STORAGE_CHANGED_EVENT, onChange);
+    return () => {
+      window.removeEventListener(STORAGE_CHANGED_EVENT, onChange);
+      clearTimeout(timer);
+    };
+  }, [session]);
+
+  return ready;
+}
 
 const TAB_SCREENS = new Set(['home', 'calendar', 'goals', 'profile']);
 
 // Mounted only once onboarding is done, so usePlanner's initial state (a lazy
 // useState initializer, which only ever runs on first mount) picks up the
 // profile defaults onboarding just saved instead of whatever was there before.
-function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, activities, profileDefaults, setProfileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities }) {
+function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, activities, profileDefaults, setProfileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities, onSignOut }) {
   const planner = usePlanner(profileDefaults);
   const { state } = planner;
   const screen = state.screen;
@@ -72,6 +132,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
           studyHistory={studyHistory}
           energyLog={energyLog}
           recurringActivities={recurringActivities}
+          onSignOut={onSignOut}
         />
       )}
 
@@ -103,7 +164,18 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
   );
 }
 
+function Splash() {
+  return (
+    <div className="app-shell" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 34, height: 34, borderRadius: '50%', border: '3px solid rgba(255,255,255,.12)', borderTopColor: '#8b6dff', animation: 'spinRing .8s linear infinite' }} />
+    </div>
+  );
+}
+
 export default function App() {
+  const { session, loading: authLoading, signUp, signIn, signOut } = useAuth();
+  const syncReady = useCloudSync(session);
+
   const [name, setName] = useStudentName();
   const [profilePhoto, setProfilePhoto] = useProfilePhoto();
   const [schoolPlan, setSchoolPlan] = useSchoolPlan();
@@ -123,6 +195,25 @@ export default function App() {
     const today = new Date().toISOString().slice(0, 10);
     setStudyHistory((h) => ({ ...h, [today]: entry }));
   }
+
+  async function handleSignOut() {
+    await signOut();
+    sessionStorage.removeItem(SYNCED_FLAG);
+    Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
+    window.location.reload();
+  }
+
+  if (isSupabaseConfigured && authLoading) return <Splash />;
+
+  if (isSupabaseConfigured && !session) {
+    return (
+      <LanguageProvider lang={lang} setLang={setLang}>
+        <Auth signUp={signUp} signIn={signIn} />
+      </LanguageProvider>
+    );
+  }
+
+  if (isSupabaseConfigured && !syncReady) return <Splash />;
 
   if (!name) {
     return (
@@ -158,6 +249,7 @@ export default function App() {
         recordStudyDay={recordStudyDay}
         recurringActivities={recurringActivities}
         setRecurringActivities={setRecurringActivities}
+        onSignOut={isSupabaseConfigured ? handleSignOut : undefined}
       />
     </LanguageProvider>
   );

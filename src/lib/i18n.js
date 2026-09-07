@@ -192,6 +192,20 @@ export const dict = {
     'tab.goals': 'Cele',
     'tab.profile': 'Profil',
 
+    // Auth
+    'auth.signInTitle': 'Zaloguj się',
+    'auth.signUpTitle': 'Załóż konto',
+    'auth.subtitle': 'Twoje dane będą zsynchronizowane na każdym urządzeniu.',
+    'auth.emailPlaceholder': 'E-mail',
+    'auth.passwordPlaceholder': 'Hasło',
+    'auth.signIn': 'Zaloguj się',
+    'auth.signUp': 'Załóż konto',
+    'auth.working': 'Chwileczkę…',
+    'auth.needAccount': 'Nie masz konta? Załóż je',
+    'auth.haveAccount': 'Masz już konto? Zaloguj się',
+    'auth.checkEmail': 'Sprawdź e-mail, żeby potwierdzić konto.',
+    'auth.signOut': 'Wyloguj się',
+
     // Onboarding
     'onb.stepOf': 'KROK {step} Z {total}',
     'onb.hey': 'Cześć! 👋',
@@ -911,6 +925,20 @@ export const dict = {
     'tab.deadline': 'Deadlines',
     'tab.goals': 'Goals',
     'tab.profile': 'Profile',
+
+    // Auth
+    'auth.signInTitle': 'Sign in',
+    'auth.signUpTitle': 'Create account',
+    'auth.subtitle': "Your data will sync across every device you sign into.",
+    'auth.emailPlaceholder': 'Email',
+    'auth.passwordPlaceholder': 'Password',
+    'auth.signIn': 'Sign in',
+    'auth.signUp': 'Create account',
+    'auth.working': 'One sec…',
+    'auth.needAccount': "Don't have an account? Sign up",
+    'auth.haveAccount': 'Already have an account? Sign in',
+    'auth.checkEmail': 'Check your email to confirm your account.',
+    'auth.signOut': 'Sign out',
 
     'onb.stepOf': 'STEP {step} OF {total}',
     'onb.hey': 'Hi! 👋',

@@ -13,6 +13,8 @@ dist-ssr
 *.local
 server/.env
 server/push-subscriptions.json
+.env
+.env.local
 
 # Editor directories and files
 .vscode/*
