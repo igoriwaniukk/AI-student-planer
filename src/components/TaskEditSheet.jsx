@@ -5,15 +5,16 @@ import { BottomSheet, Chip } from './ui';
 
 export default function TaskEditSheet({ planner }) {
   const { t } = useLang();
-  const { state, patchTaskEdit, stepTaskDur, cancelTaskEdit, saveTaskEdit } = planner;
+  const { state, patchTaskEdit, stepTaskDur, cancelTaskEdit, saveTaskEdit, removeTaskDef } = planner;
   const fm = state.taskEdit;
   if (!fm) return null;
   const errs = state.editErrors || {};
+  const isNew = fm.id == null;
 
   return (
     <BottomSheet maxHeight="92%">
-      <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{t('taskEdit.title')}</div>
-      <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 6 }}>{t(VALUE_KEY[fm.subject]) || fm.subject} — {fm.name}</div>
+      <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{isNew ? t('taskEdit.newTitle') : t('taskEdit.title')}</div>
+      <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 6 }}>{isNew ? t('taskEdit.newSubtitle') : (t(VALUE_KEY[fm.subject]) || fm.subject) + ' — ' + fm.name}</div>
 
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.taskName')}</div>
       <input
@@ -69,8 +70,11 @@ export default function TaskEditSheet({ planner }) {
 
       <div style={{ display: 'flex', gap: 11, marginTop: 18, paddingBottom: 8 }}>
         <div onClick={cancelTaskEdit} style={{ flex: 1, height: 50, borderRadius: 15, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 650, cursor: 'pointer' }}>{t('taskEdit.cancel')}</div>
-        <div onClick={saveTaskEdit} style={{ flex: 1.4, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>{t('taskEdit.saveChanges')}</div>
+        <div onClick={saveTaskEdit} style={{ flex: 1.4, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>{isNew ? t('taskEdit.addTask') : t('taskEdit.saveChanges')}</div>
       </div>
+      {!isNew && (
+        <div onClick={() => removeTaskDef(fm.id)} style={{ marginTop: 11, textAlign: 'center', fontSize: 13, fontWeight: 650, color: '#ff8a8a', cursor: 'pointer', paddingBottom: 8 }}>{t('taskEdit.removeTask')}</div>
+      )}
     </BottomSheet>
   );
 }

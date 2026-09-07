@@ -451,7 +451,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
   const [viewDay, setViewDay] = useState(state.selectedDay);
   const info = dayInfo(viewDay);
   const isRealDay = viewDay === state.selectedDay;
-  const dayIds = state.taskDefs.filter((_, i) => state.tasks[i]).map((t) => t.id);
+  const dayIds = state.taskDefs.filter((d) => state.tasks[d.id]).map((t) => t.id);
   const doneCount = dayIds.filter((id) => ts(id).status === 'completed').length;
   const totalCount = dayIds.filter((id) => ts(id).status !== 'skipped').length;
   const pct = totalCount ? Math.round((doneCount / totalCount) * 100) : 0;

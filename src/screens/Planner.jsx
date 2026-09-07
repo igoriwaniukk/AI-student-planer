@@ -6,13 +6,15 @@ import { useLang } from '../lib/useLang';
 import TaskEditSheet from '../components/TaskEditSheet';
 
 const TASK_ICONS = { math: '📐', bio: '🔬', eng: '🗣' };
+const DEFAULT_TASK_ICON = '📘';
 const PREFS = ['Wolny wieczór', 'Najpierw najtrudniejsze', 'Więcej krótkich przerw'];
 
 export default function Planner({ planner }) {
   const { t } = useLang();
-  const { state, toggleTask, openTaskEdit, update, generatePlan, go } = planner;
-  const nTasks = state.tasks.filter(Boolean).length;
-  const mins = [60, 45, 30].reduce((a, m, i) => a + (state.tasks[i] ? m : 0), 0);
+  const { state, toggleTask, openTaskEdit, openNewTaskEdit, update, generatePlan, go } = planner;
+  const enabledTasks = state.taskDefs.filter((d) => state.tasks[d.id]);
+  const nTasks = enabledTasks.length;
+  const mins = enabledTasks.reduce((a, d) => a + durOf(d.id, state.taskDefs, state.durOverride), 0);
   const sumTime = hm(mins);
 
   return (
@@ -48,19 +50,19 @@ export default function Planner({ planner }) {
 
       <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('planner.whatToDo')}</div>
       {state.taskDefs.map((d, i) => {
-        const on = state.tasks[i];
+        const on = state.tasks[d.id];
         const ps = PRIO_STYLE[d.priority] || PRIO_STYLE['Normalny priorytet'];
         return (
           <div
             key={d.id}
-            onClick={() => toggleTask(i)}
+            onClick={() => toggleTask(d.id)}
             style={{ marginTop: i ? 12 : 0, padding: 14, borderRadius: 18, cursor: 'pointer', background: on ? 'rgba(124,92,255,.07)' : 'rgba(255,255,255,.03)', border: '1.5px solid ' + (on ? 'rgba(124,92,255,.55)' : 'rgba(255,255,255,.07)') }}
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
               <div style={{ width: 24, height: 24, borderRadius: 8, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: on ? '#7c5cff' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (on ? '#7c5cff' : 'rgba(255,255,255,.18)') }}>
                 <svg width="12" height="10" viewBox="0 0 12 10" fill="none" style={{ opacity: on ? 1 : 0 }}><path d="M1 5l3.4 3.4L11 1.6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </div>
-              <div style={{ width: 20, textAlign: 'center', fontSize: 14 }}>{TASK_ICONS[d.id]}</div>
+              <div style={{ width: 20, textAlign: 'center', fontSize: 14 }}>{TASK_ICONS[d.id] || DEFAULT_TASK_ICON}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: d.color, textTransform: 'uppercase' }}>{t(VALUE_KEY[d.subject]) || d.subject}</span>
@@ -79,7 +81,7 @@ export default function Planner({ planner }) {
         );
       })}
 
-      <div style={{ marginTop: 12, height: 50, borderRadius: 16, border: '1.5px dashed rgba(255,255,255,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13.5, fontWeight: 650, color: '#9a9aab', cursor: 'pointer' }}>{t('planner.addTask')}</div>
+      <div onClick={openNewTaskEdit} style={{ marginTop: 12, height: 50, borderRadius: 16, border: '1.5px dashed rgba(255,255,255,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13.5, fontWeight: 650, color: '#9a9aab', cursor: 'pointer' }}>{t('planner.addTask')}</div>
 
       <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
         <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em' }}>{t('planner.whenFree')}</div>

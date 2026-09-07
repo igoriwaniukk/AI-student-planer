@@ -12,7 +12,7 @@ export default function Plan({ planner }) {
   const sched = state.schedule || {};
   const schedIds = Object.keys(sched);
   const nBlocks = schedIds.length;
-  const nTasks = state.tasks.filter(Boolean).length;
+  const nTasks = state.taskDefs.filter((d) => state.tasks[d.id]).length;
   const studyMins = schedIds.reduce((a, k) => a + sched[k].dur, 0);
   const studyEnd = nBlocks ? fmt(Math.max(...schedIds.map((k) => sched[k].start + sched[k].dur))) : '—';
   const blockWord = nBlocks === 1 ? t('plan.oneBlock') : (nBlocks > 1 && nBlocks < 5 ? t('plan.fewBlocks', { n: nBlocks }) : t('plan.manyBlocks', { n: nBlocks }));

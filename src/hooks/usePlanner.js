@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLang } from '../lib/useLang';
 import { getCurrentLang, TASK_TEXT_KEY } from '../lib/i18n';
 import {
-  TASK_DEFS, PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY,
+  TASK_DEFS, PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, SUBJECTS, PRIORITIES,
 } from '../lib/plannerData';
 import { buildSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, weekdayDateLabel } from '../lib/plannerLogic';
 
@@ -19,7 +19,7 @@ function initialState(defaults) {
     genTarget: 'plan',
 
     taskDefs: TASK_DEFS,
-    tasks: [true, true, false],
+    tasks: { math: true, bio: true, eng: false },
     energy: defaults?.energy || 'Normalna',
     pref: defaults?.pref || 'Wolny wieczór',
     gcal: false,
@@ -88,12 +88,13 @@ function initialState(defaults) {
     sessionMessage: '',
     sessionEdits: {},
 
-    bioMinutes: 30,
-    mathMinutes: 70,
-    bioHard: 'W sam raz',
-    mathHard: 'Trudna',
-    bioKnow: 'Dobrze umiem',
-    mathKnow: 'Częściowo umiem',
+    // Per-task end-of-session review data (actual minutes spent, how hard it
+    // felt, how well it's now known) — keyed by task id so it covers however
+    // many tasks are in today's plan, not just a fixed couple of subjects.
+    sessionReview: {
+      math: { minutes: 70, hard: 'Trudna', know: 'Częściowo umiem' },
+      bio: { minutes: 30, hard: 'W sam raz', know: 'Dobrze umiem' },
+    },
     engChoice: 'keep',
     engDate: weekdayDateLabel(REFERENCE_DAY + 1),
     engStart: '17:30',
@@ -152,12 +153,8 @@ export function usePlanner(defaults) {
     update({ screen });
   }
 
-  function toggleTask(i) {
-    update((s) => {
-      const t = s.tasks.slice();
-      t[i] = !t[i];
-      return { tasks: t };
-    });
+  function toggleTask(id) {
+    update((s) => ({ tasks: { ...s.tasks, [id]: !s.tasks[id] } }));
   }
 
   function runGen(labels, target) {
@@ -231,10 +228,10 @@ export function usePlanner(defaults) {
       const id = s.finishTask;
       const t = { ...s.taskState };
       t[id] = { status: 'completed', actual: s.finishDur, hard: s.finishHard, know: s.finishKnow };
-      const patch = { taskState: t, activeTask: null, finishTask: null, sessionStart: null, sessionElapsedMs: 0, breakDismissed: false };
-      if (id === 'bio') Object.assign(patch, { bioMinutes: s.finishDur, bioHard: s.finishHard, bioKnow: s.finishKnow });
-      if (id === 'math') Object.assign(patch, { mathMinutes: s.finishDur, mathHard: s.finishHard, mathKnow: s.finishKnow });
-      return patch;
+      return {
+        taskState: t, activeTask: null, finishTask: null, sessionStart: null, sessionElapsedMs: 0, breakDismissed: false,
+        sessionReview: { ...s.sessionReview, [id]: { minutes: s.finishDur, hard: s.finishHard, know: s.finishKnow } },
+      };
     });
   }
 
@@ -281,6 +278,15 @@ export function usePlanner(defaults) {
       };
     });
   }
+  // A blank taskEdit (id: null signals "new" to saveTaskEdit below) — lets
+  // the student add any subject/task instead of being stuck with the 3
+  // demo ones.
+  function openNewTaskEdit() {
+    update({
+      taskEdit: { id: null, name: '', subject: SUBJECTS[0], dur: 30, start: '19:00', priority: PRIORITIES[1], note: '' },
+      editErrors: {}, teToast: false,
+    });
+  }
   function fmtLocal(mins) {
     const h = Math.floor(mins / 60) % 24, m = mins % 60;
     return (h < 10 ? '0' + h : h) + ':' + (m < 10 ? '0' + m : m);
@@ -306,18 +312,41 @@ export function usePlanner(defaults) {
       if (Object.keys(errs).length) return { editErrors: errs };
       const startMin = (+m[1]) * 60 + (+m[2]);
       const name = fm.name.trim();
-      const defs = s.taskDefs.map((t) => {
-        if (t.id !== fm.id) return t;
-        const renamed = t.title !== name || t.subject !== fm.subject;
-        return { ...t, title: name, subject: fm.subject, priority: fm.priority, note: fm.note, short: renamed ? fm.subject + ' — ' + name : t.short };
-      });
-      const durOverride = { ...s.durOverride, [fm.id]: fm.dur };
-      const startOverride = { ...s.startOverride, [fm.id]: startMin };
-      const next = { ...s, taskDefs: defs, durOverride, startOverride };
-      return { taskDefs: defs, durOverride, startOverride, schedule: buildSchedule(next), taskEdit: null, editErrors: {}, teToast: true };
+      const isNew = fm.id == null;
+      const id = isNew ? 'custom-' + Date.now() : fm.id;
+      const defs = isNew
+        ? s.taskDefs.concat({ id, subject: fm.subject, title: name, dur: fm.dur, priority: fm.priority, note: fm.note, color: '#a58cff', short: fm.subject + ' — ' + name })
+        : s.taskDefs.map((t) => {
+          if (t.id !== id) return t;
+          const renamed = t.title !== name || t.subject !== fm.subject;
+          return { ...t, title: name, subject: fm.subject, priority: fm.priority, note: fm.note, short: renamed ? fm.subject + ' — ' + name : t.short };
+        });
+      const durOverride = { ...s.durOverride, [id]: fm.dur };
+      const startOverride = { ...s.startOverride, [id]: startMin };
+      const tasks = isNew ? { ...s.tasks, [id]: true } : s.tasks;
+      const taskState = isNew ? { ...s.taskState, [id]: { status: 'planned' } } : s.taskState;
+      const next = { ...s, taskDefs: defs, durOverride, startOverride, tasks, taskState };
+      return { taskDefs: defs, durOverride, startOverride, tasks, taskState, schedule: buildSchedule(next), taskEdit: null, editErrors: {}, teToast: true };
     });
     clearTimeout(toastTimerRef.current);
     toastTimerRef.current = setTimeout(() => update({ teToast: false }), 2200);
+  }
+  function removeTaskDef(id) {
+    update((s) => {
+      const defs = s.taskDefs.filter((t) => t.id !== id);
+      const tasks = { ...s.tasks };
+      delete tasks[id];
+      const taskState = { ...s.taskState };
+      delete taskState[id];
+      const durOverride = { ...s.durOverride };
+      delete durOverride[id];
+      const startOverride = { ...s.startOverride };
+      delete startOverride[id];
+      const sessionReview = { ...s.sessionReview };
+      delete sessionReview[id];
+      const next = { ...s, taskDefs: defs, tasks, taskState, durOverride, startOverride };
+      return { taskDefs: defs, tasks, taskState, durOverride, startOverride, sessionReview, schedule: buildSchedule(next), taskEdit: null };
+    });
   }
 
   // ---- manual mode ----
@@ -498,11 +527,13 @@ export function usePlanner(defaults) {
   function saveLater() {
     update({ screen: 'home' });
   }
-  function bioAdjust(delta) {
-    update((s) => ({ bioMinutes: Math.max(5, s.bioMinutes + delta) }));
+  function adjustSessionMinutes(id, delta) {
+    update((s) => ({
+      sessionReview: { ...s.sessionReview, [id]: { ...s.sessionReview[id], minutes: Math.max(5, (s.sessionReview[id]?.minutes || 0) + delta) } },
+    }));
   }
-  function mathAdjust(delta) {
-    update((s) => ({ mathMinutes: Math.max(5, s.mathMinutes + delta) }));
+  function setSessionField(id, field, value) {
+    update((s) => ({ sessionReview: { ...s.sessionReview, [id]: { ...s.sessionReview[id], [field]: value } } }));
   }
   function keepEngTomorrow() {
     update({ engChoice: 'keep', engDate: weekdayDateLabel(REFERENCE_DAY + 1), engStart: '17:30' });
@@ -583,7 +614,7 @@ export function usePlanner(defaults) {
     toggleTask, generatePlan, deadlineGenerate, rescueGenerate,
     startSession, togglePause, dismissBreakReminder, openFinish, cancelFinish, confirmFinish,
     openBlockEdit, moveBlockEdit, cancelBlockEdit, saveBlockEdit, removeBlock,
-    openTaskEdit, patchTaskEdit, stepTaskDur, cancelTaskEdit, saveTaskEdit,
+    openTaskEdit, openNewTaskEdit, patchTaskEdit, stepTaskDur, cancelTaskEdit, saveTaskEdit, removeTaskDef,
     toggleManualMode, regenerateOrCancel, confirmPlan, goHomeSaved,
     openEnergySheet, cancelEnergySheet, saveEnergySheet,
     toggleReason, setRescueTime, pickMath, setBioMin, returnEnglish,
@@ -591,7 +622,7 @@ export function usePlanner(defaults) {
     setField, addTopic, removeTopic, deadlineSubmit, goHomeDeadline,
     openSession, pickSessionDate, pickSessionTime, pickSessionDur, cancelSession, saveSession,
     togglePrepGcal, askOnlyDeadline, backToPrep, saveOnlyDeadline, confirmPrep,
-    finishDay, goHomeSummarized, saveLater, bioAdjust, mathAdjust,
+    finishDay, goHomeSummarized, saveLater, adjustSessionMinutes, setSessionField,
     keepEngTomorrow, openEngTime, pickEngTime, cancelEngTime, saveEngTime,
     applyAdaptive, declineAdaptive,
     setExamGrade, setExamImportance, adjustExamStudyMinutes, setExamStudyMinutes,

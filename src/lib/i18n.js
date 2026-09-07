@@ -119,6 +119,10 @@ export const dict = {
 
     // usePlanner validation/conflict messages (Rescue + Prep flows)
     'taskEdit.title': 'Edytuj zadanie',
+    'taskEdit.newTitle': 'Nowe zadanie',
+    'taskEdit.newSubtitle': 'Dodaj dowolny przedmiot lub zadanie do dzisiejszego planu.',
+    'taskEdit.addTask': 'Dodaj zadanie',
+    'taskEdit.removeTask': 'Usuń zadanie',
     'taskEdit.taskName': 'NAZWA ZADANIA',
     'taskEdit.subject': 'PRZEDMIOT',
     'taskEdit.duration': 'CZAS TRWANIA',
@@ -857,6 +861,10 @@ export const dict = {
 
     // usePlanner validation/conflict messages (Rescue + Prep flows)
     'taskEdit.title': 'Edit task',
+    'taskEdit.newTitle': 'New task',
+    'taskEdit.newSubtitle': "Add any subject or task to today's plan.",
+    'taskEdit.addTask': 'Add task',
+    'taskEdit.removeTask': 'Remove task',
     'taskEdit.taskName': 'TASK NAME',
     'taskEdit.subject': 'SUBJECT',
     'taskEdit.duration': 'DURATION',

@@ -58,7 +58,7 @@ export function zad(n) {
 
 export function activeIds(taskDefs, tasks, taskState) {
   return taskDefs
-    .filter((t, i) => tasks[i] && ['moved', 'skipped'].indexOf((taskState[t.id] || {}).status) < 0)
+    .filter((t) => tasks[t.id] && ['moved', 'skipped'].indexOf((taskState[t.id] || {}).status) < 0)
     .map((t) => t.id);
 }
 

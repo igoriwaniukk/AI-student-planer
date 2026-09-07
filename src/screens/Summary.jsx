@@ -7,25 +7,27 @@ import { useLang } from '../lib/useLang';
 
 export default function Summary({ planner, recordStudyDay = () => {} }) {
   const { t, lang } = useLang();
-  const { state, def, ts, go, finishDay, saveLater, bioAdjust, mathAdjust, update } = planner;
+  const { state, def, ts, go, finishDay, saveLater, adjustSessionMinutes, setSessionField, update } = planner;
   const sched = state.schedule || {};
-  const dayIds = state.taskDefs.filter((_, i) => state.tasks[i]).map((tt) => tt.id);
+  const dayIds = state.taskDefs.filter((d) => state.tasks[d.id]).map((tt) => tt.id);
   const doneCount = dayIds.filter((id) => ts(id).status === 'completed').length;
   const movedCount = dayIds.filter((id) => ts(id).status === 'moved').length;
   const totalCount = dayIds.filter((id) => ts(id).status !== 'skipped').length;
   const planOf = (id) => (sched[id] && sched[id].dur) || def(id).dur;
-  const bioPlan = planOf('bio');
-  const mathPlan = planOf('math');
-  const plannedMins = dayIds.filter((id) => ts(id).status === 'completed').reduce((a, id) => a + planOf(id), 0);
-  const mathDelta = state.mathMinutes - mathPlan;
-  const bioDiffVal = state.bioMinutes - bioPlan;
-  const mathDiffVal = state.mathMinutes - mathPlan;
-  const totalDiffVal = state.bioMinutes + state.mathMinutes - plannedMins;
+  const completedIds = dayIds.filter((id) => ts(id).status === 'completed');
+  const plannedMins = completedIds.reduce((a, id) => a + planOf(id), 0);
+  const totalActualMinutes = completedIds.reduce((a, id) => a + (state.sessionReview[id]?.minutes || 0), 0);
+  const totalDiffVal = totalActualMinutes - plannedMins;
   const sign = (n) => (n >= 0 ? '+' : '') + n;
-  const hasObservation = mathDelta !== 0;
+  // A math-specific follow-up observation ("math took longer than planned")
+  // only makes sense when math was actually part of today's plan.
+  const mathIncludedToday = completedIds.includes('math');
+  const mathPlan = mathIncludedToday ? planOf('math') : 0;
+  const mathDelta = mathIncludedToday ? (state.sessionReview.math?.minutes || 0) - mathPlan : 0;
+  const hasObservation = mathIncludedToday && mathDelta !== 0;
 
   if (state.daySaved) {
-    return <DaySaved planner={planner} doneCount={doneCount} movedCount={movedCount} celebrate={totalCount > 0 && doneCount === totalCount} />;
+    return <DaySaved planner={planner} doneCount={doneCount} movedCount={movedCount} totalActualMinutes={totalActualMinutes} celebrate={totalCount > 0 && doneCount === totalCount} />;
   }
 
   return (
@@ -44,7 +46,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
         <div style={{ height: 1, background: 'rgba(255,255,255,.08)', margin: '14px -16px' }} />
         <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
           <Row label={t('sum.plannedTime')} value={hm(plannedMins)} />
-          <Row label={t('sum.actualTime')} value={hm(state.bioMinutes + state.mathMinutes)} />
+          <Row label={t('sum.actualTime')} value={hm(totalActualMinutes)} />
           <Row label={t('sum.diff')} value={sign(totalDiffVal) + ' min'} color="#8fbaff" />
         </div>
         {movedCount > 0 && <div style={{ fontSize: 11.5, lineHeight: 1.45, color: '#7a7a8a', marginTop: 13 }}>{t('sum.movedNote')}</div>}
@@ -52,23 +54,26 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
 
       <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('sum.howSessions')}</div>
 
-      <SessionReview
-        subject={(t(VALUE_KEY.Biologia) || 'Biologia').toUpperCase()} subjectColor="#2ee6c5" title={t(TASK_TEXT_KEY.bio.title)}
-        planned={t('sum.plan', { min: bioPlan })} actual={state.bioMinutes + ' min'} diff={sign(bioDiffVal) + ' min'}
-        onMinus={() => bioAdjust(-5)} onPlus={() => bioAdjust(5)}
-        hard={state.bioHard} onHard={(x) => update({ bioHard: x })}
-        know={state.bioKnow} onKnow={(x) => update({ bioKnow: x })}
-        t={t}
-      />
-      <div style={{ height: 12 }} />
-      <SessionReview
-        subject={(t(VALUE_KEY.Matematyka) || 'Matematyka').toUpperCase()} subjectColor="#a58cff" title={t(TASK_TEXT_KEY.math.title)} deadline={t(TASK_TEXT_KEY.math.deadline)}
-        planned={t('sum.plan', { min: mathPlan })} actual={state.mathMinutes + ' min'} diff={sign(mathDiffVal) + ' min'}
-        onMinus={() => mathAdjust(-5)} onPlus={() => mathAdjust(5)}
-        hard={state.mathHard} onHard={(x) => update({ mathHard: x })}
-        know={state.mathKnow} onKnow={(x) => update({ mathKnow: x })}
-        t={t}
-      />
+      {completedIds.map((id, i) => {
+        const d = def(id);
+        const review = state.sessionReview[id] || {};
+        const plan = planOf(id);
+        const diffVal = (review.minutes || 0) - plan;
+        return (
+          <div key={id}>
+            {i > 0 && <div style={{ height: 12 }} />}
+            <SessionReview
+              subject={(t(VALUE_KEY[d.subject]) || d.subject).toUpperCase()} subjectColor={d.color}
+              title={t(TASK_TEXT_KEY[id]?.title) || d.title} deadline={d.deadline ? (t(TASK_TEXT_KEY[id]?.deadline) || d.deadline) : null}
+              planned={t('sum.plan', { min: plan })} actual={(review.minutes || 0) + ' min'} diff={sign(diffVal) + ' min'}
+              onMinus={() => adjustSessionMinutes(id, -5)} onPlus={() => adjustSessionMinutes(id, 5)}
+              hard={review.hard} onHard={(x) => setSessionField(id, 'hard', x)}
+              know={review.know} onKnow={(x) => setSessionField(id, 'know', x)}
+              t={t}
+            />
+          </div>
+        );
+      })}
 
       {movedCount > 0 && <MovedTask planner={planner} t={t} />}
 
@@ -91,7 +96,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
           <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('sum.conclusion')}</div>
           <div style={{ padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.08)' }}>
             <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.4 }}>{t('sum.mathTookLonger', { min: Math.abs(mathDelta), word: mathDelta > 0 ? t('sum.longer') : t('sum.shorter') })}</div>
-            <div style={{ fontSize: 12.5, lineHeight: 1.5, color: '#a3a3b3', marginTop: 9 }}>{t('sum.reserveNote', { actual: state.mathMinutes, planned: mathPlan })}</div>
+            <div style={{ fontSize: 12.5, lineHeight: 1.5, color: '#a3a3b3', marginTop: 9 }}>{t('sum.reserveNote', { actual: state.sessionReview.math?.minutes || 0, planned: mathPlan })}</div>
             <div style={{ display: 'flex', gap: 9, marginTop: 13 }}>
               <div onClick={() => update({ adaptive: true })} style={{ flex: 1.4, minHeight: 44, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', lineHeight: 1.25, padding: 8, fontSize: 12.5, fontWeight: 650, cursor: 'pointer', background: state.adaptive ? 'rgba(124,92,255,.16)' : 'rgba(255,255,255,.05)', border: '1.5px solid ' + (state.adaptive ? 'rgba(124,92,255,.6)' : 'rgba(255,255,255,.1)'), color: state.adaptive ? '#e6dfff' : '#c9c9d6' }}>{t('sum.applyFuture')}</div>
               <div onClick={() => update({ adaptive: false })} style={{ flex: 1, minHeight: 44, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 650, cursor: 'pointer', background: !state.adaptive ? 'rgba(124,92,255,.16)' : 'rgba(255,255,255,.05)', border: '1.5px solid ' + (!state.adaptive ? 'rgba(124,92,255,.6)' : 'rgba(255,255,255,.1)'), color: !state.adaptive ? '#e6dfff' : '#c9c9d6' }}>{t('sum.notNow')}</div>
@@ -113,15 +118,17 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
       <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)' }}>
         <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('sum.beforeSaving')}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 14 }}>
-          <Row label={t('sum.biology')} value={t('sum.doneIn', { min: state.bioMinutes })} />
-          <Row label={t('sum.math')} value={t('sum.doneIn', { min: state.mathMinutes })} />
+          {completedIds.map((id) => {
+            const d = def(id);
+            return <Row key={id} label={t(VALUE_KEY[d.subject]) || d.subject} value={t('sum.doneIn', { min: state.sessionReview[id]?.minutes || 0 })} />;
+          })}
           {movedCount > 0 && <Row label={t('sum.english2')} value={t('sum.tomorrowAt', { time: state.engStart })} />}
           <Row label={t('sum.day')} value={t('sum.dayValue', { value: t(VALUE_KEY[state.dayHard]) || state.dayHard })} />
           <Row label={t('sum.energy')} value={t('sum.energyValue', { value: t(VALUE_KEY[state.dayEnergy]) || state.dayEnergy })} />
         </div>
         <div style={{ height: 1, background: 'rgba(255,255,255,.07)', margin: '15px -16px' }} />
         <div style={{ fontSize: 12.5, lineHeight: 1.45, color: state.adaptive ? '#c9baff' : '#a3a3b3' }}>
-          {(state.adaptive && mathDelta !== 0) ? t('sum.futureMathBlocks', { min: state.mathMinutes }) : t('sum.noChangeEstimates')}
+          {(state.adaptive && mathDelta !== 0) ? t('sum.futureMathBlocks', { min: state.sessionReview.math?.minutes || 0 }) : t('sum.noChangeEstimates')}
         </div>
       </div>
 
@@ -132,7 +139,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
           onClick={() => {
             recordStudyDay({
               plannedMin: plannedMins,
-              actualMin: state.bioMinutes + state.mathMinutes,
+              actualMin: totalActualMinutes,
               completed: totalCount > 0 && doneCount === totalCount,
             });
             finishDay();
@@ -268,7 +275,7 @@ function PlanTomorrowModal({ open, onPlan, onDismiss }) {
   );
 }
 
-function DaySaved({ planner, doneCount, movedCount, celebrate }) {
+function DaySaved({ planner, doneCount, movedCount, totalActualMinutes, celebrate }) {
   const { t, lang } = useLang();
   const { state, goHomeSummarized, go } = planner;
   const [planModalOpen, setPlanModalOpen] = useState(celebrate);
@@ -288,13 +295,13 @@ function DaySaved({ planner, doneCount, movedCount, celebrate }) {
       <div style={{ marginTop: 20, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', flexDirection: 'column', gap: 11 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><span style={{ color: '#35d07f', fontSize: 12 }}>✓</span><span style={{ fontSize: 13.5, fontWeight: 650, color: '#5fdd9b' }}>{doneShort}</span></div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><span style={{ color: '#8a8a99', fontSize: 12 }}>→</span><span style={{ fontSize: 13.5, color: '#c9c9d6' }}>{movedShort}</span></div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><span style={{ color: '#8a8a99', fontSize: 12 }}>•</span><span style={{ fontSize: 13.5, color: '#c9c9d6' }}>{t('sum.realStudyTime', { time: hm(state.bioMinutes + state.mathMinutes) })}</span></div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><span style={{ color: '#8a8a99', fontSize: 12 }}>•</span><span style={{ fontSize: 13.5, color: '#c9c9d6' }}>{t('sum.realStudyTime', { time: hm(totalActualMinutes) })}</span></div>
       </div>
 
       <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)', fontSize: 12.5, lineHeight: 1.5, color: '#a3a3b3' }}>{t('sum.mathReadinessUpdated')}</div>
-      {(state.adaptive && (state.mathMinutes !== 70)) && (
+      {(state.adaptive && state.sessionReview.math && state.sessionReview.math.minutes !== 70) && (
         <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(124,92,255,.07)', border: '1px solid rgba(124,92,255,.3)', fontSize: 12.5, lineHeight: 1.5, fontWeight: 650, color: '#c9baff' }}>
-          {t('sum.similarMathTasks', { min: state.mathMinutes })}
+          {t('sum.similarMathTasks', { min: state.sessionReview.math.minutes })}
         </div>
       )}
 
