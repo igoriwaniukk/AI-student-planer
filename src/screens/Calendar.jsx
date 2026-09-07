@@ -50,16 +50,14 @@ export default function Calendar({ planner, activities, recurringActivities = []
 
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px' }}>
-      <WeekStrip
-        selectedDay={calDay} onSelect={setCalDay} eventDays={eventDays} examDay={nearestExamDay} topMargin={44}
-        pageable weekOffset={weekOffset} onOffsetChange={setWeekOffset}
-      />
-
-      <div style={{ marginTop: 20 }}>
-        <BackButton onClick={() => go('home')} />
-      </div>
+      <BackButton onClick={() => go('home')} />
       <div style={{ fontSize: 20, fontWeight: 750, letterSpacing: '-.02em', marginTop: 20 }}>{t('cal.title')}</div>
       <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 4 }}>{t('cal.subtitle')}</div>
+
+      <WeekStrip
+        selectedDay={calDay} onSelect={setCalDay} eventDays={eventDays} examDay={nearestExamDay} topMargin={18}
+        pageable weekOffset={weekOffset} onOffsetChange={setWeekOffset}
+      />
 
       <SectionTitle style={{ margin: '22px 0 12px' }}>{t('cal.upcoming')}</SectionTitle>
       {weekExams.length ? (
