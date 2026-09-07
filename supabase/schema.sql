@@ -19,14 +19,19 @@ alter table public.user_data enable row level security;
 
 -- Each user can only ever read or write their own row — this is the real
 -- security boundary, since the "anon" key the app uses is public by design.
+-- "drop ... if exists" first makes this whole file safe to run more than
+-- once (e.g. after a partial run) without erroring on "already exists".
+drop policy if exists "Users can view their own data" on public.user_data;
 create policy "Users can view their own data"
   on public.user_data for select
   using (auth.uid() = user_id);
 
+drop policy if exists "Users can insert their own data" on public.user_data;
 create policy "Users can insert their own data"
   on public.user_data for insert
   with check (auth.uid() = user_id);
 
+drop policy if exists "Users can update their own data" on public.user_data;
 create policy "Users can update their own data"
   on public.user_data for update
   using (auth.uid() = user_id);
