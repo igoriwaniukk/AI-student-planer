@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { WEEK_DAYS, REFERENCE_DAY } from '../lib/plannerData';
+import { WEEK_DAYS, REFERENCE_DAY, realDateForNum } from '../lib/plannerData';
 import { DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 
@@ -110,7 +110,7 @@ export default function WeekStrip({
                   }}
                 >
                   <span style={{ fontSize: 10, fontWeight: 650, color: on ? 'rgba(255,255,255,.85)' : '#7a7a8a', letterSpacing: '.06em' }}>{shortLabel}</span>
-                  <span style={{ fontSize: 17, fontWeight: on ? 750 : 700 }}>{num}</span>
+                  <span style={{ fontSize: 17, fontWeight: on ? 750 : 700 }}>{realDateForNum(num).getDate()}</span>
                 </div>
                 {isStreak && !isCountdown ? (
                   <span style={{ fontSize: 9, lineHeight: 1 }}>🔥</span>

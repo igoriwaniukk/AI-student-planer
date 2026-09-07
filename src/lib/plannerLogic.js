@@ -1,12 +1,26 @@
-import { DEFAULT_START, EXAMS, REFERENCE_DAY, WEEK_DAYS } from './plannerData';
+import { DEFAULT_START, EXAMS, REFERENCE_DAY, WEEK_DAYS, realDateForNum } from './plannerData';
 import { getCurrentLang } from './i18n';
 
 // Weekday info repeats on a 7-day cycle from WEEK_DAYS' base range (16-22),
 // so this works for any day number — not just the ones in the initial
-// week — once a strip can page forward/backward.
+// week — once a strip can page forward/backward. monthDay/monthIndex/year
+// are the real calendar values for that num, via realDateForNum, so the
+// day-of-month actually shown to the student wraps at real month/year
+// boundaries instead of just being the raw (unbounded) num.
 export function dayInfo(num) {
   const idx = (((num - 16) % 7) + 7) % 7;
-  return { ...WEEK_DAYS[idx], num };
+  const date = realDateForNum(num);
+  return { ...WEEK_DAYS[idx], num, monthDay: date.getDate(), monthIndex: date.getMonth(), year: date.getFullYear() };
+}
+
+// Locale-aware "day-of-month + month name" (optionally + year) for a
+// logical day index, via Intl so Polish gets the correct genitive month
+// form (e.g. "22 września") instead of a month name hardcoded for whatever
+// fixed demo month the app used to assume.
+export function formatMonthDay(num, { year = false } = {}) {
+  const lang = getCurrentLang();
+  const opts = { day: 'numeric', month: 'long', ...(year ? { year: 'numeric' } : {}) };
+  return new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'pl-PL', opts).format(realDateForNum(num));
 }
 
 export function fmt(totalMinutes) {
@@ -133,10 +147,9 @@ const PREP_DIFFICULTY_DUR = { 'Łatwy': 25, 'Średni': 35, 'Trudny': 40 };
 const WEEKDAYS = { pl: ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'], en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] };
 
 function prepDayLabel(day) {
-  const idx = (((1 + (day - REFERENCE_DAY)) % 7) + 7) % 7;
   const lang = getCurrentLang();
-  const monthName = lang === 'en' ? 'July' : 'lipca';
-  return WEEKDAYS[lang === 'en' ? 'en' : 'pl'][idx] + ', ' + (lang === 'en' ? monthName + ' ' + day : day + ' ' + monthName);
+  const idx = realDateForNum(day).getDay();
+  return WEEKDAYS[lang === 'en' ? 'en' : 'pl'][idx] + ', ' + formatMonthDay(day);
 }
 
 // Turns whatever topics the student actually entered on the Deadline screen
@@ -188,7 +201,7 @@ export function buildPrepSessions(topics, difficulty) {
   return sessions.map((sx) => ({ ...sx, time: range('17:00', sx.dur), dur: sx.dur + ' min' }));
 }
 
-export function buildPrepDates(count, examDay = 31) {
+export function buildPrepDates(count, examDay = REFERENCE_DAY + 11) {
   const startDay = REFERENCE_DAY + 1;
   const endDay = examDay - 1;
   const dates = [];

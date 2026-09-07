@@ -36,22 +36,43 @@ export const PRIO_STYLE = {
 };
 export const DEFAULT_START = { math: 930, bio: 1000, eng: 1170 };
 
-// "jutro" pivot used across the app (Poniedziałek, 20 lipca) — deadlines are
-// phrased ("za N dni") relative to this day.
-export const REFERENCE_DAY = 20;
-export const TENIS_DAY = 20;
-export const WEEK_DAYS = [
-  { num: 16, label: 'Czwartek', short: 'CZW', school: true },
-  { num: 17, label: 'Piątek', short: 'PT', school: true },
-  { num: 18, label: 'Sobota', short: 'SOB', school: false },
-  { num: 19, label: 'Niedziela', short: 'ND', school: false },
-  { num: 20, label: 'Poniedziałek', short: 'PN', school: true },
-  { num: 21, label: 'Wtorek', short: 'WT', school: true },
-  { num: 22, label: 'Środa', short: 'ŚR', school: true },
+// Day numbers throughout the app are a logical index, not a literal
+// day-of-month: num 19 is anchored to whatever real day the app happens to
+// be running on ("today"), 20 is the day after ("jutro" — deadlines are
+// phrased "za N dni" relative to it), and so on. Anything that needs an
+// actual day-of-month, weekday name, or month name converts a num through
+// realDateForNum()/dayInfo() (see plannerLogic.js) instead of treating the
+// raw num as a calendar date — so paging weeks forward in the UI rolls over
+// month/year boundaries correctly instead of drifting into numbers like 40.
+const NUM_TODAY = 19;
+const TODAY_REAL = new Date();
+TODAY_REAL.setHours(0, 0, 0, 0);
+
+export function realDateForNum(num) {
+  const d = new Date(TODAY_REAL);
+  d.setDate(d.getDate() + (num - NUM_TODAY));
+  return d;
+}
+
+export const REFERENCE_DAY = NUM_TODAY + 1;
+export const TENIS_DAY = REFERENCE_DAY;
+
+const WEEKDAY_META = [
+  { label: 'Niedziela', short: 'ND', school: false },
+  { label: 'Poniedziałek', short: 'PN', school: true },
+  { label: 'Wtorek', short: 'WT', school: true },
+  { label: 'Środa', short: 'ŚR', school: true },
+  { label: 'Czwartek', short: 'CZW', school: true },
+  { label: 'Piątek', short: 'PT', school: true },
+  { label: 'Sobota', short: 'SOB', school: false },
 ];
+export const WEEK_DAYS = Array.from({ length: 7 }, (_, i) => {
+  const num = NUM_TODAY - 3 + i;
+  return { num, ...WEEKDAY_META[realDateForNum(num).getDay()] };
+});
 export const EXAMS = [
-  { id: 'math', subject: 'Matematyka', title: 'Sprawdzian', color: '#a58cff', day: 22 },
-  { id: 'bio', subject: 'Biologia', title: 'Sprawdzian', color: '#2ee6c5', day: 31, requires: 'bioDeadlineSaved' },
+  { id: 'math', subject: 'Matematyka', title: 'Sprawdzian', color: '#a58cff', day: REFERENCE_DAY + 2 },
+  { id: 'bio', subject: 'Biologia', title: 'Sprawdzian', color: '#2ee6c5', day: REFERENCE_DAY + 11, requires: 'bioDeadlineSaved' },
 ];
 
 export const SUBJECTS = ['Matematyka', 'Biologia', 'Angielski', 'Polski', 'Historia', 'Geografia', 'Fizyka', 'Chemia', 'Inny'];

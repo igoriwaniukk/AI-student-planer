@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import WeekStrip from '../components/WeekStrip';
 import { BackButton, Pill, SectionTitle } from '../components/ui';
-import { upcomingExams, hm, dayInfo } from '../lib/plannerLogic';
+import { upcomingExams, hm, dayInfo, formatMonthDay } from '../lib/plannerLogic';
 import { REFERENCE_DAY, TENIS_DAY } from '../lib/plannerData';
 import { DAY_KEY, VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
@@ -71,7 +71,7 @@ export default function Calendar({ planner, activities, recurringActivities = []
                   <Pill text={e.daysUntil === 1 ? t('cal.tomorrowPill') : t('cal.inDaysPill', { n: e.daysUntil })} color="#f5a524" bg="rgba(245,165,36,.15)" />
                 </div>
                 <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6 }}>{t(VALUE_KEY[e.title]) || e.title}</div>
-                <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 3 }}>{t(DAY_KEY[dayInfo(e.day).label]) || dayInfo(e.day).label}, {e.day} {t('month.july')}</div>
+                <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 3 }}>{t(DAY_KEY[dayInfo(e.day).label]) || dayInfo(e.day).label}, {formatMonthDay(e.day)}</div>
                 <div
                   onClick={() => go('goals')}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,.07)', cursor: 'pointer' }}

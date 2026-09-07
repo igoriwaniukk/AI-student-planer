@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { GOALS, IMPORTANCE_OPTIONS } from '../lib/plannerData';
-import { span, computeStreak, computeTotalPoints, dayInfo, upcomingExams, examProgressMinutes } from '../lib/plannerLogic';
+import { span, computeStreak, computeTotalPoints, dayInfo, upcomingExams, examProgressMinutes, formatMonthDay } from '../lib/plannerLogic';
 import { ACHIEVEMENTS, computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
@@ -309,7 +309,7 @@ function DayPlanPlaceholder({ info, onPlan }) {
   const { t } = useLang();
   return (
     <div style={{ marginTop: 18, padding: 16, borderRadius: 20, border: '1.5px solid rgba(124,92,255,.55)', background: 'linear-gradient(165deg,rgba(124,92,255,.13),rgba(124,92,255,.03))' }}>
-      <div style={{ fontSize: 13, fontWeight: 650, color: '#c9baff' }}>{t(DAY_KEY[info.label]) || info.label}, {info.num}</div>
+      <div style={{ fontSize: 13, fontWeight: 650, color: '#c9baff' }}>{t(DAY_KEY[info.label]) || info.label}, {info.monthDay}</div>
       <div style={{ fontSize: 15, fontWeight: 700, marginTop: 8, lineHeight: 1.3 }}>{t('home.noPlanForDay')}</div>
       <div
         onClick={onPlan}
@@ -455,7 +455,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
   const doneCount = dayIds.filter((id) => ts(id).status === 'completed').length;
   const totalCount = dayIds.filter((id) => ts(id).status !== 'skipped').length;
   const pct = totalCount ? Math.round((doneCount / totalCount) * 100) : 0;
-  const dateLong = t('home.dateLong', { day: t(DAY_KEY[info.label]) || info.label, num: viewDay });
+  const dateLong = t('home.dateLong', { day: t(DAY_KEY[info.label]) || info.label, date: formatMonthDay(viewDay, { year: true }) });
   const parts = (studentName || 'Ty').trim().split(/\s+/);
   const initials = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 
