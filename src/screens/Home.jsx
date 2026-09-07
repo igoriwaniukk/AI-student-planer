@@ -481,6 +481,8 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
         : null;
 
   const [deadlinesOpen, setDeadlinesOpen] = useState(false);
+  const [todayProgressOpen, setTodayProgressOpen] = useState(false);
+  const [weekGoalOpen, setWeekGoalOpen] = useState(false);
   const upcoming = upcomingExams(state).filter((e) => e.daysUntil >= 0);
   const nearestExam = upcoming[0] || null;
 
@@ -529,12 +531,18 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
               <span style={{ fontSize: 10.5, fontWeight: 700, color: '#f0c078' }}>{t('home.badgesCount', { n: unlockedAchievements.length, total: ACHIEVEMENTS.length })}</span>
             </div>
             {isRealDay && (
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(46,230,197,.1)', border: '1px solid rgba(46,230,197,.28)' }}>
+              <div
+                onClick={() => setTodayProgressOpen(true)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(46,230,197,.1)', border: '1px solid rgba(46,230,197,.28)', cursor: 'pointer' }}
+              >
                 <span style={{ fontSize: 12 }}>📊</span>
                 <span style={{ fontSize: 10.5, fontWeight: 700, color: '#7fe8cf' }}>{t('home.todayProgressBadge', { pct, done: doneCount, total: totalCount })}</span>
               </div>
             )}
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(165,140,255,.1)', border: '1px solid rgba(165,140,255,.28)' }}>
+            <div
+              onClick={() => setWeekGoalOpen(true)}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(165,140,255,.1)', border: '1px solid rgba(165,140,255,.28)', cursor: 'pointer' }}
+            >
               <span style={{ fontSize: 12 }}>🎯</span>
               <span style={{ fontSize: 10.5, fontWeight: 700, color: '#c9baff' }}>{t('home.weekGoalBadge', { pct: 60 })}</span>
             </div>
@@ -663,6 +671,36 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
         <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(245,165,36,.13)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.2 8a5.2 5.2 0 01-8.9 3.7M2.8 8a5.2 5.2 0 018.9-3.7" stroke="#f5a524" strokeWidth="1.3" strokeLinecap="round" /><path d="M11.4 2.4v2.4H9M4.6 13.6v-2.4H7" stroke="#f5a524" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
         <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.25 }}>{t('home.rescueDay')}</div>
       </div>
+
+      {todayProgressOpen && (
+        <BottomSheet>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{t('home.todayProgress')}</div>
+            <span onClick={() => setTodayProgressOpen(false)} style={{ fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('notif.close')}</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 16 }}>
+            <div style={{ fontSize: 32, fontWeight: 750, color: '#2ee6c5' }}>{pct}%</div>
+            <div style={{ fontSize: 12.5, color: '#8a8a99' }}>{t('home.sessionsDone', { done: doneCount, total: totalCount, word: t(totalCount === 1 ? 'home.sessionsCompletedOne' : 'home.sessionsCompletedMany') })}</div>
+          </div>
+          <ProgressBar pct={pct} style={{ marginTop: 14 }} />
+          <div style={{ marginTop: 18, paddingBottom: 8 }}><TodayList planner={planner} /></div>
+        </BottomSheet>
+      )}
+
+      {weekGoalOpen && (
+        <BottomSheet>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{t('home.weekGoal')}</div>
+            <span onClick={() => setWeekGoalOpen(false)} style={{ fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('notif.close')}</span>
+          </div>
+          <div style={{ fontSize: 15.5, fontWeight: 700, lineHeight: 1.3, letterSpacing: '-.01em', marginTop: 14 }}>{t('home.mathPrepGoal')}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 10 }}>
+            <div style={{ fontSize: 32, fontWeight: 750, color: '#2ee6c5' }}>60%</div>
+            <div style={{ fontSize: 12.5, color: '#8a8a99' }}>{t('home.blocksdone')}</div>
+          </div>
+          <ProgressBar pct={60} style={{ marginTop: 14, marginBottom: 8 }} />
+        </BottomSheet>
+      )}
 
       <FinishSheet planner={planner} />
       <EnergySheet planner={planner} logEnergy={logEnergy} />
