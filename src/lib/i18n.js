@@ -478,6 +478,9 @@ export const dict = {
     // Rescue
     'rescue.now': 'Teraz 16:50',
     'rescue.title': 'Uratuj mój dzień',
+    'rescue.missedTitle': 'PRZEGAPIONA SESJA',
+    'rescue.missedHeading': 'Nie zdążyłeś z: {title}',
+    'rescue.missedDesc': 'Zaplanowany czas na tę sesję już minął. Uratuj dzisiejszy dzień, żeby ułożyć go na nowo.',
     'rescue.date': 'Poniedziałek, 20 lipca',
     'rescue.delayedTitle': 'Plan się opóźnił',
     'rescue.delayedDesc': 'Sprawdźmy, co nadal warto zrobić i czego nie trzeba już wciskać na siłę.',
@@ -1150,6 +1153,9 @@ export const dict = {
 
     'rescue.now': 'Now 4:50 PM',
     'rescue.title': 'Rescue my day',
+    'rescue.missedTitle': 'MISSED SESSION',
+    'rescue.missedHeading': "You didn't get to: {title}",
+    'rescue.missedDesc': "The scheduled time for this session has already passed. Rescue today's plan to put it back together.",
     'rescue.date': 'Monday, July 20',
     'rescue.delayedTitle': 'Your plan fell behind',
     'rescue.delayedDesc': "Let's check what's still worth doing and what we shouldn't force anymore.",

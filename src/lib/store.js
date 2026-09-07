@@ -15,6 +15,7 @@ const KEYS = {
   language: 'sp_language',
   customReminders: 'sp_customReminders',
   seenNotifSignature: 'sp_seenNotifSignature',
+  dismissedMissedSession: 'sp_dismissedMissedSession',
 };
 
 export function useLocalStorage(key, initialValue) {
@@ -118,6 +119,13 @@ export function useSeenNotifSignature() {
 // from the automatic exam alerts: [{ id, text }].
 export function useCustomReminders() {
   return useLocalStorage(KEYS.customReminders, []);
+}
+
+// Id of the missed-session task the student last dismissed the "rescue your
+// day?" popup for — so it doesn't nag again for that same session, but does
+// come back once a different session falls behind.
+export function useDismissedMissedSession() {
+  return useLocalStorage(KEYS.dismissedMissedSession, '');
 }
 
 // Wipes every bit of this app's local data and reloads to a fresh

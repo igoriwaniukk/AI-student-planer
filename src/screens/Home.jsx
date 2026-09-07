@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { GOALS, IMPORTANCE_OPTIONS } from '../lib/plannerData';
 import { span, computeStreak, computeTotalPoints, dayInfo, upcomingExams, examProgressMinutes } from '../lib/plannerLogic';
 import { computeUnlockedAchievements } from '../lib/achievements';
-import { useSeenAchievements, useLastSeenStreak } from '../lib/store';
+import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import WeekStrip from '../components/WeekStrip';
@@ -32,6 +32,31 @@ function AchievementModal({ achievement, onClose }) {
         >
           {t('home.great')}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// Same visual language as the achievement-unlock popup, but for a planned
+// session whose time has already passed without being started/finished —
+// nudges straight into the rescue-day flow instead of just a dead-end toast.
+function MissedSessionModal({ session, onRescue, onDismiss }) {
+  const { t } = useLang();
+  if (!session) return null;
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(6,6,10,.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ width: '100%', maxWidth: 340, padding: 28, borderRadius: 24, background: '#101018', border: '1px solid rgba(255,255,255,.1)', textAlign: 'center', animation: 'stepIconPop .4s cubic-bezier(.34,1.56,.64,1) both' }}>
+        <div style={{ fontSize: 44, marginBottom: 14 }}>⏰</div>
+        <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.1em', color: '#f5a524' }}>{t('rescue.missedTitle')}</div>
+        <div style={{ fontSize: 19, fontWeight: 750, marginTop: 8 }}>{t('rescue.missedHeading', { title: session.title })}</div>
+        <div style={{ fontSize: 13, color: '#a3a3b3', marginTop: 8, lineHeight: 1.5 }}>{t('rescue.missedDesc')}</div>
+        <div
+          onClick={onRescue}
+          style={{ marginTop: 20, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+        >
+          {t('home.rescueDay')}
+        </div>
+        <div onClick={onDismiss} style={{ marginTop: 14, fontSize: 13, fontWeight: 650, color: '#8a8a99', cursor: 'pointer' }}>{t('home.later')}</div>
       </div>
     </div>
   );
@@ -457,6 +482,28 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
   const [deadlinesOpen, setDeadlinesOpen] = useState(false);
   const upcoming = upcomingExams(state).filter((e) => e.daysUntil >= 0);
   const nearestExam = upcoming[0] || null;
+
+  // A planned session whose scheduled end has already passed the real
+  // current time — a prompt to nudge into the rescue-day flow, re-checked
+  // periodically so it can appear without the student having to reload.
+  const [dismissedMissedSession, setDismissedMissedSession] = useDismissedMissedSession();
+  const [, forceRecheck] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => forceRecheck((n) => n + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
+  const missedSession = (() => {
+    if (!isRealDay) return null;
+    const now = new Date();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const sched = state.schedule || {};
+    const missedId = Object.keys(sched)
+      .filter((id) => ts(id).status === 'planned' && nowMinutes > sched[id].start + sched[id].dur)
+      .sort((a, b) => sched[a].start - sched[b].start)[0];
+    if (!missedId || missedId === dismissedMissedSession) return null;
+    const d = planner.def(missedId);
+    return { id: missedId, title: t(TASK_TEXT_KEY[d.id]?.title) || d.title };
+  })();
   const examPct = (exam) => {
     const goal = state.examGoals?.[exam.id] || DEFAULT_EXAM_GOAL;
     return goal.studyMinutes ? Math.min(100, Math.round((examProgressMinutes(state, exam.id) / goal.studyMinutes) * 100)) : 0;
@@ -621,6 +668,11 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
       <FinishSheet planner={planner} />
       <EnergySheet planner={planner} logEnergy={logEnergy} />
       <AchievementModal achievement={pendingAchievement} onClose={() => setSeenAchievements(seenAchievements.concat(pendingAchievement.id))} />
+      <MissedSessionModal
+        session={!pendingAchievement ? missedSession : null}
+        onRescue={() => { setDismissedMissedSession(missedSession.id); planner.go('rescue'); }}
+        onDismiss={() => setDismissedMissedSession(missedSession.id)}
+      />
     </div>
   );
 }
