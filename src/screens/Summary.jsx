@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { HARD_OPTIONS, KNOW_OPTIONS, DAY_HARD_OPTIONS } from '../lib/plannerData';
 import { hm, toMinutes, fmt, zad } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
@@ -244,9 +245,33 @@ function EngTimeSheet({ planner }) {
   );
 }
 
+// Same visual language as the achievement-unlock and rescue-day popups —
+// a finished day is worth its own moment, not just another inline card
+// buried under the summary stats.
+function PlanTomorrowModal({ open, onPlan, onDismiss }) {
+  const { t } = useLang();
+  if (!open) return null;
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(6,6,10,.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ width: '100%', maxWidth: 340, padding: 28, borderRadius: 24, background: '#101018', border: '1px solid rgba(255,255,255,.1)', textAlign: 'center', animation: 'stepIconPop .4s cubic-bezier(.34,1.56,.64,1) both' }}>
+        <div style={{ position: 'relative' }}>
+          <div style={{ fontSize: 44, marginBottom: 14 }}>🗓️</div>
+          <Confetti top={20} />
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.1em', color: '#5fdd9b' }}>{t('sum.planTomorrowBadge')}</div>
+        <div style={{ fontSize: 19, fontWeight: 750, marginTop: 8 }}>{t('sum.planTomorrowTitle')}</div>
+        <div style={{ fontSize: 13, color: '#a3a3b3', marginTop: 8, lineHeight: 1.5 }}>{t('sum.planTomorrowDesc')}</div>
+        <div onClick={onPlan} style={{ marginTop: 20, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>{t('home.planTomorrow')}</div>
+        <div onClick={onDismiss} style={{ marginTop: 14, fontSize: 13, fontWeight: 650, color: '#8a8a99', cursor: 'pointer' }}>{t('home.later')}</div>
+      </div>
+    </div>
+  );
+}
+
 function DaySaved({ planner, doneCount, movedCount, celebrate }) {
   const { t, lang } = useLang();
   const { state, goHomeSummarized, go } = planner;
+  const [planModalOpen, setPlanModalOpen] = useState(celebrate);
   const doneShort = lang === 'en'
     ? doneCount + ' ' + (doneCount === 1 ? 'task' : 'tasks') + ' ' + t('sum.doneWord')
     : zad(doneCount) + (doneCount >= 2 && doneCount <= 4 ? ' wykonane' : doneCount === 1 ? ' wykonane' : ' wykonanych');
@@ -273,15 +298,9 @@ function DaySaved({ planner, doneCount, movedCount, celebrate }) {
         </div>
       )}
 
-      {celebrate && (
-        <div style={{ marginTop: 12, padding: 16, borderRadius: 20, border: '1.5px solid rgba(124,92,255,.4)', background: 'linear-gradient(165deg,rgba(124,92,255,.13),rgba(124,92,255,.03))' }}>
-          <div style={{ fontSize: 14.5, fontWeight: 700 }}>{t('sum.planTomorrowTitle')}</div>
-          <div style={{ fontSize: 12.5, color: '#a3a3b3', marginTop: 6, lineHeight: 1.45 }}>{t('sum.planTomorrowDesc')}</div>
-          <div onClick={() => go('planner')} style={{ marginTop: 13, height: 48, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14.5, fontWeight: 700, cursor: 'pointer' }}>{t('home.planTomorrow')}</div>
-        </div>
-      )}
-
       <div onClick={goHomeSummarized} style={{ marginTop: 12, height: 56, borderRadius: 17, background: celebrate ? 'rgba(255,255,255,.055)' : 'linear-gradient(160deg,#8b6dff,#6d4dff)', border: celebrate ? '1px solid rgba(255,255,255,.1)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16.5, fontWeight: 700, cursor: 'pointer', boxShadow: celebrate ? 'none' : '0 12px 30px rgba(109,77,255,.35)' }}>{t('sum.backToStart')}</div>
+
+      <PlanTomorrowModal open={planModalOpen} onPlan={() => { setPlanModalOpen(false); go('planner'); }} onDismiss={() => setPlanModalOpen(false)} />
     </div>
   );
 }

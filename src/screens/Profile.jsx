@@ -7,7 +7,7 @@ import { useLang } from '../lib/useLang';
 import { useCustomReminders, resetAppData } from '../lib/store';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { resizeImageToDataURL } from '../lib/image';
-import { Chip, EnergyPicker } from '../components/ui';
+import { Chip, EnergyPicker, AchievementMedal } from '../components/ui';
 
 // Clicking the avatar (or its camera badge) opens the device's photo/file
 // picker; the chosen image is downscaled client-side (see lib/image.js)
@@ -236,7 +236,7 @@ function AchievementDetail({ achievement, unlocked, onClose }) {
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(6,6,10,.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 340, padding: 28, borderRadius: 24, background: '#101018', border: '1px solid rgba(255,255,255,.1)', textAlign: 'center', animation: 'stepIconPop .4s cubic-bezier(.34,1.56,.64,1) both' }}>
-        <div style={{ fontSize: 44, marginBottom: 14, filter: unlocked ? 'none' : 'grayscale(1)', opacity: unlocked ? 1 : .4 }}>{achievement.icon}</div>
+        <div style={{ marginBottom: 14 }}><AchievementMedal icon={achievement.icon} unlocked={unlocked} size={64} /></div>
         <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.1em', color: unlocked ? '#f5a524' : '#7a7a8a' }}>{unlocked ? t('profile.unlocked') : t('profile.locked')}</div>
         <div style={{ fontSize: 19, fontWeight: 750, marginTop: 8 }}>{t(achievement.titleKey)}</div>
         <div style={{ fontSize: 13, color: '#a3a3b3', marginTop: 8, lineHeight: 1.5 }}>{t(achievement.descKey)}</div>
@@ -278,12 +278,12 @@ function AchievementsCard({ studyHistory, energyLog, recurringActivities }) {
               onClick={() => setSelected(a)}
               style={{
                 padding: '14px 8px', borderRadius: 15, textAlign: 'center', cursor: 'pointer',
-                background: unlocked ? 'rgba(124,92,255,.12)' : 'rgba(255,255,255,.03)',
-                border: '1.5px solid ' + (unlocked ? 'rgba(124,92,255,.5)' : 'rgba(255,255,255,.08)'),
+                background: unlocked ? 'rgba(240,169,60,.1)' : 'rgba(255,255,255,.03)',
+                border: '1.5px solid ' + (unlocked ? 'rgba(240,169,60,.45)' : 'rgba(255,255,255,.08)'),
               }}
             >
-              <div style={{ fontSize: 26, filter: unlocked ? 'none' : 'grayscale(1)', opacity: unlocked ? 1 : .35 }}>{a.icon}</div>
-              <div style={{ fontSize: 10.5, fontWeight: 650, marginTop: 6, color: unlocked ? '#e6dfff' : '#7a7a8a', lineHeight: 1.3 }}>{t(a.titleKey)}</div>
+              <AchievementMedal icon={a.icon} unlocked={unlocked} size={40} />
+              <div style={{ fontSize: 10.5, fontWeight: 650, marginTop: 6, color: unlocked ? '#f7dfa8' : '#7a7a8a', lineHeight: 1.3 }}>{t(a.titleKey)}</div>
             </div>
           );
         })}

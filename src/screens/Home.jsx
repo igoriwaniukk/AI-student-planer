@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { GOALS, IMPORTANCE_OPTIONS } from '../lib/plannerData';
 import { span, computeStreak, computeTotalPoints, dayInfo, upcomingExams, examProgressMinutes } from '../lib/plannerLogic';
-import { computeUnlockedAchievements } from '../lib/achievements';
+import { ACHIEVEMENTS, computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import WeekStrip from '../components/WeekStrip';
-import { Pill, BottomSheet, EnergyPicker, Chip, AnimatedNumber, Confetti, StatusPill, ProgressBar } from '../components/ui';
+import { Pill, BottomSheet, EnergyPicker, Chip, AnimatedNumber, Confetti, StatusPill, ProgressBar, AchievementMedal } from '../components/ui';
 
 const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
 // Matches Goals.jsx's DEFAULT_GOAL — an exam without a saved goal still gets
@@ -19,8 +19,8 @@ function AchievementModal({ achievement, onClose }) {
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(6,6,10,.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
       <div style={{ width: '100%', maxWidth: 340, padding: 28, borderRadius: 24, background: '#101018', border: '1px solid rgba(255,255,255,.1)', textAlign: 'center', animation: 'stepIconPop .4s cubic-bezier(.34,1.56,.64,1) both' }}>
-        <div style={{ position: 'relative' }}>
-          <div style={{ fontSize: 44, marginBottom: 14 }}>{achievement.icon}</div>
+        <div style={{ position: 'relative', marginBottom: 14 }}>
+          <AchievementMedal icon={achievement.icon} unlocked size={72} />
           <Confetti top={20} />
         </div>
         <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.1em', color: '#f5a524' }}>{t('home.newAchievement')}</div>
@@ -470,7 +470,8 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
     energyCheckins: energyLog.length,
     recurringCount: recurringActivities.length,
   };
-  const newlyUnlocked = computeUnlockedAchievements(stats).filter((a) => !seenAchievements.includes(a.id));
+  const unlockedAchievements = computeUnlockedAchievements(stats);
+  const newlyUnlocked = unlockedAchievements.filter((a) => !seenAchievements.includes(a.id));
   const pendingAchievement = newlyUnlocked[0] || null;
   const streakNotice =
     lastSeenStreak > 0 && streak < lastSeenStreak
@@ -519,6 +520,13 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
             <span style={{ fontSize: 22, display: 'inline-block', transformOrigin: '70% 70%', animation: 'handWave 3.2s ease-in-out infinite' }}>👋</span>
           </div>
           <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 6 }}>{t('home.subtitle')}</div>
+          <div
+            onClick={() => planner.go('profile')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 5, marginTop: 9, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(240,169,60,.1)', border: '1px solid rgba(240,169,60,.28)', cursor: 'pointer' }}
+          >
+            <span style={{ fontSize: 12 }}>🎖️</span>
+            <span style={{ fontSize: 10.5, fontWeight: 700, color: '#f0c078' }}>{t('home.badgesCount', { n: unlockedAchievements.length, total: ACHIEVEMENTS.length })}</span>
+          </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4, paddingRight: 46 }}>
           <div

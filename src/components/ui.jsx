@@ -112,6 +112,40 @@ export function ListRow({ label, active, onClick, last }) {
   );
 }
 
+// A small circular "school medal" for achievements — a gold coin with a
+// two-tone ribbon above it once unlocked, a dulled grey disc while it's
+// still to be earned — used anywhere an achievement icon is shown so the
+// whole app reads as one badge system instead of plain emoji.
+export function AchievementMedal({ icon, unlocked, size = 40 }) {
+  const ribbon = size >= 28;
+  const ribbonW = Math.round(size * 0.3);
+  const ribbonH = Math.round(size * 0.36);
+  return (
+    <div style={{ position: 'relative', width: size, height: ribbon ? size + Math.round(size * 0.22) : size, margin: '0 auto' }}>
+      {ribbon && (
+        <>
+          <div style={{ position: 'absolute', top: 0, left: '50%', width: ribbonW, height: ribbonH, background: unlocked ? 'linear-gradient(160deg,#d33a5c,#8f2540)' : 'rgba(255,255,255,.06)', transform: 'translateX(-115%) rotate(18deg)', borderRadius: '3px 3px 0 0' }} />
+          <div style={{ position: 'absolute', top: 0, left: '50%', width: ribbonW, height: ribbonH, background: unlocked ? 'linear-gradient(160deg,#d33a5c,#8f2540)' : 'rgba(255,255,255,.06)', transform: 'translateX(15%) rotate(-18deg)', borderRadius: '3px 3px 0 0' }} />
+        </>
+      )}
+      <div
+        style={{
+          position: 'absolute', bottom: 0, left: '50%', transform: 'translateX(-50%)',
+          width: size, height: size, borderRadius: '50%',
+          background: unlocked ? 'linear-gradient(155deg,#ffe9a8,#f0b93c 55%,#c98a1c)' : 'rgba(255,255,255,.05)',
+          border: '2px solid ' + (unlocked ? '#fff3d0' : 'rgba(255,255,255,.1)'),
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: Math.round(size * 0.5), lineHeight: 1,
+          filter: unlocked ? 'none' : 'grayscale(1)', opacity: unlocked ? 1 : .35,
+          boxShadow: unlocked ? '0 3px 10px rgba(240,169,60,.35)' : 'none',
+        }}
+      >
+        {icon}
+      </div>
+    </div>
+  );
+}
+
 export function Pill({ text, color, bg }) {
   return (
     <span style={{ fontSize: 10.5, fontWeight: 650, color, padding: '3px 7px', borderRadius: 7, background: bg }}>
