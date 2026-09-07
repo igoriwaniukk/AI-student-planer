@@ -6,7 +6,7 @@ import { VALUE_KEY, DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { BottomSheet, Chip } from './ui';
 
-// Gemini replies use light Markdown (bold, line breaks) — render that
+// Claude's replies use light Markdown (bold, line breaks) — render that
 // instead of showing literal "**...**" and losing paragraph breaks.
 function renderMarkdownLite(text) {
   return text.split('\n').map((line, i, arr) => (
@@ -39,7 +39,7 @@ function Avatar({ role, studentName }) {
   );
 }
 
-// Turns a Gemini function-call proposal into a human-readable summary and
+// Turns a Claude tool-use proposal into a human-readable summary and
 // the planner call that actually applies it, once the student confirms.
 function describeAction(action, planner, deps, t) {
   const { name, args } = action;
