@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
-import { hm, weeklyReview, upcomingExams, computeStreak } from '../lib/plannerLogic';
+import { hm, weeklyReview, upcomingExams, computeStreak, computeTotalPoints } from '../lib/plannerLogic';
 import { STUDY_TIME_OPTIONS, PREF_OPTIONS, PRIORITY_SUBJECT_OPTIONS } from '../lib/plannerData';
+import { ACHIEVEMENTS, computeUnlockedAchievements } from '../lib/achievements';
 import { VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { useCustomReminders, resetAppData } from '../lib/store';
@@ -229,6 +230,69 @@ function SettingsCard({ planner, studyHistory }) {
   );
 }
 
+function AchievementDetail({ achievement, unlocked, onClose }) {
+  const { t } = useLang();
+  if (!achievement) return null;
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(6,6,10,.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ width: '100%', maxWidth: 340, padding: 28, borderRadius: 24, background: '#101018', border: '1px solid rgba(255,255,255,.1)', textAlign: 'center', animation: 'stepIconPop .4s cubic-bezier(.34,1.56,.64,1) both' }}>
+        <div style={{ fontSize: 44, marginBottom: 14, filter: unlocked ? 'none' : 'grayscale(1)', opacity: unlocked ? 1 : .4 }}>{achievement.icon}</div>
+        <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.1em', color: unlocked ? '#f5a524' : '#7a7a8a' }}>{unlocked ? t('profile.unlocked') : t('profile.locked')}</div>
+        <div style={{ fontSize: 19, fontWeight: 750, marginTop: 8 }}>{t(achievement.titleKey)}</div>
+        <div style={{ fontSize: 13, color: '#a3a3b3', marginTop: 8, lineHeight: 1.5 }}>{t(achievement.descKey)}</div>
+        <div onClick={onClose} style={{ marginTop: 20, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>{t('home.great')}</div>
+      </div>
+    </div>
+  );
+}
+
+// All achievements — locked and unlocked — so the student can see what
+// they've earned (per their tap on the "achievement unlocked" popup) and
+// what's still ahead, instead of only ever seeing the one-off unlock toast.
+function AchievementsCard({ studyHistory, energyLog, recurringActivities }) {
+  const { t } = useLang();
+  const [selected, setSelected] = useState(null);
+  const streak = computeStreak(studyHistory || {});
+  const points = computeTotalPoints(studyHistory || {}, energyLog || []);
+  const stats = {
+    streak,
+    points,
+    completedDays: Object.values(studyHistory || {}).filter((e) => e.completed).length,
+    energyCheckins: (energyLog || []).length,
+    recurringCount: (recurringActivities || []).length,
+  };
+  const unlockedIds = new Set(computeUnlockedAchievements(stats).map((a) => a.id));
+
+  return (
+    <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', position: 'relative' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13 }}>
+        <span style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('profile.achievements')}</span>
+        <span style={{ fontSize: 11.5, fontWeight: 650, color: '#a58cff' }}>{unlockedIds.size}/{ACHIEVEMENTS.length}</span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+        {ACHIEVEMENTS.map((a) => {
+          const unlocked = unlockedIds.has(a.id);
+          return (
+            <div
+              key={a.id}
+              onClick={() => setSelected(a)}
+              style={{
+                padding: '14px 8px', borderRadius: 15, textAlign: 'center', cursor: 'pointer',
+                background: unlocked ? 'rgba(124,92,255,.12)' : 'rgba(255,255,255,.03)',
+                border: '1.5px solid ' + (unlocked ? 'rgba(124,92,255,.5)' : 'rgba(255,255,255,.08)'),
+              }}
+            >
+              <div style={{ fontSize: 26, filter: unlocked ? 'none' : 'grayscale(1)', opacity: unlocked ? 1 : .35 }}>{a.icon}</div>
+              <div style={{ fontSize: 10.5, fontWeight: 650, marginTop: 6, color: unlocked ? '#e6dfff' : '#7a7a8a', lineHeight: 1.3 }}>{t(a.titleKey)}</div>
+            </div>
+          );
+        })}
+      </div>
+      <AchievementDetail achievement={selected} unlocked={selected ? unlockedIds.has(selected.id) : false} onClose={() => setSelected(null)} />
+    </div>
+  );
+}
+
 function LanguageCard() {
   const { lang, setLang, t } = useLang();
   return (
@@ -242,7 +306,7 @@ function LanguageCard() {
   );
 }
 
-export default function Profile({ studentName, setStudentName, profilePhoto, setProfilePhoto, schoolPlan, activities, planner, profileDefaults, setProfileDefaults, studyHistory }) {
+export default function Profile({ studentName, setStudentName, profilePhoto, setProfilePhoto, schoolPlan, activities, planner, profileDefaults, setProfileDefaults, studyHistory, energyLog, recurringActivities }) {
   const { t } = useLang();
   const parts = (studentName || 'Ty').trim().split(/\s+/);
   const initials = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
@@ -282,6 +346,8 @@ export default function Profile({ studentName, setStudentName, profilePhoto, set
       <EditableRhythmCard profileDefaults={profileDefaults} setProfileDefaults={setProfileDefaults} planner={planner} />
 
       <WeeklyReviewCard studyHistory={studyHistory} />
+
+      <AchievementsCard studyHistory={studyHistory} energyLog={energyLog} recurringActivities={recurringActivities} />
 
       <SettingsCard planner={planner} studyHistory={studyHistory} />
 

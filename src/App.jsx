@@ -70,6 +70,8 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
           profileDefaults={profileDefaults}
           setProfileDefaults={setProfileDefaults}
           studyHistory={studyHistory}
+          energyLog={energyLog}
+          recurringActivities={recurringActivities}
         />
       )}
 
