@@ -129,19 +129,29 @@ a { color: #8b6dff; }
 /* Every clickable element in this app is a plain div/span/button styled
    with cursor:pointer rather than a shared button component, so this is
    the one place that can give all of them the same "grows slightly on
-   hover" feedback without touching every call site. */
-.btn, button, [style*="cursor: pointer"] {
-  transition: transform .12s ease;
-}
-.btn:hover, button:hover, [style*="cursor: pointer"]:hover {
-  transform: scale(1.035);
+   hover" feedback without touching every call site.
+   Gated to real hover-capable pointers (mouse/trackpad): touch screens
+   have no hover to leave, so tapping a button on a phone leaves it stuck
+   in :hover — a scaled-up element (often purple, since most buttons here
+   are) then sits clipped against .app-shell's overflow:hidden edge as a
+   stray sliver until something else is tapped. */
+@media (hover: hover) and (pointer: fine) {
+  .btn, button, [style*="cursor: pointer"] {
+    transition: transform .12s ease;
+  }
+  .btn:hover, button:hover, [style*="cursor: pointer"]:hover {
+    transform: scale(1.035);
+  }
 }
 
 /* The FABs run a continuous idle "look at me" animation on transform,
-   which otherwise wins over the plain :hover rule above every frame. */
-.fab-btn:hover {
-  animation: none !important;
-  transform: scale(1.08);
+   which otherwise wins over the plain :hover rule above every frame.
+   Same hover-capable-pointer gating as above, for the same reason. */
+@media (hover: hover) and (pointer: fine) {
+  .fab-btn:hover {
+    animation: none !important;
+    transform: scale(1.08);
+  }
 }
 
 .btn {
