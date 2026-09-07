@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { GOALS, IMPORTANCE_OPTIONS, REFERENCE_DAY, realDateForNum } from '../lib/plannerData';
-import { span, computeStreak, computeTotalPoints, dayInfo, upcomingExams, examProgressMinutes, formatMonthDay, weekdayDateLabel, weekdayOn, realTimeForDayMinute, formatCountdown } from '../lib/plannerLogic';
+import { GOALS, IMPORTANCE_OPTIONS, REFERENCE_DAY } from '../lib/plannerData';
+import { span, computeStreak, computeTotalPoints, dayInfo, upcomingExams, examProgressMinutes, formatMonthDay, weekdayDateLabel, weekdayOn } from '../lib/plannerLogic';
 import { ACHIEVEMENTS, computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
@@ -237,14 +237,6 @@ function NextSessionCard({ planner }) {
   const active = state.activeTask;
   const nextId = active || ids.filter((id) => ['planned', 'paused'].includes(ts(id).status))[0];
 
-  // Small live countdown to the session's start, ticking on its own so the
-  // corner label stays accurate without the rest of the card re-rendering.
-  const [, forceTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => forceTick((n) => n + 1), 30000);
-    return () => clearInterval(id);
-  }, []);
-
   // The glow pulses to draw the eye to the session waiting to be started —
   // once it's actually running (or paused mid-way), that's already been
   // acted on, so the pulsing stops until a new session takes its place.
@@ -274,9 +266,6 @@ function NextSessionCard({ planner }) {
   const b = sched[nextId];
   const st = ts(nextId);
   const running = st.status === 'in_progress' || st.status === 'paused';
-  const startCountdown = st.status === 'planned'
-    ? formatCountdown(realTimeForDayMinute(state.selectedDay, b.start).getTime() - new Date().getTime())
-    : null;
 
   return box(
     <>
@@ -284,12 +273,9 @@ function NextSessionCard({ planner }) {
         <span style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#c9baff', padding: '6px 11px', borderRadius: 999, background: 'rgba(124,92,255,.22)', border: '1px solid rgba(124,92,255,.4)' }}>
           {running ? t('home.sessionInProgress') : t('home.nextSession')}
         </span>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 11.5, fontWeight: 650, color: st.status === 'paused' ? '#f5a524' : '#8a8a99' }}>
-            {st.status === 'paused' ? t('home.paused') : span(b.start, b.start + b.dur)}
-          </div>
-          {startCountdown && <div style={{ fontSize: 9.5, fontWeight: 650, color: '#6b6b7a', marginTop: 2 }}>{t('home.countdownIn', { time: startCountdown })}</div>}
-        </div>
+        <span style={{ fontSize: 11.5, fontWeight: 650, color: st.status === 'paused' ? '#f5a524' : '#8a8a99' }}>
+          {st.status === 'paused' ? t('home.paused') : span(b.start, b.start + b.dur)}
+        </span>
       </div>
       <div style={{ fontSize: 13, fontWeight: 650, color: d.color, marginTop: 14 }}>{t(VALUE_KEY[d.subject]) || d.subject}</div>
       <div style={{ fontSize: 22, fontWeight: 750, lineHeight: 1.22, letterSpacing: '-.02em', marginTop: 8 }}>{t(TASK_TEXT_KEY[d.id]?.title) || d.title}</div>
@@ -499,7 +485,6 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
   const toggleBadge = (key) => setOpenBadge((cur) => (cur === key ? null : key));
   const upcoming = upcomingExams(state).filter((e) => e.daysUntil >= 0);
   const nearestExam = upcoming[0] || null;
-  const examCountdown = nearestExam ? formatCountdown(realDateForNum(nearestExam.day).getTime() - new Date().getTime()) : null;
 
   // A planned session whose scheduled end has already passed the real
   // current time — a prompt to nudge into the rescue-day flow, re-checked
@@ -682,7 +667,6 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 21, fontWeight: 750 }}>{examPct(nearestExam)}%</div>
             <div style={{ fontSize: 10.5, color: '#8a8a99' }}>{t('home.readiness')}</div>
-            {examCountdown && <div style={{ fontSize: 9.5, fontWeight: 650, color: '#f5a524', marginTop: 3 }}>{t('home.countdownIn', { time: examCountdown })}</div>}
           </div>
         </div>
       )}
