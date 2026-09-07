@@ -41,7 +41,9 @@ export default function Plan({ planner }) {
           <Pill text={t('plan.studyTime', { time: hm(studyMins) })} color="#e2e2ea" bg="rgba(255,255,255,.07)" />
           <Pill text={t('plan.studyEnd', { time: studyEnd })} color="#e2e2ea" bg="rgba(255,255,255,.07)" />
         </div>
-        <div style={{ fontSize: 12.5, lineHeight: 1.5, color: '#a3a3b3', marginTop: 12 }}>{t('plan.considers', { energy: energyPhrase, pref: prefPhrase })}</div>
+        <div style={{ fontSize: 12.5, lineHeight: 1.5, color: '#a3a3b3', marginTop: 12 }}>
+          {state.planAIRationale || t('plan.considers', { energy: energyPhrase, pref: prefPhrase })}
+        </div>
         <div style={{ height: 1, background: 'rgba(255,255,255,.09)', margin: '14px -16px' }} />
         <div style={{ display: 'flex', gap: 9 }}>
           <span style={{ color: '#35d07f', fontSize: 12 }}>✓</span>

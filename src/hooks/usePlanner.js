@@ -5,6 +5,7 @@ import {
   TASK_DEFS, PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, SUBJECTS, PRIORITIES,
 } from '../lib/plannerData';
 import { buildSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, weekdayDateLabel } from '../lib/plannerLogic';
+import { requestAIPlan } from '../lib/aiPlan';
 
 function initialState(defaults) {
   const initialTopics = getCurrentLang() === 'en'
@@ -27,6 +28,7 @@ function initialState(defaults) {
 
     taskState: { math: { status: 'planned' }, bio: { status: 'planned' }, eng: { status: 'planned' } },
     schedule: null,
+    planAIRationale: null,
     durOverride: {},
     startOverride: {},
     manualMode: false,
@@ -157,17 +159,29 @@ export function usePlanner(defaults) {
     update((s) => ({ tasks: { ...s.tasks, [id]: !s.tasks[id] } }));
   }
 
-  function runGen(labels, target) {
+  // `work`, when given, is a Promise the generating animation waits on
+  // before reaching its final step — it holds one step short of "done"
+  // (still spinning) for as long as the async call takes, instead of
+  // finishing on a fixed timer regardless of whether the work is ready.
+  function runGen(labels, target, work) {
     clearInterval(timerRef.current);
-    update({ generating: true, genStep: 0, genLabels: labels, genTarget: target });
+    update({ generating: true, genStep: 0, genLabels: labels, genTarget: typeof target === 'function' ? 'plan' : target });
     const last = labels.length - 1;
+    const holdAt = work ? last - 1 : last;
+    let resolved = !work;
+    let result;
+    if (work) {
+      work.then((r) => { result = r; resolved = true; }).catch(() => { resolved = true; });
+    }
     timerRef.current = setInterval(() => {
       setState((s) => {
-        if (s.genStep >= last) {
+        if (s.genStep >= holdAt) {
+          if (!resolved) return s;
           clearInterval(timerRef.current);
           setTimeout(() => {
             if (target === 'fail') update({ generating: false, rescueFailed: true });
             else if (target === 'prepFail') update({ generating: false, deadlineFailed: true });
+            else if (typeof target === 'function') update((cur) => target(result, cur));
             else update({ generating: false, screen: target });
           }, 650);
           return { ...s, genStep: last };
@@ -177,9 +191,17 @@ export function usePlanner(defaults) {
     }, labels.length > 4 ? 480 : 600);
   }
 
+  // Asks Claude to propose today's order/timing; falls back to the
+  // deterministic packer whenever the AI is unavailable or proposes
+  // something that fails the same conflict checks manual edits go through.
   function generatePlan() {
-    update((s) => ({ schedule: buildSchedule(s), manualMode: false, blockEdit: null }));
-    runGen(PLAN_LABELS, 'plan');
+    update({ manualMode: false, blockEdit: null });
+    const work = requestAIPlan(state);
+    runGen(PLAN_LABELS, (result, s) => ({
+      generating: false, screen: 'plan',
+      schedule: result ? result.schedule : buildSchedule(s),
+      planAIRationale: result ? result.rationale : null,
+    }), work);
   }
 
   function deadlineGenerate() {
