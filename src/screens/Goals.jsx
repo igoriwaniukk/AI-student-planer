@@ -160,13 +160,9 @@ export default function Goals({ planner, weeklyCapacity, setWeeklyCapacity }) {
 
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <BackButton onClick={() => go('home')} />
-        <div style={{ textAlign: 'right', paddingRight: 46 }}>
-          <div style={{ fontSize: 20, fontWeight: 750, letterSpacing: '-.02em' }}>{t('goals.title')}</div>
-          <div style={{ fontSize: 12, color: '#8a8a99' }}>{t('goals.subtitle2')}</div>
-        </div>
-      </div>
+      <BackButton onClick={() => go('home')} />
+      <div style={{ fontSize: 20, fontWeight: 750, letterSpacing: '-.02em', marginTop: 20 }}>{t('goals.title')}</div>
+      <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 4 }}>{t('goals.subtitle2')}</div>
 
       <Card style={{ marginTop: 22, background: overCapacity ? 'rgba(245,165,36,.07)' : 'rgba(255,255,255,.035)', border: '1px solid ' + (overCapacity ? 'rgba(245,165,36,.3)' : 'rgba(255,255,255,.07)') }}>
         <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('goals.weeklyLimit')}</div>
