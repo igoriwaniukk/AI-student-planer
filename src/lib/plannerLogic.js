@@ -1,4 +1,4 @@
-import { DEFAULT_START, EXAMS, REFERENCE_DAY, WEEK_DAYS, realDateForNum } from './plannerData';
+import { DEFAULT_START, EXAMS, PRIORITIES, REFERENCE_DAY, WEEK_DAYS, realDateForNum } from './plannerData';
 import { getCurrentLang } from './i18n';
 
 // Weekday info repeats on a 7-day cycle from WEEK_DAYS' base range (16-22),
@@ -64,7 +64,7 @@ export function activeIds(taskDefs, tasks, taskState) {
 
 // At low energy, sessions the student hasn't manually resized are
 // automatically shortened a bit instead of forcing a full normal-length load.
-function lightenForEnergy(dur, energy) {
+export function lightenForEnergy(dur, energy) {
   if (energy !== 'Niska') return dur;
   return Math.max(15, Math.round((dur * 0.8) / 5) * 5);
 }
@@ -85,6 +85,41 @@ export function buildSchedule({ taskDefs, tasks, taskState, energy, pref, durOve
     cur = start + dur;
   });
   return sched;
+}
+
+// Deterministic fallback for "Uratuj mój dzień" when AI is unavailable or
+// proposes something invalid: fits as many tasks as possible (highest
+// priority first) into the time actually available, shortening down to a
+// 15-minute floor before giving up on a task and marking it 'moved'.
+export function buildRescueSchedule({ taskDefs, tasks, taskState, energy, durOverride, availableMinutes }) {
+  const ids = activeIds(taskDefs, tasks, taskState);
+  const ordered = [...ids].sort((a, b) => {
+    const rank = (id) => {
+      const i = PRIORITIES.indexOf(taskDefs.find((t) => t.id === id).priority);
+      return i < 0 ? 1 : i;
+    };
+    return rank(a) - rank(b);
+  });
+  const brk = energy === 'Niska' ? 15 : 10;
+  const schedule = {};
+  const decisions = {};
+  let cur = 930;
+  let remaining = availableMinutes;
+  let placed = 0;
+  ordered.forEach((id) => {
+    const original = lightenForEnergy(durOf(id, taskDefs, durOverride), energy);
+    if (remaining < 15) { decisions[id] = 'moved'; return; }
+    const dur = Math.min(original, remaining);
+    if (placed > 0) cur += brk;
+    if (cur < 1140 && cur + dur > 1080) cur = 1170;
+    if (cur + dur > 1350) { decisions[id] = 'moved'; return; }
+    schedule[id] = { start: cur, dur };
+    decisions[id] = dur < original ? 'shortened' : 'kept';
+    cur += dur;
+    remaining -= dur;
+    placed++;
+  });
+  return { schedule, decisions };
 }
 
 const TIMELINE_TEXT = {

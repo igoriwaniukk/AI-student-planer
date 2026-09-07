@@ -6,9 +6,10 @@ import { useLang } from '../lib/useLang';
 
 export default function Rescue({ planner }) {
   const { t } = useLang();
-  const { state, ts, toggleReason, setRescueTime, update, openTaskEdit, rescueGenerate, go } = planner;
+  const { state, ts, toggleReason, setRescueTime, update, openTaskEdit, rescueGenerate, go, computeActiveIds } = planner;
   const notEnoughTime = state.rescueTime === '45 min' && !state.rescueMoved;
   const noSafeBlock = state.rescueTime === 'Własny czas';
+  const remainingCount = computeActiveIds(state.taskDefs, state.tasks, state.taskState).length;
 
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px' }}>
@@ -23,7 +24,7 @@ export default function Rescue({ planner }) {
         <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>{t('rescue.delayedTitle')}</div>
         <div style={{ fontSize: 12.5, lineHeight: 1.5, color: '#a3a3b3', marginTop: 7 }}>{t('rescue.delayedDesc')}</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 13 }}>
-          <span style={{ fontSize: 11.5, fontWeight: 650, color: '#e2e2ea', padding: '6px 10px', borderRadius: 9, background: 'rgba(255,255,255,.07)' }}>{t('rescue.tasksLeft')}</span>
+          <span style={{ fontSize: 11.5, fontWeight: 650, color: '#e2e2ea', padding: '6px 10px', borderRadius: 9, background: 'rgba(255,255,255,.07)' }}>{t('rescue.tasksLeft', { n: remainingCount })}</span>
           <span style={{ fontSize: 11.5, fontWeight: 650, color: '#8fbaff', padding: '6px 10px', borderRadius: 9, background: 'rgba(91,156,255,.13)' }}>{t('rescue.untilTennis')}</span>
           <span style={{ fontSize: 11.5, fontWeight: 650, color: '#8fbaff', padding: '6px 10px', borderRadius: 9, background: 'rgba(91,156,255,.13)' }}>{t('rescue.sleep')}</span>
         </div>
@@ -115,7 +116,7 @@ export default function Rescue({ planner }) {
       <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)' }}>
         <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('rescue.summary')}</div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 14 }}>
-          <Row label={t('rescue.remainingTasks')} value={t('rescue.remainingTasksValue')} />
+          <Row label={t('rescue.remainingTasks')} value={t('rescue.tasksLeft', { n: remainingCount })} />
           <Row label={t('rescue.availableStudy')} value={t(VALUE_KEY[state.rescueTime]) || state.rescueTime} />
           <Row label={t('rescue.energy')} value={t('rescue.energyValue', { level: t(VALUE_KEY[state.rescueEnergy]) || state.rescueEnergy })} />
           <Row label={t('rescue.tennis')} value={t('rescue.tennisUnchanged')} color="#8fbaff" />

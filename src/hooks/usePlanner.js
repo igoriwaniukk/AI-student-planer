@@ -2,10 +2,11 @@ import { useEffect, useRef, useState } from 'react';
 import { useLang } from '../lib/useLang';
 import { getCurrentLang, TASK_TEXT_KEY } from '../lib/i18n';
 import {
-  TASK_DEFS, PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, SUBJECTS, PRIORITIES,
+  TASK_DEFS, PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES,
 } from '../lib/plannerData';
-import { buildSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, weekdayDateLabel } from '../lib/plannerLogic';
+import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, weekdayDateLabel } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
+import { requestAIRescue } from '../lib/aiRescue';
 
 function initialState(defaults) {
   const initialTopics = getCurrentLang() === 'en'
@@ -54,11 +55,9 @@ function initialState(defaults) {
     rescueFailed: false,
     rescueSaved: false,
     rescueApplied: false,
-    editing: false,
-    editMessage: '',
-    bioMin: 25,
-    mathSlot: '19:30–20:30',
-    engToday: false,
+    rescueSchedule: null,
+    rescueDecisions: null,
+    rescueRationale: null,
 
     energySheet: false,
     energyDraft: 'Normalna',
@@ -212,9 +211,28 @@ export function usePlanner(defaults) {
     runGen(PREP_LABELS, 'prep');
   }
 
+  // Asks Claude to decide what stays (maybe shortened) and what gets moved
+  // to another day given how little time is actually left; falls back to
+  // the deterministic rescue packer whenever the AI is unavailable or
+  // proposes something that fails validation (over budget, over duration,
+  // or a scheduling conflict).
   function rescueGenerate() {
     update({ rescueFailed: false });
-    runGen(RESCUE_LABELS, 'rescueResult');
+    const availableMinutes = RESCUE_TIME_MINUTES[state.rescueTime] ?? 90;
+    const work = requestAIRescue({
+      taskDefs: state.taskDefs, tasks: state.tasks, taskState: state.taskState, durOverride: state.durOverride,
+      energy: state.rescueEnergy, availableMinutes, reasons: state.reasons,
+    });
+    runGen(RESCUE_LABELS, (result, s) => {
+      const fallback = result || buildRescueSchedule({
+        taskDefs: s.taskDefs, tasks: s.tasks, taskState: s.taskState, durOverride: s.durOverride,
+        energy: s.rescueEnergy, availableMinutes,
+      });
+      return {
+        generating: false, screen: 'rescueResult',
+        rescueSchedule: fallback.schedule, rescueDecisions: fallback.decisions, rescueRationale: result ? result.rationale : null,
+      };
+    }, work);
   }
 
   // ---- home / session lifecycle ----
@@ -410,41 +428,13 @@ export function usePlanner(defaults) {
   function setRescueTime(label) {
     update({ rescueTime: label, rescueMoved: false });
   }
-  function pickMath(slot) {
-    if (slot === '17:30–18:30') { update({ editMessage: translate('block.conflictTennis') }); return; }
-    if (slot === '21:45–22:45') { update({ editMessage: translate('msg.sleepConflictAlt') }); return; }
-    update({ mathSlot: slot, editMessage: '' });
-  }
-  function setBioMin(val) {
-    if (val === 45) { update({ editMessage: translate('msg.bioBlockTooLong') }); return; }
-    update({ bioMin: val, editMessage: '' });
-  }
-  function returnEnglish() {
-    update((s) => {
-      if (s.engToday) return { engToday: false, editMessage: '' };
-      const free = s.rescueTime === '2 godz.';
-      if (!free) return { editMessage: translate('msg.noFreeSlotForEnglish') };
-      return { engToday: true, editMessage: '' };
-    });
-  }
-  function openRescueEdit() {
-    update((s) => {
-      snapRef.current = { bioMin: s.bioMin, mathSlot: s.mathSlot, engToday: s.engToday };
-      return { editing: true, editMessage: '' };
-    });
-  }
-  function cancelRescueEdit() {
-    update({ editing: false, editMessage: '', ...(snapRef.current || {}) });
-  }
-  function saveRescueEdit() {
-    update({ editing: false, editMessage: '' });
-  }
   function confirmRescue() {
     update((s) => {
-      const t = { ...s.taskState, eng: { ...s.taskState.eng, status: s.engToday ? 'planned' : 'moved' } };
-      const bStart = toMinutesLocal((s.mathSlot || '19:30–20:30').split('–')[0]);
-      const schedule = { bio: { start: 1020, dur: s.bioMin }, math: { start: bStart, dur: 60 } };
-      if (s.engToday) schedule.eng = { start: 1260, dur: 30 };
+      const t = { ...s.taskState };
+      Object.keys(s.rescueDecisions || {}).forEach((id) => {
+        if (s.rescueDecisions[id] === 'moved') t[id] = { ...t[id], status: 'moved' };
+      });
+      const schedule = s.rescueSchedule || {};
       return {
         rescueSaved: true, rescueApplied: true, selectedDay: 20, planApproved: true,
         taskState: t, schedule, calendarEvents: s.gcal ? Object.keys(schedule) : s.calendarEvents,
@@ -639,8 +629,7 @@ export function usePlanner(defaults) {
     openTaskEdit, openNewTaskEdit, patchTaskEdit, stepTaskDur, cancelTaskEdit, saveTaskEdit, removeTaskDef,
     toggleManualMode, regenerateOrCancel, confirmPlan, goHomeSaved,
     openEnergySheet, cancelEnergySheet, saveEnergySheet,
-    toggleReason, setRescueTime, pickMath, setBioMin, returnEnglish,
-    openRescueEdit, cancelRescueEdit, saveRescueEdit, confirmRescue, goHomeRescued,
+    toggleReason, setRescueTime, confirmRescue, goHomeRescued,
     setField, addTopic, removeTopic, deadlineSubmit, goHomeDeadline,
     openSession, pickSessionDate, pickSessionTime, pickSessionDur, cancelSession, saveSession,
     togglePrepGcal, askOnlyDeadline, backToPrep, saveOnlyDeadline, confirmPrep,

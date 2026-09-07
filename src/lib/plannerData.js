@@ -106,3 +106,7 @@ export const STUDY_TIME_OPTIONS = ['Rano', 'Popołudniu', 'Wieczorem'];
 export const RECUR_DAYS = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela'];
 export const REASON_OPTIONS = ['Mam mniej czasu', 'Mam mniej energii', 'Plan się opóźnił', 'Pojawiło się coś pilnego'];
 export const RESCUE_TIME_OPTIONS = ['45 min', '1 godz. 30 min', '2 godz.', 'Własny czas'];
+// Minutes of real study time each option promises — the rescue planner's
+// hard budget ceiling. "Własny czas" has no picker of its own yet, so it
+// falls back to a reasonable middle-ground guess.
+export const RESCUE_TIME_MINUTES = { '45 min': 45, '1 godz. 30 min': 90, '2 godz.': 120, 'Własny czas': 90 };
