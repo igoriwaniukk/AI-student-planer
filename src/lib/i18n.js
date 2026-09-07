@@ -205,6 +205,9 @@ export const dict = {
     'auth.haveAccount': 'Masz już konto? Zaloguj się',
     'auth.checkEmail': 'Sprawdź e-mail, żeby potwierdzić konto.',
     'auth.signOut': 'Wyloguj się',
+    'auth.continueWithGoogle': 'Kontynuuj z Google',
+    'auth.continueWithApple': 'Kontynuuj z Apple',
+    'auth.or': 'lub',
 
     // Onboarding
     'onb.stepOf': 'KROK {step} Z {total}',
@@ -939,6 +942,9 @@ export const dict = {
     'auth.haveAccount': 'Already have an account? Sign in',
     'auth.checkEmail': 'Check your email to confirm your account.',
     'auth.signOut': 'Sign out',
+    'auth.continueWithGoogle': 'Continue with Google',
+    'auth.continueWithApple': 'Continue with Apple',
+    'auth.or': 'or',
 
     'onb.stepOf': 'STEP {step} OF {total}',
     'onb.hey': 'Hi! 👋',

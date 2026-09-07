@@ -173,7 +173,7 @@ function Splash() {
 }
 
 export default function App() {
-  const { session, loading: authLoading, signUp, signIn, signOut } = useAuth();
+  const { session, loading: authLoading, signUp, signIn, signInWithGoogle, signInWithApple, signOut } = useAuth();
   const syncReady = useCloudSync(session);
 
   const [name, setName] = useStudentName();
@@ -208,7 +208,7 @@ export default function App() {
   if (isSupabaseConfigured && !session) {
     return (
       <LanguageProvider lang={lang} setLang={setLang}>
-        <Auth signUp={signUp} signIn={signIn} />
+        <Auth signUp={signUp} signIn={signIn} signInWithGoogle={signInWithGoogle} signInWithApple={signInWithApple} />
       </LanguageProvider>
     );
   }
