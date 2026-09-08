@@ -1,3 +1,7 @@
+
+This forces a fresh Vercel deployment so it builds the latest commit —
+Vercel's deploy hook didn't pick it up on its own.
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
