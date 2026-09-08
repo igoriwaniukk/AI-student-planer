@@ -12,7 +12,6 @@ dist
 dist-ssr
 *.local
 server/.env
-server/push-subscriptions.json
 .env
 .env.local
 

@@ -39,3 +39,44 @@ Limitations to know about:
 - Only works while running with the backend (`npm run dev:full` or your own hosting of `server/` + the built frontend) — not from the static demo build alone.
 - On a phone, reliability (especially on iOS) is much better if you add the site to the home screen first.
 - Whether a notification actually reaches a sleeping phone still depends on the OS/browser's own battery and background-activity rules — this isn't a guarantee the way a native app's push service is.
+
+## Deploying to production (Vercel)
+
+Google/Apple sign-in, Supabase sync, and the AI features all need a real
+backend origin — they cannot run from a sandboxed preview (e.g. a Claude
+Artifact), which blocks both third-party login redirects and most outbound
+network calls. Deploying to real hosting removes both restrictions.
+
+The `api/` folder holds the same backend logic as `server/index.js`, packaged
+as individual Vercel Serverless Functions (`api/chat.js`, `api/plan/*.js`,
+`api/push/*.js`) — Vercel detects the Vite frontend and these functions
+automatically, no extra config beyond `vercel.json` (already included, for
+the push-notification cron schedule).
+
+1. Push this repo to GitHub (if it isn't already).
+2. Create a free account at [vercel.com](https://vercel.com) (sign in with
+   GitHub is easiest) and click "Add New… → Project", then import this repo.
+3. Before the first deploy, add these under Project Settings → Environment
+   Variables (Production, and Preview if you want preview deploys to work
+   too):
+   - `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` — same values as your
+     local `.env`.
+   - `ANTHROPIC_API_KEY` (and optionally `ANTHROPIC_MODEL`) — same as
+     `server/.env`.
+   - `SUPABASE_SERVICE_ROLE_KEY` — from Supabase's Project Settings → API →
+     "service_role" secret key (needed for push notifications only; see
+     `server/.env.example`).
+   - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_CONTACT` — same as
+     `server/.env`, if you want push notifications.
+   - `CRON_SECRET` — any random string, if you set up push notifications
+     (locks down the cron endpoint; see `server/.env.example`).
+4. Click Deploy. Once it's live, add Supabase's real deployed URL to
+   Authentication → URL Configuration → Redirect URLs in your Supabase
+   project (otherwise OAuth sign-in will redirect back to the wrong place).
+5. Every `git push` to your default branch redeploys automatically.
+
+Note on push notifications: Vercel has no long-running process to hold a
+timer in, so scheduled sends run via Vercel Cron (`vercel.json`) hitting
+`/api/push/cron` instead of the `setInterval` loop used locally. Cron
+frequency limits differ by Vercel plan — check your dashboard/plan's current
+limits if `vercel.json`'s hourly schedule isn't accepted, and adjust it.

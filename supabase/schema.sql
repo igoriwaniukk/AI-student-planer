@@ -35,3 +35,20 @@ drop policy if exists "Users can update their own data" on public.user_data;
 create policy "Users can update their own data"
   on public.user_data for update
   using (auth.uid() = user_id);
+
+-- Push notification subscriptions (one row per subscribed device, keyed by
+-- the browser's push endpoint URL). RLS is enabled with no policies at all
+-- — deliberately deny-all for the public "anon"/"authenticated" roles — so
+-- this table is reachable only from the server, using the service_role key
+-- (SUPABASE_SERVICE_ROLE_KEY, never shipped to the browser), which bypasses
+-- RLS entirely. Subscriptions aren't tied to a user_id: the client never
+-- sends one (see src/lib/pushNotifications.js), matching this single-device
+-- model unchanged from the pre-Supabase local-file version.
+create table if not exists public.push_subscriptions (
+  endpoint text primary key,
+  subscription jsonb not null,
+  state jsonb not null default '{}'::jsonb,
+  tick integer not null default 0
+);
+
+alter table public.push_subscriptions enable row level security;
