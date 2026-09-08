@@ -46,6 +46,10 @@ function useCloudSync(session) {
   // (already synced) never needs an effect-triggered re-render at all.
   const alreadySynced = isSupabaseConfigured && !!session && sessionStorage.getItem(SYNCED_FLAG) === session.user.id;
   const [pulled, setPulled] = useState(false);
+  // Tracks the most recent push/pull failure so the UI can tell the student
+  // their data might not be backed up, instead of failing silently — cleared
+  // on the next successful sync.
+  const [syncError, setSyncError] = useState(false);
   const ready = !isSupabaseConfigured || !session || alreadySynced || pulled;
 
   useEffect(() => {
@@ -53,15 +57,18 @@ function useCloudSync(session) {
     const uid = session.user.id;
     let cancelled = false;
     (async () => {
-      const hadCloudData = await pullFromCloud(uid);
+      const pullResult = await pullFromCloud(uid);
       if (cancelled) return;
+      if (!pullResult.ok) setSyncError(true);
       sessionStorage.setItem(SYNCED_FLAG, uid);
-      if (hadCloudData) {
+      if (pullResult.hadData) {
         window.location.reload();
         return;
       }
-      await pushToCloud(uid);
-      if (!cancelled) setPulled(true);
+      const pushResult = await pushToCloud(uid);
+      if (cancelled) return;
+      if (!pushResult.ok) setSyncError(true);
+      setPulled(true);
     })();
     return () => { cancelled = true; };
   }, [session, alreadySynced]);
@@ -72,7 +79,9 @@ function useCloudSync(session) {
     let timer = null;
     const onChange = () => {
       clearTimeout(timer);
-      timer = setTimeout(() => pushToCloud(uid), 1500);
+      timer = setTimeout(() => {
+        pushToCloud(uid).then((result) => setSyncError(!result.ok));
+      }, 1500);
     };
     window.addEventListener(STORAGE_CHANGED_EVENT, onChange);
     return () => {
@@ -81,7 +90,7 @@ function useCloudSync(session) {
     };
   }, [session]);
 
-  return ready;
+  return { ready, syncError };
 }
 
 const TAB_SCREENS = new Set(['home', 'calendar', 'goals', 'profile']);
@@ -89,7 +98,7 @@ const TAB_SCREENS = new Set(['home', 'calendar', 'goals', 'profile']);
 // Mounted only once onboarding is done, so usePlanner's initial state (a lazy
 // useState initializer, which only ever runs on first mount) picks up the
 // profile defaults onboarding just saved instead of whatever was there before.
-function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, activities, profileDefaults, setProfileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities, onSignOut }) {
+function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, activities, profileDefaults, setProfileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities, onSignOut, syncError }) {
   const planner = usePlanner(profileDefaults);
   const { state } = planner;
   const screen = state.screen;
@@ -133,6 +142,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
           energyLog={energyLog}
           recurringActivities={recurringActivities}
           onSignOut={onSignOut}
+          syncError={syncError}
         />
       )}
 
@@ -174,7 +184,7 @@ function Splash() {
 
 export default function App() {
   const { session, loading: authLoading, signUp, signIn, signInWithGoogle, signInWithApple, signOut } = useAuth();
-  const syncReady = useCloudSync(session);
+  const { ready: syncReady, syncError } = useCloudSync(session);
 
   const [name, setName] = useStudentName();
   const [profilePhoto, setProfilePhoto] = useProfilePhoto();
@@ -250,6 +260,7 @@ export default function App() {
         recurringActivities={recurringActivities}
         setRecurringActivities={setRecurringActivities}
         onSignOut={isSupabaseConfigured ? handleSignOut : undefined}
+        syncError={isSupabaseConfigured ? syncError : false}
       />
     </LanguageProvider>
   );

@@ -181,7 +181,7 @@ function EditableRhythmCard({ profileDefaults, setProfileDefaults, planner }) {
   );
 }
 
-function SettingsCard({ planner, studyHistory, onSignOut }) {
+function SettingsCard({ planner, studyHistory, onSignOut, syncError }) {
   const { t, lang } = useLang();
   const [reminders] = useCustomReminders();
   const [confirmingReset, setConfirmingReset] = useState(false);
@@ -226,6 +226,13 @@ function SettingsCard({ planner, studyHistory, onSignOut }) {
           <div onClick={() => setConfirmingReset(true)} style={{ marginTop: 11, height: 38, borderRadius: 12, background: 'rgba(255,90,90,.14)', border: '1px solid rgba(255,90,90,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 650, color: '#ff9a9a', cursor: 'pointer' }}>{t('profile.resetData')}</div>
         )}
       </div>
+
+      {syncError && (
+        <div style={{ marginTop: 12, padding: '12px 14px', borderRadius: 15, background: 'rgba(245,165,36,.08)', border: '1px solid rgba(245,165,36,.3)' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#f7c46c' }}>⚠️ {t('profile.syncErrorTitle')}</div>
+          <div style={{ fontSize: 11, color: '#8a8a99', marginTop: 4, lineHeight: 1.4 }}>{t('profile.syncErrorDesc')}</div>
+        </div>
+      )}
 
       {onSignOut && (
         <div onClick={onSignOut} style={{ marginTop: 12, height: 44, borderRadius: 15, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, color: '#c9c9d6', cursor: 'pointer' }}>{t('auth.signOut')}</div>
@@ -310,7 +317,7 @@ function LanguageCard() {
   );
 }
 
-export default function Profile({ studentName, setStudentName, profilePhoto, setProfilePhoto, schoolPlan, activities, planner, profileDefaults, setProfileDefaults, studyHistory, energyLog, recurringActivities, onSignOut }) {
+export default function Profile({ studentName, setStudentName, profilePhoto, setProfilePhoto, schoolPlan, activities, planner, profileDefaults, setProfileDefaults, studyHistory, energyLog, recurringActivities, onSignOut, syncError }) {
   const { t } = useLang();
   const parts = (studentName || 'Ty').trim().split(/\s+/);
   const initials = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
@@ -353,7 +360,7 @@ export default function Profile({ studentName, setStudentName, profilePhoto, set
 
       <AchievementsCard studyHistory={studyHistory} energyLog={energyLog} recurringActivities={recurringActivities} />
 
-      <SettingsCard planner={planner} studyHistory={studyHistory} onSignOut={onSignOut} />
+      <SettingsCard planner={planner} studyHistory={studyHistory} onSignOut={onSignOut} syncError={syncError} />
 
       <LanguageCard />
 

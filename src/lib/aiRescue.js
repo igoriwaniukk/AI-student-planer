@@ -5,7 +5,7 @@ import { getCurrentLang } from './i18n';
 // decisions} pair, or null if anything is missing/duplicated/out of bounds/
 // over budget/longer than requested — the caller then falls back to the
 // deterministic rescue packer instead of trusting a broken plan.
-function toValidatedRescue(blocks, moved, ids, taskDefs, durOverride, availableMinutes) {
+export function toValidatedRescue(blocks, moved, ids, taskDefs, durOverride, availableMinutes) {
   if (!Array.isArray(blocks) || !Array.isArray(moved)) return null;
   const remainingIds = new Set(ids);
   const schedule = {};

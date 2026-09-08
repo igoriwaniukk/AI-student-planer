@@ -4,7 +4,7 @@ import { getCurrentLang } from './i18n';
 // Turns Claude's proposed {taskId, start} blocks into a validated schedule,
 // or null if anything is missing/duplicated/out of bounds — the caller then
 // falls back to the deterministic packer instead of trusting a broken plan.
-function toValidatedSchedule(blocks, ids, taskDefs, durOverride) {
+export function toValidatedSchedule(blocks, ids, taskDefs, durOverride) {
   if (!Array.isArray(blocks) || blocks.length !== ids.length) return null;
   const remaining = new Set(ids);
   const schedule = {};
