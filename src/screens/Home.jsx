@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { GOALS, IMPORTANCE_OPTIONS, REFERENCE_DAY } from '../lib/plannerData';
-import { span, computeStreak, computeTotalPoints, dayInfo, upcomingExams, examProgressMinutes, formatMonthDay, weekdayDateLabel, weekdayOn } from '../lib/plannerLogic';
+import { span, computeStreak, computeTotalPoints, dayInfo, upcomingExams, examProgressMinutes, formatMonthDay, weekdayOn } from '../lib/plannerLogic';
 import { ACHIEVEMENTS, computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
@@ -346,7 +346,7 @@ function TodayList({ planner }) {
     rows.push(
       <div key={'x' + d.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 11, borderRadius: 14, background: 'rgba(255,255,255,.025)', border: '1px solid rgba(255,255,255,.06)' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, color: '#8a8a99' }}>{st.status === 'moved' ? t('home.movedTo', { date: weekdayDateLabel(REFERENCE_DAY + 1), time: planner.state.engStart }) : t('home.notInPlan')}</div>
+          <div style={{ fontSize: 11, color: '#8a8a99' }}>{st.status === 'moved' ? t('home.movedOther') : t('home.notInPlan')}</div>
           <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{t(TASK_TEXT_KEY[d.id]?.short) || d.short}</div>
         </div>
         <StatusPill status={st.status} />
@@ -616,15 +616,19 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
       <StreakCard streak={streak} selectedDay={viewDay} onSelectDay={setViewDay} />
       <StreakNotice notice={streakNotice} onDismiss={() => setLastSeenStreak(streak)} />
 
-      {state.rescueApplied && (
-        <div style={{ marginTop: 18, padding: 15, borderRadius: 18, background: 'rgba(53,208,127,.06)', border: '1px solid rgba(53,208,127,.22)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-            <div style={{ width: 26, height: 26, flex: 'none', borderRadius: 9, background: 'rgba(53,208,127,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="13" height="10" viewBox="0 0 13 11" fill="none"><path d="M1 5.6L4.6 9.4 12 1.6" stroke="#35d07f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
-            <div style={{ fontSize: 13.5, fontWeight: 700 }}>{t('home.planUpdated')}</div>
+      {state.rescueApplied && (() => {
+        const movedCount = Object.values(state.rescueDecisions || {}).filter((d) => d === 'moved').length;
+        const movedWord = movedCount === 1 ? t('rr.movedOne') : (movedCount > 1 && movedCount < 5 ? t('rr.movedFew', { n: movedCount }) : t('rr.movedMany', { n: movedCount }));
+        return (
+          <div style={{ marginTop: 18, padding: 15, borderRadius: 18, background: 'rgba(53,208,127,.06)', border: '1px solid rgba(53,208,127,.22)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+              <div style={{ width: 26, height: 26, flex: 'none', borderRadius: 9, background: 'rgba(53,208,127,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="13" height="10" viewBox="0 0 13 11" fill="none"><path d="M1 5.6L4.6 9.4 12 1.6" stroke="#35d07f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
+              <div style={{ fontSize: 13.5, fontWeight: 700 }}>{t('home.planUpdated')}</div>
+            </div>
+            {movedCount > 0 && <div style={{ fontSize: 12, color: '#a3a3b3', marginTop: 11 }}>{movedWord}</div>}
           </div>
-          <div style={{ fontSize: 12, color: '#a3a3b3', marginTop: 11 }}>{t('home.englishMoved', { time: state.engStart })}</div>
-        </div>
-      )}
+        );
+      })()}
 
       {goalExam && <GoalPromptCard key={goalExam.id} planner={planner} exam={goalExam} />}
 
