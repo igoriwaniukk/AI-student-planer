@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useLang } from '../lib/useLang';
+import { authedFetch } from '../lib/authFetch';
 
 export function useChat() {
   const { t } = useLang();
@@ -18,7 +19,7 @@ export function useChat() {
     setError('');
 
     try {
-      const res = await fetch('/api/chat', {
+      const res = await authedFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: next, context }),
