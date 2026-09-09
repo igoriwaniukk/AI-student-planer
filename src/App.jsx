@@ -36,6 +36,14 @@ import { pullFromCloud, pushToCloud } from './lib/cloudSync';
 // signing into a DIFFERENT account still triggers a fresh pull.
 const SYNCED_FLAG = 'sp_cloud_synced_uid';
 
+// Persisted in localStorage (unlike SYNCED_FLAG) because it has to survive
+// across tabs and reloads: it records which signed-in user the KEYS data
+// currently sitting in localStorage belongs to, so switching to a different
+// account without ever hitting "Wyloguj" (which normally wipes it) can still
+// be detected and the stale data cleared — otherwise a brand-new account
+// would silently inherit and push up the previous account's local state.
+const LOCAL_OWNER_FLAG = 'sp_local_owner_uid';
+
 // Pulls the signed-in user's saved data into localStorage once per sign-in,
 // then pushes any later local change back up (debounced) — see cloudSync.js
 // for the actual read/write. Does nothing at all until real Supabase
@@ -55,12 +63,23 @@ function useCloudSync(session) {
   useEffect(() => {
     if (!isSupabaseConfigured || !session || alreadySynced) return undefined;
     const uid = session.user.id;
+
+    const localOwner = localStorage.getItem(LOCAL_OWNER_FLAG);
+    if (localOwner && localOwner !== uid) {
+      Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
+      localStorage.setItem(LOCAL_OWNER_FLAG, uid);
+      sessionStorage.setItem(SYNCED_FLAG, uid);
+      window.location.reload();
+      return undefined;
+    }
+
     let cancelled = false;
     (async () => {
       const pullResult = await pullFromCloud(uid);
       if (cancelled) return;
       if (!pullResult.ok) setSyncError(true);
       sessionStorage.setItem(SYNCED_FLAG, uid);
+      localStorage.setItem(LOCAL_OWNER_FLAG, uid);
       if (pullResult.hadData) {
         window.location.reload();
         return;
@@ -209,6 +228,7 @@ export default function App() {
   async function handleSignOut() {
     await signOut();
     sessionStorage.removeItem(SYNCED_FLAG);
+    localStorage.removeItem(LOCAL_OWNER_FLAG);
     Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
     window.location.reload();
   }
