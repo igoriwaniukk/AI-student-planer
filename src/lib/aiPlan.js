@@ -1,5 +1,6 @@
 import { activeIds, checkBlockConflict, durOf } from './plannerLogic';
 import { getCurrentLang } from './i18n';
+import { authedFetch } from './authFetch';
 
 // Turns Claude's proposed {taskId, start} blocks into a validated schedule,
 // or null if anything is missing/duplicated/out of bounds — the caller then
@@ -33,7 +34,7 @@ export async function requestAIPlan({ taskDefs, tasks, taskState, energy, pref, 
   });
 
   try {
-    const res = await fetch('/api/plan/generate', {
+    const res = await authedFetch('/api/plan/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tasks: items, energy, pref, lang: getCurrentLang() }),

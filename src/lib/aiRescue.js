@@ -1,5 +1,6 @@
 import { activeIds, checkBlockConflict, durOf } from './plannerLogic';
 import { getCurrentLang } from './i18n';
+import { authedFetch } from './authFetch';
 
 // Turns Claude's {blocks, moved} proposal into a validated {schedule,
 // decisions} pair, or null if anything is missing/duplicated/out of bounds/
@@ -45,7 +46,7 @@ export async function requestAIRescue({ taskDefs, tasks, taskState, energy, durO
   });
 
   try {
-    const res = await fetch('/api/plan/rescue', {
+    const res = await authedFetch('/api/plan/rescue', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ tasks: items, energy, availableMinutes, reasons, lang: getCurrentLang() }),

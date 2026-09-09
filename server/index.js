@@ -4,6 +4,7 @@ import { handleChat } from '../api/_lib/chat.js';
 import { handlePlanGenerate } from '../api/_lib/plan.js';
 import { handlePlanRescue } from '../api/_lib/rescue.js';
 import { pushEnabled, handleVapidPublicKey, handleSubscribe, handlePushState, handleUnsubscribe, sendScheduledPushes } from '../api/_lib/push.js';
+import { guardAiRequest } from '../api/_lib/auth.js';
 
 const PORT = process.env.PORT || 8787;
 const PUSH_INTERVAL_MINUTES = Number(process.env.PUSH_INTERVAL_MINUTES) || 60;
@@ -20,9 +21,22 @@ async function respond(res, handler, body) {
   res.status(status).json(json);
 }
 
-app.post('/api/chat', (req, res) => respond(res, handleChat, req.body || {}));
-app.post('/api/plan/generate', (req, res) => respond(res, handlePlanGenerate, req.body || {}));
-app.post('/api/plan/rescue', (req, res) => respond(res, handlePlanRescue, req.body || {}));
+// The AI endpoints are gated behind guardAiRequest (see api/_lib/auth.js) —
+// same requirement as their Vercel counterparts — so a deployed instance
+// can't be hit anonymously to run up the Anthropic bill. It's a no-op
+// locally whenever Supabase isn't configured.
+app.post('/api/chat', async (req, res) => {
+  if (!(await guardAiRequest(req, res))) return;
+  respond(res, handleChat, req.body || {});
+});
+app.post('/api/plan/generate', async (req, res) => {
+  if (!(await guardAiRequest(req, res))) return;
+  respond(res, handlePlanGenerate, req.body || {});
+});
+app.post('/api/plan/rescue', async (req, res) => {
+  if (!(await guardAiRequest(req, res))) return;
+  respond(res, handlePlanRescue, req.body || {});
+});
 
 app.get('/api/push/vapid-public-key', (req, res) => respond(res, handleVapidPublicKey, undefined));
 app.post('/api/push/subscribe', (req, res) => respond(res, handleSubscribe, req.body || {}));
