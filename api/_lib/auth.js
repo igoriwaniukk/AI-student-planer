@@ -16,16 +16,26 @@ export const authGateEnabled = !!(SUPABASE_URL && SUPABASE_ANON_KEY);
 
 const authClient = authGateEnabled ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
+// Verifies the Authorization header's Supabase access token and returns the
+// user it belongs to (or null if the gate is off, the header is missing, or
+// the token doesn't check out) — the one place account-deletion and the AI
+// guard below both derive "who is this request actually for" from, instead
+// of trusting anything the client body claims.
+export async function getVerifiedUser(authorizationHeader) {
+  if (!authGateEnabled) return null;
+  const token = authorizationHeader && authorizationHeader.startsWith('Bearer ') ? authorizationHeader.slice(7) : null;
+  if (!token) return null;
+  const { data, error } = await authClient.auth.getUser(token);
+  return !error && data?.user ? data.user : null;
+}
+
 // Returns true if the request is allowed to proceed: either the auth gate
 // is off, or the Authorization header carries a valid Supabase access
 // token. Framework-agnostic (takes the header value, not a req/res object)
 // so both server/index.js and the Vercel functions under api/ can share it.
 export async function isAuthorized(authorizationHeader) {
   if (!authGateEnabled) return true;
-  const token = authorizationHeader && authorizationHeader.startsWith('Bearer ') ? authorizationHeader.slice(7) : null;
-  if (!token) return false;
-  const { data, error } = await authClient.auth.getUser(token);
-  return !error && !!data?.user;
+  return !!(await getVerifiedUser(authorizationHeader));
 }
 
 // Express's and Vercel's (req, res) shapes are compatible enough (headers,

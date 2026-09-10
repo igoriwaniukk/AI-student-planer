@@ -117,7 +117,7 @@ const TAB_SCREENS = new Set(['home', 'calendar', 'goals', 'profile']);
 // Mounted only once onboarding is done, so usePlanner's initial state (a lazy
 // useState initializer, which only ever runs on first mount) picks up the
 // profile defaults onboarding just saved instead of whatever was there before.
-function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, activities, profileDefaults, setProfileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities, onSignOut, syncError }) {
+function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, activities, profileDefaults, setProfileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities, onSignOut, onDeleteAccount, syncError }) {
   const [plannerData, setPlannerData] = usePlannerData();
   const planner = usePlanner(profileDefaults, activities, recurringActivities, plannerData, setPlannerData);
   const { state } = planner;
@@ -162,6 +162,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
           energyLog={energyLog}
           recurringActivities={recurringActivities}
           onSignOut={onSignOut}
+          onDeleteAccount={onDeleteAccount}
           syncError={syncError}
         />
       )}
@@ -205,7 +206,7 @@ function Splash() {
 export default function App() {
   const {
     session, loading: authLoading, signUp, signIn, signInWithGoogle, signInWithApple, signOut,
-    passwordRecovery, clearPasswordRecovery, resetPassword, updatePassword,
+    passwordRecovery, clearPasswordRecovery, resetPassword, updatePassword, deleteAccount,
   } = useAuth();
   const { ready: syncReady, syncError } = useCloudSync(session);
 
@@ -235,6 +236,16 @@ export default function App() {
     localStorage.removeItem(LOCAL_OWNER_FLAG);
     Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
     window.location.reload();
+  }
+
+  async function handleDeleteAccount() {
+    const { error } = await deleteAccount();
+    if (error) return { error };
+    sessionStorage.removeItem(SYNCED_FLAG);
+    localStorage.removeItem(LOCAL_OWNER_FLAG);
+    Object.values(KEYS).forEach((k) => localStorage.removeItem(k));
+    window.location.reload();
+    return { error: null };
   }
 
   if (isSupabaseConfigured && authLoading) return <Splash />;
@@ -297,6 +308,7 @@ export default function App() {
         recurringActivities={recurringActivities}
         setRecurringActivities={setRecurringActivities}
         onSignOut={isSupabaseConfigured ? handleSignOut : undefined}
+        onDeleteAccount={isSupabaseConfigured ? handleDeleteAccount : undefined}
         syncError={isSupabaseConfigured ? syncError : false}
       />
     </LanguageProvider>

@@ -181,10 +181,13 @@ function EditableRhythmCard({ profileDefaults, setProfileDefaults, planner }) {
   );
 }
 
-function SettingsCard({ planner, studyHistory, onSignOut, syncError }) {
+function SettingsCard({ planner, studyHistory, onSignOut, onDeleteAccount, syncError }) {
   const { t, lang } = useLang();
   const [reminders] = useCustomReminders();
   const [confirmingReset, setConfirmingReset] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
   const streak = computeStreak(studyHistory || {});
   const hasUpcomingExam = upcomingExams(planner.state).some((e) => e.daysUntil >= 0 && e.daysUntil <= 14);
   const { pushStatus, togglePush } = usePushNotifications({ streak, hasUpcomingExam, reminders: reminders.map((r) => r.text), lang });
@@ -196,6 +199,16 @@ function SettingsCard({ planner, studyHistory, onSignOut, syncError }) {
     subscribed: t('notif.pushOnNote'),
     idle: t('notif.pushOffNote'),
   }[pushStatus];
+
+  async function confirmDelete() {
+    setDeleting(true);
+    setDeleteError('');
+    const { error } = await onDeleteAccount();
+    if (error) {
+      setDeleting(false);
+      setDeleteError(t('profile.deleteAccountError'));
+    }
+  }
 
   return (
     <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
@@ -226,6 +239,27 @@ function SettingsCard({ planner, studyHistory, onSignOut, syncError }) {
           <div onClick={() => setConfirmingReset(true)} style={{ marginTop: 11, height: 38, borderRadius: 12, background: 'rgba(255,90,90,.14)', border: '1px solid rgba(255,90,90,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 650, color: '#ff9a9a', cursor: 'pointer' }}>{t('profile.resetData')}</div>
         )}
       </div>
+
+      {onDeleteAccount && (
+        <div style={{ marginTop: 12, padding: '12px 14px', borderRadius: 15, background: 'rgba(255,90,90,.06)', border: '1px solid rgba(255,90,90,.25)' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#ff9a9a' }}>⚠️ {t('profile.deleteAccount')}</div>
+          <div style={{ fontSize: 11, color: '#8a8a99', marginTop: 4, lineHeight: 1.4 }}>{t('profile.deleteAccountDesc')}</div>
+          {deleteError && <div style={{ fontSize: 11.5, color: '#ff9a9a', marginTop: 9 }}>{deleteError}</div>}
+          {confirmingDelete ? (
+            <div style={{ marginTop: 11 }}>
+              <div style={{ fontSize: 11.5, color: '#ff9a9a', marginBottom: 9 }}>{t('profile.deleteAccountConfirm')}</div>
+              <div style={{ display: 'flex', gap: 9 }}>
+                <div onClick={() => { setConfirmingDelete(false); setDeleteError(''); }} style={{ flex: 1, height: 40, borderRadius: 12, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 650, cursor: deleting ? 'default' : 'pointer', opacity: deleting ? 0.5 : 1 }}>{t('home.cancel')}</div>
+                <div onClick={deleting ? undefined : confirmDelete} style={{ flex: 1.3, height: 40, borderRadius: 12, background: '#ff5a5a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 700, color: '#fff', cursor: deleting ? 'default' : 'pointer', opacity: deleting ? 0.6 : 1 }}>
+                  {deleting ? t('profile.deleteAccountDeleting') : t('profile.deleteAccountConfirmBtn')}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div onClick={() => setConfirmingDelete(true)} style={{ marginTop: 11, height: 38, borderRadius: 12, background: 'rgba(255,90,90,.14)', border: '1px solid rgba(255,90,90,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 650, color: '#ff9a9a', cursor: 'pointer' }}>{t('profile.deleteAccount')}</div>
+          )}
+        </div>
+      )}
 
       {syncError && (
         <div style={{ marginTop: 12, padding: '12px 14px', borderRadius: 15, background: 'rgba(245,165,36,.08)', border: '1px solid rgba(245,165,36,.3)' }}>
@@ -317,7 +351,7 @@ function LanguageCard() {
   );
 }
 
-export default function Profile({ studentName, setStudentName, profilePhoto, setProfilePhoto, schoolPlan, activities, planner, profileDefaults, setProfileDefaults, studyHistory, energyLog, recurringActivities, onSignOut, syncError }) {
+export default function Profile({ studentName, setStudentName, profilePhoto, setProfilePhoto, schoolPlan, activities, planner, profileDefaults, setProfileDefaults, studyHistory, energyLog, recurringActivities, onSignOut, onDeleteAccount, syncError }) {
   const { t } = useLang();
   const parts = (studentName || 'Ty').trim().split(/\s+/);
   const initials = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
@@ -360,7 +394,7 @@ export default function Profile({ studentName, setStudentName, profilePhoto, set
 
       <AchievementsCard studyHistory={studyHistory} energyLog={energyLog} recurringActivities={recurringActivities} />
 
-      <SettingsCard planner={planner} studyHistory={studyHistory} onSignOut={onSignOut} syncError={syncError} />
+      <SettingsCard planner={planner} studyHistory={studyHistory} onSignOut={onSignOut} onDeleteAccount={onDeleteAccount} syncError={syncError} />
 
       <LanguageCard />
 

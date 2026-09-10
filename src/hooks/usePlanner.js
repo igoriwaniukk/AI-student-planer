@@ -4,7 +4,7 @@ import { TASK_TEXT_KEY } from '../lib/i18n';
 import {
   PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES,
 } from '../lib/plannerData';
-import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, weekdayDateLabel, dayConstraints, daysUntilFromISODate } from '../lib/plannerLogic';
+import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
 import { requestAIRescue } from '../lib/aiRescue';
 
@@ -624,9 +624,14 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       return { engTimeOpen: true, engChoice: 'change', engMessage: '' };
     });
   }
+  // Validated against the student's real wake/bedtime/recurring activities
+  // (see dayConstraints in plannerLogic.js), not two fixed times assumed to
+  // conflict with an invented event/sleep schedule.
   function pickEngTime(t) {
-    if (t === '18:15') { update({ engMessage: translate('msg.engEventConflict') }); return; }
-    if (t === '22:45') { update({ engMessage: translate('msg.sleepConflictShort') }); return; }
+    const movedIds = state.taskDefs.filter((d) => (state.taskState[d.id] || {}).status === 'moved').map((d) => d.id);
+    const dur = movedIds.reduce((a, id) => a + durOf(id, state.taskDefs, state.durOverride), 0) || 30;
+    const conflict = checkBlockConflict('eng-tomorrow', toMinutesLocal(t), dur, {}, () => ({ subject: '' }), constraints);
+    if (conflict) { update({ engMessage: translate(conflict.key, conflict.vars) }); return; }
     update({ engStart: t, engMessage: '' });
   }
   function cancelEngTime() {

@@ -5,6 +5,7 @@ import { handlePlanGenerate } from '../api/_lib/plan.js';
 import { handlePlanRescue } from '../api/_lib/rescue.js';
 import { pushEnabled, handleVapidPublicKey, handleSubscribe, handlePushState, handleUnsubscribe, sendScheduledPushes } from '../api/_lib/push.js';
 import { guardAiRequest } from '../api/_lib/auth.js';
+import { handleAccountDelete } from '../api/_lib/account.js';
 
 const PORT = process.env.PORT || 8787;
 const PUSH_INTERVAL_MINUTES = Number(process.env.PUSH_INTERVAL_MINUTES) || 60;
@@ -36,6 +37,11 @@ app.post('/api/plan/generate', async (req, res) => {
 app.post('/api/plan/rescue', async (req, res) => {
   if (!(await guardAiRequest(req, res))) return;
   respond(res, handlePlanRescue, req.body || {});
+});
+
+app.post('/api/account/delete', async (req, res) => {
+  const { status, body } = await handleAccountDelete(req.headers.authorization);
+  res.status(status).json(body);
 });
 
 app.get('/api/push/vapid-public-key', (req, res) => respond(res, handleVapidPublicKey, undefined));
