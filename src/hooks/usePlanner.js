@@ -2,13 +2,13 @@ import { useEffect, useRef, useState } from 'react';
 import { useLang } from '../lib/useLang';
 import { getCurrentLang, TASK_TEXT_KEY } from '../lib/i18n';
 import {
-  TASK_DEFS, PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES,
+  PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES,
 } from '../lib/plannerData';
 import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, weekdayDateLabel } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
 import { requestAIRescue } from '../lib/aiRescue';
 
-function initialState(defaults) {
+function initialState(defaults, activities) {
   const initialTopics = getCurrentLang() === 'en'
     ? ['Mendelian genetics', 'Genetic crosses', 'Blood type inheritance']
     : ['Prawa Mendla', 'Krzyżówki genetyczne', 'Dziedziczenie grup krwi'];
@@ -20,14 +20,21 @@ function initialState(defaults) {
     genLabels: PLAN_LABELS,
     genTarget: 'plan',
 
-    taskDefs: TASK_DEFS,
-    tasks: { math: true, bio: true, eng: false },
+    taskDefs: [],
+    tasks: {},
     energy: defaults?.energy || 'Normalna',
     pref: defaults?.pref || 'Wolny wieczór',
+    // Free-form context from onboarding (extracurriculars + note) — passed
+    // along to the AI plan/rescue requests (see requestAIPlan/requestAIRescue
+    // calls below) so it actually informs the generated plan instead of only
+    // ever being displayed back on the Profile screen.
+    activitiesNote: (activities?.note || '').trim(),
+    activitiesSelected: activities?.selected || [],
+    prioritySubjects: defaults?.prioritySubjects || [],
     gcal: false,
     saved: false,
 
-    taskState: { math: { status: 'planned' }, bio: { status: 'planned' }, eng: { status: 'planned' } },
+    taskState: {},
     schedule: null,
     planAIRationale: null,
     durOverride: {},
@@ -92,10 +99,7 @@ function initialState(defaults) {
     // Per-task end-of-session review data (actual minutes spent, how hard it
     // felt, how well it's now known) — keyed by task id so it covers however
     // many tasks are in today's plan, not just a fixed couple of subjects.
-    sessionReview: {
-      math: { minutes: 70, hard: 'Trudna', know: 'Częściowo umiem' },
-      bio: { minutes: 30, hard: 'W sam raz', know: 'Dobrze umiem' },
-    },
+    sessionReview: {},
     engChoice: 'keep',
     engDate: weekdayDateLabel(REFERENCE_DAY + 1),
     engStart: '17:30',
@@ -115,19 +119,17 @@ function initialState(defaults) {
     dayEnded: false,
     calendarEvents: [],
 
-    examGoals: {
-      math: { grade: 'Ocena co najmniej 4', studyMinutes: 180, importance: 'Wysoki', answered: false },
-    },
+    examGoals: {},
     customExams: [],
     dismissedGoalPrompts: {},
   };
 }
 
-export function usePlanner(defaults) {
+export function usePlanner(defaults, activities) {
   // Aliased (not `t`) since several functions below use `t` as a local
   // parameter name for a time string, which would otherwise shadow this.
   const { t: translate } = useLang();
-  const [state, setState] = useState(() => initialState(defaults));
+  const [state, setState] = useState(() => initialState(defaults, activities));
   const timerRef = useRef(null);
   const toastTimerRef = useRef(null);
   const snapRef = useRef(null);
@@ -222,6 +224,7 @@ export function usePlanner(defaults) {
     const work = requestAIRescue({
       taskDefs: state.taskDefs, tasks: state.tasks, taskState: state.taskState, durOverride: state.durOverride,
       energy: state.rescueEnergy, availableMinutes, reasons: state.reasons,
+      activitiesNote: state.activitiesNote, activitiesSelected: state.activitiesSelected, prioritySubjects: state.prioritySubjects,
     });
     runGen(RESCUE_LABELS, (result, s) => {
       const fallback = result || buildRescueSchedule({

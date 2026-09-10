@@ -52,17 +52,26 @@ function buildRescueSystemPrompt(lang) {
   ].join('\n');
 }
 
-function buildRescueUserMessage(tasks, energy, availableMinutes, reasons) {
+function buildRescueUserMessage(tasks, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects) {
   const lines = [
     `Uczniowi zostało dziś tylko ${availableMinutes} minut na naukę (availableMinutes = ${availableMinutes}). Oto zadania do rozdysponowania:`,
     ...tasks.map((t) => `- taskId: ${t.taskId}, przedmiot: ${t.subject}, tytuł: ${t.title}, oryginalny czas trwania: ${t.durationMinutes} min, priorytet: ${t.priority}`),
     `Poziom energii ucznia teraz: ${energy}.`,
     `Powody, dla których dzień się nie ułożył: ${(reasons && reasons.length ? reasons : ['nieznany']).join(', ')}.`,
   ];
+  if (prioritySubjects && prioritySubjects.length) {
+    lines.push(`Przedmioty, na których uczniowi szczególnie zależy: ${prioritySubjects.join(', ')}.`);
+  }
+  if (activitiesSelected && activitiesSelected.length) {
+    lines.push(`Zajęcia pozalekcyjne ucznia (bez podanych godzin): ${activitiesSelected.join(', ')}.`);
+  }
+  if (activitiesNote) {
+    lines.push(`Dodatkowy kontekst podany przez ucznia (weź go pod uwagę, jeśli jest istotny): ${activitiesNote}`);
+  }
   return lines.join('\n');
 }
 
-export async function handlePlanRescue({ tasks, energy, availableMinutes, reasons, lang }) {
+export async function handlePlanRescue({ tasks, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, lang }) {
   if (!anthropic) {
     return { status: 500, body: { error: 'Brak klucza ANTHROPIC_API_KEY na serwerze. Ustaw go w środowisku i uruchom serwer ponownie.' } };
   }
@@ -80,7 +89,7 @@ export async function handlePlanRescue({ tasks, energy, availableMinutes, reason
       system: buildRescueSystemPrompt(lang),
       tools: [RESCUE_TOOL],
       tool_choice: { type: 'tool', name: 'propose_rescue' },
-      messages: [{ role: 'user', content: buildRescueUserMessage(tasks, energy, availableMinutes, reasons) }],
+      messages: [{ role: 'user', content: buildRescueUserMessage(tasks, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects) }],
     });
 
     const toolUse = response.content.find((b) => b.type === 'tool_use');

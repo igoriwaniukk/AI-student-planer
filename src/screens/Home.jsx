@@ -539,13 +539,15 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
                 <span style={{ fontSize: 10.5, fontWeight: 700, color: '#7fe8cf' }}>{t('home.todayProgressBadge', { pct, done: doneCount, total: totalCount })}</span>
               </div>
             )}
-            <div
-              onClick={() => toggleBadge('goal')}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(165,140,255,.1)', border: '1px solid ' + (openBadge === 'goal' ? 'rgba(165,140,255,.7)' : 'rgba(165,140,255,.28)'), cursor: 'pointer' }}
-            >
-              <span style={{ fontSize: 12 }}>🎯</span>
-              <span style={{ fontSize: 10.5, fontWeight: 700, color: '#c9baff' }}>{t('home.weekGoalBadge', { pct: 60 })}</span>
-            </div>
+            {nearestExam && (
+              <div
+                onClick={() => toggleBadge('goal')}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(165,140,255,.1)', border: '1px solid ' + (openBadge === 'goal' ? 'rgba(165,140,255,.7)' : 'rgba(165,140,255,.28)'), cursor: 'pointer' }}
+              >
+                <span style={{ fontSize: 12 }}>🎯</span>
+                <span style={{ fontSize: 10.5, fontWeight: 700, color: '#c9baff' }}>{t('home.weekGoalBadge', { subject: t(VALUE_KEY[nearestExam.subject]) || nearestExam.subject, pct: examPct(nearestExam) })}</span>
+              </div>
+            )}
           </div>
 
           {openBadge === 'achievements' && (
@@ -584,18 +586,18 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
             </div>
           )}
 
-          {openBadge === 'goal' && (
+          {openBadge === 'goal' && nearestExam && (
             <div style={{ marginTop: 10, maxWidth: 300, padding: 15, borderRadius: 16, background: '#14141c', border: '1px solid rgba(165,140,255,.3)', transformOrigin: 'top left', animation: 'stepIn .22s ease both' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ fontSize: 13.5, fontWeight: 750 }}>{t('home.weekGoal')}</div>
                 <span onClick={() => setOpenBadge(null)} style={{ fontSize: 16, color: '#6b6b7a', cursor: 'pointer', lineHeight: 1 }}>×</span>
               </div>
-              <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, marginTop: 10 }}>{t('home.mathPrepGoal')}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, marginTop: 10 }}>{t('home.examPrepGoal', { subject: t(VALUE_KEY[nearestExam.subject]) || nearestExam.subject })}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginTop: 9 }}>
-                <div style={{ fontSize: 24, fontWeight: 750, color: '#2ee6c5' }}>60%</div>
-                <div style={{ fontSize: 11.5, color: '#8a8a99' }}>{t('home.blocksdone')}</div>
+                <div style={{ fontSize: 24, fontWeight: 750, color: '#2ee6c5' }}>{examPct(nearestExam)}%</div>
+                <div style={{ fontSize: 11.5, color: '#8a8a99' }}>{t('home.readiness')}</div>
               </div>
-              <ProgressBar pct={60} style={{ marginTop: 11 }} />
+              <ProgressBar pct={examPct(nearestExam)} style={{ marginTop: 11 }} />
             </div>
           )}
         </div>

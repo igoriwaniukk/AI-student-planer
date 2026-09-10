@@ -1,24 +1,3 @@
-export const TASK_DEFS = [
-  {
-    id: 'math', subject: 'Matematyka', title: 'Przygotowanie do sprawdzianu', dur: 60,
-    priority: 'Wysoki priorytet', color: '#a58cff', deadline: 'Sprawdzian za 2 dni', short: 'Matematyka — sprawdzian',
-    why: 'Najważniejszy blok, ponieważ sprawdzian jest za 2 dni. Trudniejsze zadanie zostało zaplanowane najwcześniej.',
-    note: '',
-  },
-  {
-    id: 'bio', subject: 'Biologia', title: 'Powtórka z fotosyntezy', dur: 45,
-    priority: 'Normalny priorytet', color: '#2ee6c5', short: 'Biologia — powtórka',
-    why: 'Materiał jest jeszcze świeży, dlatego powtórka została zaplanowana przed tenisem.',
-    note: '',
-  },
-  {
-    id: 'eng', subject: 'Angielski', title: 'Nauka słówek', dur: 30,
-    priority: 'Niższy priorytet', color: '#a58cff', short: 'Angielski — słówka',
-    why: 'Lżejsze zadanie zostało zaplanowane po treningu, gdy energia może być niższa.',
-    note: '',
-  },
-];
-
 export const STATUS_LABEL = {
   planned: 'Zaplanowane', in_progress: 'W trakcie', paused: 'Wstrzymane',
   completed: 'Wykonane', moved: 'Przeniesione', skipped: 'Pominięte',
@@ -70,10 +49,10 @@ export const WEEK_DAYS = Array.from({ length: 7 }, (_, i) => {
   const num = NUM_TODAY - 3 + i;
   return { num, ...WEEKDAY_META[realDateForNum(num).getDay()] };
 });
-export const EXAMS = [
-  { id: 'math', subject: 'Matematyka', title: 'Sprawdzian', color: '#a58cff', day: REFERENCE_DAY + 2 },
-  { id: 'bio', subject: 'Biologia', title: 'Sprawdzian', color: '#2ee6c5', day: REFERENCE_DAY + 11, requires: 'bioDeadlineSaved' },
-];
+// Real exams/deadlines come entirely from state.customExams (see
+// upcomingExams in plannerLogic.js) — a new account starts with none, rather
+// than a demo exam nobody actually entered.
+export const EXAMS = [];
 
 export const SUBJECTS = ['Matematyka', 'Biologia', 'Angielski', 'Polski', 'Historia', 'Geografia', 'Fizyka', 'Chemia', 'Inny'];
 export const PRIORITY_SUBJECT_OPTIONS = SUBJECTS.filter((s) => s !== 'Inny');
