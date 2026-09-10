@@ -90,8 +90,8 @@ function describeAction(action, planner, deps, t) {
     const startMin = toMinutes(args.newStart);
     const sched = planner.state.schedule || {};
     const dur = (sched[args.sessionId] || {}).dur || d?.dur || 30;
-    const conflict = checkBlockConflict(args.sessionId, startMin, dur, sched, planner.def);
-    const conflictText = conflict ? t(conflict.key, { subject: conflict.vars?.subject ? subj(conflict.vars.subject) : '' }) : '';
+    const conflict = checkBlockConflict(args.sessionId, startMin, dur, sched, planner.def, planner.constraints);
+    const conflictText = conflict ? t(conflict.key, { ...conflict.vars, subject: conflict.vars?.subject ? subj(conflict.vars.subject) : '' }) : '';
     return {
       summary: t('chat.actionReschedule', { label, time: args.newStart }),
       confirmedSummary: conflict ? t('chat.actionRescheduleFailed', { label, reason: conflictText }) : t('chat.actionRescheduleDone', { label, time: args.newStart }),

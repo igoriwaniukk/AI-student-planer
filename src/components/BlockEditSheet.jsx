@@ -5,11 +5,13 @@ import { BottomSheet } from './ui';
 
 export default function BlockEditSheet({ planner }) {
   const { t } = useLang();
-  const { state, def, moveBlockEdit, cancelBlockEdit, saveBlockEdit } = planner;
+  const { state, constraints, def, moveBlockEdit, cancelBlockEdit, saveBlockEdit } = planner;
   const b = state.blockEdit;
   if (!b) return null;
   const d = def(b.id);
-  const msg = b.msg ? t(b.msg.key, { subject: (b.msg.vars?.subject && (t(VALUE_KEY[b.msg.vars.subject]) || b.msg.vars.subject)) || '' }) : '';
+  const msg = b.msg
+    ? t(b.msg.key, { ...b.msg.vars, subject: (b.msg.vars?.subject && (t(VALUE_KEY[b.msg.vars.subject]) || b.msg.vars.subject)) || '' })
+    : '';
 
   return (
     <BottomSheet>
@@ -18,9 +20,9 @@ export default function BlockEditSheet({ planner }) {
 
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('block.startTime')}</div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-        <Stepper onClick={() => moveBlockEdit({ start: Math.max(880, b.start - 15) })} />
+        <Stepper onClick={() => moveBlockEdit({ start: Math.max(constraints.wakeMinutes, b.start - 15) })} />
         <div style={{ flex: 1, textAlign: 'center', fontSize: 21, fontWeight: 750 }}>{fmt(b.start)}</div>
-        <Stepper plus onClick={() => moveBlockEdit({ start: Math.min(1320, b.start + 15) })} />
+        <Stepper plus onClick={() => moveBlockEdit({ start: Math.min(constraints.bedtimeMinutes - b.dur, b.start + 15) })} />
       </div>
 
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('block.duration')}</div>

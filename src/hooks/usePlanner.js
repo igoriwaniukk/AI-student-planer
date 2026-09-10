@@ -4,7 +4,7 @@ import { getCurrentLang, TASK_TEXT_KEY } from '../lib/i18n';
 import {
   PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES,
 } from '../lib/plannerData';
-import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, weekdayDateLabel } from '../lib/plannerLogic';
+import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, weekdayDateLabel, dayConstraints } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
 import { requestAIRescue } from '../lib/aiRescue';
 
@@ -125,7 +125,7 @@ function initialState(defaults, activities) {
   };
 }
 
-export function usePlanner(defaults, activities) {
+export function usePlanner(defaults, activities, recurringActivities) {
   // Aliased (not `t`) since several functions below use `t` as a local
   // parameter name for a time string, which would otherwise shadow this.
   const { t: translate } = useLang();
@@ -134,8 +134,15 @@ export function usePlanner(defaults, activities) {
   const toastTimerRef = useRef(null);
   const snapRef = useRef(null);
 
+  // Derived fresh every render (not copied into state) from the student's
+  // real bedtime/wake and recurring activities, so a later edit to any of
+  // those (e.g. adding a new recurring activity) is picked up immediately —
+  // see dayConstraints in plannerLogic.js for what replaced the old fixed
+  // school/tennis/sleep schedule nobody could actually configure.
+  const constraints = dayConstraints({ wake: defaults?.wake, bedtime: defaults?.bedtime, recurringActivities });
+
   useEffect(() => {
-    setState((s) => ({ ...s, schedule: buildSchedule(s) }));
+    setState((s) => ({ ...s, schedule: buildSchedule({ ...s, constraints }) }));
     return () => clearInterval(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -197,10 +204,10 @@ export function usePlanner(defaults, activities) {
   // something that fails the same conflict checks manual edits go through.
   function generatePlan() {
     update({ manualMode: false, blockEdit: null });
-    const work = requestAIPlan(state);
+    const work = requestAIPlan({ ...state, constraints });
     runGen(PLAN_LABELS, (result, s) => ({
       generating: false, screen: 'plan',
-      schedule: result ? result.schedule : buildSchedule(s),
+      schedule: result ? result.schedule : buildSchedule({ ...s, constraints }),
       planAIRationale: result ? result.rationale : null,
     }), work);
   }
@@ -223,13 +230,13 @@ export function usePlanner(defaults, activities) {
     const availableMinutes = RESCUE_TIME_MINUTES[state.rescueTime] ?? 90;
     const work = requestAIRescue({
       taskDefs: state.taskDefs, tasks: state.tasks, taskState: state.taskState, durOverride: state.durOverride,
-      energy: state.rescueEnergy, availableMinutes, reasons: state.reasons,
+      energy: state.rescueEnergy, availableMinutes, reasons: state.reasons, constraints,
       activitiesNote: state.activitiesNote, activitiesSelected: state.activitiesSelected, prioritySubjects: state.prioritySubjects,
     });
     runGen(RESCUE_LABELS, (result, s) => {
       const fallback = result || buildRescueSchedule({
         taskDefs: s.taskDefs, tasks: s.tasks, taskState: s.taskState, durOverride: s.durOverride,
-        energy: s.rescueEnergy, availableMinutes,
+        energy: s.rescueEnergy, availableMinutes, constraints,
       });
       return {
         generating: false, screen: 'rescueResult',
@@ -285,7 +292,7 @@ export function usePlanner(defaults, activities) {
   function moveBlockEdit(patch) {
     update((s) => {
       const b = { ...s.blockEdit, ...patch };
-      b.msg = checkBlockConflict(b.id, b.start, b.dur, s.schedule, (id) => def(id, s));
+      b.msg = checkBlockConflict(b.id, b.start, b.dur, s.schedule, (id) => def(id, s), constraints);
       return { blockEdit: b };
     });
   }
@@ -304,7 +311,7 @@ export function usePlanner(defaults, activities) {
   function removeBlock(id) {
     update((s) => {
       const tsx = { ...s.taskState, [id]: { ...s.taskState[id], status: 'skipped' } };
-      const next = { ...s, taskState: tsx };
+      const next = { ...s, taskState: tsx, constraints };
       return { taskState: tsx, schedule: buildSchedule(next) };
     });
   }
@@ -368,7 +375,7 @@ export function usePlanner(defaults, activities) {
       const startOverride = { ...s.startOverride, [id]: startMin };
       const tasks = isNew ? { ...s.tasks, [id]: true } : s.tasks;
       const taskState = isNew ? { ...s.taskState, [id]: { status: 'planned' } } : s.taskState;
-      const next = { ...s, taskDefs: defs, durOverride, startOverride, tasks, taskState };
+      const next = { ...s, taskDefs: defs, durOverride, startOverride, tasks, taskState, constraints };
       return { taskDefs: defs, durOverride, startOverride, tasks, taskState, schedule: buildSchedule(next), taskEdit: null, editErrors: {}, teToast: true };
     });
     clearTimeout(toastTimerRef.current);
@@ -387,7 +394,7 @@ export function usePlanner(defaults, activities) {
       delete startOverride[id];
       const sessionReview = { ...s.sessionReview };
       delete sessionReview[id];
-      const next = { ...s, taskDefs: defs, tasks, taskState, durOverride, startOverride };
+      const next = { ...s, taskDefs: defs, tasks, taskState, durOverride, startOverride, constraints };
       return { taskDefs: defs, tasks, taskState, durOverride, startOverride, sessionReview, schedule: buildSchedule(next), taskEdit: null };
     });
   }
@@ -625,7 +632,7 @@ export function usePlanner(defaults, activities) {
   }
 
   return {
-    state, update, def, ts, go,
+    state, constraints, update, def, ts, go,
     toggleTask, generatePlan, deadlineGenerate, rescueGenerate,
     startSession, togglePause, dismissBreakReminder, openFinish, cancelFinish, confirmFinish,
     openBlockEdit, moveBlockEdit, cancelBlockEdit, saveBlockEdit, removeBlock,

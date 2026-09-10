@@ -1,5 +1,5 @@
 import { PRIO_STYLE, REFERENCE_DAY } from '../lib/plannerData';
-import { durOf, hm, weekdayDateLabel } from '../lib/plannerLogic';
+import { durOf, hm, weekdayDateLabel, fmt } from '../lib/plannerLogic';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
@@ -11,7 +11,7 @@ const PREFS = ['Wolny wieczór', 'Najpierw najtrudniejsze', 'Więcej krótkich p
 
 export default function Planner({ planner }) {
   const { t } = useLang();
-  const { state, toggleTask, openTaskEdit, openNewTaskEdit, update, generatePlan, go } = planner;
+  const { state, constraints, toggleTask, openTaskEdit, openNewTaskEdit, update, generatePlan, go } = planner;
   const enabledTasks = state.taskDefs.filter((d) => state.tasks[d.id]);
   const nTasks = enabledTasks.length;
   const mins = enabledTasks.reduce((a, d) => a + durOf(d.id, state.taskDefs, state.durOverride), 0);
@@ -38,12 +38,12 @@ export default function Planner({ planner }) {
           <span style={{ fontSize: 12.5, fontWeight: 650, color: '#a58cff' }}>{t('planner.edit')}</span>
         </div>
         <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 7 }}>{t('planner.aiWontChange')}</div>
-        <div style={{ height: 1, background: 'rgba(255,255,255,.07)', margin: '13px -14px 0' }} />
-        {[['🏫', t('planner.school'), t('planner.schoolSub'), '8:00–14:40'], ['🎾', t('planner.tennis'), t('planner.tennisSub'), '18:00–19:00']].map(([icon, title, sub, time]) => (
-          <div key={title} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '13px 0 0' }}>
-            <div style={{ width: 34, height: 34, borderRadius: 11, background: 'rgba(255,255,255,.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>{icon}</div>
-            <div style={{ flex: 1 }}><div style={{ fontSize: 13.5, fontWeight: 700 }}>{title}</div><div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 1 }}>{sub}</div></div>
-            <span style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6' }}>{time}</span>
+        {constraints.blocks.length > 0 && <div style={{ height: 1, background: 'rgba(255,255,255,.07)', margin: '13px -14px 0' }} />}
+        {constraints.blocks.map((b) => (
+          <div key={b.label + b.start} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '13px 0 0' }}>
+            <div style={{ width: 34, height: 34, borderRadius: 11, background: 'rgba(255,255,255,.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>🔁</div>
+            <div style={{ flex: 1 }}><div style={{ fontSize: 13.5, fontWeight: 700 }}>{b.label}</div><div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 1 }}>{t('planner.fixedActivity')}</div></div>
+            <span style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6' }}>{fmt(b.start)}–{fmt(b.end)}</span>
           </div>
         ))}
       </div>
@@ -73,7 +73,6 @@ export default function Planner({ planner }) {
                   {d.deadline && <span style={{ fontSize: 10.5, fontWeight: 650, color: '#f5a524', padding: '4px 8px', borderRadius: 8, background: 'rgba(245,165,36,.13)', border: '1px solid rgba(245,165,36,.28)' }}>⚠ {t(TASK_TEXT_KEY[d.id]?.deadline) || d.deadline}</span>}
                   <span style={{ fontSize: 11.5, color: '#8a8a99' }}>🕐 {durOf(d.id, state.taskDefs, state.durOverride)} min</span>
                 </div>
-                {d.id === 'math' && <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 8 }}>{t('planner.readiness')}</div>}
               </div>
               <span onClick={(e) => { e.stopPropagation(); openTaskEdit(d.id); }} style={{ fontSize: 12, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('planner.edit')}</span>
             </div>
@@ -86,7 +85,7 @@ export default function Planner({ planner }) {
       <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
         <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em' }}>{t('planner.whenFree')}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>
-          {['15:30', '21:30'].map((tm, i) => (
+          {[fmt(constraints.wakeMinutes), fmt(constraints.bedtimeMinutes)].map((tm, i) => (
             <div key={tm} style={{ flex: 1 }}>
               <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', marginBottom: 7 }}>{i === 0 ? t('planner.from') : t('planner.to')}</div>
               <div style={{ height: 56, borderRadius: 15, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.09)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px' }}>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import WeekStrip from '../components/WeekStrip';
 import { BackButton, Pill, SectionTitle } from '../components/ui';
 import { upcomingExams, hm, dayInfo, formatMonthDay } from '../lib/plannerLogic';
-import { REFERENCE_DAY, TENIS_DAY } from '../lib/plannerData';
+import { REFERENCE_DAY } from '../lib/plannerData';
 import { DAY_KEY, VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import DayTimeline from '../components/DayTimeline';
@@ -40,7 +40,6 @@ export default function Calendar({ planner, activities, recurringActivities = []
   const weekEnd = weekStart + 6;
   const weekExams = upcomingExams(state).filter((e) => e.day >= weekStart && e.day <= weekEnd);
   const eventDays = new Set(weekExams.map((e) => e.day));
-  if (info.school) eventDays.add(TENIS_DAY);
   const nearestExamDay = weekExams.filter((e) => e.daysUntil >= 0).sort((a, b) => a.day - b.day)[0]?.day ?? null;
 
   const sched = calDay === state.selectedDay ? (state.schedule || {}) : {};
@@ -91,15 +90,6 @@ export default function Calendar({ planner, activities, recurringActivities = []
         <Card><div style={{ fontSize: 12.5, color: '#8a8a99' }}>{t('cal.noUpcoming')}</div></Card>
       )}
 
-      <SectionTitle style={{ margin: '22px 0 12px' }}>{t('cal.schedule', { day: dayLabel })}</SectionTitle>
-      <Card>
-        {info.school ? (
-          <Row icon="🏫" title={t('cal.school')} sub={t('cal.lessonPlan')} right="8:00–14:40" />
-        ) : (
-          <div style={{ fontSize: 12.5, color: '#8a8a99' }}>{t('cal.weekend')}</div>
-        )}
-      </Card>
-
       <SectionTitle style={{ margin: '22px 0 12px' }}>{t('cal.studySessions', { day: dayLabel })}</SectionTitle>
       {sessionIds.length ? (
         <DayTimeline schedule={sched} planner={planner} t={t} compact only={['study', 'gap']} />
@@ -112,9 +102,6 @@ export default function Calendar({ planner, activities, recurringActivities = []
 
       <SectionTitle style={{ margin: '22px 0 12px' }}>{t('cal.extraActivities')}</SectionTitle>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-        {info.num === TENIS_DAY && (
-          <Card><Row icon="🎾" title={t('cal.tennis')} sub={t('cal.fixedActivity')} right="18:00–19:00" /></Card>
-        )}
         {dayRecurring.map((a) => (
           <Card key={a.id}><Row icon="🔁" title={a.name} sub={t('cal.recurringActivity')} right={a.start + ' · ' + a.dur + ' min'} /></Card>
         ))}
@@ -128,7 +115,7 @@ export default function Calendar({ planner, activities, recurringActivities = []
             </div>
           </Card>
         )}
-        {info.num !== TENIS_DAY && dayRecurring.length === 0 && selectedActivities.length === 0 && (
+        {dayRecurring.length === 0 && selectedActivities.length === 0 && (
           <Card><div style={{ fontSize: 12.5, color: '#8a8a99' }}>{t('cal.noActivities')}</div></Card>
         )}
       </div>

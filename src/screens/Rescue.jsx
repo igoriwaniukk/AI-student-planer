@@ -1,12 +1,12 @@
 import { REASON_OPTIONS, RESCUE_TIME_OPTIONS, PRIO_STYLE, REFERENCE_DAY } from '../lib/plannerData';
-import { durOf, startOf, span, weekdayDateLabel } from '../lib/plannerLogic';
+import { durOf, startOf, span, weekdayDateLabel, fmt } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import { useLang } from '../lib/useLang';
 
 export default function Rescue({ planner }) {
   const { t } = useLang();
-  const { state, ts, toggleReason, setRescueTime, update, openTaskEdit, rescueGenerate, go, computeActiveIds } = planner;
+  const { state, constraints, ts, toggleReason, setRescueTime, update, openTaskEdit, rescueGenerate, go, computeActiveIds } = planner;
   const notEnoughTime = state.rescueTime === '45 min' && !state.rescueMoved;
   const noSafeBlock = state.rescueTime === 'Własny czas';
   const remainingCount = computeActiveIds(state.taskDefs, state.tasks, state.taskState).length;
@@ -25,8 +25,10 @@ export default function Rescue({ planner }) {
         <div style={{ fontSize: 12.5, lineHeight: 1.5, color: '#a3a3b3', marginTop: 7 }}>{t('rescue.delayedDesc')}</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 13 }}>
           <span style={{ fontSize: 11.5, fontWeight: 650, color: '#e2e2ea', padding: '6px 10px', borderRadius: 9, background: 'rgba(255,255,255,.07)' }}>{t('rescue.tasksLeft', { n: remainingCount })}</span>
-          <span style={{ fontSize: 11.5, fontWeight: 650, color: '#8fbaff', padding: '6px 10px', borderRadius: 9, background: 'rgba(91,156,255,.13)' }}>{t('rescue.untilTennis')}</span>
-          <span style={{ fontSize: 11.5, fontWeight: 650, color: '#8fbaff', padding: '6px 10px', borderRadius: 9, background: 'rgba(91,156,255,.13)' }}>{t('rescue.sleep')}</span>
+          {constraints.blocks.map((b) => (
+            <span key={b.label + b.start} style={{ fontSize: 11.5, fontWeight: 650, color: '#8fbaff', padding: '6px 10px', borderRadius: 9, background: 'rgba(91,156,255,.13)' }}>{b.label}: {fmt(b.start)}–{fmt(b.end)}</span>
+          ))}
+          <span style={{ fontSize: 11.5, fontWeight: 650, color: '#8fbaff', padding: '6px 10px', borderRadius: 9, background: 'rgba(91,156,255,.13)' }}>{t('rescue.sleep', { time: fmt(constraints.bedtimeMinutes) })}</span>
         </div>
       </div>
 
@@ -66,14 +68,16 @@ export default function Rescue({ planner }) {
         })}
       </div>
 
-      <div style={{ marginTop: 14, padding: 14, borderRadius: 18, background: 'rgba(91,156,255,.06)', border: '1px solid rgba(91,156,255,.22)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-          <div style={{ width: 32, height: 32, flex: 'none', borderRadius: 10, background: 'rgba(91,156,255,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="11" height="13" viewBox="0 0 12 14" fill="none"><rect x="1.5" y="5.5" width="9" height="7.2" rx="1.8" stroke="#5b9cff" strokeWidth="1.2" /><path d="M3.8 5.5V4a2.2 2.2 0 014.4 0v1.5" stroke="#5b9cff" strokeWidth="1.2" /></svg></div>
-          <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 700 }}>{t('rescue.tennis')}</div><div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 2 }}>{t('rescue.fixedEvent')}</div></div>
-          <span style={{ fontSize: 12.5, fontWeight: 650, color: '#8fbaff' }}>18:00–19:00</span>
+      {constraints.blocks.map((b) => (
+        <div key={b.label + b.start} style={{ marginTop: 14, padding: 14, borderRadius: 18, background: 'rgba(91,156,255,.06)', border: '1px solid rgba(91,156,255,.22)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+            <div style={{ width: 32, height: 32, flex: 'none', borderRadius: 10, background: 'rgba(91,156,255,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="11" height="13" viewBox="0 0 12 14" fill="none"><rect x="1.5" y="5.5" width="9" height="7.2" rx="1.8" stroke="#5b9cff" strokeWidth="1.2" /><path d="M3.8 5.5V4a2.2 2.2 0 014.4 0v1.5" stroke="#5b9cff" strokeWidth="1.2" /></svg></div>
+            <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 700 }}>{b.label}</div><div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 2 }}>{t('rescue.fixedEvent')}</div></div>
+            <span style={{ fontSize: 12.5, fontWeight: 650, color: '#8fbaff' }}>{fmt(b.start)}–{fmt(b.end)}</span>
+          </div>
+          <div style={{ fontSize: 11.5, color: '#a3a3b3', marginTop: 10 }}>{t('rescue.aiWontMove')}</div>
         </div>
-        <div style={{ fontSize: 11.5, color: '#a3a3b3', marginTop: 10 }}>{t('rescue.aiWontMove')}</div>
-      </div>
+      ))}
 
       <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('rescue.energyQ')}</div>
       <EnergyPicker value={state.rescueEnergy} onChange={(v) => update({ rescueEnergy: v })} />
@@ -90,11 +94,11 @@ export default function Rescue({ planner }) {
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ fontSize: 13, fontWeight: 650, color: '#c9c9d6', lineHeight: 1.3 }}>{t('rescue.finishByQ')}</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 13px', borderRadius: 13, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.09)' }}>
-            <span style={{ fontSize: 17, fontWeight: 750 }}>20:30</span>
+            <span style={{ fontSize: 17, fontWeight: 750 }}>{fmt(constraints.bedtimeMinutes)}</span>
             <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7.2" stroke="#9a9aab" strokeWidth="1.3" /><path d="M9 5.2V9l2.6 1.8" stroke="#9a9aab" strokeWidth="1.3" strokeLinecap="round" /></svg>
           </div>
         </div>
-        <div style={{ fontSize: 11.5, color: '#8fbaff', marginTop: 11 }}>{t('rescue.sleepUnchanged')}</div>
+        <div style={{ fontSize: 11.5, color: '#8fbaff', marginTop: 11 }}>{t('rescue.sleepUnchanged', { time: fmt(constraints.bedtimeMinutes) })}</div>
       </div>
 
       {notEnoughTime && (
@@ -119,8 +123,10 @@ export default function Rescue({ planner }) {
           <Row label={t('rescue.remainingTasks')} value={t('rescue.tasksLeft', { n: remainingCount })} />
           <Row label={t('rescue.availableStudy')} value={t(VALUE_KEY[state.rescueTime]) || state.rescueTime} />
           <Row label={t('rescue.energy')} value={t('rescue.energyValue', { level: t(VALUE_KEY[state.rescueEnergy]) || state.rescueEnergy })} />
-          <Row label={t('rescue.tennis')} value={t('rescue.tennisUnchanged')} color="#8fbaff" />
-          <Row label={t('rescue.sleepLabel')} value={t('rescue.sleepValue')} color="#8fbaff" />
+          {constraints.blocks.map((b) => (
+            <Row key={b.label + b.start} label={b.label} value={t('rescue.tennisUnchanged')} color="#8fbaff" />
+          ))}
+          <Row label={t('rescue.sleepLabel')} value={t('rescue.sleepValue', { time: fmt(constraints.bedtimeMinutes) })} color="#8fbaff" />
         </div>
         <div style={{ height: 1, background: 'rgba(255,255,255,.07)', margin: '15px -16px' }} />
         <div style={{ fontSize: 12.5, lineHeight: 1.5, color: '#a3a3b3' }}>{t('rescue.summaryNote')}</div>
