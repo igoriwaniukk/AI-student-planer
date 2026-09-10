@@ -83,7 +83,7 @@ export default function WeekStrip({
         >
           {baseWeek.map(({ num, label, short }) => {
             const on = num === selectedDay;
-            const hasEvent = eventDays ? eventDays.has(num) : num % 2 === 0;
+            const hasEvent = eventDays ? eventDays.has(num) : false;
             const isCountdown = countdownSet ? countdownSet.has(num) : false;
             const isStreak = streakSet ? streakSet.has(num) : false;
             const shortLabel = t(DAY_KEY[label] + '.short') || short;

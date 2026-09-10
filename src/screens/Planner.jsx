@@ -1,11 +1,10 @@
 import { PRIO_STYLE, REFERENCE_DAY } from '../lib/plannerData';
-import { durOf, hm, weekdayDateLabel, fmt } from '../lib/plannerLogic';
+import { durOf, hm, weekdayDateLabel, fmt, span, freeWindows } from '../lib/plannerLogic';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import TaskEditSheet from '../components/TaskEditSheet';
 
-const TASK_ICONS = { math: '📐', bio: '🔬', eng: '🗣' };
 const DEFAULT_TASK_ICON = '📘';
 const PREFS = ['Wolny wieczór', 'Najpierw najtrudniejsze', 'Więcej krótkich przerw'];
 
@@ -16,6 +15,9 @@ export default function Planner({ planner }) {
   const nTasks = enabledTasks.length;
   const mins = enabledTasks.reduce((a, d) => a + durOf(d.id, state.taskDefs, state.durOverride), 0);
   const sumTime = hm(mins);
+  const windows = freeWindows(constraints);
+  const freeMinutes = windows.reduce((a, w) => a + (w.end - w.start), 0);
+  const freeRangesLabel = windows.length ? windows.map((w) => span(w.start, w.end)).join(', ') : t('planner.noFreeTime');
 
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 176px' }}>
@@ -62,7 +64,7 @@ export default function Planner({ planner }) {
               <div style={{ width: 24, height: 24, borderRadius: 8, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: on ? '#7c5cff' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (on ? '#7c5cff' : 'rgba(255,255,255,.18)') }}>
                 <svg width="12" height="10" viewBox="0 0 12 10" fill="none" style={{ opacity: on ? 1 : 0 }}><path d="M1 5l3.4 3.4L11 1.6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </div>
-              <div style={{ width: 20, textAlign: 'center', fontSize: 14 }}>{TASK_ICONS[d.id] || DEFAULT_TASK_ICON}</div>
+              <div style={{ width: 20, textAlign: 'center', fontSize: 14 }}>{DEFAULT_TASK_ICON}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: d.color, textTransform: 'uppercase' }}>{t(VALUE_KEY[d.subject]) || d.subject}</span>
@@ -96,8 +98,8 @@ export default function Planner({ planner }) {
           ))}
         </div>
         <div style={{ marginTop: 14, padding: 13, borderRadius: 15, background: 'rgba(53,208,127,.07)', border: '1px solid rgba(53,208,127,.22)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#35d07f' }} /><span style={{ fontSize: 13, fontWeight: 700, color: '#5fdd9b' }}>{t('planner.freeHours')}</span></div>
-          <div style={{ fontSize: 12, color: '#a3a3b3', marginTop: 6 }}>{t('planner.freeRanges')}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#35d07f' }} /><span style={{ fontSize: 13, fontWeight: 700, color: '#5fdd9b' }}>{t('planner.freeHours', { time: hm(freeMinutes) })}</span></div>
+          <div style={{ fontSize: 12, color: '#a3a3b3', marginTop: 6 }}>{freeRangesLabel}</div>
           <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 4 }}>{t('planner.aiBreaks')}</div>
         </div>
       </div>
@@ -126,7 +128,7 @@ export default function Planner({ planner }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14 }}>
           <Row label={t('planner.tasks')} value={nTasks === 1 ? t('planner.oneTask') : t('planner.nTasks', { n: nTasks })} />
           <Row label={t('planner.studyTime')} value={sumTime} />
-          <Row label={t('planner.availableTime')} value={t('planner.availableTimeValue')} />
+          <Row label={t('planner.availableTime')} value={hm(freeMinutes)} />
           <Row label={t('planner.energy')} value={t(VALUE_KEY[state.energy]) || state.energy} />
           <Row label={t('planner.preference')} value={t(VALUE_KEY[state.pref]) || state.pref} />
         </div>

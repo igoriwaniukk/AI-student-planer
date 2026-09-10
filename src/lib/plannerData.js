@@ -13,8 +13,6 @@ export const PRIO_STYLE = {
   'Normalny priorytet': { color: '#8ff0de', bg: 'rgba(46,230,197,.14)' },
   'Niższy priorytet': { color: '#9a9aab', bg: 'rgba(255,255,255,.07)' },
 };
-export const DEFAULT_START = { math: 930, bio: 1000, eng: 1170 };
-
 // Day numbers throughout the app are a logical index, not a literal
 // day-of-month: num 19 is anchored to whatever real day the app happens to
 // be running on ("today"), 20 is the day after ("jutro" — deadlines are
@@ -34,7 +32,6 @@ export function realDateForNum(num) {
 }
 
 export const REFERENCE_DAY = NUM_TODAY + 1;
-export const TENIS_DAY = REFERENCE_DAY;
 
 const WEEKDAY_META = [
   { label: 'Niedziela', short: 'ND', school: false },
@@ -66,15 +63,6 @@ export const KINDS = ['Sprawdzian', 'Kartkówka', 'Praca domowa', 'Projekt', 'Pr
 export const PREP_LABELS = ['gen.prep.1', 'gen.prep.2', 'gen.prep.3', 'gen.prep.4', 'gen.prep.5'];
 export const RESCUE_LABELS = ['gen.rescue.1', 'gen.rescue.2', 'gen.rescue.3', 'gen.rescue.4', 'gen.rescue.5'];
 export const PLAN_LABELS = ['gen.plan.1', 'gen.plan.2', 'gen.plan.3', 'gen.plan.4'];
-
-export const SESSIONS = [
-  { time: '17:00–17:35', dur: '35 min', title: 'Prawa Mendla — podstawy', type: 'Pierwszy kontakt', why: 'Najpierw uporządkujemy podstawowe pojęcia potrzebne do kolejnych tematów.' },
-  { time: '16:30–17:10', dur: '40 min', title: 'Krzyżówki genetyczne — wprowadzenie', type: 'Ćwiczenia', why: 'Pierwsze zadania pojawiają się po poznaniu zasad dziedziczenia.' },
-  { time: '11:00–11:40', dur: '40 min', title: 'Grupy krwi i krzyżówki', type: 'Nowy materiał i ćwiczenia', why: 'Łączymy drugi temat z praktycznymi przykładami.' },
-  { time: '16:30–17:10', dur: '40 min', title: 'Zadania mieszane z genetyki', type: 'Utrwalenie', why: 'Ćwiczenia ze wszystkich tematów pokażą, które elementy wymagają poprawy.' },
-  { time: '17:00–17:30', dur: '30 min', title: 'Powtórka trudniejszych obszarów', type: 'Powtórka', why: 'Wracamy do tematów ocenionych najsłabiej podczas wcześniejszych ćwiczeń.' },
-  { time: '16:30–16:55', dur: '25 min', title: 'Krótki test przed sprawdzianem', type: 'Samosprawdzenie', why: 'Ostatniego dnia sprawdzisz gotowość bez przeciążania wieczoru.' },
-];
 
 export const HARD_OPTIONS = ['Łatwa', 'W sam raz', 'Trudna'];
 export const KNOW_OPTIONS = ['Nie umiem', 'Częściowo umiem', 'Dobrze umiem', 'Opanowane'];

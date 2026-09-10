@@ -1,4 +1,4 @@
-import { DEFAULT_START, EXAMS, PRIORITIES, REFERENCE_DAY, WEEK_DAYS, realDateForNum } from './plannerData';
+import { EXAMS, PRIORITIES, REFERENCE_DAY, WEEK_DAYS, realDateForNum } from './plannerData';
 import { getCurrentLang } from './i18n';
 
 // Weekday info repeats on a 7-day cycle from WEEK_DAYS' base range (16-22),
@@ -116,6 +116,23 @@ export function dayConstraints({ wake, bedtime, recurringActivities, dayNum = RE
     bedtimeMinutes: timeStrToMinutes(bedtime || '22:30'),
     blocks,
   };
+}
+
+// The real gaps between wake and bedtime once the day's blocked activities
+// are carved out — replaces a fixed "15:30–18:00 and 19:00–21:30" that
+// assumed every student shared the same school/tennis schedule. `blocks`
+// is assumed sorted by start (dayConstraints already returns it that way).
+export function freeWindows({ wakeMinutes, bedtimeMinutes, blocks }) {
+  const windows = [];
+  let cur = wakeMinutes;
+  (blocks || []).forEach((b) => {
+    const start = Math.max(b.start, wakeMinutes);
+    const end = Math.min(b.end, bedtimeMinutes);
+    if (start > cur) windows.push({ start: cur, end: start });
+    if (end > cur) cur = end;
+  });
+  if (cur < bedtimeMinutes) windows.push({ start: cur, end: bedtimeMinutes });
+  return windows;
 }
 
 // Pushes a candidate start time past any blocked window it would overlap,
@@ -242,7 +259,7 @@ export function durOf(id, taskDefs, durOverride) {
 export function startOf(id, { schedule, startOverride }) {
   if (startOverride && startOverride[id] != null) return startOverride[id];
   if (schedule && schedule[id]) return schedule[id].start;
-  return DEFAULT_START[id] || 930;
+  return 930;
 }
 
 const PREP_DIFFICULTY_DUR = { 'Łatwy': 25, 'Średni': 35, 'Trudny': 40 };
