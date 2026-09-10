@@ -82,10 +82,11 @@ function EditBtn({ label, onClick }) {
 // compact=true (used by Calendar) skips the edit buttons and the
 // priority/deadline/why detail block, showing just the essentials.
 // only, if given, restricts which timeline item kinds render — Calendar
-// uses this to show just study blocks + gaps, since school/tennis/sleep
+// uses this to show just study blocks + gaps, since fixed activities/sleep
 // already have their own dedicated sections there.
 export default function DayTimeline({ schedule, planner, t, compact, only }) {
-  const items = only ? timeline(schedule).filter((it) => only.includes(it.k)) : timeline(schedule);
+  const all = timeline(schedule, planner.constraints);
+  const items = only ? all.filter((it) => only.includes(it.k)) : all;
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
       {items.map((it, i) => {

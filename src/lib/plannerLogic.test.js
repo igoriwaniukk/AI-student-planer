@@ -13,6 +13,12 @@ const taskDefs = [
 const allEnabled = { math: true, bio: true, eng: true };
 const allPlanned = { math: { status: 'planned' }, bio: { status: 'planned' }, eng: { status: 'planned' } };
 
+// A fixed constraints fixture (rather than the app's real dayConstraints(),
+// which reads the student's own bedtime/wake/recurring activities) so these
+// tests describe an explicit, stable scenario: earliest start 15:30, one
+// blocked activity 18:00–19:00 ("Tenis"), bedtime 22:30.
+const constraints = { wakeMinutes: 930, bedtimeMinutes: 1350, blocks: [{ start: 1080, end: 1140, label: 'Tenis' }] };
+
 afterEach(() => setCurrentLang('pl'));
 
 describe('time formatting', () => {
@@ -64,64 +70,72 @@ describe('lightenForEnergy', () => {
 
 describe('buildSchedule', () => {
   it('places active tasks back to back with a break between them', () => {
-    const sched = buildSchedule({ taskDefs, tasks: allEnabled, taskState: allPlanned, energy: 'Normalna', pref: 'Wolny wieczór' });
+    const sched = buildSchedule({ taskDefs, tasks: allEnabled, taskState: allPlanned, energy: 'Normalna', pref: 'Wolny wieczór', constraints });
     expect(sched.math).toEqual({ start: 930, dur: 60 });
     expect(sched.bio).toEqual({ start: 930 + 60 + 10, dur: 45 });
     // eng would naturally start at 1055 and run to 1085, straddling the
-    // 1080–1140 tennis window, so it gets pushed to right after it instead.
-    expect(sched.eng).toEqual({ start: 1170, dur: 30 });
+    // 1080–1140 blocked window ("Tenis"), so it gets pushed to start right
+    // when that window ends instead.
+    expect(sched.eng).toEqual({ start: 1140, dur: 30 });
   });
 
-  it('jumps a block that would straddle the tennis window to right after it', () => {
+  it('jumps a block that would straddle a blocked window to right after it', () => {
     // A single big task starting at 930 would run 930→1230, straddling
-    // 1080–1140 — it must be pushed to start at 1170 instead.
+    // 1080–1140 — it must be pushed to start at 1140 instead.
     const bigDef = [{ id: 'big', subject: 'Matematyka', title: 'Maraton', dur: 300, priority: 'Wysoki priorytet' }];
     const sched = buildSchedule({
-      taskDefs: bigDef, tasks: { big: true }, taskState: { big: { status: 'planned' } }, energy: 'Normalna', pref: 'Wolny wieczór',
+      taskDefs: bigDef, tasks: { big: true }, taskState: { big: { status: 'planned' } }, energy: 'Normalna', pref: 'Wolny wieczór', constraints,
     });
-    expect(sched.big.start).toBe(1170);
+    expect(sched.big.start).toBe(1140);
   });
 
   it('respects durOverride and startOverride', () => {
     const sched = buildSchedule({
       taskDefs, tasks: allEnabled, taskState: allPlanned, energy: 'Normalna', pref: 'Wolny wieczór',
-      durOverride: { math: 20 }, startOverride: { bio: 1200 },
+      durOverride: { math: 20 }, startOverride: { bio: 1200 }, constraints,
     });
     expect(sched.math.dur).toBe(20);
     expect(sched.bio.start).toBe(1200);
+  });
+
+  it('starts from the student\'s own wake time and skips their own recurring activities, not an invented school/tennis schedule', () => {
+    const custom = { wakeMinutes: 480, bedtimeMinutes: 1320, blocks: [{ start: 600, end: 660, label: 'Poranny bieg' }] };
+    const oneTask = [{ id: 'x', subject: 'Fizyka', title: 'Kinematyka', dur: 30, priority: 'Wysoki priorytet' }];
+    const sched = buildSchedule({ taskDefs: oneTask, tasks: { x: true }, taskState: { x: { status: 'planned' } }, energy: 'Normalna', pref: 'Wolny wieczór', constraints: custom });
+    expect(sched.x).toEqual({ start: 480, dur: 30 });
   });
 });
 
 describe('checkBlockConflict', () => {
   const def = (id) => taskDefs.find((t) => t.id === id);
 
-  it('flags a start before school ends', () => {
-    expect(checkBlockConflict('math', 800, 30, {}, def)).toEqual({ key: 'block.conflictSchool' });
+  it('flags a start before the student\'s wake time', () => {
+    expect(checkBlockConflict('math', 800, 30, {}, def, constraints)).toEqual({ key: 'block.conflictWake', vars: { time: '15:30' } });
   });
 
-  it('flags anything overlapping the tennis window', () => {
-    expect(checkBlockConflict('math', 1060, 30, {}, def)).toEqual({ key: 'block.conflictTennis' });
+  it('flags anything overlapping a blocked recurring activity, naming it', () => {
+    expect(checkBlockConflict('math', 1060, 30, {}, def, constraints)).toEqual({ key: 'block.conflictActivity', vars: { name: 'Tenis' } });
   });
 
-  it('flags anything ending after bedtime', () => {
-    expect(checkBlockConflict('math', 1340, 20, {}, def)).toEqual({ key: 'block.conflictSleep' });
+  it('flags anything ending after the student\'s bedtime', () => {
+    expect(checkBlockConflict('math', 1340, 20, {}, def, constraints)).toEqual({ key: 'block.conflictSleep', vars: { time: '22:30' } });
   });
 
   it('flags overlap with another scheduled block, naming its subject', () => {
     const schedule = { bio: { start: 930, dur: 60 } };
-    expect(checkBlockConflict('math', 960, 30, schedule, def)).toEqual({ key: 'block.conflictOther', vars: { subject: 'Biologia' } });
+    expect(checkBlockConflict('math', 960, 30, schedule, def, constraints)).toEqual({ key: 'block.conflictOther', vars: { subject: 'Biologia' } });
   });
 
   it('allows a valid, non-overlapping time', () => {
     const schedule = { bio: { start: 930, dur: 60 } };
-    expect(checkBlockConflict('math', 1000, 30, schedule, def)).toBeNull();
+    expect(checkBlockConflict('math', 1000, 30, schedule, def, constraints)).toBeNull();
   });
 });
 
 describe('buildRescueSchedule', () => {
   it('keeps everything at full length when the budget covers it', () => {
     const { schedule, decisions } = buildRescueSchedule({
-      taskDefs, tasks: allEnabled, taskState: allPlanned, energy: 'Normalna', availableMinutes: 300,
+      taskDefs, tasks: allEnabled, taskState: allPlanned, energy: 'Normalna', availableMinutes: 300, constraints,
     });
     expect(Object.keys(schedule)).toHaveLength(3);
     expect(decisions).toEqual({ math: 'kept', bio: 'kept', eng: 'kept' });
@@ -130,7 +144,7 @@ describe('buildRescueSchedule', () => {
 
   it('protects higher-priority tasks first when the budget is tight, staying within budget', () => {
     const { schedule, decisions } = buildRescueSchedule({
-      taskDefs, tasks: allEnabled, taskState: allPlanned, energy: 'Normalna', availableMinutes: 70,
+      taskDefs, tasks: allEnabled, taskState: allPlanned, energy: 'Normalna', availableMinutes: 70, constraints,
     });
     const totalDur = Object.values(schedule).reduce((a, b) => a + b.dur, 0);
     expect(totalDur).toBeLessThanOrEqual(70);
@@ -142,7 +156,7 @@ describe('buildRescueSchedule', () => {
     const lateDefs = [{ id: 'a', subject: 'Matematyka', title: 'A', dur: 300, priority: 'Wysoki priorytet' }, { id: 'b', subject: 'Biologia', title: 'B', dur: 300, priority: 'Normalny priorytet' }];
     const { decisions } = buildRescueSchedule({
       taskDefs: lateDefs, tasks: { a: true, b: true }, taskState: { a: { status: 'planned' }, b: { status: 'planned' } },
-      energy: 'Normalna', availableMinutes: 600,
+      energy: 'Normalna', availableMinutes: 600, constraints,
     });
     expect(decisions.b).toBe('moved');
   });

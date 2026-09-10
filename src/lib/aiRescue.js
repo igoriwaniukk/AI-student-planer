@@ -6,7 +6,7 @@ import { authedFetch } from './authFetch';
 // decisions} pair, or null if anything is missing/duplicated/out of bounds/
 // over budget/longer than requested — the caller then falls back to the
 // deterministic rescue packer instead of trusting a broken plan.
-export function toValidatedRescue(blocks, moved, ids, taskDefs, durOverride, availableMinutes) {
+export function toValidatedRescue(blocks, moved, ids, taskDefs, durOverride, availableMinutes, constraints) {
   if (!Array.isArray(blocks) || !Array.isArray(moved)) return null;
   const remainingIds = new Set(ids);
   const schedule = {};
@@ -16,7 +16,7 @@ export function toValidatedRescue(blocks, moved, ids, taskDefs, durOverride, ava
     if (!block || typeof block.start !== 'number' || typeof block.dur !== 'number' || !remainingIds.has(block.taskId)) return null;
     const original = durOf(block.taskId, taskDefs, durOverride);
     if (block.dur <= 0 || block.dur > original) return null;
-    const conflict = checkBlockConflict(block.taskId, block.start, block.dur, schedule, (id) => taskDefs.find((t) => t.id === id));
+    const conflict = checkBlockConflict(block.taskId, block.start, block.dur, schedule, (id) => taskDefs.find((t) => t.id === id), constraints);
     if (conflict) return null;
     remainingIds.delete(block.taskId);
     schedule[block.taskId] = { start: block.start, dur: block.dur };
@@ -37,7 +37,7 @@ export function toValidatedRescue(blocks, moved, ids, taskDefs, durOverride, ava
 // time is actually left. Returns null (never throws) whenever the AI is
 // unavailable, unreachable, or proposes something invalid; callers use that
 // as the signal to fall back to the deterministic rescue packer.
-export async function requestAIRescue({ taskDefs, tasks, taskState, energy, durOverride, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects }) {
+export async function requestAIRescue({ taskDefs, tasks, taskState, energy, durOverride, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, constraints }) {
   const ids = activeIds(taskDefs, tasks, taskState);
   if (!ids.length) return null;
   const items = ids.map((id) => {
@@ -49,11 +49,11 @@ export async function requestAIRescue({ taskDefs, tasks, taskState, energy, durO
     const res = await authedFetch('/api/plan/rescue', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tasks: items, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, lang: getCurrentLang() }),
+      body: JSON.stringify({ tasks: items, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, constraints, lang: getCurrentLang() }),
     });
     if (!res.ok) return null;
     const data = await res.json();
-    const result = toValidatedRescue(data.blocks, data.moved, ids, taskDefs, durOverride, availableMinutes);
+    const result = toValidatedRescue(data.blocks, data.moved, ids, taskDefs, durOverride, availableMinutes, constraints);
     return result ? { ...result, rationale: data.rationale || null } : null;
   } catch {
     return null;

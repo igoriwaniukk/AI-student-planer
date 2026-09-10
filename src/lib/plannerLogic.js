@@ -69,16 +69,70 @@ export function lightenForEnergy(dur, energy) {
   return Math.max(15, Math.round((dur * 0.8) / 5) * 5);
 }
 
-export function buildSchedule({ taskDefs, tasks, taskState, energy, pref, durOverride, startOverride }) {
+// Converts a "H:MM"/"HH:MM" time-of-day string (as collected at onboarding —
+// see Onboarding.jsx step3's bedtime/wake inputs) into minutes since
+// midnight, the unit the rest of the scheduler works in.
+export function timeStrToMinutes(t) {
+  const [h, m] = String(t || '0:0').split(':').map(Number);
+  return (h || 0) * 60 + (m || 0);
+}
+
+// The hard boundaries + blocked windows for a given day, derived entirely
+// from the student's own real settings instead of a fixed, invented school/
+// tennis schedule: wake/bedtime come from onboarding, and blocked windows
+// come from whichever of the student's own recurring activities (see
+// QuickAddSheet.jsx — each has a day/start/dur) land on that weekday.
+export function dayConstraints({ wake, bedtime, recurringActivities, dayNum = REFERENCE_DAY } = {}) {
+  // dayInfo(...).label (not weekdayName(...)) since it's the same
+  // language-independent Polish weekday name recurringActivities' own `day`
+  // field is stored in (see QuickAddSheet.jsx's RECUR_DAYS) — weekdayName
+  // switches to English for an English UI and would never match.
+  const weekday = dayInfo(dayNum).label;
+  const blocks = (recurringActivities || [])
+    .filter((a) => a.day === weekday)
+    .map((a) => {
+      // QuickAddSheet stores each activity's time as a "HH:MM" string (a
+      // plain <input type="time"> value), not minutes — convert it here.
+      const start = timeStrToMinutes(a.start);
+      return { start, end: start + a.dur, label: a.name };
+    })
+    .sort((a, b) => a.start - b.start);
+  return {
+    wakeMinutes: timeStrToMinutes(wake || '6:30'),
+    bedtimeMinutes: timeStrToMinutes(bedtime || '22:30'),
+    blocks,
+  };
+}
+
+// Pushes a candidate start time past any blocked window it would overlap,
+// re-checking afterward since the new position might land inside another
+// one — the generic replacement for the old single hardcoded tennis check.
+function skipBlockedWindows(start, dur, blocks) {
+  let cur = start;
+  let moved = true;
+  while (moved) {
+    moved = false;
+    for (const b of blocks || []) {
+      if (cur < b.end && cur + dur > b.start) {
+        cur = b.end;
+        moved = true;
+      }
+    }
+  }
+  return cur;
+}
+
+export function buildSchedule({ taskDefs, tasks, taskState, energy, pref, durOverride, startOverride, constraints }) {
+  const c = constraints || dayConstraints();
   const brk = (pref === 'Więcej krótkich przerw' || energy === 'Niska') ? 15 : 10;
   const sched = {};
-  let cur = 930;
+  let cur = c.wakeMinutes;
   const ids = activeIds(taskDefs, tasks, taskState);
   ids.forEach((id, i) => {
     const d = taskDefs.find((t) => t.id === id);
     const dur = (durOverride && durOverride[id]) || lightenForEnergy(d.dur, energy);
     if (i > 0) cur += brk;
-    if (cur < 1140 && cur + dur > 1080) cur = 1170;
+    cur = skipBlockedWindows(cur, dur, c.blocks);
     const ov = startOverride ? startOverride[id] : null;
     const start = ov == null ? cur : ov;
     sched[id] = { start, dur };
@@ -91,7 +145,8 @@ export function buildSchedule({ taskDefs, tasks, taskState, energy, pref, durOve
 // proposes something invalid: fits as many tasks as possible (highest
 // priority first) into the time actually available, shortening down to a
 // 15-minute floor before giving up on a task and marking it 'moved'.
-export function buildRescueSchedule({ taskDefs, tasks, taskState, energy, durOverride, availableMinutes }) {
+export function buildRescueSchedule({ taskDefs, tasks, taskState, energy, durOverride, availableMinutes, constraints }) {
+  const c = constraints || dayConstraints();
   const ids = activeIds(taskDefs, tasks, taskState);
   const ordered = [...ids].sort((a, b) => {
     const rank = (id) => {
@@ -103,7 +158,7 @@ export function buildRescueSchedule({ taskDefs, tasks, taskState, energy, durOve
   const brk = energy === 'Niska' ? 15 : 10;
   const schedule = {};
   const decisions = {};
-  let cur = 930;
+  let cur = c.wakeMinutes;
   let remaining = availableMinutes;
   let placed = 0;
   ordered.forEach((id) => {
@@ -111,8 +166,8 @@ export function buildRescueSchedule({ taskDefs, tasks, taskState, energy, durOve
     if (remaining < 15) { decisions[id] = 'moved'; return; }
     const dur = Math.min(original, remaining);
     if (placed > 0) cur += brk;
-    if (cur < 1140 && cur + dur > 1080) cur = 1170;
-    if (cur + dur > 1350) { decisions[id] = 'moved'; return; }
+    cur = skipBlockedWindows(cur, dur, c.blocks);
+    if (cur + dur > c.bedtimeMinutes) { decisions[id] = 'moved'; return; }
     schedule[id] = { start: cur, dur };
     decisions[id] = dur < original ? 'shortened' : 'kept';
     cur += dur;
@@ -124,31 +179,30 @@ export function buildRescueSchedule({ taskDefs, tasks, taskState, energy, durOve
 
 const TIMELINE_TEXT = {
   pl: {
-    school: 'Szkoła', fixedEvent: 'Stałe wydarzenie', tennis: 'Tenis', sleep: 'Sen', fixedTime: 'Stała godzina',
+    fixedEvent: 'Zajęcia', sleep: 'Sen', fixedTime: 'Stała godzina',
     gap: 'Przerwa', restMin: (n) => n + ' min odpoczynku',
-    bufferTitle: 'Bufor przed treningiem', bufferSub: 'Przygotowanie i dotarcie na tenis.',
-    dinnerTitle: 'Kolacja i odpoczynek', rest: 'Odpoczynek',
-    lunchTitle: 'Powrót i obiad',
+    bufferTitle: 'Bufor przed zajęciami', bufferSub: 'Przygotowanie i dotarcie na miejsce.',
+    afterActivityTitle: 'Po zajęciach', rest: 'Odpoczynek',
     eveningTitle: 'Wolny wieczór', freeTime: 'Czas wolny',
   },
   en: {
-    school: 'School', fixedEvent: 'Fixed event', tennis: 'Tennis', sleep: 'Sleep', fixedTime: 'Fixed time',
+    fixedEvent: 'Activity', sleep: 'Sleep', fixedTime: 'Fixed time',
     gap: 'Break', restMin: (n) => n + ' min rest',
-    bufferTitle: 'Buffer before training', bufferSub: 'Getting ready and traveling to tennis.',
-    dinnerTitle: 'Dinner and rest', rest: 'Rest',
-    lunchTitle: 'Back home and lunch',
+    bufferTitle: 'Buffer before activity', bufferSub: 'Getting ready and traveling there.',
+    afterActivityTitle: 'After activity', rest: 'Rest',
     eveningTitle: 'Free evening', freeTime: 'Free time',
   },
 };
 
-// Fixed calendar events for the demo day: school, tennis, sleep.
-export function timeline(schedule) {
+// Calendar events for the day: the student's own recurring activities (if
+// any land today) plus their real bedtime — no invented school/tennis block.
+export function timeline(schedule, constraints) {
+  const c = constraints || dayConstraints();
   const sched = schedule || {};
   const tx = TIMELINE_TEXT[getCurrentLang() === 'en' ? 'en' : 'pl'];
-  const items = [{ k: 'fixed', kind: 'school', start: 480, end: 880, title: tx.school, sub: tx.fixedEvent }];
+  const items = (c.blocks || []).map((b) => ({ k: 'fixed', kind: 'activity', start: b.start, end: b.end, title: b.label, sub: tx.fixedEvent }));
   Object.keys(sched).forEach((id) => items.push({ k: 'study', id, start: sched[id].start, end: sched[id].start + sched[id].dur }));
-  items.push({ k: 'fixed', kind: 'tennis', start: 1080, end: 1140, title: tx.tennis, sub: tx.fixedEvent });
-  items.push({ k: 'sleep', kind: 'sleep', start: 1350, end: 1350, title: tx.sleep, sub: tx.fixedTime });
+  items.push({ k: 'sleep', kind: 'sleep', start: c.bedtimeMinutes, end: c.bedtimeMinutes, title: tx.sleep, sub: tx.fixedTime });
   items.sort((a, b) => a.start - b.start);
   const out = [];
   for (let i = 0; i < items.length; i++) {
@@ -158,8 +212,7 @@ export function timeline(schedule) {
       let title = tx.gap;
       let sub = tx.restMin(it.start - prev.end);
       if (it.k === 'fixed') { title = tx.bufferTitle; sub = tx.bufferSub; }
-      else if (prev.k === 'fixed' && prev.kind === 'tennis') { title = tx.dinnerTitle; sub = tx.rest; }
-      else if (prev.k === 'fixed' && prev.kind === 'school') { title = tx.lunchTitle; sub = tx.rest; }
+      else if (prev.k === 'fixed') { title = tx.afterActivityTitle; sub = tx.rest; }
       else if (it.k === 'sleep') { title = tx.eveningTitle; sub = tx.freeTime; }
       out.push({ k: 'gap', start: prev.end, end: it.start, title, sub });
     }
@@ -344,11 +397,13 @@ export function weeklyReview(studyHistory) {
 // Returns null when the proposed time is fine, or {key, vars} for the
 // translated conflict message shown in BlockEditSheet — not a prebuilt
 // string, since this is plain logic with no access to the UI's language.
-export function checkBlockConflict(id, start, dur, schedule, def) {
+export function checkBlockConflict(id, start, dur, schedule, def, constraints) {
+  const c = constraints || dayConstraints();
   const end = start + dur;
-  if (start < 880) return { key: 'block.conflictSchool' };
-  if (start < 1140 && end > 1080) return { key: 'block.conflictTennis' };
-  if (end > 1350) return { key: 'block.conflictSleep' };
+  if (start < c.wakeMinutes) return { key: 'block.conflictWake', vars: { time: fmt(c.wakeMinutes) } };
+  const hitBlock = (c.blocks || []).find((b) => start < b.end && end > b.start);
+  if (hitBlock) return { key: 'block.conflictActivity', vars: { name: hitBlock.label } };
+  if (end > c.bedtimeMinutes) return { key: 'block.conflictSleep', vars: { time: fmt(c.bedtimeMinutes) } };
   const sched = schedule || {};
   const clash = Object.keys(sched).filter((k) => k !== id && start < sched[k].start + sched[k].dur && end > sched[k].start);
   if (clash.length) return { key: 'block.conflictOther', vars: { subject: def(clash[0]).subject } };

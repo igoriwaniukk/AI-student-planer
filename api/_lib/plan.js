@@ -28,16 +28,23 @@ export const PLAN_TOOL = {
   },
 };
 
+function fmt(totalMinutes) {
+  const h = Math.floor(totalMinutes / 60) % 24;
+  const m = totalMinutes % 60;
+  return (h < 10 ? '0' + h : h) + ':' + (m < 10 ? '0' + m : m);
+}
+
 function buildPlanSystemPrompt(lang) {
   const respondIn = lang === 'en' ? 'Respond in English.' : 'Odpowiadaj po polsku.';
   return [
-    'Jesteś asystentem planującym dzień nauki ucznia. Na podstawie listy zadań, poziomu energii i preferencji ' +
-      'ucznia, ułóż sensowną kolejność i godziny startu dzisiejszych sesji nauki, wywołując narzędzie propose_schedule.',
+    'Jesteś asystentem planującym dzień nauki ucznia. Na podstawie listy zadań, poziomu energii, preferencji ' +
+      'ucznia oraz podanych w wiadomości użytkownika ograniczeń czasowych, ułóż sensowną kolejność i godziny startu ' +
+      'dzisiejszych sesji nauki, wywołując narzędzie propose_schedule.',
     respondIn,
     'Twarde ograniczenia, których NIE WOLNO złamać:',
-    '- Szkoła trwa do 14:40 (880 min od północy) — żadna sesja nie może zaczynać się wcześniej niż o 15:30 (930 min).',
-    '- Trening tenisa jest codziennie w godzinach 18:00–19:00 (1080–1140 min) — żadna sesja nie może na niego nachodzić.',
-    '- Uczeń idzie spać o 22:30 (1350 min) — żadna sesja nie może kończyć się później.',
+    '- Żadna sesja nie może zaczynać się przed podaną godziną pobudki ucznia.',
+    '- Żadna sesja nie może kończyć się później niż podana godzina snu ucznia.',
+    '- Żadna sesja nie może nachodzić na żadne ze stałych zajęć ucznia wymienionych w wiadomości.',
     '- Zostaw sensowną przerwę (co najmniej 10–15 minut) między sesjami, więcej przy niskiej energii.',
     '- Nie zmieniaj czasu trwania (durationMinutes) zadań — użyj go dokładnie takiego, jaki podano.',
     'Przy ustalaniu kolejności bierz pod uwagę: priorytet zadania, poziom energii ucznia (przy niskiej energii ' +
@@ -46,13 +53,21 @@ function buildPlanSystemPrompt(lang) {
   ].join('\n');
 }
 
-function buildPlanUserMessage(tasks, energy, pref, activitiesNote, activitiesSelected, prioritySubjects) {
+function buildPlanUserMessage(tasks, energy, pref, activitiesNote, activitiesSelected, prioritySubjects, constraints) {
   const lines = [
     'Zaplanuj dzisiejsze sesje nauki dla poniższych zadań:',
     ...tasks.map((t) => `- taskId: ${t.taskId}, przedmiot: ${t.subject}, tytuł: ${t.title}, czas trwania: ${t.durationMinutes} min, priorytet: ${t.priority}`),
     `Poziom energii ucznia dzisiaj: ${energy}.`,
     `Preferencja ucznia: ${pref}.`,
   ];
+  if (constraints && typeof constraints.wakeMinutes === 'number' && typeof constraints.bedtimeMinutes === 'number') {
+    lines.push(`Pobudka ucznia: ${fmt(constraints.wakeMinutes)} (${constraints.wakeMinutes} min od północy) — żadna sesja nie może zaczynać się wcześniej.`);
+    lines.push(`Pora snu ucznia: ${fmt(constraints.bedtimeMinutes)} (${constraints.bedtimeMinutes} min od północy) — żadna sesja nie może kończyć się później.`);
+    if (constraints.blocks && constraints.blocks.length) {
+      lines.push('Stałe zajęcia ucznia dziś (żadna sesja nie może na nie nachodzić):');
+      constraints.blocks.forEach((b) => lines.push(`- ${b.label}: ${fmt(b.start)}–${fmt(b.end)} (${b.start}–${b.end} min od północy)`));
+    }
+  }
   if (prioritySubjects && prioritySubjects.length) {
     lines.push(`Przedmioty, na których uczniowi szczególnie zależy: ${prioritySubjects.join(', ')}.`);
   }
@@ -65,7 +80,7 @@ function buildPlanUserMessage(tasks, energy, pref, activitiesNote, activitiesSel
   return lines.join('\n');
 }
 
-export async function handlePlanGenerate({ tasks, energy, pref, activitiesNote, activitiesSelected, prioritySubjects, lang }) {
+export async function handlePlanGenerate({ tasks, energy, pref, activitiesNote, activitiesSelected, prioritySubjects, constraints, lang }) {
   if (!anthropic) {
     return { status: 500, body: { error: 'Brak klucza ANTHROPIC_API_KEY na serwerze. Ustaw go w środowisku i uruchom serwer ponownie.' } };
   }
@@ -80,7 +95,7 @@ export async function handlePlanGenerate({ tasks, energy, pref, activitiesNote, 
       system: buildPlanSystemPrompt(lang),
       tools: [PLAN_TOOL],
       tool_choice: { type: 'tool', name: 'propose_schedule' },
-      messages: [{ role: 'user', content: buildPlanUserMessage(tasks, energy, pref, activitiesNote, activitiesSelected, prioritySubjects) }],
+      messages: [{ role: 'user', content: buildPlanUserMessage(tasks, energy, pref, activitiesNote, activitiesSelected, prioritySubjects, constraints) }],
     });
 
     const toolUse = response.content.find((b) => b.type === 'tool_use');
