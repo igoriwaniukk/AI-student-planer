@@ -704,17 +704,6 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
         </BottomSheet>
       )}
 
-      {state.bioDeadlineSaved && (
-        <div style={{ marginTop: 12, padding: 14, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{ width: 32, height: 32, flex: 'none', borderRadius: 10, background: 'rgba(46,230,197,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.2" width="12" height="11" rx="2.4" stroke="#2ee6c5" strokeWidth="1.2" /><path d="M2 6.6h12" stroke="#2ee6c5" strokeWidth="1.2" /></svg></div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.nextUp')}</div>
-            <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 4 }}>{t('home.bioExam', { date: formatMonthDay(REFERENCE_DAY + 11) })}</div>
-            <div style={{ fontSize: 11.5, color: '#8ff0de', marginTop: 2 }}>{state.bioSessionsSaved ? t('home.prepSessionsInPlan') : t('home.noPrepSessions')}</div>
-          </div>
-        </div>
-      )}
-
       <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', margin: '20px 0 10px 2px' }}>{t('home.quickActions')}</div>
       <div onClick={() => planner.go('planner')} style={{ padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
         <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(124,92,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.2" width="12" height="11" rx="2.4" stroke="#a58cff" strokeWidth="1.2" /><path d="M2 6.6h12M5.6 1.8v2.4M10.4 1.8v2.4" stroke="#a58cff" strokeWidth="1.2" strokeLinecap="round" /></svg></div>

@@ -1,5 +1,5 @@
 import { KINDS, SUBJECTS, GOALS, LEVELS, REFERENCE_DAY } from '../lib/plannerData';
-import { weekdayDateLabel, formatMonthDay } from '../lib/plannerLogic';
+import { formatMonthDay, daysUntilFromISODate } from '../lib/plannerLogic';
 import { VALUE_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, Chip, ListRow, ConfirmCard, LabelRequired } from '../components/ui';
 import { useLang } from '../lib/useLang';
@@ -10,12 +10,22 @@ function diffLabel(t, d) {
   return d === 'Łatwy' ? t('dl.diffEasy') : d === 'Trudny' ? t('dl.diffHard') : t('dl.diffMedium');
 }
 
+function daysLabel(t, daysUntil) {
+  if (daysUntil === 0) return t('dl.dueToday');
+  if (daysUntil === 1) return t('cal.tomorrowPill');
+  return t('cal.inDaysPill', { n: daysUntil });
+}
+
+const TODAY_ISO = new Date().toISOString().slice(0, 10);
+
 export default function Deadline({ planner }) {
   const { t } = useLang();
-  const { state, setField, addTopic, removeTopic, deadlineSubmit, goHomeDeadline } = planner;
+  const { state, setField, addTopic, setTopic, removeTopic, deadlineSubmit, goHomeDeadline } = planner;
   const nameEmpty = !state.nameValue.trim();
-  const topicsMissing = state.autoPlan && state.topics.length === 0;
-  const valid = !!state.kind && !!state.subject && !nameEmpty && state.dateValid && !topicsMissing;
+  const topicsMissing = state.autoPlan && (state.topics.length === 0 || state.topics.some((tp) => !tp.trim()));
+  const daysUntil = daysUntilFromISODate(state.examDate);
+  const dateValid = daysUntil != null && daysUntil >= 0;
+  const valid = !!state.kind && !!state.subject && !nameEmpty && dateValid && !topicsMissing;
   const difficultyLabel = diffLabel(t, state.difficulty);
 
   return (
@@ -51,26 +61,33 @@ export default function Deadline({ planner }) {
 
       <LabelRequired label={t('dl.dateLabel')} />
       <div style={{ display: 'flex', gap: 10 }}>
-        <div onClick={() => setField('dateValid', !state.dateValid)} style={{ flex: 2, height: 66, borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid ' + (state.dateValid ? 'rgba(255,255,255,.09)' : 'rgba(245,165,36,.5)'), padding: '0 14px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 4, cursor: 'pointer' }}>
-          <span style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('dl.date')}</span>
-          <span style={{ fontSize: 14, fontWeight: 700, color: state.dateValid ? '#f4f4f7' : '#f5a524' }}>{state.dateValid ? t('dl.dateFuture', { date: weekdayDateLabel(REFERENCE_DAY + 11, { year: true }) }) : t('dl.datePast', { date: weekdayDateLabel(REFERENCE_DAY - 3, { year: true }) })}</span>
-        </div>
-        <div style={{ flex: 1, height: 66, borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', padding: '0 14px', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 4 }}>
-          <span style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('dl.time')}</span>
-          <span style={{ fontSize: 17, fontWeight: 750 }}>09:00</span>
-        </div>
+        <input
+          type="date" value={state.examDate || ''} min={TODAY_ISO}
+          onChange={(e) => setField('examDate', e.target.value)}
+          style={{ flex: 2, height: 54, borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid ' + (state.examDate && !dateValid ? 'rgba(245,165,36,.5)' : 'rgba(255,255,255,.09)'), padding: '0 14px', fontSize: 14, fontWeight: 700, color: '#f4f4f7', fontFamily: 'inherit' }}
+        />
+        <input
+          type="time" value={state.examTime || '09:00'}
+          onChange={(e) => setField('examTime', e.target.value)}
+          style={{ flex: 1, height: 54, borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', padding: '0 14px', fontSize: 14, fontWeight: 700, color: '#f4f4f7', fontFamily: 'inherit' }}
+        />
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 10 }}>
-        <span style={{ fontSize: 11.5, fontWeight: 650, color: state.dateValid ? '#8ff0de' : '#f5a524', padding: '5px 10px', borderRadius: 8, background: state.dateValid ? 'rgba(46,230,197,.13)' : 'rgba(245,165,36,.13)' }}>{state.dateValid ? t('dl.inDays11') : t('dl.datePassed')}</span>
-        {!state.dateValid && <span style={{ fontSize: 12, color: '#f5a524' }}>{t('dl.pickFuture')}</span>}
-      </div>
+      {state.examDate && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 10 }}>
+          <span style={{ fontSize: 11.5, fontWeight: 650, color: dateValid ? '#8ff0de' : '#f5a524', padding: '5px 10px', borderRadius: 8, background: dateValid ? 'rgba(46,230,197,.13)' : 'rgba(245,165,36,.13)' }}>{dateValid ? daysLabel(t, daysUntil) : t('dl.datePassed')}</span>
+          {!dateValid && <span style={{ fontSize: 12, color: '#f5a524' }}>{t('dl.pickFuture')}</span>}
+        </div>
+      )}
 
       <LabelRequired label={t('dl.topicsLabel')} tag={t('dl.recommended')} tagColor="#8ff0de" />
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
         {state.topics.map((topic, i) => (
           <div key={i} style={{ minHeight: 52, borderRadius: 15, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 11.5, fontWeight: 700, color: '#7a7a8a', width: 14 }}>{i + 1}</span>
-            <span style={{ flex: 1, fontSize: 14, fontWeight: 650, lineHeight: 1.35 }}>{topic}</span>
+            <input
+              value={topic} onChange={(e) => setTopic(i, e.target.value)} placeholder={t('dl.topicPlaceholder')}
+              style={{ flex: 1, fontSize: 14, fontWeight: 650, lineHeight: 1.35, background: 'none', border: 'none', color: '#f4f4f7', fontFamily: 'inherit', padding: 0, outline: 'none' }}
+            />
             <span onClick={() => removeTopic(i)} style={{ fontSize: 12.5, fontWeight: 650, color: '#8a8a99', cursor: 'pointer', padding: '4px 6px' }}>{t('dl.remove')}</span>
           </div>
         ))}
@@ -118,8 +135,8 @@ export default function Deadline({ planner }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 14 }}>
           <Row label={t('dl.kind')} value={t(VALUE_KEY[state.kind]) || state.kind} />
           <Row label={t('dl.subject')} value={t(VALUE_KEY[state.subject]) || state.subject} />
-          <Row label={t('dl.deadline')} value={t('dl.deadlineValue', { date: formatMonthDay(REFERENCE_DAY + 11) })} />
-          <Row label={t('dl.left')} value={state.dateValid ? t('dl.inDays11') : t('dl.datePassed')} />
+          <Row label={t('dl.deadline')} value={state.examDate ? t('dl.deadlineValue', { date: formatMonthDay(REFERENCE_DAY + daysUntil), time: state.examTime || '09:00' }) : '—'} />
+          <Row label={t('dl.left')} value={state.examDate ? (dateValid ? daysLabel(t, daysUntil) : t('dl.datePassed')) : '—'} />
           <Row label={t('dl.scope')} value={state.topics.length === 1 ? t('dl.oneTopic') : t('dl.nTopics', { n: state.topics.length })} />
           <Row label={t('dl.difficulty')} value={t('dl.difficultyValue', { level: difficultyLabel })} />
           <Row label={t('dl.knowledge')} value={t('dl.knowledgeValue', { level: state.level })} />
