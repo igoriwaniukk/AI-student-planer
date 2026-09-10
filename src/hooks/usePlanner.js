@@ -31,6 +31,11 @@ function initialState(defaults, activities) {
     activitiesNote: (activities?.note || '').trim(),
     activitiesSelected: activities?.selected || [],
     prioritySubjects: defaults?.prioritySubjects || [],
+    // "When do you study best?" from onboarding — a preference for the AI
+    // plan/rescue requests (see requestAIPlan/requestAIRescue below), not a
+    // hard constraint like bedtime/wake (see dayConstraints in
+    // plannerLogic.js). Previously only reached the chat assistant.
+    studyTime: defaults?.studyTime || 'Wieczorem',
     gcal: false,
     saved: false,
 
@@ -232,6 +237,7 @@ export function usePlanner(defaults, activities, recurringActivities) {
       taskDefs: state.taskDefs, tasks: state.tasks, taskState: state.taskState, durOverride: state.durOverride,
       energy: state.rescueEnergy, availableMinutes, reasons: state.reasons, constraints,
       activitiesNote: state.activitiesNote, activitiesSelected: state.activitiesSelected, prioritySubjects: state.prioritySubjects,
+      studyTime: state.studyTime,
     });
     runGen(RESCUE_LABELS, (result, s) => {
       const fallback = result || buildRescueSchedule({

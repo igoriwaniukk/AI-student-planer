@@ -207,7 +207,7 @@ export default function App() {
 
   const [name, setName] = useStudentName();
   const [profilePhoto, setProfilePhoto] = useProfilePhoto();
-  const [schoolPlan, setSchoolPlan] = useSchoolPlan();
+  const [schoolPlan] = useSchoolPlan();
   const [activities, setActivities] = useActivities();
   const [profileDefaults, setProfileDefaults] = useProfileDefaults();
   const [weeklyCapacity, setWeeklyCapacity] = useWeeklyCapacity();
@@ -249,8 +249,10 @@ export default function App() {
     return (
       <LanguageProvider lang={lang} setLang={setLang}>
         <Onboarding
-          onComplete={({ name: newName, schoolPlan: plan, activities: acts, profile }) => {
-            setSchoolPlan(plan);
+          onComplete={({ name: newName, schoolHours, activities: acts, profile }) => {
+            if (schoolHours && schoolHours.length) {
+              setRecurringActivities((prev) => (prev || []).concat(schoolHours.map((h, i) => ({ ...h, id: Date.now() + i }))));
+            }
             setActivities(acts);
             setProfileDefaults(profile);
             setName(newName);
