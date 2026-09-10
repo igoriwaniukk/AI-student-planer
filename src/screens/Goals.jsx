@@ -23,7 +23,48 @@ function Stepper({ value, onAdjust, step = 15 }) {
   );
 }
 
-function ExamGoalCard({ exam, goal, progressMinutes, atRisk, onGrade, onImportance, onAdjust, onRemove }) {
+// The prep plan's own sessions (see confirmPrep in usePlanner.js) — checking
+// one off is what actually moves the exam's progress bar above, instead of
+// progress being a number nothing in the app could ever move.
+function SessionChecklist({ sessions, onToggle }) {
+  const { t } = useLang();
+  if (!sessions || !sessions.length) return null;
+  const doneCount = sessions.filter((s) => s.done).length;
+  return (
+    <>
+      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '16px 0 9px' }}>
+        {t('goals.prepSessions', { done: doneCount, total: sessions.length })}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {sessions.map((s, i) => (
+          <div
+            key={i}
+            onClick={() => onToggle(i)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10, padding: '11px 13px', borderRadius: 13, cursor: 'pointer',
+              background: s.done ? 'rgba(53,208,127,.08)' : 'rgba(255,255,255,.035)',
+              border: '1px solid ' + (s.done ? 'rgba(53,208,127,.3)' : 'rgba(255,255,255,.08)'),
+            }}
+          >
+            <div style={{
+              width: 20, height: 20, flex: 'none', borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: s.done ? '#35d07f' : 'rgba(255,255,255,.06)', border: '1.5px solid ' + (s.done ? '#35d07f' : 'rgba(255,255,255,.18)'),
+            }}
+            >
+              {s.done && <svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.8 2.8L9 1.4" stroke="#04241f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 650, textDecoration: s.done ? 'line-through' : 'none', color: s.done ? '#8fe0b8' : '#f4f4f7' }}>{s.title}</div>
+              <div style={{ fontSize: 11, color: '#7a7a8a', marginTop: 2 }}>{s.dateLabel} · {s.time}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  );
+}
+
+function ExamGoalCard({ exam, goal, progressMinutes, atRisk, sessions, onToggleSession, onGrade, onImportance, onAdjust, onRemove }) {
   const { t } = useLang();
   const pct = goal.studyMinutes ? Math.min(100, Math.round((progressMinutes / goal.studyMinutes) * 100)) : 0;
   return (
@@ -48,6 +89,8 @@ function ExamGoalCard({ exam, goal, progressMinutes, atRisk, onGrade, onImportan
           {t('goals.atRisk')}
         </div>
       )}
+
+      <SessionChecklist sessions={sessions} onToggle={onToggleSession} />
 
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '16px 0 9px' }}>{t('goals.howImportantQ')}</div>
       <div style={{ display: 'flex', gap: 8 }}>
@@ -149,7 +192,7 @@ function AddGoalSheet({ onCancel, onSave }) {
 
 export default function Goals({ planner, weeklyCapacity, setWeeklyCapacity }) {
   const { t } = useLang();
-  const { state, go, setExamGrade, setExamImportance, adjustExamStudyMinutes, addCustomExam, removeCustomExam } = planner;
+  const { state, go, setExamGrade, setExamImportance, adjustExamStudyMinutes, addCustomExam, removeCustomExam, toggleExamSession } = planner;
   const [adding, setAdding] = useState(false);
   const exams = upcomingExams(state);
   const DEFAULT_GOAL = { grade: GOALS[2], studyMinutes: 120, importance: 'Średni' };
@@ -197,6 +240,8 @@ export default function Goals({ planner, weeklyCapacity, setWeeklyCapacity }) {
                 goal={goal}
                 progressMinutes={examProgressMinutes(state, exam.id)}
                 atRisk={examAtRisk(state, exam, goal)}
+                sessions={state.examSessions[exam.id]}
+                onToggleSession={(i) => toggleExamSession(exam.id, i)}
                 onGrade={(g) => setExamGrade(exam.id, g)}
                 onImportance={(imp) => setExamImportance(exam.id, imp)}
                 onAdjust={(delta) => adjustExamStudyMinutes(exam.id, delta)}

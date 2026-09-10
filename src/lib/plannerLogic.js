@@ -356,12 +356,15 @@ export function buildPrepDates(count, examDay = REFERENCE_DAY + 11) {
   return dates;
 }
 
-// Actual minutes logged toward an exam so far. Only 'math'/'bio' currently
-// have a real scheduled+completed session tied to the same id; custom exams
-// simply have nothing logged yet.
+// Actual minutes logged toward an exam so far — the sum of every prep
+// session (see confirmPrep in usePlanner.js) the student has actually
+// checked off in state.examSessions, not just a guess. An exam with no
+// prep plan (added straight from Goals, or "save deadline only") simply
+// has nothing to log yet.
 export function examProgressMinutes(state, examId) {
-  const st = state.taskState[examId];
-  return st && st.status === 'completed' ? st.actual : 0;
+  const sessions = state.examSessions?.[examId];
+  if (!sessions) return 0;
+  return sessions.reduce((a, s) => a + (s.done ? s.dur : 0), 0);
 }
 
 // A rough capacity heuristic: a student can't realistically dedicate more

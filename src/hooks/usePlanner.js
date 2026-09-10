@@ -16,7 +16,7 @@ import { requestAIRescue } from '../lib/aiRescue';
 // resume, on reload.
 const DURABLE_KEYS = [
   'taskDefs', 'tasks', 'taskState', 'schedule', 'durOverride', 'startOverride',
-  'customExams', 'examGoals', 'dismissedGoalPrompts', 'planApproved', 'selectedDay', 'sessionReview',
+  'customExams', 'examGoals', 'examSessions', 'dismissedGoalPrompts', 'planApproved', 'selectedDay', 'sessionReview',
 ];
 
 function initialState(defaults, activities, persisted) {
@@ -134,6 +134,7 @@ function initialState(defaults, activities, persisted) {
 
     examGoals: {},
     customExams: [],
+    examSessions: {},
     dismissedGoalPrompts: {},
   };
   if (persisted) {
@@ -162,13 +163,13 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     setPersisted({
       taskDefs: state.taskDefs, tasks: state.tasks, taskState: state.taskState, schedule: state.schedule,
       durOverride: state.durOverride, startOverride: state.startOverride,
-      customExams: state.customExams, examGoals: state.examGoals, dismissedGoalPrompts: state.dismissedGoalPrompts,
+      customExams: state.customExams, examGoals: state.examGoals, examSessions: state.examSessions, dismissedGoalPrompts: state.dismissedGoalPrompts,
       planApproved: state.planApproved, selectedDay: state.selectedDay, sessionReview: state.sessionReview,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     state.taskDefs, state.tasks, state.taskState, state.schedule, state.durOverride, state.startOverride,
-    state.customExams, state.examGoals, state.dismissedGoalPrompts, state.planApproved, state.selectedDay, state.sessionReview,
+    state.customExams, state.examGoals, state.examSessions, state.dismissedGoalPrompts, state.planApproved, state.selectedDay, state.sessionReview,
   ]);
 
   // Derived fresh every render (not copied into state) from the student's
@@ -589,11 +590,24 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     });
     update({ onlyDeadlineAsk: false, screen: 'deadline', deadlineOnlySaved: true });
   }
+  // The prep plan's own sessions become the thing exam progress is tracked
+  // against (see toggleExamSession/examProgressMinutes) — each one carries
+  // whatever date/time/duration the student ended up with after any edits
+  // made via openSession/applySession above, not just the original guess.
   function confirmPrep() {
-    addCustomExam({
-      subject: state.subject, title: state.nameValue.trim(), daysUntil: daysUntilFromISODate(state.examDate),
-      grade: state.goal, importance: 'Średni', studyMinutes: 120,
+    const sessions = state.prepSessions.map((sx, i) => {
+      const edit = state.sessionEdits[i] || {};
+      return {
+        title: sx.title, type: sx.type, dateLabel: edit.date || state.prepDates[i], time: edit.time || sx.time,
+        dur: parseInt(edit.dur || sx.dur, 10), done: false,
+      };
     });
+    const totalMinutes = sessions.reduce((a, s) => a + s.dur, 0);
+    const id = addCustomExam({
+      subject: state.subject, title: state.nameValue.trim(), daysUntil: daysUntilFromISODate(state.examDate),
+      grade: state.goal, importance: 'Średni', studyMinutes: totalMinutes || 120,
+    });
+    update((s) => ({ examSessions: { ...s.examSessions, [id]: sessions } }));
     update({ prepSaved: true });
   }
 
@@ -676,7 +690,19 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     update((s) => {
       const examGoals = { ...s.examGoals };
       delete examGoals[id];
-      return { customExams: s.customExams.filter((e) => e.id !== id), examGoals };
+      const examSessions = { ...s.examSessions };
+      delete examSessions[id];
+      return { customExams: s.customExams.filter((e) => e.id !== id), examGoals, examSessions };
+    });
+  }
+  // Toggles one prep session's done state — the only thing driving that
+  // exam's progress % (see examProgressMinutes in plannerLogic.js), so an
+  // exam with 4 confirmed sessions reaches 100% exactly when all 4 are
+  // checked off, not from a separate, disconnected minutes guess.
+  function toggleExamSession(examId, idx) {
+    update((s) => {
+      const list = (s.examSessions[examId] || []).map((sess, i) => (i === idx ? { ...sess, done: !sess.done } : sess));
+      return { examSessions: { ...s.examSessions, [examId]: list } };
     });
   }
   function dismissGoalPrompt(examId) {
@@ -710,7 +736,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     keepEngTomorrow, openEngTime, pickEngTime, cancelEngTime, saveEngTime,
     applyAdaptive, declineAdaptive,
     setExamGrade, setExamImportance, adjustExamStudyMinutes, setExamStudyMinutes,
-    addCustomExam, removeCustomExam, dismissGoalPrompt, answerGoalPrompt, nextGoalPrompt,
+    addCustomExam, removeCustomExam, toggleExamSession, dismissGoalPrompt, answerGoalPrompt, nextGoalPrompt,
     computeActiveIds,
   };
 }
