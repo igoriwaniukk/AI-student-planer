@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ENERGY_OPTIONS, PREF_OPTIONS, STUDY_TIME_OPTIONS, PRIORITY_SUBJECT_OPTIONS } from '../lib/plannerData';
-import { VALUE_KEY } from '../lib/i18n';
+import { ENERGY_OPTIONS, PREF_OPTIONS, STUDY_TIME_OPTIONS, PRIORITY_SUBJECT_OPTIONS, RECUR_DAYS } from '../lib/plannerData';
+import { VALUE_KEY, DAY_KEY } from '../lib/i18n';
+import { timeStrToMinutes } from '../lib/plannerLogic';
 import { useLang } from '../lib/useLang';
 
 const ACTIVITY_OPTIONS = [
@@ -12,17 +13,7 @@ const ACTIVITY_OPTIONS = [
   'Kurs językowy',
 ];
 
-const MAX_STORED_FILE_SIZE = 4_000_000;
 const TOTAL_STEPS = 6;
-
-function readFileAsDataURL(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
 
 function Chip({ label, active, onClick }) {
   return (
@@ -51,31 +42,29 @@ export default function Onboarding({ onComplete }) {
   const { t } = useLang();
   const [step, setStep] = useState(0);
   const [nameDraft, setNameDraft] = useState('');
-  const [planFile, setPlanFile] = useState(null);
-  const [planError, setPlanError] = useState('');
+  // Keyed by day name (see RECUR_DAYS) — present with {start, end} only for
+  // days the student actually has school, so a homeschooled/no-fixed-hours
+  // student can just leave every day off instead of us inventing one.
+  const [schoolDays, setSchoolDays] = useState({});
   const [selectedActivities, setSelectedActivities] = useState([]);
   const [activitiesNote, setActivitiesNote] = useState('');
   const [studyTime, setStudyTime] = useState('Wieczorem');
   const [bedtime, setBedtime] = useState('22:30');
-  const [wake, setWake] = useState('6:30');
+  const [wake, setWake] = useState('06:30');
   const [energy, setEnergy] = useState('Normalna');
   const [pref, setPref] = useState('Wolny wieczór');
   const [prioritySubjects, setPrioritySubjects] = useState([]);
 
-  async function handleFileChange(e) {
-    const file = e.target.files?.[0];
-    setPlanError('');
-    if (!file) {
-      setPlanFile(null);
-      return;
-    }
-    if (file.size > MAX_STORED_FILE_SIZE) {
-      setPlanFile({ name: file.name, type: file.type, size: file.size, dataUrl: null });
-      setPlanError(t('onb.fileSizeWarning'));
-      return;
-    }
-    const dataUrl = await readFileAsDataURL(file);
-    setPlanFile({ name: file.name, type: file.type, size: file.size, dataUrl });
+  function toggleSchoolDay(day) {
+    setSchoolDays((prev) => {
+      const next = { ...prev };
+      if (next[day]) delete next[day];
+      else next[day] = { start: '08:00', end: '15:00' };
+      return next;
+    });
+  }
+  function setSchoolDayTime(day, field, value) {
+    setSchoolDays((prev) => ({ ...prev, [day]: { ...prev[day], [field]: value } }));
   }
 
   function toggleInList(value, list, setList) {
@@ -83,9 +72,18 @@ export default function Onboarding({ onComplete }) {
   }
 
   function finish() {
+    // Turned into the same {day, start, dur} shape as a recurring activity
+    // (see QuickAddSheet.jsx) so school hours block out real schedule time
+    // exactly like any other recurring activity, with no separate concept
+    // in the scheduling engine — a day with end <= start is simply dropped.
+    const schoolLabel = t('onb.step1.schoolActivityName');
+    const schoolHours = Object.entries(schoolDays)
+      .map(([day, { start, end }]) => ({ name: schoolLabel, day, start, dur: timeStrToMinutes(end) - timeStrToMinutes(start) }))
+      .filter((h) => h.dur > 0);
+
     onComplete({
       name: nameDraft.trim(),
-      schoolPlan: planFile,
+      schoolHours,
       activities: { selected: selectedActivities, note: activitiesNote.trim() },
       profile: { studyTime, bedtime, wake, energy, pref, prioritySubjects },
     });
@@ -121,18 +119,26 @@ export default function Onboarding({ onComplete }) {
           <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 8 }}>
             {t('onb.step1.desc')}
           </div>
-          <div className="card" style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-            <input type="file" accept="image/*,.pdf" onChange={handleFileChange} />
-            {planFile && (
-              <div style={{ fontSize: 12, color: '#a58cff' }}>📎 {planFile.name}</div>
-            )}
-            {planError && (
-              <div style={{ fontSize: 11.5, color: '#ff8a5c' }}>{planError}</div>
-            )}
+          <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {RECUR_DAYS.map((day) => {
+              const on = !!schoolDays[day];
+              return (
+                <div key={day} className="card" style={{ padding: 12, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <Chip label={t(DAY_KEY[day]) || day} active={on} onClick={() => toggleSchoolDay(day)} />
+                  {on && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 160 }}>
+                      <input type="time" value={schoolDays[day].start} onChange={(e) => setSchoolDayTime(day, 'start', e.target.value)} style={{ flex: 1 }} />
+                      <span style={{ color: '#8a8a99' }}>–</span>
+                      <input type="time" value={schoolDays[day].end} onChange={(e) => setSchoolDayTime(day, 'end', e.target.value)} style={{ flex: 1 }} />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
             <button type="button" className="btn btn-primary" onClick={() => setStep(2)}>
-              {planFile ? t('onb.next') : t('onb.skip')}
+              {Object.keys(schoolDays).length ? t('onb.next') : t('onb.skip')}
             </button>
           </div>
         </>

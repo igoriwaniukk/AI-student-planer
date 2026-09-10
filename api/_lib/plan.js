@@ -53,13 +53,16 @@ function buildPlanSystemPrompt(lang) {
   ].join('\n');
 }
 
-function buildPlanUserMessage(tasks, energy, pref, activitiesNote, activitiesSelected, prioritySubjects, constraints) {
+function buildPlanUserMessage(tasks, energy, pref, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints) {
   const lines = [
     'Zaplanuj dzisiejsze sesje nauki dla poniższych zadań:',
     ...tasks.map((t) => `- taskId: ${t.taskId}, przedmiot: ${t.subject}, tytuł: ${t.title}, czas trwania: ${t.durationMinutes} min, priorytet: ${t.priority}`),
     `Poziom energii ucznia dzisiaj: ${energy}.`,
     `Preferencja ucznia: ${pref}.`,
   ];
+  if (studyTime) {
+    lines.push(`Pora dnia, o której uczniowi najlepiej się uczy: ${studyTime} — jeśli to możliwe przy zachowaniu ograniczeń, faworyzuj tę porę.`);
+  }
   if (constraints && typeof constraints.wakeMinutes === 'number' && typeof constraints.bedtimeMinutes === 'number') {
     lines.push(`Pobudka ucznia: ${fmt(constraints.wakeMinutes)} (${constraints.wakeMinutes} min od północy) — żadna sesja nie może zaczynać się wcześniej.`);
     lines.push(`Pora snu ucznia: ${fmt(constraints.bedtimeMinutes)} (${constraints.bedtimeMinutes} min od północy) — żadna sesja nie może kończyć się później.`);
@@ -80,7 +83,7 @@ function buildPlanUserMessage(tasks, energy, pref, activitiesNote, activitiesSel
   return lines.join('\n');
 }
 
-export async function handlePlanGenerate({ tasks, energy, pref, activitiesNote, activitiesSelected, prioritySubjects, constraints, lang }) {
+export async function handlePlanGenerate({ tasks, energy, pref, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints, lang }) {
   if (!anthropic) {
     return { status: 500, body: { error: 'Brak klucza ANTHROPIC_API_KEY na serwerze. Ustaw go w środowisku i uruchom serwer ponownie.' } };
   }
@@ -95,7 +98,7 @@ export async function handlePlanGenerate({ tasks, energy, pref, activitiesNote, 
       system: buildPlanSystemPrompt(lang),
       tools: [PLAN_TOOL],
       tool_choice: { type: 'tool', name: 'propose_schedule' },
-      messages: [{ role: 'user', content: buildPlanUserMessage(tasks, energy, pref, activitiesNote, activitiesSelected, prioritySubjects, constraints) }],
+      messages: [{ role: 'user', content: buildPlanUserMessage(tasks, energy, pref, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints) }],
     });
 
     const toolUse = response.content.find((b) => b.type === 'tool_use');

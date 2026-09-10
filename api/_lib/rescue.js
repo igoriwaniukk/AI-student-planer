@@ -58,13 +58,16 @@ function buildRescueSystemPrompt(lang) {
   ].join('\n');
 }
 
-function buildRescueUserMessage(tasks, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, constraints) {
+function buildRescueUserMessage(tasks, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints) {
   const lines = [
     `Uczniowi zostało dziś tylko ${availableMinutes} minut na naukę (availableMinutes = ${availableMinutes}). Oto zadania do rozdysponowania:`,
     ...tasks.map((t) => `- taskId: ${t.taskId}, przedmiot: ${t.subject}, tytuł: ${t.title}, oryginalny czas trwania: ${t.durationMinutes} min, priorytet: ${t.priority}`),
     `Poziom energii ucznia teraz: ${energy}.`,
     `Powody, dla których dzień się nie ułożył: ${(reasons && reasons.length ? reasons : ['nieznany']).join(', ')}.`,
   ];
+  if (studyTime) {
+    lines.push(`Pora dnia, o której uczniowi najlepiej się uczy: ${studyTime} — jeśli to możliwe przy zachowaniu ograniczeń, faworyzuj tę porę.`);
+  }
   if (constraints && typeof constraints.wakeMinutes === 'number' && typeof constraints.bedtimeMinutes === 'number') {
     lines.push(`Pobudka ucznia: ${fmt(constraints.wakeMinutes)} (${constraints.wakeMinutes} min od północy) — żadna sesja nie może zaczynać się wcześniej.`);
     lines.push(`Pora snu ucznia: ${fmt(constraints.bedtimeMinutes)} (${constraints.bedtimeMinutes} min od północy) — żadna sesja nie może kończyć się później.`);
@@ -85,7 +88,7 @@ function buildRescueUserMessage(tasks, energy, availableMinutes, reasons, activi
   return lines.join('\n');
 }
 
-export async function handlePlanRescue({ tasks, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, constraints, lang }) {
+export async function handlePlanRescue({ tasks, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints, lang }) {
   if (!anthropic) {
     return { status: 500, body: { error: 'Brak klucza ANTHROPIC_API_KEY na serwerze. Ustaw go w środowisku i uruchom serwer ponownie.' } };
   }
@@ -103,7 +106,7 @@ export async function handlePlanRescue({ tasks, energy, availableMinutes, reason
       system: buildRescueSystemPrompt(lang),
       tools: [RESCUE_TOOL],
       tool_choice: { type: 'tool', name: 'propose_rescue' },
-      messages: [{ role: 'user', content: buildRescueUserMessage(tasks, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, constraints) }],
+      messages: [{ role: 'user', content: buildRescueUserMessage(tasks, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints) }],
     });
 
     const toolUse = response.content.find((b) => b.type === 'tool_use');

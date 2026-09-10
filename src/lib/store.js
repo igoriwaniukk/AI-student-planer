@@ -65,7 +65,7 @@ export function useProfileDefaults() {
   return useLocalStorage(KEYS.profileDefaults, {
     studyTime: 'Wieczorem',
     bedtime: '22:30',
-    wake: '6:30',
+    wake: '06:30',
     energy: 'Normalna',
     pref: 'Wolny wieczór',
     prioritySubjects: [],

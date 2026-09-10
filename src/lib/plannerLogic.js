@@ -98,7 +98,7 @@ export function dayConstraints({ wake, bedtime, recurringActivities, dayNum = RE
     })
     .sort((a, b) => a.start - b.start);
   return {
-    wakeMinutes: timeStrToMinutes(wake || '6:30'),
+    wakeMinutes: timeStrToMinutes(wake || '06:30'),
     bedtimeMinutes: timeStrToMinutes(bedtime || '22:30'),
     blocks,
   };
