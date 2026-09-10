@@ -16,7 +16,7 @@ import Prep from './screens/Prep';
 import Summary from './screens/Summary';
 import Profile from './screens/Profile';
 import Onboarding from './screens/Onboarding';
-import Auth from './screens/Auth';
+import Auth, { NewPasswordScreen } from './screens/Auth';
 import {
   useStudentName, useProfilePhoto, useSchoolPlan, useActivities, useProfileDefaults,
   useWeeklyCapacity, useEnergyLog, useStudyHistory, useRecurringActivities, useLanguage,
@@ -202,7 +202,10 @@ function Splash() {
 }
 
 export default function App() {
-  const { session, loading: authLoading, signUp, signIn, signInWithGoogle, signInWithApple, signOut } = useAuth();
+  const {
+    session, loading: authLoading, signUp, signIn, signInWithGoogle, signInWithApple, signOut,
+    passwordRecovery, clearPasswordRecovery, resetPassword, updatePassword,
+  } = useAuth();
   const { ready: syncReady, syncError } = useCloudSync(session);
 
   const [name, setName] = useStudentName();
@@ -235,10 +238,21 @@ export default function App() {
 
   if (isSupabaseConfigured && authLoading) return <Splash />;
 
+  if (isSupabaseConfigured && passwordRecovery) {
+    return (
+      <LanguageProvider lang={lang} setLang={setLang}>
+        <NewPasswordScreen
+          updatePassword={updatePassword}
+          onDone={async () => { await signOut(); clearPasswordRecovery(); }}
+        />
+      </LanguageProvider>
+    );
+  }
+
   if (isSupabaseConfigured && !session) {
     return (
       <LanguageProvider lang={lang} setLang={setLang}>
-        <Auth signUp={signUp} signIn={signIn} signInWithGoogle={signInWithGoogle} signInWithApple={signInWithApple} />
+        <Auth signUp={signUp} signIn={signIn} signInWithGoogle={signInWithGoogle} signInWithApple={signInWithApple} resetPassword={resetPassword} />
       </LanguageProvider>
     );
   }

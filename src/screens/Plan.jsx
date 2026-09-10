@@ -8,7 +8,7 @@ import DayTimeline from '../components/DayTimeline';
 
 export default function Plan({ planner }) {
   const { t } = useLang();
-  const { state, update, toggleManualMode, regenerateOrCancel, confirmPlan, goHomeSaved, go } = planner;
+  const { state, toggleManualMode, regenerateOrCancel, confirmPlan, goHomeSaved, go } = planner;
   const sched = state.schedule || {};
   const schedIds = Object.keys(sched);
   const nBlocks = schedIds.length;
@@ -51,16 +51,6 @@ export default function Plan({ planner }) {
         </div>
       </div>
 
-      <div onClick={() => update((s) => ({ gcal: !s.gcal }))} style={{ marginTop: 14, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', gap: 13, cursor: 'pointer' }}>
-        <div style={{ width: 44, height: 26, flex: 'none', borderRadius: 99, padding: 3, display: 'flex', alignItems: 'center', background: state.gcal ? '#7c5cff' : 'rgba(255,255,255,.14)', justifyContent: state.gcal ? 'flex-end' : 'flex-start' }}>
-          <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff' }} />
-        </div>
-        <div>
-          <div style={{ fontSize: 13.5, fontWeight: 700 }}>{t('plan.addToCalendar')}</div>
-          <div style={{ fontSize: 11.5, lineHeight: 1.45, color: '#7a7a8a', marginTop: 4 }}>{t('plan.addToCalendarDesc', { blocks: blockWord.toLowerCase() })}</div>
-        </div>
-      </div>
-
       <div style={{ display: 'flex', gap: 11, marginTop: 14 }}>
         <div onClick={toggleManualMode} style={{ flex: 1, height: 48, borderRadius: 15, background: state.manualMode ? 'rgba(124,92,255,.22)' : 'rgba(255,255,255,.055)', border: '1px solid ' + (state.manualMode ? 'rgba(124,92,255,.5)' : 'rgba(255,255,255,.1)'), display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13.5, fontWeight: 650, cursor: 'pointer' }}>{state.manualMode ? t('plan.saveChanges') : t('plan.editManually')}</div>
         <div onClick={regenerateOrCancel} style={{ flex: 1, height: 48, borderRadius: 15, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13.5, fontWeight: 650, cursor: 'pointer' }}>{state.manualMode ? t('plan.cancel') : t('plan.regenerate')}</div>
@@ -76,7 +66,6 @@ export default function Plan({ planner }) {
       {state.saved && (
         <ConfirmCard
           title={t('plan.savedTitle', { weekday: weekdayOn(REFERENCE_DAY) })}
-          sub={state.gcal ? t('plan.savedGcal', { n: schedIds.length }) : null}
           onDone={goHomeSaved}
           buttonLabel={t('plan.goToPlan')}
         />
