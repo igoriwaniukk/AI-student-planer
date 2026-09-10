@@ -46,17 +46,26 @@ function buildPlanSystemPrompt(lang) {
   ].join('\n');
 }
 
-function buildPlanUserMessage(tasks, energy, pref) {
+function buildPlanUserMessage(tasks, energy, pref, activitiesNote, activitiesSelected, prioritySubjects) {
   const lines = [
     'Zaplanuj dzisiejsze sesje nauki dla poniższych zadań:',
     ...tasks.map((t) => `- taskId: ${t.taskId}, przedmiot: ${t.subject}, tytuł: ${t.title}, czas trwania: ${t.durationMinutes} min, priorytet: ${t.priority}`),
     `Poziom energii ucznia dzisiaj: ${energy}.`,
     `Preferencja ucznia: ${pref}.`,
   ];
+  if (prioritySubjects && prioritySubjects.length) {
+    lines.push(`Przedmioty, na których uczniowi szczególnie zależy: ${prioritySubjects.join(', ')}.`);
+  }
+  if (activitiesSelected && activitiesSelected.length) {
+    lines.push(`Zajęcia pozalekcyjne ucznia (bez podanych godzin): ${activitiesSelected.join(', ')}.`);
+  }
+  if (activitiesNote) {
+    lines.push(`Dodatkowy kontekst podany przez ucznia (weź go pod uwagę, jeśli jest istotny): ${activitiesNote}`);
+  }
   return lines.join('\n');
 }
 
-export async function handlePlanGenerate({ tasks, energy, pref, lang }) {
+export async function handlePlanGenerate({ tasks, energy, pref, activitiesNote, activitiesSelected, prioritySubjects, lang }) {
   if (!anthropic) {
     return { status: 500, body: { error: 'Brak klucza ANTHROPIC_API_KEY na serwerze. Ustaw go w środowisku i uruchom serwer ponownie.' } };
   }
@@ -71,7 +80,7 @@ export async function handlePlanGenerate({ tasks, energy, pref, lang }) {
       system: buildPlanSystemPrompt(lang),
       tools: [PLAN_TOOL],
       tool_choice: { type: 'tool', name: 'propose_schedule' },
-      messages: [{ role: 'user', content: buildPlanUserMessage(tasks, energy, pref) }],
+      messages: [{ role: 'user', content: buildPlanUserMessage(tasks, energy, pref, activitiesNote, activitiesSelected, prioritySubjects) }],
     });
 
     const toolUse = response.content.find((b) => b.type === 'tool_use');

@@ -25,7 +25,7 @@ export function toValidatedSchedule(blocks, ids, taskDefs, durOverride) {
 // manual edits. Returns null (never throws) whenever the AI is unavailable,
 // unreachable, or proposes something invalid — callers use that as the
 // signal to fall back to the deterministic scheduler.
-export async function requestAIPlan({ taskDefs, tasks, taskState, energy, pref, durOverride }) {
+export async function requestAIPlan({ taskDefs, tasks, taskState, energy, pref, durOverride, activitiesNote, activitiesSelected, prioritySubjects }) {
   const ids = activeIds(taskDefs, tasks, taskState);
   if (!ids.length) return null;
   const items = ids.map((id) => {
@@ -37,7 +37,7 @@ export async function requestAIPlan({ taskDefs, tasks, taskState, energy, pref, 
     const res = await authedFetch('/api/plan/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tasks: items, energy, pref, lang: getCurrentLang() }),
+      body: JSON.stringify({ tasks: items, energy, pref, activitiesNote, activitiesSelected, prioritySubjects, lang: getCurrentLang() }),
     });
     if (!res.ok) return null;
     const data = await res.json();

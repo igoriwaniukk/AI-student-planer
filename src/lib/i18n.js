@@ -406,10 +406,9 @@ export const dict = {
     'home.bioExam': 'Biologia — sprawdzian, {date}',
     'home.prepSessionsInPlan': '6 sesji przygotowania w planie',
     'home.noPrepSessions': 'Bez sesji przygotowania',
-    'home.mathPrepGoal': 'Matematyka — przygotowanie do sprawdzianu',
-    'home.blocksdone': '3 z 5 bloków wykonane',
+    'home.examPrepGoal': '{subject} — przygotowanie do sprawdzianu',
     'home.todayProgressBadge': '{pct}% dzisiaj ({done}/{total})',
-    'home.weekGoalBadge': 'Matematyka {pct}%',
+    'home.weekGoalBadge': '{subject} {pct}%',
     'home.seeInProfile': 'Zobacz w profilu',
     'home.dateLong': '{day}, {date}',
     'home.noPlanForDay': 'Nie masz jeszcze planu na ten dzień.',
@@ -1404,10 +1403,9 @@ export const dict = {
     'home.bioExam': 'Biology — exam, {date}',
     'home.prepSessionsInPlan': '6 prep sessions in the plan',
     'home.noPrepSessions': 'No prep sessions',
-    'home.mathPrepGoal': 'Math — exam prep',
-    'home.blocksdone': '3 of 5 blocks done',
+    'home.examPrepGoal': '{subject} — exam prep',
     'home.todayProgressBadge': '{pct}% today ({done}/{total})',
-    'home.weekGoalBadge': 'Math {pct}%',
+    'home.weekGoalBadge': '{subject} {pct}%',
     'home.seeInProfile': 'See in profile',
     'home.dateLong': '{day}, {date}',
     'home.noPlanForDay': "You don't have a plan for this day yet.",
@@ -1454,9 +1452,9 @@ export const VALUE_KEY = {
   'Sport / treningi': 'val.actSport', Praca: 'val.actWork', 'Kurs językowy': 'val.actLanguageCourse',
 };
 
-// Per-task narrative text (see plannerData.js's TASK_DEFS) — the demo's
-// fixed subject/title/deadline/why content isn't a small enum like the
-// values above, so it's keyed by task id + field instead.
+// Per-task narrative text for the old fixed demo tasks (id 'math'/'bio'/
+// 'eng') — real, user-created tasks never have these ids, so lookups here
+// simply miss and callers fall back to the task's own stored text instead.
 export const TASK_TEXT_KEY = {
   math: { title: 'task.math.title', short: 'task.math.short', deadline: 'task.math.deadline', why: 'task.math.why' },
   bio: { title: 'task.bio.title', short: 'task.bio.short', why: 'task.bio.why' },
