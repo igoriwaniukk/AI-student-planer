@@ -18,7 +18,7 @@ function GoogleIcon() {
 // picks the resulting session up automatically (see useAuth.js), nothing
 // else to do here beyond starting that redirect and surfacing an error if
 // it couldn't even begin (e.g. the provider isn't enabled yet in Supabase).
-export default function Auth({ signUp, signIn, signInWithGoogle, signInWithApple }) {
+export default function Auth({ signUp, signIn, signInWithGoogle, signInWithApple, resetPassword }) {
   const { t } = useLang();
   const [mode, setMode] = useState('signIn');
   const [email, setEmail] = useState('');
@@ -27,11 +27,24 @@ export default function Auth({ signUp, signIn, signInWithGoogle, signInWithApple
   const [info, setInfo] = useState('');
   const [busy, setBusy] = useState(false);
 
+  function switchMode(next) {
+    setMode(next);
+    setError('');
+    setInfo('');
+  }
+
   async function submit(e) {
     e.preventDefault();
     setError('');
     setInfo('');
     setBusy(true);
+    if (mode === 'forgot') {
+      const { error: err } = await resetPassword(email);
+      setBusy(false);
+      if (err) { setError(err.message); return; }
+      setInfo(t('auth.resetLinkSent'));
+      return;
+    }
     const { error: err } = mode === 'signIn' ? await signIn(email, password) : await signUp(email, password);
     setBusy(false);
     if (err) {
@@ -54,53 +67,117 @@ export default function Auth({ signUp, signIn, signInWithGoogle, signInWithApple
 
   return (
     <div className="app-shell sc" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowY: 'auto', padding: '24px 20px' }}>
-      <div style={{ fontSize: 26, fontWeight: 750 }}>{mode === 'signIn' ? t('auth.signInTitle') : t('auth.signUpTitle')}</div>
-      <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 8 }}>{t('auth.subtitle')}</div>
-
-      <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <button
-          type="button" className="btn" disabled={busy} onClick={() => oauth(signInWithGoogle)}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
-        >
-          <GoogleIcon /> {t('auth.continueWithGoogle')}
-        </button>
-        <button
-          type="button" className="btn" disabled={busy} onClick={() => oauth(signInWithApple)}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 14.5 }}
-        >
-           {t('auth.continueWithApple')}
-        </button>
+      <div style={{ fontSize: 26, fontWeight: 750 }}>
+        {mode === 'signIn' ? t('auth.signInTitle') : mode === 'signUp' ? t('auth.signUpTitle') : t('auth.forgotTitle')}
       </div>
+      <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 8 }}>{mode === 'forgot' ? t('auth.forgotSubtitle') : t('auth.subtitle')}</div>
 
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '18px 0' }}>
-        <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.1)' }} />
-        <span style={{ fontSize: 11.5, color: '#6f6f7d' }}>{t('auth.or')}</span>
-        <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.1)' }} />
-      </div>
+      {mode !== 'forgot' && (
+        <>
+          <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <button
+              type="button" className="btn" disabled={busy} onClick={() => oauth(signInWithGoogle)}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
+            >
+              <GoogleIcon /> {t('auth.continueWithGoogle')}
+            </button>
+            <button
+              type="button" className="btn" disabled={busy} onClick={() => oauth(signInWithApple)}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 14.5 }}
+            >
+               {t('auth.continueWithApple')}
+            </button>
+          </div>
 
-      <form style={{ display: 'flex', flexDirection: 'column', gap: 12 }} onSubmit={submit}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '18px 0' }}>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.1)' }} />
+            <span style={{ fontSize: 11.5, color: '#6f6f7d' }}>{t('auth.or')}</span>
+            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,.1)' }} />
+          </div>
+        </>
+      )}
+
+      <form style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: mode === 'forgot' ? 20 : 0 }} onSubmit={submit}>
         <input
           type="email" value={email} onChange={(e) => setEmail(e.target.value)}
           placeholder={t('auth.emailPlaceholder')} autoComplete="email" required autoFocus
         />
-        <input
-          type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-          placeholder={t('auth.passwordPlaceholder')} autoComplete={mode === 'signIn' ? 'current-password' : 'new-password'}
-          minLength={6} required
-        />
+        {mode !== 'forgot' && (
+          <input
+            type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+            placeholder={t('auth.passwordPlaceholder')} autoComplete={mode === 'signIn' ? 'current-password' : 'new-password'}
+            minLength={6} required
+          />
+        )}
+        {mode === 'signIn' && (
+          <div onClick={() => switchMode('forgot')} style={{ textAlign: 'right', fontSize: 12.5, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>
+            {t('auth.forgotPassword')}
+          </div>
+        )}
         {error && <div style={{ fontSize: 12.5, color: '#ff8a5c', lineHeight: 1.4 }}>{error}</div>}
         {info && <div style={{ fontSize: 12.5, color: '#5fdd9b', lineHeight: 1.4 }}>{info}</div>}
         <button type="submit" className="btn btn-primary" disabled={busy}>
-          {busy ? t('auth.working') : mode === 'signIn' ? t('auth.signIn') : t('auth.signUp')}
+          {busy ? t('auth.working') : mode === 'signIn' ? t('auth.signIn') : mode === 'signUp' ? t('auth.signUp') : t('auth.sendResetLink')}
         </button>
       </form>
 
-      <div
-        onClick={() => { setMode(mode === 'signIn' ? 'signUp' : 'signIn'); setError(''); setInfo(''); }}
-        style={{ marginTop: 18, textAlign: 'center', fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}
-      >
-        {mode === 'signIn' ? t('auth.needAccount') : t('auth.haveAccount')}
-      </div>
+      {mode === 'forgot' ? (
+        <div onClick={() => switchMode('signIn')} style={{ marginTop: 18, textAlign: 'center', fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>
+          {t('auth.backToSignIn')}
+        </div>
+      ) : (
+        <div
+          onClick={() => switchMode(mode === 'signIn' ? 'signUp' : 'signIn')}
+          style={{ marginTop: 18, textAlign: 'center', fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}
+        >
+          {mode === 'signIn' ? t('auth.needAccount') : t('auth.haveAccount')}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Shown instead of the normal signed-in app whenever useAuth reports
+// passwordRecovery (the student followed the reset-password email's link,
+// which signs them into a real but temporary session meant only for
+// setting a new password) — see useAuth.js's PASSWORD_RECOVERY handling.
+export function NewPasswordScreen({ updatePassword, onDone }) {
+  const { t } = useLang();
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [info, setInfo] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  async function submit(e) {
+    e.preventDefault();
+    setError('');
+    setBusy(true);
+    const { error: err } = await updatePassword(password);
+    setBusy(false);
+    if (err) { setError(err.message); return; }
+    setInfo(t('auth.passwordUpdated'));
+  }
+
+  return (
+    <div className="app-shell sc" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowY: 'auto', padding: '24px 20px' }}>
+      <div style={{ fontSize: 26, fontWeight: 750 }}>{t('auth.newPasswordTitle')}</div>
+      <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 8 }}>{t('auth.newPasswordSubtitle')}</div>
+
+      {info ? (
+        <>
+          <div style={{ fontSize: 12.5, color: '#5fdd9b', lineHeight: 1.4, marginTop: 20 }}>{info}</div>
+          <button type="button" className="btn btn-primary" style={{ marginTop: 16 }} onClick={onDone}>{t('auth.signIn')}</button>
+        </>
+      ) : (
+        <form style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 20 }} onSubmit={submit}>
+          <input
+            type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+            placeholder={t('auth.newPasswordPlaceholder')} autoComplete="new-password" minLength={6} required autoFocus
+          />
+          {error && <div style={{ fontSize: 12.5, color: '#ff8a5c', lineHeight: 1.4 }}>{error}</div>}
+          <button type="submit" className="btn btn-primary" disabled={busy}>{busy ? t('auth.working') : t('auth.savePassword')}</button>
+        </form>
+      )}
     </div>
   );
 }

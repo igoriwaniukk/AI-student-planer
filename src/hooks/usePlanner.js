@@ -36,7 +36,6 @@ function initialState(defaults, activities) {
     // hard constraint like bedtime/wake (see dayConstraints in
     // plannerLogic.js). Previously only reached the chat assistant.
     studyTime: defaults?.studyTime || 'Wieczorem',
-    gcal: false,
     saved: false,
 
     taskState: {},
@@ -90,7 +89,6 @@ function initialState(defaults, activities) {
     deadlineOnlySaved: false,
     onlyDeadlineAsk: false,
     prepSaved: false,
-    prepGcal: false,
     bioDeadlineSaved: false,
     bioSessionsSaved: false,
     prepSessions: initialPrepSessions,
@@ -122,7 +120,6 @@ function initialState(defaults, activities) {
     selectedDay: 19,
     planApproved: false,
     dayEnded: false,
-    calendarEvents: [],
 
     examGoals: {},
     customExams: [],
@@ -420,7 +417,7 @@ export function usePlanner(defaults, activities, recurringActivities) {
   }
 
   function confirmPlan() {
-    update((s) => ({ saved: true, planApproved: true, selectedDay: 20, manualMode: false, calendarEvents: s.gcal ? Object.keys(s.schedule || {}) : [] }));
+    update({ saved: true, planApproved: true, selectedDay: 20, manualMode: false });
   }
   function goHomeSaved() {
     update({ saved: false, screen: 'home' });
@@ -453,7 +450,7 @@ export function usePlanner(defaults, activities, recurringActivities) {
       const schedule = s.rescueSchedule || {};
       return {
         rescueSaved: true, rescueApplied: true, selectedDay: 20, planApproved: true,
-        taskState: t, schedule, calendarEvents: s.gcal ? Object.keys(schedule) : s.calendarEvents,
+        taskState: t, schedule,
       };
     });
   }
@@ -532,9 +529,6 @@ export function usePlanner(defaults, activities, recurringActivities) {
   function saveSession() {
     if (state.sessionMessage) return;
     update({ sessionOpen: false, sessionMessage: '' });
-  }
-  function togglePrepGcal() {
-    update((s) => ({ prepGcal: !s.prepGcal }));
   }
   function askOnlyDeadline() { update({ onlyDeadlineAsk: true }); }
   function backToPrep() { update({ onlyDeadlineAsk: false }); }
@@ -648,7 +642,7 @@ export function usePlanner(defaults, activities, recurringActivities) {
     toggleReason, setRescueTime, confirmRescue, goHomeRescued,
     setField, addTopic, removeTopic, deadlineSubmit, goHomeDeadline,
     openSession, pickSessionDate, pickSessionTime, pickSessionDur, cancelSession, saveSession,
-    togglePrepGcal, askOnlyDeadline, backToPrep, saveOnlyDeadline, confirmPrep,
+    askOnlyDeadline, backToPrep, saveOnlyDeadline, confirmPrep,
     finishDay, goHomeSummarized, saveLater, adjustSessionMinutes, setSessionField,
     keepEngTomorrow, openEngTime, pickEngTime, cancelEngTime, saveEngTime,
     applyAdaptive, declineAdaptive,

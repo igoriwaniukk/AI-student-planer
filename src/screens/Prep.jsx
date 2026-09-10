@@ -15,7 +15,7 @@ export default function Prep({ planner }) {
   const { t, lang } = useLang();
   const {
     state, openSession, pickSessionDate, pickSessionTime, pickSessionDur, cancelSession, saveSession,
-    togglePrepGcal, askOnlyDeadline, backToPrep, saveOnlyDeadline, confirmPrep, goHomeDeadline, go,
+    askOnlyDeadline, backToPrep, saveOnlyDeadline, confirmPrep, goHomeDeadline, go,
   } = planner;
 
   const SESSIONS = state.prepSessions;
@@ -88,16 +88,6 @@ export default function Prep({ planner }) {
             <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6 }}>{t('prep.examTitle')}</div>
             <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 3 }}>{t('prep.examNote')}</div>
           </div>
-        </div>
-      </div>
-
-      <div onClick={togglePrepGcal} style={{ marginTop: 14, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', gap: 13, cursor: 'pointer' }}>
-        <div style={{ width: 44, height: 26, flex: 'none', borderRadius: 99, padding: 3, display: 'flex', alignItems: 'center', background: state.prepGcal ? '#7c5cff' : 'rgba(255,255,255,.14)', justifyContent: state.prepGcal ? 'flex-end' : 'flex-start' }}>
-          <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff' }} />
-        </div>
-        <div>
-          <div style={{ fontSize: 13.5, fontWeight: 700 }}>{t('prep.addToCalendar')}</div>
-          <div style={{ fontSize: 11.5, lineHeight: 1.45, color: '#7a7a8a', marginTop: 4 }}>{t('prep.addToCalendarDesc')}</div>
         </div>
       </div>
 
