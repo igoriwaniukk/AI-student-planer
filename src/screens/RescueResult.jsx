@@ -94,7 +94,6 @@ export default function RescueResult({ planner }) {
       {state.rescueSaved && (
         <ConfirmCard
           title={t('rr.savedTitle')}
-          sub={state.gcal ? t('rr.savedSubGcal') : null}
           onDone={goHomeRescued}
           buttonLabel={t('rr.backToDayPlan')}
         />

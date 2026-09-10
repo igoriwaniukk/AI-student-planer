@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { HARD_OPTIONS, KNOW_OPTIONS, DAY_HARD_OPTIONS, REFERENCE_DAY } from '../lib/plannerData';
-import { hm, toMinutes, fmt, zad, weekdayDateLabel } from '../lib/plannerLogic';
+import { hm, toMinutes, fmt, zad, weekdayDateLabel, durOf } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, PrimaryButton, EnergyPicker, OptionRow, ListRow, Chip, BottomSheet, Confetti } from '../components/ui';
 import { useLang } from '../lib/useLang';
@@ -11,7 +11,9 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
   const sched = state.schedule || {};
   const dayIds = state.taskDefs.filter((d) => state.tasks[d.id]).map((tt) => tt.id);
   const doneCount = dayIds.filter((id) => ts(id).status === 'completed').length;
-  const movedCount = dayIds.filter((id) => ts(id).status === 'moved').length;
+  const movedIds = dayIds.filter((id) => ts(id).status === 'moved');
+  const movedCount = movedIds.length;
+  const movedSubjectLabel = [...new Set(movedIds.map((id) => t(VALUE_KEY[def(id).subject]) || def(id).subject))].join(', ');
   const totalCount = dayIds.filter((id) => ts(id).status !== 'skipped').length;
   const planOf = (id) => (sched[id] && sched[id].dur) || def(id).dur;
   const completedIds = dayIds.filter((id) => ts(id).status === 'completed');
@@ -75,7 +77,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
         );
       })}
 
-      {movedCount > 0 && <MovedTask planner={planner} t={t} />}
+      {movedCount > 0 && <MovedTask planner={planner} t={t} movedIds={movedIds} subjectLabel={movedSubjectLabel} />}
 
       <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('sum.howHardDay')}</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
@@ -110,7 +112,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
         <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#8ff0de' }}>{t('sum.tipTomorrow')}</div>
         <div style={{ fontSize: 13.5, lineHeight: 1.5, fontWeight: 650, marginTop: 9 }}>
           {movedCount > 0
-            ? t('sum.tipMoved', { time: state.engStart })
+            ? t('sum.tipMoved', { time: state.engStart, subject: movedSubjectLabel })
             : t('sum.tipHardest')}
         </div>
       </div>
@@ -122,7 +124,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
             const d = def(id);
             return <Row key={id} label={t(VALUE_KEY[d.subject]) || d.subject} value={t('sum.doneIn', { min: state.sessionReview[id]?.minutes || 0 })} />;
           })}
-          {movedCount > 0 && <Row label={t('sum.english2')} value={t('sum.tomorrowAt', { time: state.engStart })} />}
+          {movedCount > 0 && <Row label={movedSubjectLabel} value={t('sum.tomorrowAt', { time: state.engStart })} />}
           <Row label={t('sum.day')} value={t('sum.dayValue', { value: t(VALUE_KEY[state.dayHard]) || state.dayHard })} />
           <Row label={t('sum.energy')} value={t('sum.energyValue', { value: t(VALUE_KEY[state.dayEnergy]) || state.dayEnergy })} />
         </div>
@@ -149,7 +151,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
         </PrimaryButton>
       </StickyFooter>
 
-      <EngTimeSheet planner={planner} />
+      <EngTimeSheet planner={planner} subjectLabel={movedSubjectLabel} />
     </div>
   );
 }
@@ -196,22 +198,22 @@ function SessionReview({ subject, subjectColor, title, deadline, planned, actual
   );
 }
 
-function MovedTask({ planner, t }) {
-  const { state, keepEngTomorrow, openEngTime } = planner;
+function MovedTask({ planner, t, movedIds, subjectLabel }) {
+  const { state, def, keepEngTomorrow, openEngTime } = planner;
   const keepOn = state.engChoice === 'keep';
+  const titleLabel = movedIds.map((id) => t(TASK_TEXT_KEY[id]?.title) || def(id).title).join(', ');
+  const totalDur = movedIds.reduce((a, id) => a + durOf(id, state.taskDefs, state.durOverride), 0);
   return (
     <>
       <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('sum.movedTaskTitle')}</div>
       <div style={{ padding: 15, borderRadius: 18, background: 'rgba(124,92,255,.06)', border: '1.5px solid rgba(124,92,255,.4)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-          <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: '#a58cff' }}>{t('sum.english')}</span>
+          <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: '#a58cff' }}>{subjectLabel.toUpperCase()}</span>
           <span style={{ fontSize: 10.5, fontWeight: 750, color: '#c9baff', padding: '4px 9px', borderRadius: 8, background: 'rgba(124,92,255,.22)' }}>{t('sum.movedConsciously')}</span>
         </div>
-        <div style={{ fontSize: 15.5, fontWeight: 700, lineHeight: 1.3, marginTop: 7 }}>{t('sum.vocabPractice')}</div>
+        <div style={{ fontSize: 15.5, fontWeight: 700, lineHeight: 1.3, marginTop: 7 }}>{titleLabel}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 11, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 12, color: '#7a7a8a', textDecoration: 'line-through' }}>{t('sum.todayOldTime')}</span>
-          <span style={{ fontSize: 11, color: '#6b6b7a' }}>→</span>
-          <span style={{ fontSize: 12.5, fontWeight: 700 }}>{state.engDate}, {state.engStart}–{fmt(toMinutes(state.engStart) + 30)}</span>
+          <span style={{ fontSize: 12.5, fontWeight: 700 }}>{state.engDate}, {state.engStart}–{fmt(toMinutes(state.engStart) + totalDur)}</span>
         </div>
         <div style={{ fontSize: 12.5, lineHeight: 1.5, color: '#a3a3b3', marginTop: 10 }}>{t('sum.movedReason')}</div>
         <div style={{ display: 'flex', gap: 9, marginTop: 13 }}>
@@ -223,13 +225,13 @@ function MovedTask({ planner, t }) {
   );
 }
 
-function EngTimeSheet({ planner }) {
+function EngTimeSheet({ planner, subjectLabel }) {
   const { t } = useLang();
   const { state, pickEngTime, cancelEngTime, saveEngTime, update } = planner;
   if (!state.engTimeOpen) return null;
   return (
     <BottomSheet>
-      <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{t('sum.changeEngTitle')}</div>
+      <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{t('sum.changeEngTitle', { subject: subjectLabel })}</div>
       <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 6 }}>{t('sum.changeEngDesc')}</div>
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('sum.dateLabel')}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>

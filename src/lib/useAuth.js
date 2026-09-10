@@ -39,5 +39,25 @@ export function useAuth() {
     resetPassword: (email) => supabase.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin }),
     updatePassword: (password) => supabase.auth.updateUser({ password }),
     signOut: () => supabase.auth.signOut(),
+    // Deleting an auth.users row needs the service-role key, which never
+    // reaches the browser — so this calls the server (api/account/delete.js
+    // in production, the matching Express route locally), passing the
+    // caller's own access token so the server can verify who's asking
+    // instead of trusting a client-supplied id.
+    deleteAccount: async () => {
+      const token = session?.access_token;
+      if (!token) return { error: new Error('Nie jesteś zalogowany.') };
+      try {
+        const res = await fetch('/api/account/delete', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) return { error: new Error(body.error || 'Nie udało się usunąć konta.') };
+        return { error: null };
+      } catch (error) {
+        return { error };
+      }
+    },
   };
 }
