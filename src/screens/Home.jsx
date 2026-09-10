@@ -84,7 +84,7 @@ function StreakNotice({ notice, onDismiss }) {
 // Combines the streak count with the week strip so the days that make up
 // the streak are visible right where the count is, instead of a plain
 // number with the calendar buried further down the page.
-function StreakCard({ streak, selectedDay, onSelectDay }) {
+function StreakCard({ streak, selectedDay, onSelectDay, eventDays }) {
   const { t } = useLang();
   // Bumps the flame with a bigger, one-shot bounce right when the streak
   // ticks up, on top of its constant gentle pulse — a small reward beat
@@ -112,7 +112,7 @@ function StreakCard({ streak, selectedDay, onSelectDay }) {
           <span style={{ fontSize: 13, fontWeight: 750, fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={streak} /></span>
         </div>
       </div>
-      <WeekStrip selectedDay={selectedDay} onSelect={onSelectDay} streakCount={streak} topMargin={12} pageable />
+      <WeekStrip selectedDay={selectedDay} onSelect={onSelectDay} streakCount={streak} eventDays={eventDays} topMargin={12} pageable />
     </div>
   );
 }
@@ -615,7 +615,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
         </div>
       </div>
 
-      <StreakCard streak={streak} selectedDay={viewDay} onSelectDay={setViewDay} />
+      <StreakCard streak={streak} selectedDay={viewDay} onSelectDay={setViewDay} eventDays={new Set(upcoming.map((e) => e.day))} />
       <StreakNotice notice={streakNotice} onDismiss={() => setLastSeenStreak(streak)} />
 
       {state.rescueApplied && (() => {
