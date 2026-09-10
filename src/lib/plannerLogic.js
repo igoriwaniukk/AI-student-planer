@@ -52,6 +52,20 @@ export function range(start, durMinutes) {
   return start + '–' + fmt(s + durMinutes);
 }
 
+// Whole real-world days between today and an ISO "YYYY-MM-DD" date string
+// (the Deadline screen's actual date input) — negative once the date has
+// passed. Feeding this back into REFERENCE_DAY + daysUntil lets a real
+// picked date reuse all the existing REFERENCE_DAY-relative date-label
+// helpers (formatMonthDay, weekdayDateLabel) instead of duplicating them.
+export function daysUntilFromISODate(isoDate) {
+  if (!isoDate) return null;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(isoDate + 'T00:00:00');
+  if (Number.isNaN(target.getTime())) return null;
+  return Math.round((target - today) / 86400000);
+}
+
 export function zad(n) {
   return n + (n === 1 ? ' zadanie' : (n >= 2 && n <= 4 ? ' zadania' : ' zadań'));
 }

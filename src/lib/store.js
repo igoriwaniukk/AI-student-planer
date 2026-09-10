@@ -16,6 +16,7 @@ export const KEYS = {
   customReminders: 'sp_customReminders',
   seenNotifSignature: 'sp_seenNotifSignature',
   dismissedMissedSession: 'sp_dismissedMissedSession',
+  plannerData: 'sp_plannerData',
 };
 
 // Fired whenever any useLocalStorage value is written — cloudSync.js listens
@@ -132,6 +133,16 @@ export function useCustomReminders() {
 // come back once a different session falls behind.
 export function useDismissedMissedSession() {
   return useLocalStorage(KEYS.dismissedMissedSession, '');
+}
+
+// The durable slice of usePlanner's state (custom tasks, today's schedule
+// and their status, custom exams and their study goals) — everything the
+// student actually created, as opposed to which screen/modal happens to be
+// open right now. See DURABLE_KEYS in usePlanner.js for exactly what's
+// stored here; without this it only ever lived in memory and vanished on
+// every reload or on a different device.
+export function usePlannerData() {
+  return useLocalStorage(KEYS.plannerData, null);
 }
 
 // Wipes every bit of this app's local data and reloads to a fresh

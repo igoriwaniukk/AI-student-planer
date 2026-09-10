@@ -2,7 +2,7 @@ import { BackButton, StickyFooter, PrimaryButton, BottomSheet, OptionRow, Confir
 import { VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { REFERENCE_DAY } from '../lib/plannerData';
-import { weekdayDateLabel, formatMonthDay } from '../lib/plannerLogic';
+import { weekdayDateLabel, formatMonthDay, daysUntilFromISODate } from '../lib/plannerLogic';
 
 function sesji(n) {
   return n + (n === 1 ? ' sesja' : (n >= 2 && n <= 4 ? ' sesje' : ' sesji'));
@@ -10,6 +10,8 @@ function sesji(n) {
 function sessionsWord(n) {
   return n + (n === 1 ? ' session' : ' sessions');
 }
+
+const CANDIDATE_TIMES = ['16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00'];
 
 export default function Prep({ planner }) {
   const { t, lang } = useLang();
@@ -25,10 +27,18 @@ export default function Prep({ planner }) {
   const curDate = sEdit.date || SESSION_DATES[sIdx];
   const curStart = sEdit.start || (sEdit.time || SESSIONS[sIdx].time).split('–')[0];
   const curDur = sEdit.dur || SESSIONS[sIdx].dur;
-  const dateOpts = [SESSION_DATES[sIdx], t('prep.wedJuly22', { date: weekdayDateLabel(REFERENCE_DAY + 2) }), t('prep.satAug1', { date: weekdayDateLabel(REFERENCE_DAY + 12) })];
+  // Every option here is already known to fall within the real prep window
+  // (today through the real exam date) since it comes straight from
+  // state.prepDates — no separately-invented alternative dates needed.
+  const dateOpts = [...new Set(SESSION_DATES)];
   const totalMin = SESSIONS.reduce((a, s) => a + parseInt(s.dur, 10), 0);
   const hUnit = lang === 'en' ? 'hr' : 'godz.';
   const totalLabel = totalMin >= 60 ? Math.floor(totalMin / 60) + ' ' + hUnit + (totalMin % 60 ? ' ' + (totalMin % 60) + ' min' : '') : totalMin + ' min';
+  const daysUntil = daysUntilFromISODate(state.examDate) ?? 11;
+  const examDay = REFERENCE_DAY + daysUntil;
+  // A real starting estimate from the student's own self-assessed knowledge
+  // level (Deadline screen, 1-5) instead of an invented fixed number.
+  const readinessPct = Math.round(((state.level - 1) / 4) * 100);
 
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px' }}>
@@ -37,21 +47,21 @@ export default function Prep({ planner }) {
         <span style={{ fontSize: 11, fontWeight: 650, color: '#c9baff', padding: '8px 14px', borderRadius: 999, background: 'rgba(124,92,255,.14)', border: '1px solid rgba(124,92,255,.45)' }}>{t('prep.toConfirm')}</span>
       </div>
       <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>{t('prep.title')}</div>
-      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('prep.subtitle', { subject: t(VALUE_KEY[state.subject]) || state.subject, date: formatMonthDay(REFERENCE_DAY + 11) })}</div>
+      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('prep.subtitle', { subject: t(VALUE_KEY[state.subject]) || state.subject, date: formatMonthDay(examDay) })}</div>
 
       <div style={{ marginTop: 18, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.14)' }}>
         <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>{t('prep.ready')}</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
           <span style={{ fontSize: 12, fontWeight: 650, color: '#c9baff', padding: '7px 11px', borderRadius: 9, background: 'rgba(124,92,255,.2)' }}>{lang === 'en' ? sessionsWord(SESSIONS.length) : sesji(SESSIONS.length)}</span>
           <span style={{ fontSize: 12, fontWeight: 650, color: '#e2e2ea', padding: '7px 11px', borderRadius: 9, background: 'rgba(255,255,255,.07)' }}>{t('prep.studyLabel', { time: totalLabel })}</span>
-          <span style={{ fontSize: 12, fontWeight: 650, color: '#e2e2ea', padding: '7px 11px', borderRadius: 9, background: 'rgba(255,255,255,.07)' }}>{t('prep.daysToExam')}</span>
+          <span style={{ fontSize: 12, fontWeight: 650, color: '#e2e2ea', padding: '7px 11px', borderRadius: 9, background: 'rgba(255,255,255,.07)' }}>{t('prep.daysToExam', { n: daysUntil })}</span>
           <span style={{ fontSize: 12, fontWeight: 650, color: '#8ff0de', padding: '7px 11px', borderRadius: 9, background: 'rgba(46,230,197,.13)' }}>{t('prep.lastReview')}</span>
         </div>
         <div style={{ fontSize: 12.5, lineHeight: 1.5, color: '#a3a3b3', marginTop: 12 }}>{t('prep.flowDesc')}</div>
         <div style={{ height: 1, background: 'rgba(255,255,255,.09)', margin: '14px -16px' }} />
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
           <span style={{ fontSize: 13, color: '#9a9aab' }}>{t('prep.estimatedReadiness')}</span>
-          <span style={{ fontSize: 19, fontWeight: 750, color: '#2ee6c5' }}>40%</span>
+          <span style={{ fontSize: 19, fontWeight: 750, color: '#2ee6c5' }}>{readinessPct}%</span>
         </div>
         <div style={{ fontSize: 11.5, lineHeight: 1.45, color: '#7a7a8a', marginTop: 8 }}>{t('prep.estimateNote')}</div>
       </div>
@@ -84,8 +94,8 @@ export default function Prep({ planner }) {
         <div style={{ padding: 14, borderRadius: 18, background: 'rgba(245,165,36,.06)', border: '1.5px solid rgba(245,165,36,.32)', display: 'flex', gap: 12 }}>
           <div style={{ width: 32, height: 32, flex: 'none', borderRadius: 10, background: 'rgba(245,165,36,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="11" height="13" viewBox="0 0 12 14" fill="none"><rect x="1.5" y="5.5" width="9" height="7.2" rx="1.8" stroke="#f5a524" strokeWidth="1.2" /><path d="M3.8 5.5V4a2.2 2.2 0 014.4 0v1.5" stroke="#f5a524" strokeWidth="1.2" /></svg></div>
           <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}><span style={{ fontSize: 11.5, color: '#8a8a99' }}>{t('prep.examLabel', { date: weekdayDateLabel(REFERENCE_DAY + 11) })}</span><span style={{ fontSize: 10.5, fontWeight: 650, color: '#f5a524' }}>{t('prep.deadlineTag')}</span></div>
-            <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6 }}>{t('prep.examTitle')}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}><span style={{ fontSize: 11.5, color: '#8a8a99' }}>{t('prep.examLabel', { date: weekdayDateLabel(examDay), time: state.examTime || '09:00' })}</span><span style={{ fontSize: 10.5, fontWeight: 650, color: '#f5a524' }}>{t('prep.deadlineTag')}</span></div>
+            <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6 }}>{t('prep.examTitle', { kind: t(VALUE_KEY[state.kind]) || state.kind, name: state.nameValue })}</div>
             <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 3 }}>{t('prep.examNote')}</div>
           </div>
         </div>
@@ -113,8 +123,8 @@ export default function Prep({ planner }) {
           </div>
 
           <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('prep.startTimeLabel')}</div>
-          <div style={{ display: 'flex', gap: 9 }}>
-            {['16:30', '17:00', '18:15', '22:15'].map((tm) => <OptionRow key={tm} label={tm} active={curStart === tm} onClick={() => pickSessionTime(tm)} />)}
+          <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap' }}>
+            {CANDIDATE_TIMES.map((tm) => <OptionRow key={tm} label={tm} active={curStart === tm} onClick={() => pickSessionTime(tm)} />)}
           </div>
 
           <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('prep.durationLabel')}</div>
@@ -154,7 +164,7 @@ export default function Prep({ planner }) {
       {state.prepSaved && (
         <ConfirmCard
           title={t('prep.savedTitle')}
-          sub={state.bioSessionsSaved ? t('prep.savedSub') : ''}
+          sub={t('prep.savedSub', { n: SESSIONS.length })}
           onDone={goHomeDeadline}
           buttonLabel={t('sum.backToStart')}
         />

@@ -1,19 +1,31 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLang } from '../lib/useLang';
-import { getCurrentLang, TASK_TEXT_KEY } from '../lib/i18n';
+import { TASK_TEXT_KEY } from '../lib/i18n';
 import {
   PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES,
 } from '../lib/plannerData';
-import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, weekdayDateLabel, dayConstraints } from '../lib/plannerLogic';
+import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, weekdayDateLabel, dayConstraints, daysUntilFromISODate } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
 import { requestAIRescue } from '../lib/aiRescue';
 
-function initialState(defaults, activities) {
-  const initialTopics = getCurrentLang() === 'en'
-    ? ['Mendelian genetics', 'Genetic crosses', 'Blood type inheritance']
-    : ['Prawa Mendla', 'Krzyżówki genetyczne', 'Dziedziczenie grup krwi'];
-  const initialPrepSessions = buildPrepSessions(initialTopics, 'Średni');
-  return {
+// The only slice of usePlanner's state that survives a reload / syncs across
+// devices (via KEYS.plannerData in store.js) — everything else here is
+// either a fixed default or a form/modal that should always start fresh.
+// Deliberately excludes in-progress-form fields (deadline form, rescue form,
+// day-summary form, sheet/edit-panel state): those are meant to reset, not
+// resume, on reload.
+const DURABLE_KEYS = [
+  'taskDefs', 'tasks', 'taskState', 'schedule', 'durOverride', 'startOverride',
+  'customExams', 'examGoals', 'dismissedGoalPrompts', 'planApproved', 'selectedDay', 'sessionReview',
+];
+
+function initialState(defaults, activities, persisted) {
+  // Empty rather than a fixed demo topic list — buildPrepSessions falls back
+  // to a generic placeholder topic on its own when given none, and this is
+  // overwritten for real once deadlineGenerate() runs off the student's own
+  // topics anyway (see the Deadline screen).
+  const initialPrepSessions = buildPrepSessions([], 'Średni');
+  const base = {
     screen: 'home',
     generating: false,
     genStep: 0,
@@ -74,13 +86,14 @@ function initialState(defaults, activities) {
     energyDraft: 'Normalna',
 
     kind: 'Sprawdzian',
-    subject: 'Biologia',
+    subject: 'Matematyka',
     subjectsOpen: false,
     goal: 'Ocena co najmniej 4',
     goalsOpen: false,
-    nameValue: 'Genetyka — dziedziczenie cech',
-    dateValid: true,
-    topics: initialTopics,
+    nameValue: '',
+    examDate: '',
+    examTime: '09:00',
+    topics: [],
     topicErr: false,
     difficulty: 'Średni',
     level: 2,
@@ -89,8 +102,6 @@ function initialState(defaults, activities) {
     deadlineOnlySaved: false,
     onlyDeadlineAsk: false,
     prepSaved: false,
-    bioDeadlineSaved: false,
-    bioSessionsSaved: false,
     prepSessions: initialPrepSessions,
     prepDates: buildPrepDates(initialPrepSessions.length),
 
@@ -125,16 +136,40 @@ function initialState(defaults, activities) {
     customExams: [],
     dismissedGoalPrompts: {},
   };
+  if (persisted) {
+    DURABLE_KEYS.forEach((k) => {
+      if (persisted[k] !== undefined) base[k] = persisted[k];
+    });
+  }
+  return base;
 }
 
-export function usePlanner(defaults, activities, recurringActivities) {
+export function usePlanner(defaults, activities, recurringActivities, persisted, setPersisted) {
   // Aliased (not `t`) since several functions below use `t` as a local
   // parameter name for a time string, which would otherwise shadow this.
   const { t: translate } = useLang();
-  const [state, setState] = useState(() => initialState(defaults, activities));
+  const [state, setState] = useState(() => initialState(defaults, activities, persisted));
   const timerRef = useRef(null);
   const toastTimerRef = useRef(null);
   const snapRef = useRef(null);
+
+  // Mirrors the durable slice of state (see DURABLE_KEYS above) out to
+  // localStorage/cloud sync on every change, so a custom task, a schedule
+  // edit, or a saved exam survives a reload instead of living only in this
+  // in-memory useState.
+  useEffect(() => {
+    if (!setPersisted) return;
+    setPersisted({
+      taskDefs: state.taskDefs, tasks: state.tasks, taskState: state.taskState, schedule: state.schedule,
+      durOverride: state.durOverride, startOverride: state.startOverride,
+      customExams: state.customExams, examGoals: state.examGoals, dismissedGoalPrompts: state.dismissedGoalPrompts,
+      planApproved: state.planApproved, selectedDay: state.selectedDay, sessionReview: state.sessionReview,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    state.taskDefs, state.tasks, state.taskState, state.schedule, state.durOverride, state.startOverride,
+    state.customExams, state.examGoals, state.dismissedGoalPrompts, state.planApproved, state.selectedDay, state.sessionReview,
+  ]);
 
   // Derived fresh every render (not copied into state) from the student's
   // real bedtime/wake and recurring activities, so a later edit to any of
@@ -217,7 +252,8 @@ export function usePlanner(defaults, activities, recurringActivities) {
   function deadlineGenerate() {
     update((s) => {
       const sessions = buildPrepSessions(s.topics, s.difficulty);
-      return { deadlineFailed: false, prepSessions: sessions, prepDates: buildPrepDates(sessions.length), sessionEdits: {} };
+      const examDay = REFERENCE_DAY + (daysUntilFromISODate(s.examDate) ?? 11);
+      return { deadlineFailed: false, prepSessions: sessions, prepDates: buildPrepDates(sessions.length, examDay), sessionEdits: {} };
     });
     runGen(PREP_LABELS, 'prep');
   }
@@ -464,7 +500,10 @@ export function usePlanner(defaults, activities, recurringActivities) {
     update({ [key]: value });
   }
   function addTopic() {
-    update((s) => ({ topics: s.topics.concat('Nowy temat'), topicErr: false }));
+    update((s) => ({ topics: s.topics.concat(''), topicErr: false }));
+  }
+  function setTopic(i, value) {
+    update((s) => ({ topics: s.topics.map((t, j) => (j === i ? value : t)) }));
   }
   function removeTopic(i) {
     update((s) => ({ topics: s.topics.filter((_, j) => j !== i), topicErr: false }));
@@ -472,7 +511,11 @@ export function usePlanner(defaults, activities, recurringActivities) {
   function deadlineSubmit(valid) {
     if (!valid) { update({ topicErr: true }); return; }
     if (!state.autoPlan) {
-      update({ deadlineOnlySaved: true, bioDeadlineSaved: true, bioSessionsSaved: false });
+      addCustomExam({
+        subject: state.subject, title: state.nameValue.trim(), daysUntil: daysUntilFromISODate(state.examDate),
+        grade: state.goal, importance: 'Średni', studyMinutes: 120,
+      });
+      update({ deadlineOnlySaved: true });
       return;
     }
     deadlineGenerate();
@@ -496,7 +539,9 @@ export function usePlanner(defaults, activities, recurringActivities) {
     });
   }
   function pickSessionDate(d) {
-    if (d === 'Sobota, 1 sierpnia') { update({ sessionMessage: translate('msg.sessionBeforeExam') }); return; }
+    // Every offered date option already comes from state.prepDates, which
+    // buildPrepDates() only ever spreads between today and the real exam
+    // date — so any option here is inherently valid, nothing to reject.
     applySession({ date: d });
   }
   function currentDur(i) {
@@ -507,9 +552,14 @@ export function usePlanner(defaults, activities, recurringActivities) {
     const s = toMinutesLocal(start);
     return start + '–' + fmtLocal(s + parseInt(durLabel, 10));
   }
+  // Validated against the student's real wake/bedtime/recurring activities
+  // (see dayConstraints in plannerLogic.js) — not fixed times assumed to
+  // conflict with an invented school/tennis schedule.
   function pickSessionTime(t) {
-    if (t === '18:15') { update({ sessionMessage: translate('block.conflictTennis') }); return; }
-    if (t === '22:15') { update({ sessionMessage: translate('msg.sleepConflictShort') }); return; }
+    const startMin = toMinutesLocal(t);
+    const dur = parseInt(currentDur(state.sessionIdx), 10);
+    const conflict = checkBlockConflict('prep-session', startMin, dur, {}, () => ({ subject: '' }), constraints);
+    if (conflict) { update({ sessionMessage: translate(conflict.key, conflict.vars) }); return; }
     applySession({ start: t, time: rangeLocal(t, currentDur(state.sessionIdx)) });
   }
   function pickSessionDur(d) {
@@ -533,10 +583,18 @@ export function usePlanner(defaults, activities, recurringActivities) {
   function askOnlyDeadline() { update({ onlyDeadlineAsk: true }); }
   function backToPrep() { update({ onlyDeadlineAsk: false }); }
   function saveOnlyDeadline() {
-    update({ onlyDeadlineAsk: false, bioDeadlineSaved: true, bioSessionsSaved: false, screen: 'deadline', deadlineOnlySaved: true });
+    addCustomExam({
+      subject: state.subject, title: state.nameValue.trim(), daysUntil: daysUntilFromISODate(state.examDate),
+      grade: state.goal, importance: 'Średni', studyMinutes: 120,
+    });
+    update({ onlyDeadlineAsk: false, screen: 'deadline', deadlineOnlySaved: true });
   }
   function confirmPrep() {
-    update({ prepSaved: true, bioDeadlineSaved: true, bioSessionsSaved: true });
+    addCustomExam({
+      subject: state.subject, title: state.nameValue.trim(), daysUntil: daysUntilFromISODate(state.examDate),
+      grade: state.goal, importance: 'Średni', studyMinutes: 120,
+    });
+    update({ prepSaved: true });
   }
 
   // ---- day summary ----
@@ -640,7 +698,7 @@ export function usePlanner(defaults, activities, recurringActivities) {
     toggleManualMode, regenerateOrCancel, confirmPlan, goHomeSaved,
     openEnergySheet, cancelEnergySheet, saveEnergySheet,
     toggleReason, setRescueTime, confirmRescue, goHomeRescued,
-    setField, addTopic, removeTopic, deadlineSubmit, goHomeDeadline,
+    setField, addTopic, setTopic, removeTopic, deadlineSubmit, goHomeDeadline,
     openSession, pickSessionDate, pickSessionTime, pickSessionDur, cancelSession, saveSession,
     askOnlyDeadline, backToPrep, saveOnlyDeadline, confirmPrep,
     finishDay, goHomeSummarized, saveLater, adjustSessionMinutes, setSessionField,

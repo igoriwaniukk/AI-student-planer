@@ -19,7 +19,7 @@ import Onboarding from './screens/Onboarding';
 import Auth, { NewPasswordScreen } from './screens/Auth';
 import {
   useStudentName, useProfilePhoto, useSchoolPlan, useActivities, useProfileDefaults,
-  useWeeklyCapacity, useEnergyLog, useStudyHistory, useRecurringActivities, useLanguage,
+  useWeeklyCapacity, useEnergyLog, useStudyHistory, useRecurringActivities, useLanguage, usePlannerData,
   KEYS, STORAGE_CHANGED_EVENT,
 } from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
@@ -118,7 +118,8 @@ const TAB_SCREENS = new Set(['home', 'calendar', 'goals', 'profile']);
 // useState initializer, which only ever runs on first mount) picks up the
 // profile defaults onboarding just saved instead of whatever was there before.
 function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, activities, profileDefaults, setProfileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities, onSignOut, syncError }) {
-  const planner = usePlanner(profileDefaults, activities, recurringActivities);
+  const [plannerData, setPlannerData] = usePlannerData();
+  const planner = usePlanner(profileDefaults, activities, recurringActivities, plannerData, setPlannerData);
   const { state } = planner;
   const screen = state.screen;
   const streak = computeStreak(studyHistory);
