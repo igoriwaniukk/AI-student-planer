@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLang } from '../lib/useLang';
-import { TASK_TEXT_KEY } from '../lib/i18n';
+import { TASK_TEXT_KEY, VALUE_KEY } from '../lib/i18n';
 import {
   PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES,
 } from '../lib/plannerData';
@@ -184,6 +184,22 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     return () => clearInterval(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Re-lays-out the (not yet approved) schedule whenever the real constraints
+  // change — adding/editing/removing a recurring activity from the quick-add
+  // sheet or the chat, or changing bedtime/wake in Profile — so a session
+  // already placed on the day's plan actually moves out of the way instead
+  // of silently keeping its old time as if the new activity didn't exist.
+  // Skipped once the plan is approved (confirmPlan) or while the student is
+  // mid manual edit, so it never overwrites something they explicitly set.
+  const constraintsKey = JSON.stringify(constraints);
+  const prevConstraintsKeyRef = useRef(constraintsKey);
+  useEffect(() => {
+    if (constraintsKey === prevConstraintsKeyRef.current) return;
+    prevConstraintsKeyRef.current = constraintsKey;
+    setState((s) => (s.planApproved || s.manualMode ? s : { ...s, schedule: buildSchedule({ ...s, constraints }) }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [constraintsKey]);
 
   function update(patch) {
     setState((s) => ({ ...s, ...(typeof patch === 'function' ? patch(s) : patch) }));
@@ -404,6 +420,16 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       const name = fm.name.trim();
       const isNew = fm.id == null;
       const id = isNew ? 'custom-' + Date.now() : fm.id;
+      // Checked here (not just in BlockEditSheet) so a task can't be saved
+      // on top of a fixed activity or another session in the first place —
+      // previously only a drag-edit of an already-placed block was
+      // validated, so a brand new task (or a duration change) could freely
+      // land on a time a recurring activity already owns.
+      const conflict = checkBlockConflict(id, startMin, fm.dur, s.schedule, (cid) => def(cid, s), constraints);
+      if (conflict) {
+        const vars = conflict.vars?.subject ? { ...conflict.vars, subject: translate(VALUE_KEY[conflict.vars.subject]) || conflict.vars.subject } : conflict.vars;
+        return { editErrors: { start: translate(conflict.key, vars) } };
+      }
       const defs = isNew
         ? s.taskDefs.concat({ id, subject: fm.subject, title: name, dur: fm.dur, priority: fm.priority, note: fm.note, color: '#a58cff', short: fm.subject + ' — ' + name })
         : s.taskDefs.map((t) => {
