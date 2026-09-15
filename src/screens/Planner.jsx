@@ -1,4 +1,4 @@
-import { PRIO_STYLE, REFERENCE_DAY } from '../lib/plannerData';
+import { PRIO_STYLE } from '../lib/plannerData';
 import { durOf, hm, weekdayDateLabel, fmt, span, freeWindows } from '../lib/plannerLogic';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
@@ -7,10 +7,11 @@ import TaskEditSheet from '../components/TaskEditSheet';
 
 const DEFAULT_TASK_ICON = '📘';
 const PREFS = ['Wolny wieczór', 'Najpierw najtrudniejsze', 'Więcej krótkich przerw'];
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function Planner({ planner }) {
   const { t } = useLang();
-  const { state, constraints, toggleTask, openTaskEdit, openNewTaskEdit, update, generatePlan, go } = planner;
+  const { state, constraints, planDayNum, toggleTask, openTaskEdit, openNewTaskEdit, update, generatePlan, go } = planner;
   const enabledTasks = state.taskDefs.filter((d) => state.tasks[d.id]);
   const nTasks = enabledTasks.length;
   const mins = enabledTasks.reduce((a, d) => a + durOf(d.id, state.taskDefs, state.durOverride), 0);
@@ -18,6 +19,7 @@ export default function Planner({ planner }) {
   const windows = freeWindows(constraints);
   const freeMinutes = windows.reduce((a, w) => a + (w.end - w.start), 0);
   const freeRangesLabel = windows.length ? windows.map((w) => span(w.start, w.end)).join(', ') : t('planner.noFreeTime');
+  const dayWord = t(state.planToday ? 'planner.dayToday' : 'planner.dayTomorrow');
 
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 176px' }}>
@@ -27,15 +29,20 @@ export default function Planner({ planner }) {
         <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(150deg,#8b6dff,#6d4dff)' }} />
       </div>
 
-      <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 22 }}>{t('planner.title')}</div>
-      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('planner.date', { date: weekdayDateLabel(REFERENCE_DAY) })}</div>
+      <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 22 }}>{t('planner.title', { day: dayWord })}</div>
+      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('planner.date', { date: weekdayDateLabel(planDayNum) })}</div>
       <div style={{ fontSize: 13, color: '#8a8a99', lineHeight: 1.45, marginTop: 6 }}>{t('planner.subtitle')}</div>
 
-      <div style={{ marginTop: 18, padding: 14, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
+      <div style={{ display: 'flex', gap: 9, marginTop: 16 }}>
+        <Chip label={t('planner.pickToday')} active={!!state.planToday} onClick={() => update({ planToday: true })} />
+        <Chip label={t('planner.pickTomorrow')} active={!state.planToday} onClick={() => update({ planToday: false })} />
+      </div>
+
+      <div style={{ marginTop: 14, padding: 14, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#8b6dff' }} />
-            <span style={{ fontSize: 13.5, fontWeight: 700 }}>{t('planner.alreadyPlanned')}</span>
+            <span style={{ fontSize: 13.5, fontWeight: 700 }}>{t('planner.alreadyPlanned', { day: dayWord, Day: cap(dayWord) })}</span>
           </div>
           <span style={{ fontSize: 12.5, fontWeight: 650, color: '#a58cff' }}>{t('planner.edit')}</span>
         </div>

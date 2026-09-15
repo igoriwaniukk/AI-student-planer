@@ -21,7 +21,7 @@ export const PRIO_STYLE = {
 // realDateForNum()/dayInfo() (see plannerLogic.js) instead of treating the
 // raw num as a calendar date — so paging weeks forward in the UI rolls over
 // month/year boundaries correctly instead of drifting into numbers like 40.
-const NUM_TODAY = 19;
+export const NUM_TODAY = 19;
 const TODAY_REAL = new Date();
 TODAY_REAL.setHours(0, 0, 0, 0);
 
