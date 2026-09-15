@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLang } from '../lib/useLang';
 import { TASK_TEXT_KEY, VALUE_KEY } from '../lib/i18n';
 import {
-  PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES,
+  PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, NUM_TODAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES,
 } from '../lib/plannerData';
 import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
@@ -34,6 +34,11 @@ function initialState(defaults, activities, persisted) {
 
     taskDefs: [],
     tasks: {},
+    // Which day the Planner screen is building a schedule for — false (the
+    // default) is REFERENCE_DAY ("tomorrow"), true switches it to NUM_TODAY
+    // ("today"). Not persisted: it's a per-visit choice on the Planner
+    // screen, not something that should stick after a reload.
+    planToday: false,
     energy: defaults?.energy || 'Normalna',
     pref: defaults?.pref || 'Wolny wieczór',
     // Free-form context from onboarding (extracurriculars + note) — passed
@@ -172,12 +177,16 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     state.customExams, state.examGoals, state.examSessions, state.dismissedGoalPrompts, state.planApproved, state.selectedDay, state.sessionReview,
   ]);
 
+  // Which real day the Planner/Plan screens are working with — toggled via
+  // state.planToday (see the "Dziś / Jutro" switch on the Planner screen).
+  const planDayNum = state.planToday ? NUM_TODAY : REFERENCE_DAY;
+
   // Derived fresh every render (not copied into state) from the student's
   // real bedtime/wake and recurring activities, so a later edit to any of
   // those (e.g. adding a new recurring activity) is picked up immediately —
   // see dayConstraints in plannerLogic.js for what replaced the old fixed
   // school/tennis/sleep schedule nobody could actually configure.
-  const constraints = dayConstraints({ wake: defaults?.wake, bedtime: defaults?.bedtime, recurringActivities });
+  const constraints = dayConstraints({ wake: defaults?.wake, bedtime: defaults?.bedtime, recurringActivities, dayNum: planDayNum });
 
   useEffect(() => {
     setState((s) => ({ ...s, schedule: buildSchedule({ ...s, constraints }) }));
@@ -480,7 +489,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   }
 
   function confirmPlan() {
-    update({ saved: true, planApproved: true, selectedDay: 20, manualMode: false });
+    update({ saved: true, planApproved: true, selectedDay: planDayNum, manualMode: false });
   }
   function goHomeSaved() {
     update({ saved: false, screen: 'home' });
@@ -747,7 +756,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   }
 
   return {
-    state, constraints, update, def, ts, go,
+    state, constraints, planDayNum, update, def, ts, go,
     toggleTask, generatePlan, deadlineGenerate, rescueGenerate,
     startSession, togglePause, dismissBreakReminder, openFinish, cancelFinish, confirmFinish,
     openBlockEdit, moveBlockEdit, cancelBlockEdit, saveBlockEdit, removeBlock,
