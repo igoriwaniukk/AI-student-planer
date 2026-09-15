@@ -180,3 +180,13 @@ input, select, textarea {
   font-size: 14px;
   font-family: inherit;
 }
+
+/* WheelTimePicker's hour/minute columns scroll natively (touch drag, mouse
+   wheel, trackpad) with scroll-snap doing the settling — the scrollbar
+   itself is just visual noise on what's meant to look like a picker wheel. */
+.wheel-col {
+  scrollbar-width: none;
+}
+.wheel-col::-webkit-scrollbar {
+  display: none;
+}
