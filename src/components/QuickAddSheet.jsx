@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { RECUR_DAYS } from '../lib/plannerData';
+import { timeStrToMinutes } from '../lib/plannerLogic';
 import { DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { BottomSheet, Chip } from './ui';
+import WheelTimePicker from './WheelTimePicker';
 
 const inputStyle = { boxSizing: 'border-box', width: '100%', height: 44, borderRadius: 13, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', padding: '0 13px', fontSize: 13.5, color: '#f4f4f7', fontFamily: 'inherit' };
 
@@ -22,7 +24,7 @@ export default function QuickAddSheet({ open, onClose, onAddExam, recurringActiv
   const [name, setName] = useState('');
   const [day, setDay] = useState(RECUR_DAYS[0]);
   const [start, setStart] = useState('18:00');
-  const [dur, setDur] = useState(60);
+  const [end, setEnd] = useState('19:00');
 
   if (!open) return null;
 
@@ -31,12 +33,17 @@ export default function QuickAddSheet({ open, onClose, onAddExam, recurringActiv
     setName('');
     setDay(RECUR_DAYS[0]);
     setStart('18:00');
-    setDur(60);
+    setEnd('19:00');
     onClose();
   }
 
   function addActivity() {
     if (!name.trim()) return;
+    // The picker only lets an activity start and end on the same day, so a
+    // non-positive gap means the student dragged the end time before (or
+    // onto) the start — treat it as the shortest valid slot rather than
+    // silently saving a negative/zero duration.
+    const dur = Math.max(15, timeStrToMinutes(end) - timeStrToMinutes(start));
     setRecurringActivities((recurringActivities || []).concat({ id: Date.now(), name: name.trim(), day, start, dur }));
     close();
   }
@@ -79,8 +86,14 @@ export default function QuickAddSheet({ open, onClose, onAddExam, recurringActiv
               {RECUR_DAYS.map((d) => <Chip key={d} label={(t(DAY_KEY[d]) || d).slice(0, 3)} active={day === d} onClick={() => setDay(d)} />)}
             </div>
             <div style={{ display: 'flex', gap: 9 }}>
-              <input type="time" value={start} onChange={(e) => setStart(e.target.value)} style={{ ...inputStyle, flex: 1 }} />
-              <input type="number" min={15} step={5} value={dur} onChange={(e) => setDur(Math.max(15, Number(e.target.value) || 60))} style={{ ...inputStyle, width: 88, textAlign: 'center' }} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', color: '#7a7a8a', marginBottom: 6, textAlign: 'center' }}>{t('quickAdd.start')}</div>
+                <WheelTimePicker value={start} onChange={setStart} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', color: '#7a7a8a', marginBottom: 6, textAlign: 'center' }}>{t('quickAdd.end')}</div>
+                <WheelTimePicker value={end} onChange={setEnd} />
+              </div>
             </div>
             <div
               onClick={addActivity}
