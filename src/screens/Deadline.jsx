@@ -2,6 +2,7 @@ import { KINDS, SUBJECTS, GOALS, LEVELS, REFERENCE_DAY } from '../lib/plannerDat
 import { formatMonthDay, daysUntilFromISODate } from '../lib/plannerLogic';
 import { VALUE_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, Chip, ListRow, ConfirmCard, LabelRequired } from '../components/ui';
+import AmbientGlow from '../components/AmbientGlow';
 import { useLang } from '../lib/useLang';
 
 const DIFFICULTIES = ['Łatwy', 'Średni', 'Trudny'];
@@ -29,7 +30,9 @@ export default function Deadline({ planner }) {
   const difficultyLabel = diffLabel(t, state.difficulty);
 
   return (
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px' }}>
+    <>
+    <AmbientGlow />
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px', position: 'relative', zIndex: 1 }}>
       <BackButton onClick={() => planner.go('home')} />
       <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>{t('dl.title')}</div>
       <div style={{ fontSize: 13, lineHeight: 1.5, color: '#8a8a99', marginTop: 8 }}>{t('dl.subtitle')}</div>
@@ -162,6 +165,7 @@ export default function Deadline({ planner }) {
         <ConfirmCard title={t('dl.savedTitle')} sub={t('dl.savedSub')} onDone={goHomeDeadline} buttonLabel={t('sum.backToStart')} />
       )}
     </div>
+    </>
   );
 }
 

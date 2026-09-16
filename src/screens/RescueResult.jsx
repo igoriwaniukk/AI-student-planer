@@ -1,4 +1,5 @@
 import { BackButton, StickyFooter, PrimaryButton, ConfirmCard } from '../components/ui';
+import AmbientGlow from '../components/AmbientGlow';
 import { useLang } from '../lib/useLang';
 import { REFERENCE_DAY } from '../lib/plannerData';
 import { weekdayDateLabel, span, fmt, hm, durOf, startOf } from '../lib/plannerLogic';
@@ -34,7 +35,9 @@ export default function RescueResult({ planner }) {
   const earliestStart = nBlocks ? Math.min(...scheduledIds.map((id) => schedule[id].start)) : null;
 
   return (
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px' }}>
+    <>
+    <AmbientGlow />
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BackButton onClick={() => go('rescue')} />
         <span style={{ fontSize: 11, fontWeight: 650, color: '#c9baff', padding: '8px 14px', borderRadius: 999, background: 'rgba(124,92,255,.14)', border: '1px solid rgba(124,92,255,.45)' }}>{t('rr.readyToReview')}</span>
@@ -99,5 +102,6 @@ export default function RescueResult({ planner }) {
         />
       )}
     </div>
+    </>
   );
 }

@@ -2,6 +2,7 @@ import { REASON_OPTIONS, RESCUE_TIME_OPTIONS, PRIO_STYLE, REFERENCE_DAY } from '
 import { durOf, startOf, span, weekdayDateLabel, fmt } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
+import AmbientGlow from '../components/AmbientGlow';
 import { useLang } from '../lib/useLang';
 
 export default function Rescue({ planner }) {
@@ -12,7 +13,9 @@ export default function Rescue({ planner }) {
   const remainingCount = computeActiveIds(state.taskDefs, state.tasks, state.taskState).length;
 
   return (
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px' }}>
+    <>
+    <AmbientGlow />
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BackButton onClick={() => go('home')} />
         <span style={{ fontSize: 11, fontWeight: 650, color: '#c9c9d6', padding: '8px 13px', borderRadius: 999, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)' }}>{t('rescue.now')}</span>
@@ -136,6 +139,7 @@ export default function Rescue({ planner }) {
         <PrimaryButton onClick={rescueGenerate}>{t('rescue.rescueBtn')}</PrimaryButton>
       </StickyFooter>
     </div>
+    </>
   );
 }
 

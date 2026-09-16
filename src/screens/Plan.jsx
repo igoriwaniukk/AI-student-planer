@@ -1,5 +1,6 @@
 import { hm, fmt, formatMonthDay, weekdayOn } from '../lib/plannerLogic';
 import { BackButton, StickyFooter, PrimaryButton, ConfirmCard, Pill } from '../components/ui';
+import AmbientGlow from '../components/AmbientGlow';
 import { useLang } from '../lib/useLang';
 import TaskEditSheet from '../components/TaskEditSheet';
 import BlockEditSheet from '../components/BlockEditSheet';
@@ -19,7 +20,9 @@ export default function Plan({ planner }) {
   const prefPhrase = state.pref === 'Więcej krótkich przerw' ? t('plan.prefBreaks') : state.pref === 'Najpierw najtrudniejsze' ? t('plan.prefHardest') : t('plan.prefFree');
 
   return (
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 120px' }}>
+    <>
+    <AmbientGlow />
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 120px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {/* Once a plan is approved, this screen is reached by viewing an
             already-saved plan (Home's "See full plan"), so back should exit
@@ -74,5 +77,6 @@ export default function Plan({ planner }) {
         />
       )}
     </div>
+    </>
   );
 }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import WeekStrip from '../components/WeekStrip';
+import AmbientGlow from '../components/AmbientGlow';
 import { BackButton, Pill, SectionTitle } from '../components/ui';
 import { upcomingExams, hm, dayInfo, formatMonthDay } from '../lib/plannerLogic';
 import { REFERENCE_DAY } from '../lib/plannerData';
@@ -48,7 +49,9 @@ export default function Calendar({ planner, activities, recurringActivities = []
   const dayRecurring = recurringActivities.filter((a) => a.day === info.label);
 
   return (
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px' }}>
+    <>
+    <AmbientGlow />
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px', position: 'relative', zIndex: 1 }}>
       <BackButton onClick={() => go('home')} />
       <div style={{ fontSize: 20, fontWeight: 750, letterSpacing: '-.02em', marginTop: 20 }}>{t('cal.title')}</div>
       <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 4 }}>{t('cal.subtitle')}</div>
@@ -120,5 +123,6 @@ export default function Calendar({ planner, activities, recurringActivities = []
         )}
       </div>
     </div>
+    </>
   );
 }
