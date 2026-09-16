@@ -62,7 +62,7 @@ export default function Settings({ planner, studyHistory, onSignOut, onDeleteAcc
   return (
     <>
     <AmbientGlow />
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 40px', position: 'relative', zIndex: 1 }}>
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 40px', position: 'relative', zIndex: 50 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <BackButton onClick={() => planner.go('profile')} />
         <div style={{ fontSize: 22, fontWeight: 750, letterSpacing: '-.01em' }}>{t('settings.title')}</div>

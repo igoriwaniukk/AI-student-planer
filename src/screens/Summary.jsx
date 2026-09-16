@@ -36,7 +36,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
   return (
     <>
     <AmbientGlow />
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px', position: 'relative', zIndex: 1 }}>
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px', position: 'relative', zIndex: 50 }}>
       <BackButton onClick={() => go('home')} />
       <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>{t('sum.title')}</div>
       <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('sum.date', { date: weekdayDateLabel(REFERENCE_DAY) })}</div>

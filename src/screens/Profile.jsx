@@ -262,7 +262,7 @@ export default function Profile({ studentName, setStudentName, profilePhoto, set
   return (
     <>
     <AmbientGlow />
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px', position: 'relative', zIndex: 1 }}>
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px', position: 'relative', zIndex: 50 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 8 }}>
         <AvatarPicker photo={profilePhoto} setPhoto={setProfilePhoto} initials={initials} />
         <div style={{ flex: 1, minWidth: 0 }}>

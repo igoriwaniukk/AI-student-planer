@@ -105,9 +105,9 @@ function StreakCard({ streak, selectedDay, onSelectDay, eventDays }) {
     <div style={{ marginTop: 14, padding: '13px 15px 10px', borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.streak')}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 999, background: 'rgba(46,230,197,.14)', border: '1px solid rgba(46,230,197,.35)', animation: 'cardGlowPulse 2.6s ease-in-out infinite', '--glow-color': 'rgba(46,230,197,.45)' }}>
-          <span style={{ fontSize: 12.5, display: 'inline-block', animation: bumping ? 'streakBump .7s ease' : 'pulseGlow 1.8s ease-in-out infinite' }}>🔥</span>
-          <span style={{ fontSize: 13, fontWeight: 750, fontVariantNumeric: 'tabular-nums', color: '#7fe8cf' }}><AnimatedNumber value={streak} /></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 999, background: 'rgba(245,165,36,.14)', border: '1px solid rgba(245,165,36,.3)' }}>
+          <span style={{ fontSize: 12.5, animation: bumping ? 'streakBump .7s ease' : (streak > 0 ? 'pulseGlow 1.8s ease-in-out infinite' : 'none') }}>🔥</span>
+          <span style={{ fontSize: 13, fontWeight: 750, fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={streak} /></span>
         </div>
       </div>
       <WeekStrip selectedDay={selectedDay} onSelect={onSelectDay} streakCount={streak} eventDays={eventDays} topMargin={12} pageable />
@@ -456,7 +456,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
   return (
     <>
       <AmbientGlow />
-      <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px', position: 'relative', zIndex: 1 }}>
+      <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px', position: 'relative', zIndex: 50 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div>
           <div style={{ fontSize: 12.5, color: '#8a8a99', letterSpacing: '.01em' }}>{dateLong}</div>
@@ -468,7 +468,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 9 }}>
             <div
               onClick={() => toggleBadge('achievements')}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(240,169,60,.1)', border: '1px solid ' + (openBadge === 'achievements' ? 'rgba(240,169,60,.7)' : 'rgba(240,169,60,.28)'), cursor: 'pointer', animation: 'cardGlowPulse 3.2s ease-in-out infinite', '--glow-color': 'rgba(240,169,60,.4)' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(240,169,60,.1)', border: '1px solid ' + (openBadge === 'achievements' ? 'rgba(240,169,60,.7)' : 'rgba(240,169,60,.28)'), cursor: 'pointer' }}
             >
               <span style={{ fontSize: 12 }}>🎖️</span>
               <span style={{ fontSize: 10.5, fontWeight: 700, color: '#f0c078' }}>{t('home.badgesCount', { n: unlockedAchievements.length, total: ACHIEVEMENTS.length })}</span>
@@ -476,7 +476,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
             {isRealDay && (
               <div
                 onClick={() => toggleBadge('progress')}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(46,230,197,.1)', border: '1px solid ' + (openBadge === 'progress' ? 'rgba(46,230,197,.7)' : 'rgba(46,230,197,.28)'), cursor: 'pointer', animation: 'cardGlowPulse 3.2s ease-in-out infinite', '--glow-color': 'rgba(46,230,197,.45)' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(46,230,197,.1)', border: '1px solid ' + (openBadge === 'progress' ? 'rgba(46,230,197,.7)' : 'rgba(46,230,197,.28)'), cursor: 'pointer' }}
               >
                 <span style={{ fontSize: 12 }}>📊</span>
                 <span style={{ fontSize: 10.5, fontWeight: 700, color: '#7fe8cf' }}>{t('home.todayProgressBadge', { pct, done: doneCount, total: totalCount })}</span>
