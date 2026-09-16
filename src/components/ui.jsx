@@ -1,7 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLang } from '../lib/useLang';
 import { VALUE_KEY } from '../lib/i18n';
 import { STATUS_COLOR } from '../lib/plannerData';
+
+// Every screen wraps its own content in `position: relative; z-index: 1`
+// (see AmbientGlow.jsx) so it paints above the background glow — but that
+// same wrapper also traps any full-screen overlay rendered inside it (like
+// BottomSheet below) under a single effective stacking rank of 1, no matter
+// what z-index the overlay itself declares. The floating chat button and
+// tab bar live outside that wrapper with explicit z-index 40-45, so they
+// still render on top of a "trapped" overlay. Portaling the overlay onto
+// .app-shell itself — a sibling of the chat button and tab bar — escapes
+// that trap without changing any screen's own stacking rank (which is what
+// broke click-through the first time this was attempted, see git history).
+export function AppShellPortal({ children }) {
+  const shell = typeof document !== 'undefined' ? document.querySelector('.app-shell') : null;
+  if (!shell) return children;
+  return createPortal(children, shell);
+}
 
 // Animates a numeric value counting up (or down) to its new value whenever
 // it changes, instead of jumping instantly — used for streak/points badges.
@@ -282,11 +299,13 @@ function BatteryIcon({ level }) {
 
 export function BottomSheet({ children, maxHeight = '86%' }) {
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 76, background: 'rgba(6,6,10,.75)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end' }}>
-      <div className="sc" style={{ width: '100%', maxHeight, overflowY: 'auto', padding: 20, borderRadius: '24px 24px 0 0', background: '#101018', borderTop: '1px solid rgba(255,255,255,.12)', animation: 'fadeUp .3s ease both' }}>
-        {children}
+    <AppShellPortal>
+      <div style={{ position: 'absolute', inset: 0, zIndex: 76, background: 'rgba(6,6,10,.75)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end' }}>
+        <div className="sc" style={{ width: '100%', maxHeight, overflowY: 'auto', padding: 20, borderRadius: '24px 24px 0 0', background: '#101018', borderTop: '1px solid rgba(255,255,255,.12)', animation: 'fadeUp .3s ease both' }}>
+          {children}
+        </div>
       </div>
-    </div>
+    </AppShellPortal>
   );
 }
 
@@ -294,22 +313,24 @@ export function ConfirmCard({ title, sub, onDone, buttonLabel }) {
   const { t } = useLang();
   const label = buttonLabel || t('sum.backToStart');
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 78, background: 'rgba(6,6,10,.72)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end', padding: 20 }}>
-      <div style={{ width: '100%', padding: 20, borderRadius: 24, background: '#101018', border: '1px solid rgba(255,255,255,.1)', boxShadow: '0 -20px 50px rgba(0,0,0,.5)', animation: 'fadeUp .3s ease both' }}>
-        <div style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
-          <div style={{ width: 30, height: 30, flex: 'none', borderRadius: 10, background: 'rgba(53,208,127,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="14" height="11" viewBox="0 0 13 11" fill="none"><path d="M1 5.6L4.6 9.4 12 1.6" stroke="#35d07f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    <AppShellPortal>
+      <div style={{ position: 'absolute', inset: 0, zIndex: 78, background: 'rgba(6,6,10,.72)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end', padding: 20 }}>
+        <div style={{ width: '100%', padding: 20, borderRadius: 24, background: '#101018', border: '1px solid rgba(255,255,255,.1)', boxShadow: '0 -20px 50px rgba(0,0,0,.5)', animation: 'fadeUp .3s ease both' }}>
+          <div style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
+            <div style={{ width: 30, height: 30, flex: 'none', borderRadius: 10, background: 'rgba(53,208,127,.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <svg width="14" height="11" viewBox="0 0 13 11" fill="none"><path d="M1 5.6L4.6 9.4 12 1.6" stroke="#35d07f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.35 }}>{title}</div>
+              {sub && <div style={{ fontSize: 12.5, color: '#a3a3b3', marginTop: 6 }}>{sub}</div>}
+            </div>
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.35 }}>{title}</div>
-            {sub && <div style={{ fontSize: 12.5, color: '#a3a3b3', marginTop: 6 }}>{sub}</div>}
+          <div onClick={onDone} style={{ marginTop: 16, height: 52, borderRadius: 16, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15.5, fontWeight: 700, cursor: 'pointer' }}>
+            {label}
           </div>
-        </div>
-        <div onClick={onDone} style={{ marginTop: 16, height: 52, borderRadius: 16, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15.5, fontWeight: 700, cursor: 'pointer' }}>
-          {label}
         </div>
       </div>
-    </div>
+    </AppShellPortal>
   );
 }
 

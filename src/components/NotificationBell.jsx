@@ -4,6 +4,7 @@ import { useCustomReminders, useSeenNotifSignature } from '../lib/store';
 import { useLang } from '../lib/useLang';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { VALUE_KEY } from '../lib/i18n';
+import { AppShellPortal } from './ui';
 
 export default function NotificationBell({ state, streak = 0, inline = false }) {
   const { t, lang } = useLang();
@@ -67,7 +68,7 @@ export default function NotificationBell({ state, streak = 0, inline = false }) 
       </div>
 
       {open && (
-        <>
+        <AppShellPortal>
           <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 74 }} />
           <div
             className="sc"
@@ -137,7 +138,7 @@ export default function NotificationBell({ state, streak = 0, inline = false }) 
               <div style={{ fontSize: 11, color: '#8a8a99', marginTop: 4, lineHeight: 1.4 }}>{pushNote}</div>
             </div>
           </div>
-        </>
+        </AppShellPortal>
       )}
     </>
   );
