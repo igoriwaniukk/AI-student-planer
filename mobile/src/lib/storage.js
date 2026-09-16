@@ -9,6 +9,9 @@ export const KEYS = {
   seenAchievements: 'sp_seenAchievements',
   lastSeenStreak: 'sp_lastSeenStreak',
   language: 'sp_language',
+  activities: 'sp_activities',
+  profileDefaults: 'sp_profileDefaults',
+  plannerData: 'sp_plannerData',
 };
 
 // AsyncStorage is async, unlike web's localStorage, so every key's current
@@ -92,4 +95,23 @@ export function useLastSeenStreak() {
 
 export function useLanguage() {
   return useLocalStorage(KEYS.language, 'pl');
+}
+
+export function useActivities() {
+  return useLocalStorage(KEYS.activities, null);
+}
+
+export function useProfileDefaults() {
+  return useLocalStorage(KEYS.profileDefaults, {
+    studyTime: 'Wieczorem',
+    bedtime: '22:30',
+    wake: '06:30',
+    energy: 'Normalna',
+    pref: 'Wolny wieczór',
+    prioritySubjects: [],
+  });
+}
+
+export function usePlannerData() {
+  return useLocalStorage(KEYS.plannerData, null);
 }
