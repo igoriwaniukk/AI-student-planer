@@ -2,7 +2,7 @@ import { useState } from 'react';
 import WeekStrip from '../components/WeekStrip';
 import AmbientGlow from '../components/AmbientGlow';
 import { BackButton, Pill, SectionTitle } from '../components/ui';
-import { upcomingExams, hm, dayInfo, formatMonthDay } from '../lib/plannerLogic';
+import { upcomingExams, dayInfo, formatMonthDay } from '../lib/plannerLogic';
 import { REFERENCE_DAY } from '../lib/plannerData';
 import { DAY_KEY, VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
@@ -64,30 +64,16 @@ export default function Calendar({ planner, activities, recurringActivities = []
       <SectionTitle style={{ margin: '22px 0 12px' }}>{t('cal.upcoming')}</SectionTitle>
       {weekExams.length ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
-          {weekExams.map((e) => {
-            const goal = state.examGoals?.[e.id];
-            return (
-              <Card key={e.id} style={{ background: 'rgba(245,165,36,.06)', border: '1px solid rgba(245,165,36,.28)', animation: 'cardGlowPulse 3.4s ease-in-out infinite', '--glow-color': 'rgba(245,165,36,.4)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                  <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: e.color }}>{(t(VALUE_KEY[e.subject]) || e.subject).toUpperCase()}</span>
-                  <Pill text={e.daysUntil === 1 ? t('cal.tomorrowPill') : t('cal.inDaysPill', { n: e.daysUntil })} color="#f5a524" bg="rgba(245,165,36,.15)" />
-                </div>
-                <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6 }}>{t(VALUE_KEY[e.title]) || e.title}</div>
-                <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 3 }}>{t(DAY_KEY[dayInfo(e.day).label]) || dayInfo(e.day).label}, {formatMonthDay(e.day)}</div>
-                <div
-                  onClick={() => go('goals')}
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,.07)', cursor: 'pointer' }}
-                >
-                  {goal ? (
-                    <span style={{ fontSize: 12, color: '#c9baff' }}>🎯 {t('cal.goal', { grade: goal.grade, time: hm(goal.studyMinutes) })}</span>
-                  ) : (
-                    <span style={{ fontSize: 12, color: '#8a8a99' }}>{t('cal.noGoal')}</span>
-                  )}
-                  <span style={{ fontSize: 12, fontWeight: 650, color: '#a58cff' }}>{t('cal.goToGoals')} ›</span>
-                </div>
-              </Card>
-            );
-          })}
+          {weekExams.map((e) => (
+            <Card key={e.id} style={{ background: 'rgba(245,165,36,.06)', border: '1px solid rgba(245,165,36,.28)', animation: 'cardGlowPulse 3.4s ease-in-out infinite', '--glow-color': 'rgba(245,165,36,.4)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+                <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: e.color }}>{(t(VALUE_KEY[e.subject]) || e.subject).toUpperCase()}</span>
+                <Pill text={e.daysUntil === 1 ? t('cal.tomorrowPill') : t('cal.inDaysPill', { n: e.daysUntil })} color="#f5a524" bg="rgba(245,165,36,.15)" />
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6 }}>{t(VALUE_KEY[e.title]) || e.title}</div>
+              <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 3 }}>{t(DAY_KEY[dayInfo(e.day).label]) || dayInfo(e.day).label}, {formatMonthDay(e.day)}</div>
+            </Card>
+          ))}
         </div>
       ) : (
         <Card><div style={{ fontSize: 12.5, color: '#8a8a99' }}>{t('cal.noUpcoming')}</div></Card>

@@ -18,12 +18,11 @@ const TABS = [
     key: 'deadline', labelKey: 'tab.deadline', fab: true,
   },
   {
-    key: 'goals', labelKey: 'tab.goals', screens: ['goals'],
+    key: 'tasks', labelKey: 'tab.tasks', screens: ['tasks'],
     icon: (c) => (
       <>
-        <circle cx="11" cy="11" r="7.6" stroke={c} strokeWidth="1.5" />
-        <circle cx="11" cy="11" r="3.4" stroke={c} strokeWidth="1.5" />
-        <circle cx="11" cy="11" r="1" fill={c} />
+        <path d="M3.6 5.6h9.4M3.6 11h9.4M3.6 16.4h6.2" stroke={c} strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M16 4.4l1.4 1.4L20 3.2" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </>
     ),
   },

@@ -1,18 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { GOALS, IMPORTANCE_OPTIONS, REFERENCE_DAY } from '../lib/plannerData';
-import { span, computeStreak, computeTotalPoints, dayInfo, upcomingExams, examProgressMinutes, formatMonthDay, weekdayOn } from '../lib/plannerLogic';
+import { REFERENCE_DAY } from '../lib/plannerData';
+import { span, computeStreak, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn } from '../lib/plannerLogic';
 import { ACHIEVEMENTS, computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import WeekStrip from '../components/WeekStrip';
 import AmbientGlow from '../components/AmbientGlow';
-import { Pill, BottomSheet, EnergyPicker, Chip, AnimatedNumber, Confetti, StatusPill, ProgressBar, AchievementMedal } from '../components/ui';
+import { Pill, BottomSheet, EnergyPicker, AnimatedNumber, Confetti, StatusPill, ProgressBar, AchievementMedal } from '../components/ui';
 
 const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
-// Matches Goals.jsx's DEFAULT_GOAL — an exam without a saved goal still gets
-// a sensible study-time target so its readiness % here isn't just stuck at 0.
-const DEFAULT_EXAM_GOAL = { grade: GOALS[2], studyMinutes: 120, importance: 'Średni' };
 
 function AchievementModal({ achievement, onClose }) {
   const { t } = useLang();
@@ -108,66 +105,12 @@ function StreakCard({ streak, selectedDay, onSelectDay, eventDays }) {
     <div style={{ marginTop: 14, padding: '13px 15px 10px', borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.streak')}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 999, background: 'rgba(245,165,36,.14)', border: '1px solid rgba(245,165,36,.3)' }}>
-          <span style={{ fontSize: 12.5, animation: bumping ? 'streakBump .7s ease' : (streak > 0 ? 'pulseGlow 1.8s ease-in-out infinite' : 'none') }}>🔥</span>
-          <span style={{ fontSize: 13, fontWeight: 750, fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={streak} /></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 999, background: 'rgba(46,230,197,.14)', border: '1px solid rgba(46,230,197,.35)', animation: 'cardGlowPulse 2.6s ease-in-out infinite', '--glow-color': 'rgba(46,230,197,.45)' }}>
+          <span style={{ fontSize: 12.5, display: 'inline-block', animation: bumping ? 'streakBump .7s ease' : 'pulseGlow 1.8s ease-in-out infinite' }}>🔥</span>
+          <span style={{ fontSize: 13, fontWeight: 750, fontVariantNumeric: 'tabular-nums', color: '#7fe8cf' }}><AnimatedNumber value={streak} /></span>
         </div>
       </div>
       <WeekStrip selectedDay={selectedDay} onSelect={onSelectDay} streakCount={streak} eventDays={eventDays} topMargin={12} pageable />
-    </div>
-  );
-}
-
-function GoalPromptCard({ planner, exam }) {
-  const { t } = useLang();
-  const { answerGoalPrompt, dismissGoalPrompt } = planner;
-  const [step, setStep] = useState(0);
-  const [importance, setImportance] = useState('');
-  const [grade, setGrade] = useState('');
-  const canSave = importance && grade;
-
-  return (
-    <div style={{ marginTop: 18, padding: 16, borderRadius: 20, background: 'rgba(124,92,255,.08)', border: '1.5px solid rgba(124,92,255,.35)', animation: step === 0 ? 'cardGlowPulse 3.4s ease-in-out infinite' : 'none', '--glow-color': 'rgba(124,92,255,.4)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-        <span style={{ fontSize: 16 }}>🎯</span>
-        <div style={{ fontSize: 13.5, fontWeight: 700 }}>{t('home.examSoon', { subject: t(VALUE_KEY[exam.subject]) || exam.subject })}</div>
-      </div>
-      <div style={{ fontSize: 12, color: '#a3a3b3', marginTop: 6, lineHeight: 1.45 }}>
-        {t('home.examSoonDesc', { title: t(VALUE_KEY[exam.title]) || exam.title, when: exam.daysUntil === 1 ? t('cal.tomorrowPill').toLowerCase() : t('cal.inDaysPill', { n: exam.daysUntil }).toLowerCase() })}
-      </div>
-
-      {step === 0 ? (
-        <>
-          <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '14px 0 8px' }}>{t('goals.howImportantQ')}</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            {IMPORTANCE_OPTIONS.map((imp) => (
-              <Chip key={imp} label={t(VALUE_KEY[imp]) || imp} active={importance === imp} onClick={() => { setImportance(imp); setStep(1); }} style={{ flex: 1, textAlign: 'center' }} />
-            ))}
-          </div>
-          <div onClick={() => dismissGoalPrompt(exam.id)} style={{ marginTop: 16, height: 44, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, cursor: 'pointer' }}>{t('home.later')}</div>
-        </>
-      ) : (
-        <>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '14px 0 8px' }}>
-            <span style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a' }}>{t('home.whatGradeWant')}</span>
-            <span onClick={() => setStep(0)} style={{ fontSize: 11.5, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>‹ {t('home.back')}</span>
-          </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-            {GOALS.map((g) => (
-              <Chip key={g} label={t(VALUE_KEY[g]) || g} active={grade === g} onClick={() => setGrade(g)} />
-            ))}
-          </div>
-          <div style={{ display: 'flex', gap: 11, marginTop: 16 }}>
-            <div onClick={() => dismissGoalPrompt(exam.id)} style={{ flex: 1, height: 44, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, cursor: 'pointer' }}>{t('home.later')}</div>
-            <div
-              onClick={() => canSave && answerGoalPrompt(exam.id, { importance, grade })}
-              style={{ flex: 1.3, height: 44, borderRadius: 14, background: canSave ? 'linear-gradient(160deg,#8b6dff,#6d4dff)' : 'rgba(255,255,255,.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: canSave ? '#fff' : '#6b6b7a', cursor: canSave ? 'pointer' : 'not-allowed' }}
-            >
-              {t('home.saveGoal')}
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }
@@ -451,7 +394,6 @@ function EnergyHistory({ energyLog }) {
 export default function Home({ planner, studentName, profilePhoto, energyLog = [], logEnergy = () => {}, studyHistory = {}, recurringActivities = [] }) {
   const { t } = useLang();
   const { state, ts, openEnergySheet } = planner;
-  const goalExam = planner.nextGoalPrompt();
   const [viewDay, setViewDay] = useState(state.selectedDay);
   const info = dayInfo(viewDay);
   const isRealDay = viewDay === state.selectedDay;
@@ -511,11 +453,6 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
     const d = planner.def(missedId);
     return { id: missedId, title: t(TASK_TEXT_KEY[d.id]?.title) || d.title };
   })();
-  const examPct = (exam) => {
-    const goal = state.examGoals?.[exam.id] || DEFAULT_EXAM_GOAL;
-    return goal.studyMinutes ? Math.min(100, Math.round((examProgressMinutes(state, exam.id) / goal.studyMinutes) * 100)) : 0;
-  };
-
   return (
     <>
       <AmbientGlow />
@@ -531,7 +468,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 9 }}>
             <div
               onClick={() => toggleBadge('achievements')}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(240,169,60,.1)', border: '1px solid ' + (openBadge === 'achievements' ? 'rgba(240,169,60,.7)' : 'rgba(240,169,60,.28)'), cursor: 'pointer' }}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(240,169,60,.1)', border: '1px solid ' + (openBadge === 'achievements' ? 'rgba(240,169,60,.7)' : 'rgba(240,169,60,.28)'), cursor: 'pointer', animation: 'cardGlowPulse 3.2s ease-in-out infinite', '--glow-color': 'rgba(240,169,60,.4)' }}
             >
               <span style={{ fontSize: 12 }}>🎖️</span>
               <span style={{ fontSize: 10.5, fontWeight: 700, color: '#f0c078' }}>{t('home.badgesCount', { n: unlockedAchievements.length, total: ACHIEVEMENTS.length })}</span>
@@ -539,19 +476,10 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
             {isRealDay && (
               <div
                 onClick={() => toggleBadge('progress')}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(46,230,197,.1)', border: '1px solid ' + (openBadge === 'progress' ? 'rgba(46,230,197,.7)' : 'rgba(46,230,197,.28)'), cursor: 'pointer' }}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(46,230,197,.1)', border: '1px solid ' + (openBadge === 'progress' ? 'rgba(46,230,197,.7)' : 'rgba(46,230,197,.28)'), cursor: 'pointer', animation: 'cardGlowPulse 3.2s ease-in-out infinite', '--glow-color': 'rgba(46,230,197,.45)' }}
               >
                 <span style={{ fontSize: 12 }}>📊</span>
                 <span style={{ fontSize: 10.5, fontWeight: 700, color: '#7fe8cf' }}>{t('home.todayProgressBadge', { pct, done: doneCount, total: totalCount })}</span>
-              </div>
-            )}
-            {nearestExam && (
-              <div
-                onClick={() => toggleBadge('goal')}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(165,140,255,.1)', border: '1px solid ' + (openBadge === 'goal' ? 'rgba(165,140,255,.7)' : 'rgba(165,140,255,.28)'), cursor: 'pointer' }}
-              >
-                <span style={{ fontSize: 12 }}>🎯</span>
-                <span style={{ fontSize: 10.5, fontWeight: 700, color: '#c9baff' }}>{t('home.weekGoalBadge', { subject: t(VALUE_KEY[nearestExam.subject]) || nearestExam.subject, pct: examPct(nearestExam) })}</span>
               </div>
             )}
           </div>
@@ -592,20 +520,6 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
             </div>
           )}
 
-          {openBadge === 'goal' && nearestExam && (
-            <div style={{ marginTop: 10, maxWidth: 300, padding: 15, borderRadius: 16, background: '#14141c', border: '1px solid rgba(165,140,255,.3)', transformOrigin: 'top left', animation: 'stepIn .22s ease both' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: 13.5, fontWeight: 750 }}>{t('home.weekGoal')}</div>
-                <span onClick={() => setOpenBadge(null)} style={{ fontSize: 16, color: '#6b6b7a', cursor: 'pointer', lineHeight: 1 }}>×</span>
-              </div>
-              <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.3, marginTop: 10 }}>{t('home.examPrepGoal', { subject: t(VALUE_KEY[nearestExam.subject]) || nearestExam.subject })}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginTop: 9 }}>
-                <div style={{ fontSize: 24, fontWeight: 750, color: '#2ee6c5' }}>{examPct(nearestExam)}%</div>
-                <div style={{ fontSize: 11.5, color: '#8a8a99' }}>{t('home.readiness')}</div>
-              </div>
-              <ProgressBar pct={examPct(nearestExam)} style={{ marginTop: 11 }} />
-            </div>
-          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4, paddingRight: 46 }}>
           <div
@@ -637,8 +551,6 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
           </div>
         );
       })()}
-
-      {goalExam && <GoalPromptCard key={goalExam.id} planner={planner} exam={goalExam} />}
 
       {isRealDay ? (
         <>
@@ -674,12 +586,8 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.nextDeadline')}</div>
             <div style={{ fontSize: 14, fontWeight: 700, marginTop: 4 }}>{t(VALUE_KEY[nearestExam.title]) || nearestExam.title}</div>
-            <div style={{ fontSize: 12, fontWeight: 650, color: '#f5a524', marginTop: 2 }}>{nearestExam.daysUntil === 1 ? t('cal.tomorrowPill') : t('cal.inDaysPill', { n: nearestExam.daysUntil })}</div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: 21, fontWeight: 750 }}>{examPct(nearestExam)}%</div>
-            <div style={{ fontSize: 10.5, color: '#8a8a99' }}>{t('home.readiness')}</div>
-          </div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#f5a524', flex: 'none' }}>{nearestExam.daysUntil === 1 ? t('cal.tomorrowPill') : t('cal.inDaysPill', { n: nearestExam.daysUntil })}</div>
         </div>
       )}
 
@@ -697,11 +605,6 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
                   <Pill text={exam.daysUntil === 1 ? t('cal.tomorrowPill') : t('cal.inDaysPill', { n: exam.daysUntil })} color="#f5a524" bg="rgba(245,165,36,.15)" />
                 </div>
                 <div style={{ fontSize: 14.5, fontWeight: 700, marginTop: 6 }}>{t(VALUE_KEY[exam.title]) || exam.title}</div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-                  <span style={{ fontSize: 11, color: '#8a8a99' }}>{t('home.readiness')}</span>
-                  <span style={{ fontSize: 12.5, fontWeight: 700, color: '#f5a524' }}>{examPct(exam)}%</span>
-                </div>
-                <ProgressBar pct={examPct(exam)} fill="#f5a524" style={{ marginTop: 6 }} />
               </div>
             )) : (
               <div style={{ fontSize: 12.5, color: '#8a8a99' }}>{t('cal.noUpcoming')}</div>

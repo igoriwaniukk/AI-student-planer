@@ -5,7 +5,7 @@ import QuickAddSheet from './components/QuickAddSheet';
 import { GeneratingOverlay } from './components/ui';
 import Home from './screens/Home';
 import Calendar from './screens/Calendar';
-import Goals from './screens/Goals';
+import Tasks from './screens/Tasks';
 import Planner from './screens/Planner';
 import Plan from './screens/Plan';
 import Rescue from './screens/Rescue';
@@ -112,12 +112,12 @@ function useCloudSync(session) {
   return { ready, syncError };
 }
 
-const TAB_SCREENS = new Set(['home', 'calendar', 'goals', 'profile']);
+const TAB_SCREENS = new Set(['home', 'calendar', 'tasks', 'profile']);
 
 // Mounted only once onboarding is done, so usePlanner's initial state (a lazy
 // useState initializer, which only ever runs on first mount) picks up the
 // profile defaults onboarding just saved instead of whatever was there before.
-function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, activities, profileDefaults, setProfileDefaults, weeklyCapacity, setWeeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities, onSignOut, onDeleteAccount, syncError }) {
+function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, activities, profileDefaults, setProfileDefaults, weeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities, onSignOut, onDeleteAccount, syncError }) {
   const [plannerData, setPlannerData] = usePlannerData();
   const planner = usePlanner(profileDefaults, activities, recurringActivities, plannerData, setPlannerData);
   const { state } = planner;
@@ -139,7 +139,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
         />
       )}
       {screen === 'calendar' && <Calendar planner={planner} activities={activities} recurringActivities={recurringActivities} />}
-      {screen === 'goals' && <Goals planner={planner} weeklyCapacity={weeklyCapacity} setWeeklyCapacity={setWeeklyCapacity} />}
+      {screen === 'tasks' && <Tasks planner={planner} />}
       {screen === 'planner' && <Planner planner={planner} />}
       {screen === 'plan' && <Plan planner={planner} />}
       {screen === 'rescue' && <Rescue planner={planner} />}
@@ -215,7 +215,7 @@ export default function App() {
   const [schoolPlan] = useSchoolPlan();
   const [activities, setActivities] = useActivities();
   const [profileDefaults, setProfileDefaults] = useProfileDefaults();
-  const [weeklyCapacity, setWeeklyCapacity] = useWeeklyCapacity();
+  const [weeklyCapacity] = useWeeklyCapacity();
   const [energyLog, setEnergyLog] = useEnergyLog();
   const [studyHistory, setStudyHistory] = useStudyHistory();
   const [recurringActivities, setRecurringActivities] = useRecurringActivities();
@@ -300,7 +300,6 @@ export default function App() {
         profileDefaults={profileDefaults}
         setProfileDefaults={setProfileDefaults}
         weeklyCapacity={weeklyCapacity}
-        setWeeklyCapacity={setWeeklyCapacity}
         energyLog={energyLog}
         logEnergy={logEnergy}
         studyHistory={studyHistory}

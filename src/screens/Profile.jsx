@@ -273,9 +273,12 @@ export default function Profile({ studentName, setStudentName, profilePhoto, set
           <NotificationBell state={state} streak={streak} inline />
           <div
             onClick={() => planner.go('settings')}
-            style={{ width: 38, height: 38, flex: 'none', borderRadius: '50%', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 16 }}
+            style={{ width: 38, height: 38, flex: 'none', borderRadius: '50%', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
           >
-            ⚙️
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M9.1 1.6l.32 1.4a5.4 5.4 0 011.5.87l1.36-.46 1 1.73-1.06.97a5.4 5.4 0 010 1.72l1.06.97-1 1.73-1.36-.46a5.4 5.4 0 01-1.5.87l-.32 1.4H6.9l-.32-1.4a5.4 5.4 0 01-1.5-.87l-1.36.46-1-1.73 1.06-.97a5.4 5.4 0 010-1.72L2.72 5.14l1-1.73 1.36.46a5.4 5.4 0 011.5-.87l.32-1.4h2.2z" stroke="#c9c9d6" strokeWidth="1.2" strokeLinejoin="round" />
+              <circle cx="8" cy="8" r="2.1" stroke="#c9c9d6" strokeWidth="1.2" />
+            </svg>
           </div>
         </div>
       </div>
