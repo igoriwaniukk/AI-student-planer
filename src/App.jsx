@@ -15,6 +15,7 @@ import Deadline from './screens/Deadline';
 import Prep from './screens/Prep';
 import Summary from './screens/Summary';
 import Profile from './screens/Profile';
+import Settings from './screens/Settings';
 import Onboarding from './screens/Onboarding';
 import Auth, { NewPasswordScreen } from './screens/Auth';
 import {
@@ -161,10 +162,10 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
           studyHistory={studyHistory}
           energyLog={energyLog}
           recurringActivities={recurringActivities}
-          onSignOut={onSignOut}
-          onDeleteAccount={onDeleteAccount}
-          syncError={syncError}
         />
+      )}
+      {screen === 'settings' && (
+        <Settings planner={planner} studyHistory={studyHistory} onSignOut={onSignOut} onDeleteAccount={onDeleteAccount} syncError={syncError} />
       )}
 
       {state.generating && <GeneratingOverlay labels={state.genLabels} step={state.genStep} />}

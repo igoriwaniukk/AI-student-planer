@@ -400,6 +400,16 @@ export const dict = {
     'profile.language': 'JĘZYK',
     'profile.polish': 'Polski',
     'profile.english': 'English',
+    'profile.settingsButton': 'Ustawienia',
+
+    // Settings (separate screen, opened from Profile's gear icon)
+    'settings.title': 'Ustawienia',
+    'settings.about': 'O APLIKACJI',
+    'settings.version': 'Wersja {v}',
+    'settings.privacyPolicy': 'Polityka prywatności',
+    'settings.termsOfService': 'Regulamin',
+    'settings.privacyPolicyText': 'Ta aplikacja przechowuje Twoje dane (imię, plan lekcji, zadania, sprawdziany, dziennik energii, zajęcia cykliczne) na koncie w Supabase, powiązanym z Twoim logowaniem. Dane synchronizują się między urządzeniami, na których jesteś zalogowany/a.\n\nGdy prosisz o wygenerowanie planu dnia albo planu ratunkowego, Twoje zadania, preferencje i poziom energii są wysyłane do usługi AI (Claude, Anthropic) wyłącznie po to, by zaproponować harmonogram — nic więcej nie jest do niej przekazywane.\n\nDane nie są sprzedawane ani udostępniane osobom trzecim w celach marketingowych. Możesz usunąć wszystkie swoje dane w każdej chwili w Ustawieniach → Usuń konto — usunięcie jest trwałe i natychmiastowe.',
+    'settings.termsText': 'Student Planner to narzędzie pomagające planować naukę — nie gwarantuje wyników w nauce ani zdania sprawdzianów. Odpowiadasz za treść zadań i sprawdzianów, które dodajesz.\n\nKorzystasz z aplikacji na własną odpowiedzialność; staramy się, aby działała poprawnie, ale mogą zdarzyć się błędy lub przerwy w działaniu.\n\nKonto i wszystkie dane możesz usunąć w dowolnym momencie w Ustawieniach.',
 
     // Home — extra fixed/demo strings
     'home.examSoon': 'Zbliża się sprawdzian: {subject}',
@@ -1103,6 +1113,16 @@ export const dict = {
     'profile.language': 'LANGUAGE',
     'profile.polish': 'Polski',
     'profile.english': 'English',
+    'profile.settingsButton': 'Settings',
+
+    // Settings (separate screen, opened from Profile's gear icon)
+    'settings.title': 'Settings',
+    'settings.about': 'ABOUT THE APP',
+    'settings.version': 'Version {v}',
+    'settings.privacyPolicy': 'Privacy Policy',
+    'settings.termsOfService': 'Terms of Service',
+    'settings.privacyPolicyText': "This app stores your data (name, class schedule, tasks, exams, energy log, recurring activities) in a Supabase account tied to your login. Data syncs across every device you're signed into.\n\nWhen you ask for a day plan or a rescue plan, your tasks, preferences, and energy level are sent to an AI service (Claude, by Anthropic) solely to propose a schedule — nothing else is shared with it.\n\nYour data is never sold or shared with third parties for marketing. You can delete all of your data at any time from Settings → Delete account — deletion is permanent and immediate.",
+    'settings.termsText': "Student Planner is a tool to help you plan your studying — it doesn't guarantee study results or exam outcomes. You're responsible for the content of the tasks and exams you add.\n\nYou use the app at your own risk; we try to keep it working correctly, but bugs or downtime can happen.\n\nYou can delete your account and all your data at any time from Settings.",
 
     'status.planned': 'Planned', 'status.in_progress': 'In progress', 'status.paused': 'Paused',
     'status.completed': 'Done', 'status.moved': 'Moved', 'status.skipped': 'Skipped',
