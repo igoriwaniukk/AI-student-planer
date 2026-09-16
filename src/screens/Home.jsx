@@ -402,24 +402,27 @@ function EnergySheet({ planner, logEnergy }) {
   const { state, cancelEnergySheet, saveEnergySheet, update } = planner;
   if (!state.energySheet) return null;
   return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 80, background: 'rgba(6,6,10,.75)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end' }}>
-      <div style={{ width: '100%', padding: 20, borderRadius: '24px 24px 0 0', background: '#101018', borderTop: '1px solid rgba(255,255,255,.12)', animation: 'fadeUp .3s ease both' }}>
-        <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{t('home.energyPickerTitle')}</div>
-        <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 6 }}>{t('home.energyPickerSub')}</div>
-        <div style={{ marginTop: 18 }}>
-          <EnergyPicker value={state.energyDraft} onChange={(v) => update({ energyDraft: v })} emoji />
+    <BottomSheet>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <div>
+          <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{t('home.energyPickerTitle')}</div>
+          <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 6 }}>{t('home.energyPickerSub')}</div>
         </div>
-        <div style={{ display: 'flex', gap: 11, marginTop: 18, paddingBottom: 8 }}>
-          <div onClick={cancelEnergySheet} style={{ flex: 1, height: 50, borderRadius: 15, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 650, cursor: 'pointer' }}>{t('home.cancel')}</div>
-          <div
-            onClick={() => { logEnergy(state.energyDraft); saveEnergySheet(); }}
-            style={{ flex: 1.3, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-          >
-            {t('home.save')}
-          </div>
+        <span onClick={cancelEnergySheet} style={{ fontSize: 15, color: '#8a8a99', cursor: 'pointer', padding: 4 }}>✕</span>
+      </div>
+      <div style={{ marginTop: 18 }}>
+        <EnergyPicker value={state.energyDraft} onChange={(v) => update({ energyDraft: v })} emoji />
+      </div>
+      <div style={{ display: 'flex', gap: 11, marginTop: 18, paddingBottom: 8 }}>
+        <div onClick={cancelEnergySheet} style={{ flex: 1, height: 50, borderRadius: 15, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 650, cursor: 'pointer' }}>{t('home.cancel')}</div>
+        <div
+          onClick={() => { logEnergy(state.energyDraft); saveEnergySheet(); }}
+          style={{ flex: 1.3, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
+        >
+          {t('home.save')}
         </div>
       </div>
-    </div>
+    </BottomSheet>
   );
 }
 
