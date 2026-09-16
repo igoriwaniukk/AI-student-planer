@@ -1,6 +1,7 @@
 import { PRIO_STYLE } from '../lib/plannerData';
 import { durOf, hm, weekdayDateLabel, fmt, span, freeWindows } from '../lib/plannerLogic';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
+import AmbientGlow from '../components/AmbientGlow';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import TaskEditSheet from '../components/TaskEditSheet';
@@ -22,7 +23,9 @@ export default function Planner({ planner }) {
   const dayWord = t(state.planToday ? 'planner.dayToday' : 'planner.dayTomorrow');
 
   return (
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 176px' }}>
+    <>
+    <AmbientGlow />
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 176px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BackButton onClick={() => go('home')} />
         <span style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.12em', color: '#c9baff', padding: '8px 14px', borderRadius: 999, background: 'rgba(124,92,255,.16)', border: '1px solid rgba(124,92,255,.45)' }}>{t('planner.badge')}</span>
@@ -153,6 +156,7 @@ export default function Planner({ planner }) {
 
       <TaskEditSheet planner={planner} />
     </div>
+    </>
   );
 }
 

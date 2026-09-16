@@ -8,6 +8,7 @@ import { useCustomReminders, resetAppData } from '../lib/store';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { resizeImageToDataURL } from '../lib/image';
 import { Chip, EnergyPicker, AchievementMedal } from '../components/ui';
+import AmbientGlow from '../components/AmbientGlow';
 
 // Clicking the avatar (or its camera badge) opens the device's photo/file
 // picker; the chosen image is downscaled client-side (see lib/image.js)
@@ -357,7 +358,9 @@ export default function Profile({ studentName, setStudentName, profilePhoto, set
   const initials = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 
   return (
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px' }}>
+    <>
+    <AmbientGlow />
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 8 }}>
         <AvatarPicker photo={profilePhoto} setPhoto={setProfilePhoto} initials={initials} />
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -403,5 +406,6 @@ export default function Profile({ studentName, setStudentName, profilePhoto, set
         <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 6, lineHeight: 1.5 }}>{t('profile.appDesc')}</div>
       </div>
     </div>
+    </>
   );
 }

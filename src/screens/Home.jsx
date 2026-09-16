@@ -6,6 +6,7 @@ import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } fro
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import WeekStrip from '../components/WeekStrip';
+import AmbientGlow from '../components/AmbientGlow';
 import { Pill, BottomSheet, EnergyPicker, Chip, AnimatedNumber, Confetti, StatusPill, ProgressBar, AchievementMedal } from '../components/ui';
 
 const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
@@ -513,7 +514,9 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
   };
 
   return (
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px' }}>
+    <>
+      <AmbientGlow />
+      <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div>
           <div style={{ fontSize: 12.5, color: '#8a8a99', letterSpacing: '.01em' }}>{dateLong}</div>
@@ -726,6 +729,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
         onRescue={() => { setDismissedMissedSession(missedSession.id); planner.go('rescue'); }}
         onDismiss={() => setDismissedMissedSession(missedSession.id)}
       />
-    </div>
+      </div>
+    </>
   );
 }
