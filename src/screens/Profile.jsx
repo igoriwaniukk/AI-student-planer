@@ -7,6 +7,7 @@ import { useLang } from '../lib/useLang';
 import { resizeImageToDataURL } from '../lib/image';
 import { Chip, EnergyPicker, AchievementMedal } from '../components/ui';
 import AmbientGlow from '../components/AmbientGlow';
+import NotificationBell from '../components/NotificationBell';
 
 // Clicking the avatar (or its camera badge) opens the device's photo/file
 // picker; the chosen image is downscaled client-side (see lib/image.js)
@@ -243,7 +244,7 @@ function AchievementsCard({ studyHistory, energyLog, recurringActivities }) {
   );
 }
 
-export default function Profile({ studentName, setStudentName, profilePhoto, setProfilePhoto, schoolPlan, activities, planner, profileDefaults, setProfileDefaults, studyHistory, energyLog, recurringActivities }) {
+export default function Profile({ studentName, setStudentName, profilePhoto, setProfilePhoto, schoolPlan, activities, planner, profileDefaults, setProfileDefaults, studyHistory, energyLog, recurringActivities, state, streak }) {
   const { t } = useLang();
   const parts = (studentName || 'Ty').trim().split(/\s+/);
   const initials = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
@@ -258,11 +259,14 @@ export default function Profile({ studentName, setStudentName, profilePhoto, set
           <NameField studentName={studentName} setStudentName={setStudentName} />
           <div style={{ fontSize: 12.5, color: '#8a8a99', marginTop: 2 }}>{t('profile.defaultEnergy', { energy: t(VALUE_KEY[planner.state.energy]) || planner.state.energy })}</div>
         </div>
-        <div
-          onClick={() => planner.go('settings')}
-          style={{ width: 38, height: 38, flex: 'none', borderRadius: '50%', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 16 }}
-        >
-          ⚙️
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 'none' }}>
+          <NotificationBell state={state} streak={streak} inline />
+          <div
+            onClick={() => planner.go('settings')}
+            style={{ width: 38, height: 38, flex: 'none', borderRadius: '50%', background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 16 }}
+          >
+            ⚙️
+          </div>
         </div>
       </div>
 

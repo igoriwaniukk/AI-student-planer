@@ -5,7 +5,7 @@ import { useLang } from '../lib/useLang';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { VALUE_KEY } from '../lib/i18n';
 
-export default function NotificationBell({ state, streak = 0 }) {
+export default function NotificationBell({ state, streak = 0, inline = false }) {
   const { t, lang } = useLang();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
@@ -58,7 +58,7 @@ export default function NotificationBell({ state, streak = 0 }) {
     <>
       <div
         onClick={handleOpen}
-        style={{ position: 'absolute', top: 20, right: 20, zIndex: 60, width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+        style={{ position: inline ? 'relative' : 'absolute', top: inline ? 'auto' : 20, right: inline ? 'auto' : 20, zIndex: 60, width: 38, height: 38, borderRadius: '50%', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
       >
         <span style={{ display: 'inline-flex', transformOrigin: 'top center', animation: hasNew ? 'bellRing 4s ease-in-out infinite' : 'none' }}>
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6.5a4 4 0 018 0v3l1.2 2H2.8L4 9.5v-3z" stroke="#c9c9d6" strokeWidth="1.3" strokeLinejoin="round" /><path d="M6.5 13.4a1.6 1.6 0 003 0" stroke="#c9c9d6" strokeWidth="1.3" strokeLinecap="round" /></svg>
@@ -68,13 +68,14 @@ export default function NotificationBell({ state, streak = 0 }) {
 
       {open && (
         <>
-          <div onClick={() => setOpen(false)} style={{ position: 'absolute', inset: 0, zIndex: 74 }} />
+          <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 74 }} />
           <div
             className="sc"
             style={{
-              position: 'absolute', top: 64, right: 20, zIndex: 76, width: 300, maxHeight: '65%', overflowY: 'auto',
+              position: 'fixed', top: inline ? 'auto' : 64, bottom: inline ? 'auto' : 'auto', right: inline ? 'auto' : 20, zIndex: 76, width: 300, maxHeight: '65%', overflowY: 'auto',
               padding: 16, borderRadius: 20, background: '#101018', border: '1px solid rgba(255,255,255,.12)',
               boxShadow: '0 16px 40px rgba(0,0,0,.5)', animation: 'fadeUp .22s ease both',
+              ...(inline && { transform: 'translateX(calc(100vw - 320px))', top: 70 }),
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>

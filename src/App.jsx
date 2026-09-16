@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import TabBar from './components/TabBar';
 import ChatWidget from './components/ChatWidget';
-import NotificationBell from './components/NotificationBell';
 import QuickAddSheet from './components/QuickAddSheet';
 import { GeneratingOverlay } from './components/ui';
 import Home from './screens/Home';
@@ -162,6 +161,8 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
           studyHistory={studyHistory}
           energyLog={energyLog}
           recurringActivities={recurringActivities}
+          state={state}
+          streak={streak}
         />
       )}
       {screen === 'settings' && (
@@ -169,8 +170,6 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
       )}
 
       {state.generating && <GeneratingOverlay labels={state.genLabels} step={state.genStep} />}
-
-      <NotificationBell state={state} streak={streak} />
 
       <ChatWidget
         planner={planner}
