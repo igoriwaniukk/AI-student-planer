@@ -51,7 +51,7 @@ export default function Calendar({ planner, activities, recurringActivities = []
   return (
     <>
     <AmbientGlow />
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px', position: 'relative', zIndex: 50 }}>
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px', position: 'relative', zIndex: 1 }}>
       <BackButton onClick={() => go('home')} />
       <div style={{ fontSize: 20, fontWeight: 750, letterSpacing: '-.02em', marginTop: 20 }}>{t('cal.title')}</div>
       <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 4 }}>{t('cal.subtitle')}</div>

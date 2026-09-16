@@ -37,7 +37,7 @@ export default function RescueResult({ planner }) {
   return (
     <>
     <AmbientGlow />
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px', position: 'relative', zIndex: 50 }}>
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BackButton onClick={() => go('rescue')} />
         <span style={{ fontSize: 11, fontWeight: 650, color: '#c9baff', padding: '8px 14px', borderRadius: 999, background: 'rgba(124,92,255,.14)', border: '1px solid rgba(124,92,255,.45)' }}>{t('rr.readyToReview')}</span>

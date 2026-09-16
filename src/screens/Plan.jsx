@@ -22,7 +22,7 @@ export default function Plan({ planner }) {
   return (
     <>
     <AmbientGlow />
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 120px', position: 'relative', zIndex: 50 }}>
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 120px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {/* Once a plan is approved, this screen is reached by viewing an
             already-saved plan (Home's "See full plan"), so back should exit

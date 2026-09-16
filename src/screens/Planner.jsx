@@ -25,7 +25,7 @@ export default function Planner({ planner }) {
   return (
     <>
     <AmbientGlow />
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 176px', position: 'relative', zIndex: 50 }}>
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 176px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BackButton onClick={() => go('home')} />
         <span style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.12em', color: '#c9baff', padding: '8px 14px', borderRadius: 999, background: 'rgba(124,92,255,.16)', border: '1px solid rgba(124,92,255,.45)' }}>{t('planner.badge')}</span>
