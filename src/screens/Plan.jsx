@@ -21,7 +21,11 @@ export default function Plan({ planner }) {
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 120px' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <BackButton onClick={() => go('planner')} />
+        {/* Once a plan is approved, this screen is reached by viewing an
+            already-saved plan (Home's "See full plan"), so back should exit
+            to Home — not into the Planner form, which is only meant for the
+            one-time review right after generating a brand new plan. */}
+        <BackButton onClick={() => go(state.planApproved ? 'home' : 'planner')} />
         <span style={{ fontSize: 11, fontWeight: 650, color: '#c9baff', padding: '8px 14px', borderRadius: 999, background: 'rgba(124,92,255,.14)', border: '1px solid rgba(124,92,255,.45)' }}>{t('plan.readyToReview')}</span>
       </div>
       <div style={{ fontSize: 12.5, color: '#8a8a99', marginTop: 20 }}>{t('plan.date', { date: formatMonthDay(planDayNum, { year: true }) })}</div>
