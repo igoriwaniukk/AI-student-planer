@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { REFERENCE_DAY } from '../lib/plannerData';
 import { span, computeStreak, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn } from '../lib/plannerLogic';
-import { ACHIEVEMENTS, computeUnlockedAchievements } from '../lib/achievements';
+import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import WeekStrip from '../components/WeekStrip';
 import AmbientGlow from '../components/AmbientGlow';
-import { Pill, BottomSheet, EnergyPicker, AnimatedNumber, Confetti, StatusPill, ProgressBar, AchievementMedal } from '../components/ui';
+import { Pill, BottomSheet, EnergyPicker, AnimatedNumber, Confetti, StatusPill, AchievementMedal } from '../components/ui';
 
 const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
 
@@ -397,10 +397,6 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
   const [viewDay, setViewDay] = useState(state.selectedDay);
   const info = dayInfo(viewDay);
   const isRealDay = viewDay === state.selectedDay;
-  const dayIds = state.taskDefs.filter((d) => state.tasks[d.id]).map((t) => t.id);
-  const doneCount = dayIds.filter((id) => ts(id).status === 'completed').length;
-  const totalCount = dayIds.filter((id) => ts(id).status !== 'skipped').length;
-  const pct = totalCount ? Math.round((doneCount / totalCount) * 100) : 0;
   const dateLong = t('home.dateLong', { day: t(DAY_KEY[info.label]) || info.label, date: formatMonthDay(viewDay, { year: true }) });
   const parts = (studentName || 'Ty').trim().split(/\s+/);
   const initials = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
@@ -427,8 +423,6 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
         : null;
 
   const [deadlinesOpen, setDeadlinesOpen] = useState(false);
-  const [openBadge, setOpenBadge] = useState(null);
-  const toggleBadge = (key) => setOpenBadge((cur) => (cur === key ? null : key));
   const upcoming = upcomingExams(state).filter((e) => e.daysUntil >= 0);
   const nearestExam = upcoming[0] || null;
 
@@ -465,61 +459,6 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
             <span style={{ fontSize: 22, display: 'inline-block', transformOrigin: '70% 70%', animation: 'handWave 3.2s ease-in-out infinite' }}>👋</span>
           </div>
           <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 6 }}>{t('home.subtitle')}</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginTop: 9 }}>
-            <div
-              onClick={() => toggleBadge('achievements')}
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(240,169,60,.1)', border: '1px solid ' + (openBadge === 'achievements' ? 'rgba(240,169,60,.7)' : 'rgba(240,169,60,.28)'), cursor: 'pointer' }}
-            >
-              <span style={{ fontSize: 12 }}>🎖️</span>
-              <span style={{ fontSize: 10.5, fontWeight: 700, color: '#f0c078' }}>{t('home.badgesCount', { n: unlockedAchievements.length, total: ACHIEVEMENTS.length })}</span>
-            </div>
-            {isRealDay && (
-              <div
-                onClick={() => toggleBadge('progress')}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '3px 9px 3px 5px', borderRadius: 20, background: 'rgba(46,230,197,.1)', border: '1px solid ' + (openBadge === 'progress' ? 'rgba(46,230,197,.7)' : 'rgba(46,230,197,.28)'), cursor: 'pointer' }}
-              >
-                <span style={{ fontSize: 12 }}>📊</span>
-                <span style={{ fontSize: 10.5, fontWeight: 700, color: '#7fe8cf' }}>{t('home.todayProgressBadge', { pct, done: doneCount, total: totalCount })}</span>
-              </div>
-            )}
-          </div>
-
-          {openBadge === 'achievements' && (
-            <div style={{ marginTop: 10, maxWidth: 300, padding: 15, borderRadius: 16, background: '#14141c', border: '1px solid rgba(240,169,60,.3)', transformOrigin: 'top left', animation: 'stepIn .22s ease both' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: 13.5, fontWeight: 750 }}>{t('profile.achievements')}</div>
-                <span onClick={() => setOpenBadge(null)} style={{ fontSize: 16, color: '#6b6b7a', cursor: 'pointer', lineHeight: 1 }}>×</span>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginTop: 12 }}>
-                {ACHIEVEMENTS.map((a) => {
-                  const unlocked = unlockedAchievements.some((u) => u.id === a.id);
-                  return (
-                    <div key={a.id} style={{ textAlign: 'center' }}>
-                      <AchievementMedal icon={a.icon} unlocked={unlocked} size={32} />
-                      <div style={{ fontSize: 9, fontWeight: 650, marginTop: 5, color: unlocked ? '#f7dfa8' : '#6f6f7d', lineHeight: 1.25 }}>{t(a.titleKey)}</div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div onClick={() => planner.go('profile')} style={{ marginTop: 13, fontSize: 12, fontWeight: 650, color: '#a58cff', cursor: 'pointer', textAlign: 'center' }}>{t('home.seeInProfile')}</div>
-            </div>
-          )}
-
-          {openBadge === 'progress' && (
-            <div style={{ marginTop: 10, maxWidth: 300, padding: 15, borderRadius: 16, background: '#14141c', border: '1px solid rgba(46,230,197,.3)', transformOrigin: 'top left', animation: 'stepIn .22s ease both' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ fontSize: 13.5, fontWeight: 750 }}>{t('home.todayProgress')}</div>
-                <span onClick={() => setOpenBadge(null)} style={{ fontSize: 16, color: '#6b6b7a', cursor: 'pointer', lineHeight: 1 }}>×</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginTop: 11 }}>
-                <div style={{ fontSize: 24, fontWeight: 750, color: '#2ee6c5' }}>{pct}%</div>
-                <div style={{ fontSize: 11.5, color: '#8a8a99' }}>{t('home.sessionsDone', { done: doneCount, total: totalCount, word: t(totalCount === 1 ? 'home.sessionsCompletedOne' : 'home.sessionsCompletedMany') })}</div>
-              </div>
-              <ProgressBar pct={pct} style={{ marginTop: 11 }} />
-              <div style={{ marginTop: 13 }}><TodayList planner={planner} /></div>
-            </div>
-          )}
-
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4, paddingRight: 46 }}>
           <div
