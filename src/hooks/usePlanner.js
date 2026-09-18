@@ -19,6 +19,17 @@ const DURABLE_KEYS = [
   'customExams', 'examGoals', 'examSessions', 'dismissedGoalPrompts', 'planApproved', 'selectedDay', 'sessionReview',
 ];
 
+// The wheel date picker (see WheelDatePicker.jsx) always shows a concrete
+// dialed-in date, unlike the native <input type="date"> it replaced, which
+// could sit visually empty until touched — so the Deadline form needs a
+// real starting value instead of ''. 11 days out matches the assumption
+// deadlineGenerate() already falls back to when no date has been set.
+function defaultExamDateISO() {
+  const d = new Date();
+  d.setDate(d.getDate() + 11);
+  return d.toISOString().slice(0, 10);
+}
+
 function initialState(defaults, activities, persisted) {
   // Empty rather than a fixed demo topic list — buildPrepSessions falls back
   // to a generic placeholder topic on its own when given none, and this is
@@ -39,6 +50,11 @@ function initialState(defaults, activities, persisted) {
     // ("today"). Not persisted: it's a per-visit choice on the Planner
     // screen, not something that should stick after a reload.
     planToday: false,
+    // Per-plan tweaks to the free-time window (see the wake/bedtime wheel
+    // pickers on the Planner screen) — null means "use the Profile
+    // default". Not persisted, same as planToday above.
+    wakeOverride: null,
+    bedtimeOverride: null,
     energy: defaults?.energy || 'Normalna',
     pref: defaults?.pref || 'Wolny wieczór',
     // Free-form context from onboarding (extracurriculars + note) — passed
@@ -96,7 +112,7 @@ function initialState(defaults, activities, persisted) {
     goal: 'Ocena co najmniej 4',
     goalsOpen: false,
     nameValue: '',
-    examDate: '',
+    examDate: defaultExamDateISO(),
     examTime: '09:00',
     topics: [],
     topicErr: false,
@@ -186,7 +202,15 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   // those (e.g. adding a new recurring activity) is picked up immediately —
   // see dayConstraints in plannerLogic.js for what replaced the old fixed
   // school/tennis/sleep schedule nobody could actually configure.
-  const constraints = dayConstraints({ wake: defaults?.wake, bedtime: defaults?.bedtime, recurringActivities, dayNum: planDayNum });
+  // state.wakeOverride/bedtimeOverride (set via the wake/bedtime wheel
+  // pickers on the Planner screen, see "When do you have time?") tweak the
+  // free-time window for this plan only, without touching the student's
+  // saved Profile defaults — not persisted, so they reset next visit like
+  // energy/pref already do.
+  const constraints = dayConstraints({
+    wake: state.wakeOverride || defaults?.wake, bedtime: state.bedtimeOverride || defaults?.bedtime,
+    recurringActivities, dayNum: planDayNum,
+  });
 
   useEffect(() => {
     setState((s) => ({ ...s, schedule: buildSchedule({ ...s, constraints, dayNum: dayNumOf(s) }) }));
@@ -420,16 +444,17 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   }
   // A blank taskEdit (id: null signals "new" to saveTaskEdit below) — lets
   // the student add any subject/task instead of being stuck with the 3
-  // demo ones. Defaults to today, matching taskEdit.newSubtitle's copy —
-  // the Day chips below let the student change it before saving. category
-  // starts as a guess (school) since the name is still empty — TaskEditSheet
-  // re-detects it from the name as soon as the student types one (see
-  // autoCategory, detectTaskMeta in lib/taskAuto.js).
-  function openNewTaskEdit() {
+  // demo ones. `dayNum`, when given (e.g. Tasks screen's own day scroller,
+  // or Planner's today/tomorrow toggle), pre-selects that day instead of
+  // always defaulting to today — the Day chips below let the student change
+  // it either way. category starts as a guess (school) since the name is
+  // still empty — TaskEditSheet re-detects it from the name as soon as the
+  // student types one (see autoCategory, detectTaskMeta in lib/taskAuto.js).
+  function openNewTaskEdit(dayNum) {
     update({
       taskEdit: {
         id: null, name: '', subject: SUBJECTS[0], dur: 30, start: '19:00', priority: PRIORITIES[1], note: '',
-        category: 'school', autoCategory: true, dayChoice: 'today', dayDate: '',
+        category: 'school', autoCategory: true, ...(dayNum != null ? dayChoiceForNum(dayNum) : { dayChoice: 'today', dayDate: '' }),
       },
       editErrors: {}, teToast: false,
     });

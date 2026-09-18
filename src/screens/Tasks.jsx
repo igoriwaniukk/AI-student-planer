@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { PRIO_STYLE, NUM_TODAY, REFERENCE_DAY } from '../lib/plannerData';
 import { durOf, formatMonthDay } from '../lib/plannerLogic';
 import { iconForTask } from '../lib/taskAuto';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import AmbientGlow from '../components/AmbientGlow';
+import WeekStrip from '../components/WeekStrip';
 import TaskEditSheet from '../components/TaskEditSheet';
 
 // A task's own day-num resolved to the same Today/Tomorrow labels the
@@ -15,9 +17,21 @@ function dayLabel(t, dayNum) {
   return formatMonthDay(dayNum);
 }
 
+// A task with no day set (the original demo tasks, or anything saved
+// before that field existed) still shows on Today and Tomorrow — the only
+// two days that were ever plannable before the day strip existed — rather
+// than vanishing once the strip is scrolled anywhere else.
+function dueOnDay(d, dayNum) {
+  if (d.day === dayNum) return true;
+  return d.day == null && (dayNum === NUM_TODAY || dayNum === REFERENCE_DAY);
+}
+
 export default function Tasks({ planner }) {
   const { t } = useLang();
   const { state, toggleTask, openTaskEdit, openNewTaskEdit } = planner;
+  const [viewDay, setViewDay] = useState(NUM_TODAY);
+  const [weekOffset, setWeekOffset] = useState(0);
+  const dayTasks = state.taskDefs.filter((d) => dueOnDay(d, viewDay));
 
   return (
     <>
@@ -26,11 +40,13 @@ export default function Tasks({ planner }) {
       <div style={{ fontSize: 20, fontWeight: 750, letterSpacing: '-.02em', marginTop: 20 }}>{t('tasks.title')}</div>
       <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 4 }}>{t('tasks.subtitle')}</div>
 
+      <WeekStrip selectedDay={viewDay} onSelect={setViewDay} pageable weekOffset={weekOffset} onOffsetChange={setWeekOffset} topMargin={16} />
+
       <div style={{ marginTop: 18 }}>
-        {state.taskDefs.length === 0 && (
+        {dayTasks.length === 0 && (
           <div style={{ fontSize: 12.5, color: '#8a8a99' }}>{t('tasks.empty')}</div>
         )}
-        {state.taskDefs.map((d, i) => {
+        {dayTasks.map((d, i) => {
           const on = state.tasks[d.id];
           const isPersonal = d.category === 'personal';
           const ps = PRIO_STYLE[d.priority] || PRIO_STYLE['Normalny priorytet'];
@@ -64,7 +80,7 @@ export default function Tasks({ planner }) {
         })}
       </div>
 
-      <div onClick={openNewTaskEdit} style={{ marginTop: 12, height: 50, borderRadius: 16, border: '1.5px dashed rgba(255,255,255,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13.5, fontWeight: 650, color: '#9a9aab', cursor: 'pointer' }}>{t('planner.addTask')}</div>
+      <div onClick={() => openNewTaskEdit(viewDay)} style={{ marginTop: 12, height: 50, borderRadius: 16, border: '1.5px dashed rgba(255,255,255,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13.5, fontWeight: 650, color: '#9a9aab', cursor: 'pointer' }}>{t('planner.addTask')}</div>
 
       <TaskEditSheet planner={planner} />
     </div>

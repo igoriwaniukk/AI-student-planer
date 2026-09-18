@@ -2,6 +2,7 @@ import { PRIO_STYLE } from '../lib/plannerData';
 import { durOf, hm, weekdayDateLabel, fmt, span, freeWindows } from '../lib/plannerLogic';
 import { iconForTask } from '../lib/taskAuto';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
+import WheelTimePicker from '../components/WheelTimePicker';
 import AmbientGlow from '../components/AmbientGlow';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
@@ -98,7 +99,7 @@ export default function Planner({ planner }) {
         );
       })}
 
-      <div onClick={openNewTaskEdit} style={{ marginTop: 12, height: 50, borderRadius: 16, border: '1.5px dashed rgba(255,255,255,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13.5, fontWeight: 650, color: '#9a9aab', cursor: 'pointer' }}>{t('planner.addTask')}</div>
+      <div onClick={() => openNewTaskEdit(planDayNum)} style={{ marginTop: 12, height: 50, borderRadius: 16, border: '1.5px dashed rgba(255,255,255,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13.5, fontWeight: 650, color: '#9a9aab', cursor: 'pointer' }}>{t('planner.addTask')}</div>
 
       {personalTasks.length > 0 && (
         <>
@@ -125,16 +126,15 @@ export default function Planner({ planner }) {
 
       <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
         <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em' }}>{t('planner.whenFree')}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>
-          {[fmt(constraints.wakeMinutes), fmt(constraints.bedtimeMinutes)].map((tm, i) => (
-            <div key={tm} style={{ flex: 1 }}>
-              <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', marginBottom: 7 }}>{i === 0 ? t('planner.from') : t('planner.to')}</div>
-              <div style={{ height: 56, borderRadius: 15, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.09)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 14px' }}>
-                <span style={{ fontSize: 20, fontWeight: 750, letterSpacing: '-.01em' }}>{tm}</span>
-                <svg width="17" height="17" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7.2" stroke="#9a9aab" strokeWidth="1.3" /><path d="M9 5.2V9l2.6 1.8" stroke="#9a9aab" strokeWidth="1.3" strokeLinecap="round" /></svg>
-              </div>
-            </div>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 14 }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', marginBottom: 7, textAlign: 'center' }}>{t('planner.from')}</div>
+            <WheelTimePicker value={fmt(constraints.wakeMinutes)} onChange={(v) => update({ wakeOverride: v })} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', marginBottom: 7, textAlign: 'center' }}>{t('planner.to')}</div>
+            <WheelTimePicker value={fmt(constraints.bedtimeMinutes)} onChange={(v) => update({ bedtimeOverride: v })} />
+          </div>
         </div>
         <div style={{ marginTop: 14, padding: 13, borderRadius: 15, background: 'rgba(53,208,127,.07)', border: '1px solid rgba(53,208,127,.22)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#35d07f' }} /><span style={{ fontSize: 13, fontWeight: 700, color: '#5fdd9b' }}>{t('planner.freeHours', { time: hm(freeMinutes) })}</span></div>

@@ -3,6 +3,8 @@ import { formatMonthDay, daysUntilFromISODate } from '../lib/plannerLogic';
 import { VALUE_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, Chip, ListRow, ConfirmCard, LabelRequired } from '../components/ui';
 import AmbientGlow from '../components/AmbientGlow';
+import WheelDatePicker from '../components/WheelDatePicker';
+import WheelTimePicker from '../components/WheelTimePicker';
 import { useLang } from '../lib/useLang';
 
 const DIFFICULTIES = ['Łatwy', 'Średni', 'Trudny'];
@@ -63,17 +65,15 @@ export default function Deadline({ planner }) {
       {nameEmpty && <div style={{ fontSize: 12, color: '#f5a524', marginTop: 8 }}>{t('dl.nameRequired')}</div>}
 
       <LabelRequired label={t('dl.dateLabel')} />
-      <div style={{ display: 'flex', gap: 10 }}>
-        <input
-          type="date" value={state.examDate || ''} min={TODAY_ISO}
-          onChange={(e) => setField('examDate', e.target.value)}
-          style={{ flex: 2, height: 54, borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid ' + (state.examDate && !dateValid ? 'rgba(245,165,36,.5)' : 'rgba(255,255,255,.09)'), padding: '0 14px', fontSize: 14, fontWeight: 700, color: '#f4f4f7', fontFamily: 'inherit' }}
-        />
-        <input
-          type="time" value={state.examTime || '09:00'}
-          onChange={(e) => setField('examTime', e.target.value)}
-          style={{ flex: 1, height: 54, borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', padding: '0 14px', fontSize: 14, fontWeight: 700, color: '#f4f4f7', fontFamily: 'inherit' }}
-        />
+      <div style={{ display: 'flex', gap: 9 }}>
+        <div style={{ flex: 3 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', color: '#7a7a8a', marginBottom: 6, textAlign: 'center' }}>{t('dl.date')}</div>
+          <WheelDatePicker value={state.examDate} minDate={TODAY_ISO} onChange={(v) => setField('examDate', v)} />
+        </div>
+        <div style={{ flex: 2 }}>
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', color: '#7a7a8a', marginBottom: 6, textAlign: 'center' }}>{t('dl.time')}</div>
+          <WheelTimePicker value={state.examTime || '09:00'} onChange={(v) => setField('examTime', v)} />
+        </div>
       </div>
       {state.examDate && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 10 }}>

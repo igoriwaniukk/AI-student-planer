@@ -1,15 +1,16 @@
 import { useEffect, useRef } from 'react';
 
-const ITEM_H = 40;
+export const ITEM_H = 40;
 const VISIBLE = 3;
-const PAD = (ITEM_H * (VISIBLE - 1)) / 2;
+export const PAD = (ITEM_H * (VISIBLE - 1)) / 2;
 const fmt2 = (n) => String(n).padStart(2, '0');
 
-// One scrollable hour/minute column. Native scroll (touch drag, mouse wheel,
-// trackpad) does the actual scrolling — scroll-snap settles it on an item,
-// and a debounced onScroll reads back whichever one ended up centered, so
-// there's no separate drag-gesture math to get wrong.
-function WheelColumn({ options, value, onChange }) {
+// One scrollable column (hours, minutes, or — via WheelDatePicker — day/
+// month/year, using its own `format`). Native scroll (touch drag, mouse
+// wheel, trackpad) does the actual scrolling — scroll-snap settles it on an
+// item, and a debounced onScroll reads back whichever one ended up
+// centered, so there's no separate drag-gesture math to get wrong.
+export function WheelColumn({ options, value, onChange, format = fmt2 }) {
   const ref = useRef(null);
   const settleRef = useRef(null);
   const idx = Math.max(0, options.indexOf(value));
@@ -57,7 +58,7 @@ function WheelColumn({ options, value, onChange }) {
             color: o === value ? '#f4f4f7' : '#6b6b7a', transition: 'font-size .12s,color .12s',
           }}
         >
-          {fmt2(o)}
+          {format(o)}
         </div>
       ))}
       <div style={{ height: PAD }} />
@@ -66,16 +67,18 @@ function WheelColumn({ options, value, onChange }) {
 }
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
-const MINUTES = Array.from({ length: 12 }, (_, i) => i * 5);
+// Every minute, not a coarser 5- or 15-minute step — scrolling one more
+// notch is cheap, and rounding away exact times (7:03, 8:47) the student
+// actually wants isn't worth saving a handful of extra rows.
+const MINUTES = Array.from({ length: 60 }, (_, i) => i);
 
 // A rolling hour/minute picker (scroll to dial in a time, no typing) in
 // place of the native <input type="time">, which some mobile browsers
-// render as a plain text field with no working picker at all. Minutes snap
-// to 5-minute steps — the same granularity the old duration input used.
+// render as a plain text field with no working picker at all.
 export default function WheelTimePicker({ value, onChange }) {
   const [h, m] = String(value || '00:00').split(':').map(Number);
   const hour = HOURS.includes(h) ? h : 0;
-  const minute = MINUTES.reduce((best, cur) => (Math.abs(cur - m) < Math.abs(best - m) ? cur : best), 0);
+  const minute = MINUTES.includes(m) ? m : 0;
 
   return (
     <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, borderRadius: 13, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', padding: '0 6px' }}>
