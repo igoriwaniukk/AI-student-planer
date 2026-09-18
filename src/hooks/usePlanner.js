@@ -4,7 +4,7 @@ import { TASK_TEXT_KEY, VALUE_KEY } from '../lib/i18n';
 import {
   PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, NUM_TODAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES, realDateForNum,
 } from '../lib/plannerData';
-import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf } from '../lib/plannerLogic';
+import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
 import { requestAIRescue } from '../lib/aiRescue';
 
@@ -45,11 +45,14 @@ function initialState(defaults, activities, persisted) {
 
     taskDefs: [],
     tasks: {},
-    // Which day the Planner screen is building a schedule for — false (the
-    // default) is REFERENCE_DAY ("tomorrow"), true switches it to NUM_TODAY
-    // ("today"). Not persisted: it's a per-visit choice on the Planner
-    // screen, not something that should stick after a reload.
-    planToday: false,
+    // Which day the Planner screen is building a schedule for — true (the
+    // default) is NUM_TODAY ("today"), so opening the Planner from
+    // anywhere other than the "Plan tomorrow" quick actions (Home,
+    // Calendar — see their onClick handlers, which set this false before
+    // navigating) lands on today's plan rather than requiring an extra tap
+    // to switch off of tomorrow. Not persisted: it's a per-visit choice on
+    // the Planner screen, not something that should stick after a reload.
+    planToday: true,
     // Per-plan tweaks to the free-time window (see the wake/bedtime wheel
     // pickers on the Planner screen) — null means "use the Profile
     // default". Not persisted, same as planToday above.
@@ -125,6 +128,7 @@ function initialState(defaults, activities, persisted) {
     prepSaved: false,
     prepSessions: initialPrepSessions,
     prepDates: buildPrepDates(initialPrepSessions.length),
+    prepDayNums: buildPrepDayNums(initialPrepSessions.length),
 
     sessionOpen: false,
     sessionIdx: 0,
@@ -311,7 +315,10 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     update((s) => {
       const sessions = buildPrepSessions(s.topics, s.difficulty);
       const examDay = REFERENCE_DAY + (daysUntilFromISODate(s.examDate) ?? 11);
-      return { deadlineFailed: false, prepSessions: sessions, prepDates: buildPrepDates(sessions.length, examDay), sessionEdits: {} };
+      return {
+        deadlineFailed: false, prepSessions: sessions, prepDates: buildPrepDates(sessions.length, examDay),
+        prepDayNums: buildPrepDayNums(sessions.length, examDay), sessionEdits: {},
+      };
     });
     runGen(PREP_LABELS, 'prep');
   }
@@ -705,12 +712,20 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   // against (see toggleExamSession/examProgressMinutes) — each one carries
   // whatever date/time/duration the student ended up with after any edits
   // made via openSession/applySession above, not just the original guess.
+  // A label the student picked for a session (via openSession/pickSessionDate
+  // on the Prep screen) is one of state.prepDates' own labels, so it maps
+  // back to a real day-num 1:1 through this — the reverse of prepDayLabel().
+  function dayNumForPrepLabel(label, fallbackIdx) {
+    const i = state.prepDates.indexOf(label);
+    return i >= 0 ? state.prepDayNums[i] : state.prepDayNums[fallbackIdx];
+  }
   function confirmPrep() {
     const sessions = state.prepSessions.map((sx, i) => {
       const edit = state.sessionEdits[i] || {};
+      const dateLabel = edit.date || state.prepDates[i];
       return {
-        title: sx.title, type: sx.type, dateLabel: edit.date || state.prepDates[i], time: edit.time || sx.time,
-        dur: parseInt(edit.dur || sx.dur, 10), done: false,
+        title: sx.title, type: sx.type, dateLabel, time: edit.time || sx.time,
+        dur: parseInt(edit.dur || sx.dur, 10), done: false, day: dayNumForPrepLabel(dateLabel, i),
       };
     });
     const totalMinutes = sessions.reduce((a, s) => a + s.dur, 0);
@@ -718,7 +733,21 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       subject: state.subject, title: state.nameValue.trim(), daysUntil: daysUntilFromISODate(state.examDate),
       grade: state.goal, importance: 'Średni', studyMinutes: totalMinutes || 120,
     });
-    update((s) => ({ examSessions: { ...s.examSessions, [id]: sessions } }));
+    update((s) => {
+      // Each prep session becomes a real school task too — on its own day,
+      // pre-selected — so it's actually remembered while planning that day
+      // (Planner's list, the generated schedule, the Tasks screen), not
+      // just tracked on this exam's own progress card.
+      const sessionTaskDefs = sessions.map((sess, i) => ({
+        id: 'examsession-' + id + '-' + i,
+        category: 'school', subject: s.subject, title: sess.title, dur: sess.dur,
+        priority: 'Wysoki priorytet', day: sess.day, color: '#f5a524', short: s.subject + ' — ' + sess.title,
+      }));
+      const taskDefs = s.taskDefs.concat(sessionTaskDefs);
+      const tasks = { ...s.tasks };
+      sessionTaskDefs.forEach((d) => { tasks[d.id] = true; });
+      return { examSessions: { ...s.examSessions, [id]: sessions }, taskDefs, tasks };
+    });
     update({ prepSaved: true });
   }
 
@@ -803,7 +832,15 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       delete examGoals[id];
       const examSessions = { ...s.examSessions };
       delete examSessions[id];
-      return { customExams: s.customExams.filter((e) => e.id !== id), examGoals, examSessions };
+      // Removes this exam's own prep-session tasks too (see confirmPrep),
+      // so deleting the exam doesn't leave orphaned sessions behind in
+      // Planner/Tasks with nothing to point back to.
+      const prefix = 'examsession-' + id + '-';
+      const taskDefs = s.taskDefs.filter((t) => !t.id.startsWith(prefix));
+      const tasks = { ...s.tasks };
+      const taskState = { ...s.taskState };
+      s.taskDefs.forEach((t) => { if (t.id.startsWith(prefix)) { delete tasks[t.id]; delete taskState[t.id]; } });
+      return { customExams: s.customExams.filter((e) => e.id !== id), examGoals, examSessions, taskDefs, tasks, taskState };
     });
   }
   // Toggles one prep session's done state — the only thing driving that

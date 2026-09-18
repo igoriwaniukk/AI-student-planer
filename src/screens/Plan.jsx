@@ -1,4 +1,5 @@
 import { hm, fmt, formatMonthDay, weekdayOn } from '../lib/plannerLogic';
+import { iconForTask } from '../lib/taskAuto';
 import { BackButton, StickyFooter, PrimaryButton, ConfirmCard, Pill } from '../components/ui';
 import AmbientGlow from '../components/AmbientGlow';
 import { useLang } from '../lib/useLang';
@@ -8,11 +9,17 @@ import DayTimeline from '../components/DayTimeline';
 
 export default function Plan({ planner }) {
   const { t } = useLang();
-  const { state, planDayNum, toggleManualMode, regenerateOrCancel, confirmPlan, goHomeSaved, go } = planner;
+  const { state, planDayNum, toggleManualMode, regenerateOrCancel, confirmPlan, goHomeSaved, go, openNewTaskEdit, openTaskEdit, toggleTask } = planner;
   const sched = state.schedule || {};
   const schedIds = Object.keys(sched);
   const nBlocks = schedIds.length;
   const nTasks = state.taskDefs.filter((d) => state.tasks[d.id] && d.category !== 'personal').length;
+  // Personal tasks (see TaskEditSheet's auto-detected category) never get a
+  // scheduled block, so DayTimeline — which only ever shows schedule
+  // entries — has nothing to render them with. Added here (via "+ Add
+  // task" below) they'd otherwise vanish from this screen entirely despite
+  // being saved, even though they're still visible on Planner/Tasks.
+  const personalTasks = state.taskDefs.filter((d) => d.category === 'personal' && (d.day == null || d.day === planDayNum));
   const studyMins = schedIds.reduce((a, k) => a + sched[k].dur, 0);
   const studyEnd = nBlocks ? fmt(Math.max(...schedIds.map((k) => sched[k].start + sched[k].dur))) : '—';
   const blockWord = nBlocks === 1 ? t('plan.oneBlock') : (nBlocks > 1 && nBlocks < 5 ? t('plan.fewBlocks', { n: nBlocks }) : t('plan.manyBlocks', { n: nBlocks }));
@@ -39,6 +46,37 @@ export default function Plan({ planner }) {
         {state.manualMode && <span style={{ fontSize: 11, fontWeight: 650, color: '#c9baff' }}>{t('plan.manualMode')}</span>}
       </div>
       <DayTimeline schedule={state.schedule} planner={planner} t={t} />
+      {/* Editing here previously only covered blocks the plan already had
+          (change time, remove) — there was no way to add one that wasn't
+          already in it, short of backing out to the Planner form and
+          regenerating. Manual mode is exactly the moment a student wants
+          that, so it gets the same "+ Add task" affordance Planner has. */}
+      {state.manualMode && (
+        <div onClick={() => openNewTaskEdit(planDayNum)} style={{ marginTop: 11, height: 48, borderRadius: 16, border: '1.5px dashed rgba(255,255,255,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13.5, fontWeight: 650, color: '#9a9aab', cursor: 'pointer' }}>{t('planner.addTask')}</div>
+      )}
+
+      {personalTasks.length > 0 && (
+        <>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#9a9aab', margin: '14px 0 10px' }}>{t('planner.alsoPlanned', { day: weekdayOn(planDayNum) })}</div>
+          {personalTasks.map((d) => {
+            const done = state.tasks[d.id];
+            return (
+              <div
+                key={d.id}
+                onClick={() => toggleTask(d.id)}
+                style={{ marginTop: 8, padding: '12px 14px', borderRadius: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 11, background: done ? 'rgba(53,208,127,.06)' : 'rgba(255,255,255,.03)', border: '1px solid ' + (done ? 'rgba(53,208,127,.25)' : 'rgba(255,255,255,.07)') }}
+              >
+                <div style={{ width: 22, height: 22, borderRadius: 7, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: done ? '#35d07f' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (done ? '#35d07f' : 'rgba(255,255,255,.18)') }}>
+                  <svg width="11" height="9" viewBox="0 0 12 10" fill="none" style={{ opacity: done ? 1 : 0 }}><path d="M1 5l3.4 3.4L11 1.6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </div>
+                <span style={{ fontSize: 14 }}>{iconForTask(d)}</span>
+                <div style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 650, textDecoration: done ? 'line-through' : 'none', color: done ? '#8a8a99' : '#f4f4f7' }}>{d.title}</div>
+                <span onClick={(e) => { e.stopPropagation(); openTaskEdit(d.id); }} style={{ fontSize: 12, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('planner.edit')}</span>
+              </div>
+            );
+          })}
+        </>
+      )}
 
       <div style={{ marginTop: 18, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.14)' }}>
         <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>{t('plan.ready')}</div>

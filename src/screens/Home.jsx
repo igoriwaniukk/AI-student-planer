@@ -553,7 +553,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
       )}
 
       <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', margin: '20px 0 10px 2px' }}>{t('home.quickActions')}</div>
-      <div onClick={() => planner.go('planner')} style={{ padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+      <div onClick={() => { planner.update({ planToday: false }); planner.go('planner'); }} style={{ padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
         <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(124,92,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.2" width="12" height="11" rx="2.4" stroke="#a58cff" strokeWidth="1.2" /><path d="M2 6.6h12M5.6 1.8v2.4M10.4 1.8v2.4" stroke="#a58cff" strokeWidth="1.2" strokeLinecap="round" /></svg></div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14.5, fontWeight: 700 }}>{t('home.planTomorrow')}</div>

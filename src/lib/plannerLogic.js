@@ -351,15 +351,21 @@ export function buildPrepSessions(topics, difficulty) {
   return sessions.map((sx) => ({ ...sx, time: range('17:00', sx.dur), dur: sx.dur + ' min' }));
 }
 
-export function buildPrepDates(count, examDay = REFERENCE_DAY + 11) {
+// The actual day-num behind each of buildPrepDates' labels below — needed
+// so a confirmed prep session can become a real task on the right day
+// (see confirmPrep in usePlanner.js), not just a label on the Prep screen.
+export function buildPrepDayNums(count, examDay = REFERENCE_DAY + 11) {
   const startDay = REFERENCE_DAY + 1;
   const endDay = examDay - 1;
-  const dates = [];
+  const days = [];
   for (let i = 0; i < count; i++) {
-    const day = count === 1 ? endDay : Math.round(startDay + ((endDay - startDay) * i) / (count - 1));
-    dates.push(prepDayLabel(day));
+    days.push(count === 1 ? endDay : Math.round(startDay + ((endDay - startDay) * i) / (count - 1)));
   }
-  return dates;
+  return days;
+}
+
+export function buildPrepDates(count, examDay = REFERENCE_DAY + 11) {
+  return buildPrepDayNums(count, examDay).map(prepDayLabel);
 }
 
 // Actual minutes logged toward an exam so far — the sum of every prep

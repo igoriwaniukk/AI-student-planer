@@ -31,7 +31,7 @@ function Row({ icon, title, sub, right }) {
 
 export default function Calendar({ planner, activities, recurringActivities = [] }) {
   const { t } = useLang();
-  const { state, go } = planner;
+  const { state, go, update } = planner;
   const [calDay, setCalDay] = useState(state.selectedDay || REFERENCE_DAY);
   const [weekOffset, setWeekOffset] = useState(0);
   const info = dayInfo(calDay);
@@ -85,7 +85,7 @@ export default function Calendar({ planner, activities, recurringActivities = []
       ) : (
         <Card>
           <div style={{ fontSize: 12.5, color: '#8a8a99', lineHeight: 1.5 }}>{t('cal.noSessions')}</div>
-          <div onClick={() => go('planner')} style={{ marginTop: 12, height: 44, borderRadius: 14, background: 'rgba(124,92,255,.16)', border: '1px solid rgba(124,92,255,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, color: '#c9baff', cursor: 'pointer' }}>{t('cal.planTomorrow')}</div>
+          <div onClick={() => { update({ planToday: false }); go('planner'); }} style={{ marginTop: 12, height: 44, borderRadius: 14, background: 'rgba(124,92,255,.16)', border: '1px solid rgba(124,92,255,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, color: '#c9baff', cursor: 'pointer' }}>{t('cal.planTomorrow')}</div>
         </Card>
       )}
 
