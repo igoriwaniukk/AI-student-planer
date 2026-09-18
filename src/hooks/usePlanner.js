@@ -412,7 +412,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       return {
         taskEdit: {
           id, name: translate(TASK_TEXT_KEY[id]?.title) || d.title, subject: d.subject, dur, start: fmtLocal(start),
-          priority: d.priority, note: d.note || '', category: d.category || 'school', ...dayChoiceForNum(d.day),
+          priority: d.priority, note: d.note || '', category: d.category || 'school', autoCategory: true, ...dayChoiceForNum(d.day),
         },
         editErrors: {}, teToast: false,
       };
@@ -421,12 +421,15 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   // A blank taskEdit (id: null signals "new" to saveTaskEdit below) — lets
   // the student add any subject/task instead of being stuck with the 3
   // demo ones. Defaults to today, matching taskEdit.newSubtitle's copy —
-  // the Day chips below let the student change it before saving.
+  // the Day chips below let the student change it before saving. category
+  // starts as a guess (school) since the name is still empty — TaskEditSheet
+  // re-detects it from the name as soon as the student types one (see
+  // autoCategory, detectTaskMeta in lib/taskAuto.js).
   function openNewTaskEdit() {
     update({
       taskEdit: {
         id: null, name: '', subject: SUBJECTS[0], dur: 30, start: '19:00', priority: PRIORITIES[1], note: '',
-        category: 'school', dayChoice: 'today', dayDate: '',
+        category: 'school', autoCategory: true, dayChoice: 'today', dayDate: '',
       },
       editErrors: {}, teToast: false,
     });

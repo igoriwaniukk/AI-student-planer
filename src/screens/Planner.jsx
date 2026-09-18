@@ -1,12 +1,12 @@
 import { PRIO_STYLE } from '../lib/plannerData';
 import { durOf, hm, weekdayDateLabel, fmt, span, freeWindows } from '../lib/plannerLogic';
+import { iconForTask } from '../lib/taskAuto';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import AmbientGlow from '../components/AmbientGlow';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import TaskEditSheet from '../components/TaskEditSheet';
 
-const DEFAULT_TASK_ICON = '📘';
 const PREFS = ['Wolny wieczór', 'Najpierw najtrudniejsze', 'Więcej krótkich przerw'];
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
@@ -80,7 +80,7 @@ export default function Planner({ planner }) {
               <div style={{ width: 24, height: 24, borderRadius: 8, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: on ? '#7c5cff' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (on ? '#7c5cff' : 'rgba(255,255,255,.18)') }}>
                 <svg width="12" height="10" viewBox="0 0 12 10" fill="none" style={{ opacity: on ? 1 : 0 }}><path d="M1 5l3.4 3.4L11 1.6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
               </div>
-              <div style={{ width: 20, textAlign: 'center', fontSize: 14 }}>{DEFAULT_TASK_ICON}</div>
+              <div style={{ width: 20, textAlign: 'center', fontSize: 14 }}>{iconForTask(d)}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: d.color, textTransform: 'uppercase' }}>{t(VALUE_KEY[d.subject]) || d.subject}</span>
@@ -114,6 +114,7 @@ export default function Planner({ planner }) {
                 <div style={{ width: 22, height: 22, borderRadius: 7, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: done ? '#35d07f' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (done ? '#35d07f' : 'rgba(255,255,255,.18)') }}>
                   <svg width="11" height="9" viewBox="0 0 12 10" fill="none" style={{ opacity: done ? 1 : 0 }}><path d="M1 5l3.4 3.4L11 1.6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </div>
+                <span style={{ fontSize: 14 }}>{iconForTask(d)}</span>
                 <div style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 650, textDecoration: done ? 'line-through' : 'none', color: done ? '#8a8a99' : '#f4f4f7' }}>{d.title}</div>
                 <span onClick={(e) => { e.stopPropagation(); openTaskEdit(d.id); }} style={{ fontSize: 12, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('planner.edit')}</span>
               </div>

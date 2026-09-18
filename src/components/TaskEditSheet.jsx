@@ -1,6 +1,7 @@
 import { SUBJECTS, PRIORITIES } from '../lib/plannerData';
 import { VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
+import { detectTaskMeta, iconForTask } from '../lib/taskAuto';
 import { BottomSheet, Chip } from './ui';
 
 export default function TaskEditSheet({ planner }) {
@@ -13,35 +14,43 @@ export default function TaskEditSheet({ planner }) {
 
   const isPersonal = fm.category === 'personal';
 
+  // The student never picks School vs. Personal directly — it's guessed
+  // from the task name (see lib/taskAuto.js) and re-guessed on every edit
+  // to the name, unless they've tapped "Not right?" below, which pins
+  // category/subject to their manual choice for the rest of this edit.
+  function handleNameChange(name) {
+    if (fm.autoCategory && name.trim()) {
+      const meta = detectTaskMeta(name);
+      patchTaskEdit({ name, category: meta.category, subject: meta.subject || fm.subject });
+    } else {
+      patchTaskEdit({ name });
+    }
+  }
+  function switchCategory() {
+    patchTaskEdit({ category: isPersonal ? 'school' : 'personal', autoCategory: false });
+  }
+
   return (
     <BottomSheet maxHeight="92%">
       <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{isNew ? t('taskEdit.newTitle') : t('taskEdit.title')}</div>
       <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 6 }}>{isNew ? t('taskEdit.newSubtitle') : (fm.subject ? (t(VALUE_KEY[fm.subject]) || fm.subject) + ' — ' + fm.name : fm.name)}</div>
 
-      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.categoryLabel')}</div>
-      <div style={{ display: 'flex', gap: 9 }}>
-        <div
-          onClick={() => patchTaskEdit({ category: 'school' })}
-          style={{ flex: 1, height: 44, borderRadius: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, background: !isPersonal ? 'rgba(124,92,255,.16)' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (!isPersonal ? 'rgba(124,92,255,.6)' : 'rgba(255,255,255,.09)'), color: !isPersonal ? '#e6dfff' : '#c9c9d6' }}
-        >
-          {t('taskEdit.categorySchool')}
-        </div>
-        <div
-          onClick={() => patchTaskEdit({ category: 'personal' })}
-          style={{ flex: 1, height: 44, borderRadius: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, background: isPersonal ? 'rgba(124,92,255,.16)' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (isPersonal ? 'rgba(124,92,255,.6)' : 'rgba(255,255,255,.09)'), color: isPersonal ? '#e6dfff' : '#c9c9d6' }}
-        >
-          {t('taskEdit.categoryPersonal')}
-        </div>
-      </div>
-      <div style={{ fontSize: 11.5, lineHeight: 1.4, color: '#7a7a8a', marginTop: 8 }}>{isPersonal ? t('taskEdit.categoryPersonalNote') : t('taskEdit.categorySchoolNote')}</div>
-
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.taskName')}</div>
       <input
         value={fm.name}
-        onChange={(e) => patchTaskEdit({ name: e.target.value })}
+        onChange={(e) => handleNameChange(e.target.value)}
         style={{ width: '100%', boxSizing: 'border-box', height: 50, padding: '0 15px', borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', color: '#f4f4f7', fontSize: 15, fontWeight: 650, fontFamily: 'inherit', outline: 'none' }}
       />
       {errs.name && <div style={{ fontSize: 11.5, color: '#f5a524', marginTop: 7 }}>{errs.name}</div>}
+
+      {fm.name.trim() && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 10, padding: '10px 13px', borderRadius: 13, background: 'rgba(124,92,255,.08)', border: '1px solid rgba(124,92,255,.22)' }}>
+          <span style={{ fontSize: 12.5, fontWeight: 650, color: '#c9baff' }}>
+            {iconForTask({ category: fm.category, subject: fm.subject, title: fm.name })} {isPersonal ? t('taskEdit.categoryPersonal') : (t('taskEdit.categorySchool') + (fm.subject ? ' · ' + (t(VALUE_KEY[fm.subject]) || fm.subject) : ''))}
+          </span>
+          <span onClick={switchCategory} style={{ fontSize: 12, fontWeight: 650, color: '#a58cff', cursor: 'pointer', flex: 'none' }}>{t('taskEdit.notRight')}</span>
+        </div>
+      )}
 
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.dayLabel')}</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
