@@ -25,8 +25,8 @@ export function toValidatedSchedule(blocks, ids, taskDefs, durOverride, constrai
 // manual edits. Returns null (never throws) whenever the AI is unavailable,
 // unreachable, or proposes something invalid — callers use that as the
 // signal to fall back to the deterministic scheduler.
-export async function requestAIPlan({ taskDefs, tasks, taskState, energy, pref, durOverride, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints }) {
-  const ids = activeIds(taskDefs, tasks, taskState);
+export async function requestAIPlan({ taskDefs, tasks, taskState, energy, pref, durOverride, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints, dayNum }) {
+  const ids = activeIds(taskDefs, tasks, taskState, dayNum);
   if (!ids.length) return null;
   const items = ids.map((id) => {
     const d = taskDefs.find((t) => t.id === id);

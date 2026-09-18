@@ -216,11 +216,20 @@ export function PrimaryButton({ children, onClick, style }) {
   );
 }
 
+// A `position: absolute; bottom: 0` box inside a scrolling container isn't
+// pinned to the *viewport* — its containing block is the scroll container's
+// own padding box, which scrolls along with everything else, so the footer
+// only ever lands at the very end of the scrollable content instead of
+// staying visible throughout. Portaled onto .app-shell (which never scrolls
+// — only the screen's own .sc div does, see AppShellPortal above), `bottom:
+// 0` now anchors to the real, fixed viewport edge.
 export function StickyFooter({ children }) {
   return (
-    <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '12px 20px 24px', background: 'linear-gradient(to top,#08080c 66%,rgba(8,8,12,0))' }}>
-      {children}
-    </div>
+    <AppShellPortal>
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 44, padding: '12px 20px 24px', background: 'linear-gradient(to top,#08080c 66%,rgba(8,8,12,0))' }}>
+        {children}
+      </div>
+    </AppShellPortal>
   );
 }
 

@@ -10,7 +10,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
   const { t, lang } = useLang();
   const { state, def, ts, go, finishDay, saveLater, adjustSessionMinutes, setSessionField, update } = planner;
   const sched = state.schedule || {};
-  const dayIds = state.taskDefs.filter((d) => state.tasks[d.id]).map((tt) => tt.id);
+  const dayIds = state.taskDefs.filter((d) => state.tasks[d.id] && d.category !== 'personal').map((tt) => tt.id);
   const doneCount = dayIds.filter((id) => ts(id).status === 'completed').length;
   const movedIds = dayIds.filter((id) => ts(id).status === 'moved');
   const movedCount = movedIds.length;

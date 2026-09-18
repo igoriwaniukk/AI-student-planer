@@ -44,7 +44,7 @@ export default function Rescue({ planner }) {
 
       <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('rescue.remaining')}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
-        {state.taskDefs.map((d) => {
+        {state.taskDefs.filter((d) => d.category !== 'personal').map((d) => {
           const ps = PRIO_STYLE[d.priority] || PRIO_STYLE['Normalny priorytet'];
           const dur = durOf(d.id, state.taskDefs, state.durOverride);
           const start = startOf(d.id, state);

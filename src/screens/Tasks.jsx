@@ -1,11 +1,21 @@
-import { PRIO_STYLE } from '../lib/plannerData';
-import { durOf } from '../lib/plannerLogic';
+import { PRIO_STYLE, NUM_TODAY, REFERENCE_DAY } from '../lib/plannerData';
+import { durOf, formatMonthDay } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import AmbientGlow from '../components/AmbientGlow';
 import TaskEditSheet from '../components/TaskEditSheet';
 
 const DEFAULT_TASK_ICON = '📘';
+const PERSONAL_TASK_ICON = '📝';
+
+// A task's own day-num resolved to the same Today/Tomorrow labels the
+// TaskEditSheet's day picker uses, or a real date once it's further out —
+// lets the main task list show when each task is actually planned for.
+function dayLabel(t, dayNum) {
+  if (dayNum == null || dayNum === REFERENCE_DAY) return t('taskEdit.dayTomorrow');
+  if (dayNum === NUM_TODAY) return t('taskEdit.dayToday');
+  return formatMonthDay(dayNum);
+}
 
 export default function Tasks({ planner }) {
   const { t } = useLang();
@@ -24,6 +34,7 @@ export default function Tasks({ planner }) {
         )}
         {state.taskDefs.map((d, i) => {
           const on = state.tasks[d.id];
+          const isPersonal = d.category === 'personal';
           const ps = PRIO_STYLE[d.priority] || PRIO_STYLE['Normalny priorytet'];
           return (
             <div
@@ -35,16 +46,17 @@ export default function Tasks({ planner }) {
                 <div style={{ width: 24, height: 24, borderRadius: 8, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: on ? '#7c5cff' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (on ? '#7c5cff' : 'rgba(255,255,255,.18)') }}>
                   <svg width="12" height="10" viewBox="0 0 12 10" fill="none" style={{ opacity: on ? 1 : 0 }}><path d="M1 5l3.4 3.4L11 1.6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 </div>
-                <div style={{ width: 20, textAlign: 'center', fontSize: 14 }}>{DEFAULT_TASK_ICON}</div>
+                <div style={{ width: 20, textAlign: 'center', fontSize: 14 }}>{isPersonal ? PERSONAL_TASK_ICON : DEFAULT_TASK_ICON}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: d.color, textTransform: 'uppercase' }}>{t(VALUE_KEY[d.subject]) || d.subject}</span>
+                    {!isPersonal && <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: d.color, textTransform: 'uppercase' }}>{t(VALUE_KEY[d.subject]) || d.subject}</span>}
+                    <span style={{ fontSize: 10, fontWeight: 650, padding: '3px 8px', borderRadius: 7, color: '#8fbaff', background: 'rgba(91,156,255,.13)' }}>{dayLabel(t, d.day)}</span>
                     <span style={{ fontSize: 10, fontWeight: 650, padding: '3px 8px', borderRadius: 7, color: ps.color, background: ps.bg }}>{t(VALUE_KEY[d.priority]) || d.priority}</span>
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3, marginTop: 6 }}>{t(TASK_TEXT_KEY[d.id]?.title) || d.title}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', marginTop: 9 }}>
                     {d.deadline && <span style={{ fontSize: 10.5, fontWeight: 650, color: '#f5a524', padding: '4px 8px', borderRadius: 8, background: 'rgba(245,165,36,.13)', border: '1px solid rgba(245,165,36,.28)' }}>⚠ {t(TASK_TEXT_KEY[d.id]?.deadline) || d.deadline}</span>}
-                    <span style={{ fontSize: 11.5, color: '#8a8a99' }}>🕐 {durOf(d.id, state.taskDefs, state.durOverride)} min</span>
+                    {!isPersonal && <span style={{ fontSize: 11.5, color: '#8a8a99' }}>🕐 {durOf(d.id, state.taskDefs, state.durOverride)} min</span>}
                   </div>
                 </div>
                 <span onClick={(e) => { e.stopPropagation(); openTaskEdit(d.id); }} style={{ fontSize: 12, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('planner.edit')}</span>

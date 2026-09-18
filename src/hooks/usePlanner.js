@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLang } from '../lib/useLang';
 import { TASK_TEXT_KEY, VALUE_KEY } from '../lib/i18n';
 import {
-  PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, NUM_TODAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES,
+  PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, NUM_TODAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES, realDateForNum,
 } from '../lib/plannerData';
 import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
@@ -189,7 +189,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   const constraints = dayConstraints({ wake: defaults?.wake, bedtime: defaults?.bedtime, recurringActivities, dayNum: planDayNum });
 
   useEffect(() => {
-    setState((s) => ({ ...s, schedule: buildSchedule({ ...s, constraints }) }));
+    setState((s) => ({ ...s, schedule: buildSchedule({ ...s, constraints, dayNum: dayNumOf(s) }) }));
     return () => clearInterval(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -206,12 +206,20 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   useEffect(() => {
     if (constraintsKey === prevConstraintsKeyRef.current) return;
     prevConstraintsKeyRef.current = constraintsKey;
-    setState((s) => (s.planApproved || s.manualMode ? s : { ...s, schedule: buildSchedule({ ...s, constraints }) }));
+    setState((s) => (s.planApproved || s.manualMode ? s : { ...s, schedule: buildSchedule({ ...s, constraints, dayNum: dayNumOf(s) }) }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [constraintsKey]);
 
   function update(patch) {
     setState((s) => ({ ...s, ...(typeof patch === 'function' ? patch(s) : patch) }));
+  }
+
+  // Which logical day the Planner screen is currently building a schedule
+  // for, read off state rather than the closed-over `planDayNum` above — the
+  // functional setState callbacks below run against whatever `s` they're
+  // handed, which may not match the render this closure was created in.
+  function dayNumOf(s) {
+    return s.planToday ? NUM_TODAY : REFERENCE_DAY;
   }
 
   function def(id, st) {
@@ -267,10 +275,10 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   // something that fails the same conflict checks manual edits go through.
   function generatePlan() {
     update({ manualMode: false, blockEdit: null });
-    const work = requestAIPlan({ ...state, constraints });
+    const work = requestAIPlan({ ...state, constraints, dayNum: dayNumOf(state) });
     runGen(PLAN_LABELS, (result, s) => ({
       generating: false, screen: 'plan',
-      schedule: result ? result.schedule : buildSchedule({ ...s, constraints }),
+      schedule: result ? result.schedule : buildSchedule({ ...s, constraints, dayNum: dayNumOf(s) }),
       planAIRationale: result ? result.rationale : null,
     }), work);
   }
@@ -376,29 +384,50 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   function removeBlock(id) {
     update((s) => {
       const tsx = { ...s.taskState, [id]: { ...s.taskState[id], status: 'skipped' } };
-      const next = { ...s, taskState: tsx, constraints };
+      const next = { ...s, taskState: tsx, constraints, dayNum: dayNumOf(s) };
       return { taskState: tsx, schedule: buildSchedule(next) };
     });
   }
 
   // ---- task edit sheet ----
+  // Converts a stored day-num back into the sheet's Today/Tomorrow/Pick-date
+  // chips — the inverse of dayNumFromChoice below.
+  function dayChoiceForNum(dayNum) {
+    if (dayNum == null || dayNum === REFERENCE_DAY) return { dayChoice: 'tomorrow', dayDate: '' };
+    if (dayNum === NUM_TODAY) return { dayChoice: 'today', dayDate: '' };
+    return { dayChoice: 'pick', dayDate: realDateForNum(dayNum).toISOString().slice(0, 10) };
+  }
+  // The reverse: today/tomorrow/an explicit picked date all resolve down to
+  // the same day-num space (NUM_TODAY-relative) everything else here uses.
+  function dayNumFromChoice(dayChoice, dayDate) {
+    if (dayChoice === 'today') return NUM_TODAY;
+    if (dayChoice === 'pick') return NUM_TODAY + (daysUntilFromISODate(dayDate) ?? 1);
+    return REFERENCE_DAY;
+  }
   function openTaskEdit(id) {
     update((s) => {
       const d = def(id, s);
       const dur = (s.durOverride && s.durOverride[id]) || d.dur;
       const start = s.startOverride && s.startOverride[id] != null ? s.startOverride[id] : (s.schedule && s.schedule[id] ? s.schedule[id].start : 930);
       return {
-        taskEdit: { id, name: translate(TASK_TEXT_KEY[id]?.title) || d.title, subject: d.subject, dur, start: fmtLocal(start), priority: d.priority, note: d.note || '' },
+        taskEdit: {
+          id, name: translate(TASK_TEXT_KEY[id]?.title) || d.title, subject: d.subject, dur, start: fmtLocal(start),
+          priority: d.priority, note: d.note || '', category: d.category || 'school', ...dayChoiceForNum(d.day),
+        },
         editErrors: {}, teToast: false,
       };
     });
   }
   // A blank taskEdit (id: null signals "new" to saveTaskEdit below) — lets
   // the student add any subject/task instead of being stuck with the 3
-  // demo ones.
+  // demo ones. Defaults to today, matching taskEdit.newSubtitle's copy —
+  // the Day chips below let the student change it before saving.
   function openNewTaskEdit() {
     update({
-      taskEdit: { id: null, name: '', subject: SUBJECTS[0], dur: 30, start: '19:00', priority: PRIORITIES[1], note: '' },
+      taskEdit: {
+        id: null, name: '', subject: SUBJECTS[0], dur: 30, start: '19:00', priority: PRIORITIES[1], note: '',
+        category: 'school', dayChoice: 'today', dayDate: '',
+      },
       editErrors: {}, teToast: false,
     });
   }
@@ -419,38 +448,57 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     update((s) => {
       const fm = s.taskEdit;
       if (!fm) return {};
+      const isPersonal = fm.category === 'personal';
       const errs = {};
       if (!fm.name || !fm.name.trim()) errs.name = translate('taskEdit.nameRequired');
-      if (!(fm.dur >= 5 && fm.dur <= 240)) errs.dur = translate('taskEdit.durRequired');
-      const m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec((fm.start || '').trim());
-      if (!m) errs.start = translate('taskEdit.startRequired');
+      // A personal task (errand, chore — see the category toggle) has no
+      // subject and never gets a scheduled time block, so its duration and
+      // start-time fields don't exist on the sheet and skip validation here.
+      let startMin = null;
+      if (!isPersonal) {
+        if (!(fm.dur >= 5 && fm.dur <= 240)) errs.dur = translate('taskEdit.durRequired');
+        const m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec((fm.start || '').trim());
+        if (!m) errs.start = translate('taskEdit.startRequired');
+        else startMin = (+m[1]) * 60 + (+m[2]);
+      }
       if (Object.keys(errs).length) return { editErrors: errs };
-      const startMin = (+m[1]) * 60 + (+m[2]);
       const name = fm.name.trim();
       const isNew = fm.id == null;
       const id = isNew ? 'custom-' + Date.now() : fm.id;
+      const day = dayNumFromChoice(fm.dayChoice, fm.dayDate);
       // Checked here (not just in BlockEditSheet) so a task can't be saved
       // on top of a fixed activity or another session in the first place —
       // previously only a drag-edit of an already-placed block was
       // validated, so a brand new task (or a duration change) could freely
-      // land on a time a recurring activity already owns.
-      const conflict = checkBlockConflict(id, startMin, fm.dur, s.schedule, (cid) => def(cid, s), constraints);
-      if (conflict) {
-        const vars = conflict.vars?.subject ? { ...conflict.vars, subject: translate(VALUE_KEY[conflict.vars.subject]) || conflict.vars.subject } : conflict.vars;
-        return { editErrors: { start: translate(conflict.key, vars) } };
+      // land on a time a recurring activity already owns. Only school tasks
+      // occupy a time slot, so a personal task has nothing to conflict with.
+      if (!isPersonal) {
+        const conflict = checkBlockConflict(id, startMin, fm.dur, s.schedule, (cid) => def(cid, s), constraints);
+        if (conflict) {
+          const vars = conflict.vars?.subject ? { ...conflict.vars, subject: translate(VALUE_KEY[conflict.vars.subject]) || conflict.vars.subject } : conflict.vars;
+          return { editErrors: { start: translate(conflict.key, vars) } };
+        }
       }
       const defs = isNew
-        ? s.taskDefs.concat({ id, subject: fm.subject, title: name, dur: fm.dur, priority: fm.priority, note: fm.note, color: '#a58cff', short: fm.subject + ' — ' + name })
+        ? s.taskDefs.concat(isPersonal
+          ? { id, category: 'personal', title: name, priority: fm.priority, note: fm.note, day, color: '#a58cff', short: name }
+          : { id, category: 'school', subject: fm.subject, title: name, dur: fm.dur, priority: fm.priority, note: fm.note, day, color: '#a58cff', short: fm.subject + ' — ' + name })
         : s.taskDefs.map((t) => {
           if (t.id !== id) return t;
+          if (isPersonal) return { ...t, category: 'personal', title: name, priority: fm.priority, note: fm.note, day, short: name };
           const renamed = t.title !== name || t.subject !== fm.subject;
-          return { ...t, title: name, subject: fm.subject, priority: fm.priority, note: fm.note, short: renamed ? fm.subject + ' — ' + name : t.short };
+          return { ...t, category: 'school', title: name, subject: fm.subject, dur: fm.dur, priority: fm.priority, note: fm.note, day, short: renamed ? fm.subject + ' — ' + name : t.short };
         });
-      const durOverride = { ...s.durOverride, [id]: fm.dur };
-      const startOverride = { ...s.startOverride, [id]: startMin };
-      const tasks = isNew ? { ...s.tasks, [id]: true } : s.tasks;
+      const durOverride = isPersonal ? s.durOverride : { ...s.durOverride, [id]: fm.dur };
+      const startOverride = isPersonal ? s.startOverride : { ...s.startOverride, [id]: startMin };
+      // For a school task this flag means "include it in the schedule",
+      // defaulted on since that's the point of adding one. A personal task
+      // has no schedule to join — the same flag doubles as its "done"
+      // checkbox in Planner's checklist (see the personalTasks section
+      // there), so a new one should start unchecked, not pre-completed.
+      const tasks = isNew ? { ...s.tasks, [id]: !isPersonal } : s.tasks;
       const taskState = isNew ? { ...s.taskState, [id]: { status: 'planned' } } : s.taskState;
-      const next = { ...s, taskDefs: defs, durOverride, startOverride, tasks, taskState, constraints };
+      const next = { ...s, taskDefs: defs, durOverride, startOverride, tasks, taskState, constraints, dayNum: dayNumOf(s) };
       return { taskDefs: defs, durOverride, startOverride, tasks, taskState, schedule: buildSchedule(next), taskEdit: null, editErrors: {}, teToast: true };
     });
     clearTimeout(toastTimerRef.current);
@@ -469,7 +517,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       delete startOverride[id];
       const sessionReview = { ...s.sessionReview };
       delete sessionReview[id];
-      const next = { ...s, taskDefs: defs, tasks, taskState, durOverride, startOverride, constraints };
+      const next = { ...s, taskDefs: defs, tasks, taskState, durOverride, startOverride, constraints, dayNum: dayNumOf(s) };
       return { taskDefs: defs, tasks, taskState, durOverride, startOverride, sessionReview, schedule: buildSchedule(next), taskEdit: null };
     });
   }

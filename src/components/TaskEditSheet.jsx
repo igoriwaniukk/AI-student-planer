@@ -11,10 +11,29 @@ export default function TaskEditSheet({ planner }) {
   const errs = state.editErrors || {};
   const isNew = fm.id == null;
 
+  const isPersonal = fm.category === 'personal';
+
   return (
     <BottomSheet maxHeight="92%">
       <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{isNew ? t('taskEdit.newTitle') : t('taskEdit.title')}</div>
-      <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 6 }}>{isNew ? t('taskEdit.newSubtitle') : (t(VALUE_KEY[fm.subject]) || fm.subject) + ' — ' + fm.name}</div>
+      <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 6 }}>{isNew ? t('taskEdit.newSubtitle') : (fm.subject ? (t(VALUE_KEY[fm.subject]) || fm.subject) + ' — ' + fm.name : fm.name)}</div>
+
+      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.categoryLabel')}</div>
+      <div style={{ display: 'flex', gap: 9 }}>
+        <div
+          onClick={() => patchTaskEdit({ category: 'school' })}
+          style={{ flex: 1, height: 44, borderRadius: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, background: !isPersonal ? 'rgba(124,92,255,.16)' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (!isPersonal ? 'rgba(124,92,255,.6)' : 'rgba(255,255,255,.09)'), color: !isPersonal ? '#e6dfff' : '#c9c9d6' }}
+        >
+          {t('taskEdit.categorySchool')}
+        </div>
+        <div
+          onClick={() => patchTaskEdit({ category: 'personal' })}
+          style={{ flex: 1, height: 44, borderRadius: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, background: isPersonal ? 'rgba(124,92,255,.16)' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (isPersonal ? 'rgba(124,92,255,.6)' : 'rgba(255,255,255,.09)'), color: isPersonal ? '#e6dfff' : '#c9c9d6' }}
+        >
+          {t('taskEdit.categoryPersonal')}
+        </div>
+      </div>
+      <div style={{ fontSize: 11.5, lineHeight: 1.4, color: '#7a7a8a', marginTop: 8 }}>{isPersonal ? t('taskEdit.categoryPersonalNote') : t('taskEdit.categorySchoolNote')}</div>
 
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.taskName')}</div>
       <input
@@ -24,28 +43,47 @@ export default function TaskEditSheet({ planner }) {
       />
       {errs.name && <div style={{ fontSize: 11.5, color: '#f5a524', marginTop: 7 }}>{errs.name}</div>}
 
-      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.subject')}</div>
+      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.dayLabel')}</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-        {SUBJECTS.map((v) => (
-          <Chip key={v} label={t(VALUE_KEY[v]) || v} active={fm.subject === v} onClick={() => patchTaskEdit({ subject: v })} style={{ padding: '9px 13px' }} />
-        ))}
+        <Chip label={t('taskEdit.dayToday')} active={fm.dayChoice === 'today'} onClick={() => patchTaskEdit({ dayChoice: 'today' })} />
+        <Chip label={t('taskEdit.dayTomorrow')} active={fm.dayChoice === 'tomorrow'} onClick={() => patchTaskEdit({ dayChoice: 'tomorrow' })} />
+        <Chip label={t('taskEdit.dayPick')} active={fm.dayChoice === 'pick'} onClick={() => patchTaskEdit({ dayChoice: 'pick' })} />
       </div>
+      {fm.dayChoice === 'pick' && (
+        <input
+          type="date"
+          value={fm.dayDate}
+          onChange={(e) => patchTaskEdit({ dayDate: e.target.value })}
+          style={{ width: '100%', boxSizing: 'border-box', height: 50, marginTop: 10, padding: '0 15px', borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', color: '#f4f4f7', fontSize: 15, fontWeight: 650, fontFamily: 'inherit', outline: 'none' }}
+        />
+      )}
 
-      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.duration')}</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-        <div onClick={() => stepTaskDur(-5)} style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, cursor: 'pointer' }}>−</div>
-        <div style={{ flex: 1, textAlign: 'center', fontSize: 21, fontWeight: 750 }}>{fm.dur} min</div>
-        <div onClick={() => stepTaskDur(5)} style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, cursor: 'pointer' }}>+</div>
-      </div>
-      {errs.dur && <div style={{ fontSize: 11.5, color: '#f5a524', marginTop: 7 }}>{errs.dur}</div>}
+      {!isPersonal && (
+        <>
+          <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.subject')}</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {SUBJECTS.map((v) => (
+              <Chip key={v} label={t(VALUE_KEY[v]) || v} active={fm.subject === v} onClick={() => patchTaskEdit({ subject: v })} style={{ padding: '9px 13px' }} />
+            ))}
+          </div>
 
-      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.startTime')}</div>
-      <input
-        value={fm.start}
-        onChange={(e) => patchTaskEdit({ start: e.target.value })}
-        style={{ width: 110, boxSizing: 'border-box', height: 50, padding: '0 15px', borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', color: '#f4f4f7', fontSize: 17, fontWeight: 750, fontFamily: 'inherit', outline: 'none' }}
-      />
-      {errs.start && <div style={{ fontSize: 11.5, color: '#f5a524', marginTop: 7 }}>{errs.start}</div>}
+          <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.duration')}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+            <div onClick={() => stepTaskDur(-5)} style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, cursor: 'pointer' }}>−</div>
+            <div style={{ flex: 1, textAlign: 'center', fontSize: 21, fontWeight: 750 }}>{fm.dur} min</div>
+            <div onClick={() => stepTaskDur(5)} style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, cursor: 'pointer' }}>+</div>
+          </div>
+          {errs.dur && <div style={{ fontSize: 11.5, color: '#f5a524', marginTop: 7 }}>{errs.dur}</div>}
+
+          <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.startTime')}</div>
+          <input
+            value={fm.start}
+            onChange={(e) => patchTaskEdit({ start: e.target.value })}
+            style={{ width: 110, boxSizing: 'border-box', height: 50, padding: '0 15px', borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', color: '#f4f4f7', fontSize: 17, fontWeight: 750, fontFamily: 'inherit', outline: 'none' }}
+          />
+          {errs.start && <div style={{ fontSize: 11.5, color: '#f5a524', marginTop: 7 }}>{errs.start}</div>}
+        </>
+      )}
 
       <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.priority')}</div>
       <div style={{ display: 'flex', gap: 9 }}>

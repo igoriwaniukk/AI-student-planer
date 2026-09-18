@@ -70,9 +70,15 @@ export function zad(n) {
   return n + (n === 1 ? ' zadanie' : (n >= 2 && n <= 4 ? ' zadania' : ' zadań'));
 }
 
-export function activeIds(taskDefs, tasks, taskState) {
+// `dayNum`, when given, additionally restricts to tasks due that day — a
+// task with no `day` set (the original demo tasks, or anything saved before
+// this field existed) still matches any day, so nothing existing silently
+// disappears. Personal tasks (see TaskEditSheet's category toggle) never get
+// a study-time block, so they're excluded here regardless of day.
+export function activeIds(taskDefs, tasks, taskState, dayNum) {
   return taskDefs
     .filter((t) => tasks[t.id] && ['moved', 'skipped'].indexOf((taskState[t.id] || {}).status) < 0)
+    .filter((t) => t.category !== 'personal' && (dayNum == null || t.day == null || t.day === dayNum))
     .map((t) => t.id);
 }
 
@@ -153,12 +159,12 @@ function skipBlockedWindows(start, dur, blocks) {
   return cur;
 }
 
-export function buildSchedule({ taskDefs, tasks, taskState, energy, pref, durOverride, startOverride, constraints }) {
+export function buildSchedule({ taskDefs, tasks, taskState, energy, pref, durOverride, startOverride, constraints, dayNum }) {
   const c = constraints || dayConstraints();
   const brk = (pref === 'Więcej krótkich przerw' || energy === 'Niska') ? 15 : 10;
   const sched = {};
   let cur = c.wakeMinutes;
-  const ids = activeIds(taskDefs, tasks, taskState);
+  const ids = activeIds(taskDefs, tasks, taskState, dayNum);
   ids.forEach((id, i) => {
     const d = taskDefs.find((t) => t.id === id);
     const dur = (durOverride && durOverride[id]) || lightenForEnergy(d.dur, energy);
