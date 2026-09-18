@@ -196,8 +196,16 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
     clearAction();
   }
 
+  // Rescue is a long, dense form ending in a sticky footer button — between
+  // that footer and the FAB's own fixed footprint there's no vertical room
+  // left for whatever naturally lands there (energy picker, time chips)
+  // without covering one or the other. Simplest reliable fix: park the FAB
+  // off-screen for this one screen rather than fight the layout with it.
+  const fabHidden = planner.state.screen === 'rescue' && !open;
+
   return (
     <>
+      {!fabHidden && (
       <div
         onClick={() => setOpen(true)}
         className="fab-btn"
@@ -210,6 +218,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
       >
         ✨
       </div>
+      )}
 
       {open && (
         <BottomSheet maxHeight="85%">
