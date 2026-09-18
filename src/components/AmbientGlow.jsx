@@ -15,14 +15,14 @@ export default function AmbientGlow() {
         style={{
           position: 'absolute', top: '-12%', left: '-25%', width: 420, height: 420, borderRadius: '50%',
           background: 'radial-gradient(circle, rgba(139,109,255,.35), transparent 70%)',
-          animation: 'glowDrift 22s ease-in-out infinite',
+          animation: 'glowDrift 34s ease-in-out infinite',
         }}
       />
       <div
         style={{
           position: 'absolute', bottom: '-16%', right: '-20%', width: 380, height: 380, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(46,230,197,.16), transparent 70%)',
-          animation: 'glowDrift 27s ease-in-out infinite 4s',
+          background: 'radial-gradient(circle, rgba(139,109,255,.35), transparent 70%)',
+          animation: 'glowDrift 40s ease-in-out infinite 6s',
         }}
       />
     </div>
