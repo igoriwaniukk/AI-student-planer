@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { REFERENCE_DAY } from '../lib/plannerData';
-import { span, computeStreak, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn } from '../lib/plannerLogic';
+import { span, fmt, computeStreak, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn } from '../lib/plannerLogic';
 import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
@@ -175,7 +175,7 @@ function SmallBtn({ label, onClick, accent }) {
 
 function NextSessionCard({ planner }) {
   const { t } = useLang();
-  const { state, def, ts, startSession, togglePause, openFinish, openBlockEdit, update } = planner;
+  const { state, def, ts, startSession, isBeforeScheduledStart, togglePause, openFinish, openBlockEdit, update } = planner;
   const sched = state.schedule || {};
   const ids = Object.keys(sched).sort((a, b) => sched[a].start - sched[b].start);
   const active = state.activeTask;
@@ -236,6 +236,12 @@ function NextSessionCard({ planner }) {
             <SmallBtn label={t('home.finish')} accent onClick={() => openFinish(nextId, b.dur)} />
           </div>
         </>
+      ) : isBeforeScheduledStart(nextId) ? (
+        <div
+          style={{ marginTop: 14, height: 52, borderRadius: 15, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 650, color: '#8a8a99' }}
+        >
+          {t('home.startsAt', { time: fmt(b.start) })}
+        </div>
       ) : (
         <div
           onClick={() => startSession(nextId)}

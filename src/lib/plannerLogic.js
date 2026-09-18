@@ -397,6 +397,16 @@ export function upcomingExams(state) {
     .sort((a, b) => a.daysUntil - b.daysUntil);
 }
 
+// A session can't be started (and by extension finished) before the real
+// clock time it's actually scheduled for — nothing in real life lets you
+// log study time for a session that hasn't happened yet. `schedule` is
+// keyed by task id to { start, dur } in minutes-of-day (see buildSchedule).
+export function isBeforeScheduledStart(schedule, id, now = new Date()) {
+  const b = schedule && schedule[id];
+  if (!b) return false;
+  return now.getHours() * 60 + now.getMinutes() < b.start;
+}
+
 // Consecutive real-world days (ending today or yesterday) with a fully
 // completed study day recorded in studyHistory (keyed by real ISO date).
 export function computeStreak(studyHistory) {

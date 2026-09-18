@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import {
   fmt, span, toMinutes, hm, activeIds, lightenForEnergy, buildSchedule, buildRescueSchedule,
-  checkBlockConflict, computeStreak, computeTotalPoints, weeklyReview, examAtRisk,
+  checkBlockConflict, computeStreak, computeTotalPoints, weeklyReview, examAtRisk, isBeforeScheduledStart,
 } from './plannerLogic';
 import { setCurrentLang } from './i18n';
 
@@ -194,6 +194,30 @@ describe('computeStreak / computeTotalPoints / weeklyReview', () => {
     expect(review.completedDays).toBe(2);
     expect(review.trackedDays).toBe(2);
     expect(review.rate).toBe(100);
+  });
+});
+
+describe('isBeforeScheduledStart', () => {
+  const schedule = { math: { start: 930, dur: 60 } }; // 15:30-16:30
+
+  it('blocks starting a session before its scheduled clock time', () => {
+    const now = new Date(2026, 0, 1, 10, 0); // 10:00, well before 15:30
+    expect(isBeforeScheduledStart(schedule, 'math', now)).toBe(true);
+  });
+
+  it('allows starting once the scheduled time has arrived', () => {
+    const now = new Date(2026, 0, 1, 15, 30);
+    expect(isBeforeScheduledStart(schedule, 'math', now)).toBe(false);
+  });
+
+  it('allows starting after the scheduled time has passed', () => {
+    const now = new Date(2026, 0, 1, 20, 0);
+    expect(isBeforeScheduledStart(schedule, 'math', now)).toBe(false);
+  });
+
+  it('does not block a task with no scheduled block', () => {
+    const now = new Date(2026, 0, 1, 10, 0);
+    expect(isBeforeScheduledStart(schedule, 'unknown', now)).toBe(false);
   });
 });
 

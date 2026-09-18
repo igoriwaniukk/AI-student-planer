@@ -4,7 +4,7 @@ import { TASK_TEXT_KEY, VALUE_KEY } from '../lib/i18n';
 import {
   PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, NUM_TODAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES, realDateForNum,
 } from '../lib/plannerData';
-import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf } from '../lib/plannerLogic';
+import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, isBeforeScheduledStart } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
 import { requestAIRescue } from '../lib/aiRescue';
 
@@ -153,7 +153,7 @@ function initialState(defaults, activities, persisted) {
     unfinishedChoice: '',
     skipReason: '',
 
-    selectedDay: 19,
+    selectedDay: NUM_TODAY,
     planApproved: false,
     dayEnded: false,
 
@@ -164,6 +164,13 @@ function initialState(defaults, activities, persisted) {
   };
   if (persisted) {
     DURABLE_KEYS.forEach((k) => {
+      // selectedDay is persisted so approving a plan or running the rescue
+      // flow can pin it forward (see confirmPlan/confirmRescue below), but a
+      // value like that from a previous session must never survive a reload
+      // — NUM_TODAY shifts by one every real day, so a stale "tomorrow" from
+      // yesterday silently becomes "the day after" today. Always reopen on
+      // the real current day instead.
+      if (k === 'selectedDay') return;
       if (persisted[k] !== undefined) base[k] = persisted[k];
     });
   }
@@ -351,6 +358,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
 
   // ---- home / session lifecycle ----
   function startSession(id) {
+    if (isBeforeScheduledStart(state.schedule, id)) return;
     update((s) => {
       const t = { ...s.taskState };
       t[id] = { ...t[id], status: 'in_progress' };
@@ -871,7 +879,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   return {
     state, constraints, planDayNum, update, def, ts, go,
     toggleTask, generatePlan, deadlineGenerate, rescueGenerate,
-    startSession, togglePause, dismissBreakReminder, openFinish, cancelFinish, confirmFinish,
+    startSession, isBeforeScheduledStart: (id) => isBeforeScheduledStart(state.schedule, id), togglePause, dismissBreakReminder, openFinish, cancelFinish, confirmFinish,
     openBlockEdit, moveBlockEdit, cancelBlockEdit, saveBlockEdit, removeBlock,
     openTaskEdit, openNewTaskEdit, patchTaskEdit, stepTaskDur, cancelTaskEdit, saveTaskEdit, removeTaskDef,
     toggleManualMode, regenerateOrCancel, confirmPlan, goHomeSaved,

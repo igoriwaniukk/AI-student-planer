@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { WEEK_DAYS, REFERENCE_DAY, realDateForNum } from '../lib/plannerData';
+import { WEEK_DAYS, REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
 import { DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 
@@ -34,8 +34,10 @@ export default function WeekStrip({
   const countdownSet = examDay != null
     ? new Set(baseWeek.filter((d) => d.num >= REFERENCE_DAY && d.num <= examDay).map((d) => d.num))
     : null;
+  // Anchored to NUM_TODAY ("today"), not REFERENCE_DAY ("tomorrow") — a
+  // streak can only ever include days that have actually happened.
   const streakSet = streakCount > 0
-    ? new Set(baseWeek.filter((d) => d.num <= REFERENCE_DAY && d.num > REFERENCE_DAY - streakCount).map((d) => d.num))
+    ? new Set(baseWeek.filter((d) => d.num <= NUM_TODAY && d.num > NUM_TODAY - streakCount).map((d) => d.num))
     : null;
   const daysUntilExam = examDay != null ? examDay - REFERENCE_DAY : null;
 

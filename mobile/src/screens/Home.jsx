@@ -3,7 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useLang } from '../lib/useLang';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { GOALS, IMPORTANCE_OPTIONS, REFERENCE_DAY } from '../lib/plannerData';
-import { span, computeStreak, computeTotalPoints, dayInfo, upcomingExams, examProgressMinutes, formatMonthDay, weekdayOn } from '../lib/plannerLogic';
+import { span, fmt, computeStreak, computeTotalPoints, dayInfo, upcomingExams, examProgressMinutes, formatMonthDay, weekdayOn } from '../lib/plannerLogic';
 import { ACHIEVEMENTS, computeUnlockedAchievements } from '../lib/achievements';
 import { useLastSeenStreak, useSeenAchievements } from '../lib/storage';
 import WeekStrip from '../components/WeekStrip';
@@ -173,7 +173,7 @@ function SmallBtn({ label, onPress, accent }) {
 
 function NextSessionCard({ planner }) {
   const { t } = useLang();
-  const { state, def, ts, startSession, togglePause, openFinish, openBlockEdit, update } = planner;
+  const { state, def, ts, startSession, isBeforeScheduledStart, togglePause, openFinish, openBlockEdit, update } = planner;
   const sched = state.schedule || {};
   const ids = Object.keys(sched).sort((a, b) => sched[a].start - sched[b].start);
   const active = state.activeTask;
@@ -222,6 +222,10 @@ function NextSessionCard({ planner }) {
             <SmallBtn label={t('home.finish')} accent onPress={() => openFinish(nextId, b.dur)} />
           </View>
         </>
+      ) : isBeforeScheduledStart(nextId) ? (
+        <View style={[styles.primaryBtn, { height: 52, backgroundColor: 'rgba(255,255,255,.05)', borderWidth: 1, borderColor: 'rgba(255,255,255,.1)' }]}>
+          <Text style={{ fontSize: 14, fontWeight: '650', color: '#8a8a99' }}>{t('home.startsAt', { time: fmt(b.start) })}</Text>
+        </View>
       ) : (
         <Pressable onPress={() => startSession(nextId)} style={[styles.primaryBtn, { height: 52 }]}>
           <Text style={styles.primaryBtnText}>{t('home.startSession')}</Text>
