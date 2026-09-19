@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { PRIO_STYLE, NUM_TODAY, REFERENCE_DAY } from '../lib/plannerData';
-import { durOf, formatMonthDay } from '../lib/plannerLogic';
+import { durOf, formatMonthDay, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
 import { iconForTask } from '../lib/taskAuto';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
@@ -11,19 +11,11 @@ import TaskEditSheet from '../components/TaskEditSheet';
 // A task's own day-num resolved to the same Today/Tomorrow labels the
 // TaskEditSheet's day picker uses, or a real date once it's further out —
 // lets the main task list show when each task is actually planned for.
-function dayLabel(t, dayNum) {
-  if (dayNum == null || dayNum === REFERENCE_DAY) return t('taskEdit.dayTomorrow');
-  if (dayNum === NUM_TODAY) return t('taskEdit.dayToday');
-  return formatMonthDay(dayNum);
-}
-
-// A task with no day set (the original demo tasks, or anything saved
-// before that field existed) still shows on Today and Tomorrow — the only
-// two days that were ever plannable before the day strip existed — rather
-// than vanishing once the strip is scrolled anywhere else.
-function dueOnDay(d, dayNum) {
-  if (d.day === dayNum) return true;
-  return d.day == null && (dayNum === NUM_TODAY || dayNum === REFERENCE_DAY);
+function dayLabel(t, d) {
+  if (d.repeatDays && d.repeatDays.length) return t('taskEdit.dayRepeat');
+  if (d.day == null || d.day === REFERENCE_DAY) return t('taskEdit.dayTomorrow');
+  if (d.day === NUM_TODAY) return t('taskEdit.dayToday');
+  return formatMonthDay(d.day);
 }
 
 export default function Tasks({ planner }) {
@@ -31,7 +23,7 @@ export default function Tasks({ planner }) {
   const { state, toggleTask, openTaskEdit, openNewTaskEdit } = planner;
   const [viewDay, setViewDay] = useState(NUM_TODAY);
   const [weekOffset, setWeekOffset] = useState(0);
-  const dayTasks = state.taskDefs.filter((d) => dueOnDay(d, viewDay));
+  const dayTasks = state.taskDefs.filter((d) => taskDueOnDay(d, viewDay));
 
   return (
     <>
@@ -47,13 +39,13 @@ export default function Tasks({ planner }) {
           <div style={{ fontSize: 12.5, color: '#8a8a99' }}>{t('tasks.empty')}</div>
         )}
         {dayTasks.map((d, i) => {
-          const on = state.tasks[d.id];
+          const on = isTaskOn(state.tasks, d, viewDay);
           const isPersonal = d.category === 'personal';
           const ps = PRIO_STYLE[d.priority] || PRIO_STYLE['Normalny priorytet'];
           return (
             <div
               key={d.id}
-              onClick={() => toggleTask(d.id)}
+              onClick={() => toggleTask(d.id, viewDay)}
               style={{ marginTop: i ? 12 : 0, padding: 14, borderRadius: 18, cursor: 'pointer', background: on ? 'rgba(124,92,255,.07)' : 'rgba(255,255,255,.03)', border: '1.5px solid ' + (on ? 'rgba(124,92,255,.55)' : 'rgba(255,255,255,.07)') }}
             >
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
@@ -64,7 +56,7 @@ export default function Tasks({ planner }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     {!isPersonal && <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: d.color, textTransform: 'uppercase' }}>{t(VALUE_KEY[d.subject]) || d.subject}</span>}
-                    <span style={{ fontSize: 10, fontWeight: 650, padding: '3px 8px', borderRadius: 7, color: '#8fbaff', background: 'rgba(91,156,255,.13)' }}>{dayLabel(t, d.day)}</span>
+                    <span style={{ fontSize: 10, fontWeight: 650, padding: '3px 8px', borderRadius: 7, color: '#8fbaff', background: 'rgba(91,156,255,.13)' }}>{dayLabel(t, d)}</span>
                     <span style={{ fontSize: 10, fontWeight: 650, padding: '3px 8px', borderRadius: 7, color: ps.color, background: ps.bg }}>{t(VALUE_KEY[d.priority]) || d.priority}</span>
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3, marginTop: 6 }}>{t(TASK_TEXT_KEY[d.id]?.title) || d.title}</div>

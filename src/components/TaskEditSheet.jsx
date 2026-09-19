@@ -1,8 +1,13 @@
-import { SUBJECTS, PRIORITIES } from '../lib/plannerData';
-import { VALUE_KEY } from '../lib/i18n';
+import { SUBJECTS, PRIORITIES, RECUR_DAYS } from '../lib/plannerData';
+import { VALUE_KEY, DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { detectTaskMeta, iconForTask } from '../lib/taskAuto';
 import { BottomSheet, Chip } from './ui';
+import WheelDatePicker from './WheelDatePicker';
+import WheelTimePicker from './WheelTimePicker';
+
+const TODAY_ISO = new Date().toISOString().slice(0, 10);
+const WEEKDAYS_5 = RECUR_DAYS.slice(0, 5);
 
 export default function TaskEditSheet({ planner }) {
   const { t } = useLang();
@@ -56,15 +61,40 @@ export default function TaskEditSheet({ planner }) {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         <Chip label={t('taskEdit.dayToday')} active={fm.dayChoice === 'today'} onClick={() => patchTaskEdit({ dayChoice: 'today' })} />
         <Chip label={t('taskEdit.dayTomorrow')} active={fm.dayChoice === 'tomorrow'} onClick={() => patchTaskEdit({ dayChoice: 'tomorrow' })} />
-        <Chip label={t('taskEdit.dayPick')} active={fm.dayChoice === 'pick'} onClick={() => patchTaskEdit({ dayChoice: 'pick' })} />
+        <Chip label={t('taskEdit.dayPick')} active={fm.dayChoice === 'pick'} onClick={() => patchTaskEdit({ dayChoice: 'pick', dayDate: fm.dayDate || TODAY_ISO })} />
+        <Chip label={t('taskEdit.dayRepeat')} active={fm.dayChoice === 'repeat'} onClick={() => patchTaskEdit({ dayChoice: 'repeat' })} />
       </div>
       {fm.dayChoice === 'pick' && (
-        <input
-          type="date"
-          value={fm.dayDate}
-          onChange={(e) => patchTaskEdit({ dayDate: e.target.value })}
-          style={{ width: '100%', boxSizing: 'border-box', height: 50, marginTop: 10, padding: '0 15px', borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', color: '#f4f4f7', fontSize: 15, fontWeight: 650, fontFamily: 'inherit', outline: 'none' }}
-        />
+        <div style={{ marginTop: 10 }}>
+          <WheelDatePicker value={fm.dayDate} minDate={TODAY_ISO} onChange={(v) => patchTaskEdit({ dayDate: v })} />
+        </div>
+      )}
+      {fm.dayChoice === 'repeat' && (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+            <Chip
+              label={t('taskEdit.repeatEveryDay')}
+              active={fm.repeatDays.length === RECUR_DAYS.length}
+              onClick={() => patchTaskEdit({ repeatDays: RECUR_DAYS.slice() })}
+            />
+            <Chip
+              label={t('taskEdit.repeatWeekdays')}
+              active={fm.repeatDays.length === WEEKDAYS_5.length && WEEKDAYS_5.every((d) => fm.repeatDays.includes(d))}
+              onClick={() => patchTaskEdit({ repeatDays: WEEKDAYS_5.slice() })}
+            />
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {RECUR_DAYS.map((day) => (
+              <Chip
+                key={day}
+                label={(t(DAY_KEY[day]) || day).slice(0, 3)}
+                active={fm.repeatDays.includes(day)}
+                onClick={() => patchTaskEdit({ repeatDays: fm.repeatDays.includes(day) ? fm.repeatDays.filter((x) => x !== day) : fm.repeatDays.concat(day) })}
+              />
+            ))}
+          </div>
+          {errs.repeatDays && <div style={{ fontSize: 11.5, color: '#f5a524', marginTop: 7 }}>{errs.repeatDays}</div>}
+        </div>
       )}
 
       {!isPersonal && (
@@ -85,11 +115,9 @@ export default function TaskEditSheet({ planner }) {
           {errs.dur && <div style={{ fontSize: 11.5, color: '#f5a524', marginTop: 7 }}>{errs.dur}</div>}
 
           <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.startTime')}</div>
-          <input
-            value={fm.start}
-            onChange={(e) => patchTaskEdit({ start: e.target.value })}
-            style={{ width: 110, boxSizing: 'border-box', height: 50, padding: '0 15px', borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', color: '#f4f4f7', fontSize: 17, fontWeight: 750, fontFamily: 'inherit', outline: 'none' }}
-          />
+          <div style={{ width: 150 }}>
+            <WheelTimePicker value={fm.start} onChange={(v) => patchTaskEdit({ start: v })} />
+          </div>
           {errs.start && <div style={{ fontSize: 11.5, color: '#f5a524', marginTop: 7 }}>{errs.start}</div>}
         </>
       )}

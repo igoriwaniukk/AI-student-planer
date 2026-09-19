@@ -4,7 +4,7 @@ import { TASK_TEXT_KEY, VALUE_KEY } from '../lib/i18n';
 import {
   PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, NUM_TODAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES, realDateForNum,
 } from '../lib/plannerData';
-import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf } from '../lib/plannerLogic';
+import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, isTaskOn } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
 import { requestAIRescue } from '../lib/aiRescue';
 
@@ -254,16 +254,31 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     const list = (st || state).taskDefs;
     return list.find((t) => t.id === id);
   }
-  function ts(id, st) {
-    return (st || state).taskState[id] || { status: 'planned' };
+  // `dayNum`, when omitted, defaults to whichever day the Planner form is
+  // currently on (see dayNumOf below) — right for every existing call site,
+  // which only ever reads/writes the taskState of whatever's currently
+  // scheduled. A repeating task's occurrence for that day gets its own
+  // composite key (see taskKey in plannerLogic.js); an ordinary task is
+  // unaffected since taskKey just returns its plain id.
+  function ts(id, dayNum, st) {
+    const s = st || state;
+    const d = def(id, s);
+    const key = d ? taskKey(d, dayNum != null ? dayNum : dayNumOf(s)) : id;
+    return s.taskState[key] || { status: 'planned' };
   }
 
   function go(screen) {
     update({ screen });
   }
 
-  function toggleTask(id) {
-    update((s) => ({ tasks: { ...s.tasks, [id]: !s.tasks[id] } }));
+  function toggleTask(id, dayNum) {
+    update((s) => {
+      const d = def(id, s);
+      if (!d) return {};
+      const dn = dayNum != null ? dayNum : dayNumOf(s);
+      const key = taskKey(d, dn);
+      return { tasks: { ...s.tasks, [key]: !isTaskOn(s.tasks, d, dn) } };
+    });
   }
 
   // `work`, when given, is a Promise the generating animation waits on
@@ -352,16 +367,20 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   // ---- home / session lifecycle ----
   function startSession(id) {
     update((s) => {
+      const d = def(id, s);
+      const key = d ? taskKey(d, dayNumOf(s)) : id;
       const t = { ...s.taskState };
-      t[id] = { ...t[id], status: 'in_progress' };
+      t[key] = { ...t[key], status: 'in_progress' };
       return { taskState: t, activeTask: id, sessionStart: Date.now(), sessionElapsedMs: 0, breakDismissed: false };
     });
   }
   function togglePause(id) {
     update((s) => {
+      const d = def(id, s);
+      const key = d ? taskKey(d, dayNumOf(s)) : id;
       const t = { ...s.taskState };
-      const pausing = t[id].status !== 'paused';
-      t[id] = { ...t[id], status: pausing ? 'paused' : 'in_progress' };
+      const pausing = t[key].status !== 'paused';
+      t[key] = { ...t[key], status: pausing ? 'paused' : 'in_progress' };
       if (pausing) {
         return { taskState: t, sessionElapsedMs: s.sessionElapsedMs + (Date.now() - s.sessionStart), sessionStart: null };
       }
@@ -380,8 +399,10 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   function confirmFinish() {
     update((s) => {
       const id = s.finishTask;
+      const d = def(id, s);
+      const key = d ? taskKey(d, dayNumOf(s)) : id;
       const t = { ...s.taskState };
-      t[id] = { status: 'completed', actual: s.finishDur, hard: s.finishHard, know: s.finishKnow };
+      t[key] = { status: 'completed', actual: s.finishDur, hard: s.finishHard, know: s.finishKnow };
       return {
         taskState: t, activeTask: null, finishTask: null, sessionStart: null, sessionElapsedMs: 0, breakDismissed: false,
         sessionReview: { ...s.sessionReview, [id]: { minutes: s.finishDur, hard: s.finishHard, know: s.finishKnow } },
@@ -414,7 +435,9 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   }
   function removeBlock(id) {
     update((s) => {
-      const tsx = { ...s.taskState, [id]: { ...s.taskState[id], status: 'skipped' } };
+      const d = def(id, s);
+      const key = d ? taskKey(d, dayNumOf(s)) : id;
+      const tsx = { ...s.taskState, [key]: { ...s.taskState[key], status: 'skipped' } };
       const next = { ...s, taskState: tsx, constraints, dayNum: dayNumOf(s) };
       return { taskState: tsx, schedule: buildSchedule(next) };
     });
@@ -440,10 +463,16 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       const d = def(id, s);
       const dur = (s.durOverride && s.durOverride[id]) || d.dur;
       const start = s.startOverride && s.startOverride[id] != null ? s.startOverride[id] : (s.schedule && s.schedule[id] ? s.schedule[id].start : 930);
+      // A repeating task (see the "Repeat" day chip) has no single `day` to
+      // round-trip through dayChoiceForNum — it opens straight back into
+      // repeat mode with its saved weekdays instead.
+      const dayFields = d.repeatDays && d.repeatDays.length
+        ? { dayChoice: 'repeat', dayDate: '', repeatDays: d.repeatDays }
+        : { ...dayChoiceForNum(d.day), repeatDays: [] };
       return {
         taskEdit: {
           id, name: translate(TASK_TEXT_KEY[id]?.title) || d.title, subject: d.subject, dur, start: fmtLocal(start),
-          priority: d.priority, note: d.note || '', category: d.category || 'school', autoCategory: true, ...dayChoiceForNum(d.day),
+          priority: d.priority, note: d.note || '', category: d.category || 'school', autoCategory: true, ...dayFields,
         },
         editErrors: {}, teToast: false,
       };
@@ -461,7 +490,8 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     update({
       taskEdit: {
         id: null, name: '', subject: SUBJECTS[0], dur: 30, start: '19:00', priority: PRIORITIES[1], note: '',
-        category: 'school', autoCategory: true, ...(dayNum != null ? dayChoiceForNum(dayNum) : { dayChoice: 'today', dayDate: '' }),
+        category: 'school', autoCategory: true, repeatDays: [],
+        ...(dayNum != null ? dayChoiceForNum(dayNum) : { dayChoice: 'today', dayDate: '' }),
       },
       editErrors: {}, teToast: false,
     });
@@ -484,8 +514,10 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       const fm = s.taskEdit;
       if (!fm) return {};
       const isPersonal = fm.category === 'personal';
+      const isRepeat = fm.dayChoice === 'repeat';
       const errs = {};
       if (!fm.name || !fm.name.trim()) errs.name = translate('taskEdit.nameRequired');
+      if (isRepeat && (!fm.repeatDays || !fm.repeatDays.length)) errs.repeatDays = translate('taskEdit.repeatDaysRequired');
       // A personal task (errand, chore — see the category toggle) has no
       // subject and never gets a scheduled time block, so its duration and
       // start-time fields don't exist on the sheet and skip validation here.
@@ -500,7 +532,11 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       const name = fm.name.trim();
       const isNew = fm.id == null;
       const id = isNew ? 'custom-' + Date.now() : fm.id;
-      const day = dayNumFromChoice(fm.dayChoice, fm.dayDate);
+      // A repeating task has no single day-num — it matches whichever of its
+      // chosen weekdays a given dayNum falls on (see taskDueOnDay in
+      // plannerLogic.js) instead.
+      const day = isRepeat ? null : dayNumFromChoice(fm.dayChoice, fm.dayDate);
+      const repeatDays = isRepeat ? fm.repeatDays : [];
       // Checked here (not just in BlockEditSheet) so a task can't be saved
       // on top of a fixed activity or another session in the first place —
       // previously only a drag-edit of an already-placed block was
@@ -516,13 +552,13 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       }
       const defs = isNew
         ? s.taskDefs.concat(isPersonal
-          ? { id, category: 'personal', title: name, priority: fm.priority, note: fm.note, day, color: '#a58cff', short: name }
-          : { id, category: 'school', subject: fm.subject, title: name, dur: fm.dur, priority: fm.priority, note: fm.note, day, color: '#a58cff', short: fm.subject + ' — ' + name })
+          ? { id, category: 'personal', title: name, priority: fm.priority, note: fm.note, day, repeatDays, color: '#a58cff', short: name }
+          : { id, category: 'school', subject: fm.subject, title: name, dur: fm.dur, priority: fm.priority, note: fm.note, day, repeatDays, color: '#a58cff', short: fm.subject + ' — ' + name })
         : s.taskDefs.map((t) => {
           if (t.id !== id) return t;
-          if (isPersonal) return { ...t, category: 'personal', title: name, priority: fm.priority, note: fm.note, day, short: name };
+          if (isPersonal) return { ...t, category: 'personal', title: name, priority: fm.priority, note: fm.note, day, repeatDays, short: name };
           const renamed = t.title !== name || t.subject !== fm.subject;
-          return { ...t, category: 'school', title: name, subject: fm.subject, dur: fm.dur, priority: fm.priority, note: fm.note, day, short: renamed ? fm.subject + ' — ' + name : t.short };
+          return { ...t, category: 'school', title: name, subject: fm.subject, dur: fm.dur, priority: fm.priority, note: fm.note, day, repeatDays, short: renamed ? fm.subject + ' — ' + name : t.short };
         });
       const durOverride = isPersonal ? s.durOverride : { ...s.durOverride, [id]: fm.dur };
       const startOverride = isPersonal ? s.startOverride : { ...s.startOverride, [id]: startMin };
@@ -530,9 +566,12 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       // defaulted on since that's the point of adding one. A personal task
       // has no schedule to join — the same flag doubles as its "done"
       // checkbox in Planner's checklist (see the personalTasks section
-      // there), so a new one should start unchecked, not pre-completed.
-      const tasks = isNew ? { ...s.tasks, [id]: !isPersonal } : s.tasks;
-      const taskState = isNew ? { ...s.taskState, [id]: { status: 'planned' } } : s.taskState;
+      // there), so a new one should start unchecked, not pre-completed. A
+      // repeating task has no single occurrence to seed here — each day's
+      // own on/off state defaults itself the same way lazily (see isTaskOn
+      // in plannerLogic.js) the first time that day is actually looked at.
+      const tasks = isNew && !isRepeat ? { ...s.tasks, [id]: !isPersonal } : s.tasks;
+      const taskState = isNew && !isRepeat ? { ...s.taskState, [id]: { status: 'planned' } } : s.taskState;
       const next = { ...s, taskDefs: defs, durOverride, startOverride, tasks, taskState, constraints, dayNum: dayNumOf(s) };
       return { taskDefs: defs, durOverride, startOverride, tasks, taskState, schedule: buildSchedule(next), taskEdit: null, editErrors: {}, teToast: true };
     });
@@ -542,10 +581,19 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   function removeTaskDef(id) {
     update((s) => {
       const defs = s.taskDefs.filter((t) => t.id !== id);
-      const tasks = { ...s.tasks };
-      delete tasks[id];
-      const taskState = { ...s.taskState };
-      delete taskState[id];
+      // A repeating task's own occurrences live under composite `id:dayNum`
+      // keys (see taskKey in plannerLogic.js) — removing the definition
+      // needs to sweep every one of those too, not just the plain `id`
+      // (which a repeating task never actually uses), or they'd linger as
+      // orphaned, unreachable entries in persisted state forever.
+      const prefix = id + ':';
+      const stripOccurrences = (map) => {
+        const next = { ...map };
+        Object.keys(next).forEach((k) => { if (k === id || k.startsWith(prefix)) delete next[k]; });
+        return next;
+      };
+      const tasks = stripOccurrences(s.tasks);
+      const taskState = stripOccurrences(s.taskState);
       const durOverride = { ...s.durOverride };
       delete durOverride[id];
       const startOverride = { ...s.startOverride };

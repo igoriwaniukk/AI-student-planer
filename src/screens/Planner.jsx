@@ -1,5 +1,5 @@
 import { PRIO_STYLE } from '../lib/plannerData';
-import { durOf, hm, weekdayDateLabel, fmt, span, freeWindows } from '../lib/plannerLogic';
+import { durOf, hm, weekdayDateLabel, fmt, span, freeWindows, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
 import { iconForTask } from '../lib/taskAuto';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import WheelTimePicker from '../components/WheelTimePicker';
@@ -16,11 +16,12 @@ export default function Planner({ planner }) {
   const { state, constraints, planDayNum, toggleTask, openTaskEdit, openNewTaskEdit, update, generatePlan, go } = planner;
   // Only school tasks due this day occupy a time slot (see the category
   // toggle in TaskEditSheet) — a task with no day set still applies to
-  // either day, matching how tasks behaved before that field existed.
-  const dueThisDay = (d) => d.day == null || d.day === planDayNum;
-  const schedulableTasks = state.taskDefs.filter((d) => d.category !== 'personal' && dueThisDay(d));
-  const personalTasks = state.taskDefs.filter((d) => d.category === 'personal' && dueThisDay(d));
-  const enabledTasks = schedulableTasks.filter((d) => state.tasks[d.id]);
+  // either day, matching how tasks behaved before that field existed, and a
+  // repeating task (see taskDueOnDay) applies whenever this day falls on one
+  // of its chosen weekdays.
+  const schedulableTasks = state.taskDefs.filter((d) => d.category !== 'personal' && taskDueOnDay(d, planDayNum));
+  const personalTasks = state.taskDefs.filter((d) => d.category === 'personal' && taskDueOnDay(d, planDayNum));
+  const enabledTasks = schedulableTasks.filter((d) => isTaskOn(state.tasks, d, planDayNum));
   const nTasks = enabledTasks.length;
   const mins = enabledTasks.reduce((a, d) => a + durOf(d.id, state.taskDefs, state.durOverride), 0);
   const sumTime = hm(mins);
@@ -69,12 +70,12 @@ export default function Planner({ planner }) {
 
       <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('planner.whatToDo')}</div>
       {schedulableTasks.map((d, i) => {
-        const on = state.tasks[d.id];
+        const on = isTaskOn(state.tasks, d, planDayNum);
         const ps = PRIO_STYLE[d.priority] || PRIO_STYLE['Normalny priorytet'];
         return (
           <div
             key={d.id}
-            onClick={() => toggleTask(d.id)}
+            onClick={() => toggleTask(d.id, planDayNum)}
             style={{ marginTop: i ? 12 : 0, padding: 14, borderRadius: 18, cursor: 'pointer', background: on ? 'rgba(124,92,255,.07)' : 'rgba(255,255,255,.03)', border: '1.5px solid ' + (on ? 'rgba(124,92,255,.55)' : 'rgba(255,255,255,.07)') }}
           >
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
@@ -105,11 +106,11 @@ export default function Planner({ planner }) {
         <>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#9a9aab', margin: '18px 0 10px' }}>{t('planner.alsoPlanned', { day: dayWord })}</div>
           {personalTasks.map((d) => {
-            const done = state.tasks[d.id];
+            const done = isTaskOn(state.tasks, d, planDayNum);
             return (
               <div
                 key={d.id}
-                onClick={() => toggleTask(d.id)}
+                onClick={() => toggleTask(d.id, planDayNum)}
                 style={{ marginTop: 8, padding: '12px 14px', borderRadius: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 11, background: done ? 'rgba(53,208,127,.06)' : 'rgba(255,255,255,.03)', border: '1px solid ' + (done ? 'rgba(53,208,127,.25)' : 'rgba(255,255,255,.07)') }}
               >
                 <div style={{ width: 22, height: 22, borderRadius: 7, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: done ? '#35d07f' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (done ? '#35d07f' : 'rgba(255,255,255,.18)') }}>

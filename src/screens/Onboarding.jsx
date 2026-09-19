@@ -3,6 +3,7 @@ import { ENERGY_OPTIONS, PREF_OPTIONS, STUDY_TIME_OPTIONS, PRIORITY_SUBJECT_OPTI
 import { VALUE_KEY, DAY_KEY } from '../lib/i18n';
 import { timeStrToMinutes } from '../lib/plannerLogic';
 import { useLang } from '../lib/useLang';
+import WheelTimePicker from '../components/WheelTimePicker';
 
 const ACTIVITY_OPTIONS = [
   'Szkoła / liceum',
@@ -126,10 +127,10 @@ export default function Onboarding({ onComplete }) {
                 <div key={day} className="card" style={{ padding: 12, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   <Chip label={t(DAY_KEY[day]) || day} active={on} onClick={() => toggleSchoolDay(day)} />
                   {on && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 160 }}>
-                      <input type="time" value={schoolDays[day].start} onChange={(e) => setSchoolDayTime(day, 'start', e.target.value)} style={{ flex: 1 }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 220 }}>
+                      <WheelTimePicker value={schoolDays[day].start} onChange={(v) => setSchoolDayTime(day, 'start', v)} />
                       <span style={{ color: '#8a8a99' }}>–</span>
-                      <input type="time" value={schoolDays[day].end} onChange={(e) => setSchoolDayTime(day, 'end', e.target.value)} style={{ flex: 1 }} />
+                      <WheelTimePicker value={schoolDays[day].end} onChange={(v) => setSchoolDayTime(day, 'end', v)} />
                     </div>
                   )}
                 </div>
@@ -186,14 +187,14 @@ export default function Onboarding({ onComplete }) {
           </div>
 
           <div style={{ display: 'flex', gap: 12, marginTop: 18 }}>
-            <label style={{ flex: 1, fontSize: 12, color: '#8a8a99' }}>
-              {t('onb.step3.bedtimeLabel')}
-              <input type="time" value={bedtime} onChange={(e) => setBedtime(e.target.value)} style={{ marginTop: 6 }} />
-            </label>
-            <label style={{ flex: 1, fontSize: 12, color: '#8a8a99' }}>
-              {t('onb.step3.wakeLabel')}
-              <input type="time" value={wake} onChange={(e) => setWake(e.target.value)} style={{ marginTop: 6 }} />
-            </label>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, color: '#8a8a99', marginBottom: 6 }}>{t('onb.step3.bedtimeLabel')}</div>
+              <WheelTimePicker value={bedtime} onChange={setBedtime} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 12, color: '#8a8a99', marginBottom: 6 }}>{t('onb.step3.wakeLabel')}</div>
+              <WheelTimePicker value={wake} onChange={setWake} />
+            </div>
           </div>
 
           <button type="button" className="btn btn-primary" style={{ marginTop: 18 }} onClick={() => setStep(4)}>

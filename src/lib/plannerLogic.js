@@ -1,4 +1,4 @@
-import { EXAMS, PRIORITIES, REFERENCE_DAY, WEEK_DAYS, realDateForNum } from './plannerData';
+import { EXAMS, PRIORITIES, REFERENCE_DAY, NUM_TODAY, WEEK_DAYS, realDateForNum } from './plannerData';
 import { getCurrentLang } from './i18n';
 
 // Weekday info repeats on a 7-day cycle from WEEK_DAYS' base range (16-22),
@@ -70,15 +70,53 @@ export function zad(n) {
   return n + (n === 1 ? ' zadanie' : (n >= 2 && n <= 4 ? ' zadania' : ' zadań'));
 }
 
-// `dayNum`, when given, additionally restricts to tasks due that day — a
-// task with no `day` set (the original demo tasks, or anything saved before
-// this field existed) still matches any day, so nothing existing silently
-// disappears. Personal tasks (see TaskEditSheet's category toggle) never get
-// a study-time block, so they're excluded here regardless of day.
+// A task recurs on chosen weekdays (see the "Repeat" chip in TaskEditSheet)
+// instead of a single fixed day-num — d.repeatDays, when set, is a list of
+// RECUR_DAYS values (Polish weekday names, matching dayInfo(...).label and
+// recurringActivities' own `day` field). `dayNum == null` means "don't
+// filter by day at all" (used by the rescue flow, which salvages whatever
+// was already active regardless of which day it was originally for) — kept
+// identical to the old `dayNum == null || t.day == null || t.day === dayNum`
+// behavior for a non-repeating task. A task with no `day` set (the original
+// demo tasks, or anything saved before that field existed) still matches
+// Today and Tomorrow specifically, not every day, matching how the day strip
+// has always treated it (see Tasks.jsx).
+export function taskDueOnDay(d, dayNum) {
+  if (dayNum == null) return true;
+  if (d.repeatDays && d.repeatDays.length) return d.repeatDays.includes(dayInfo(dayNum).label);
+  if (d.day != null) return d.day === dayNum;
+  return dayNum === NUM_TODAY || dayNum === REFERENCE_DAY;
+}
+
+// The key a repeating task's per-occurrence state (see `tasks`/`taskState`
+// in usePlanner.js) is stored under for a given day — plain `d.id` for an
+// ordinary task (unchanged, so nothing persisted before repeating tasks
+// existed needs migrating), `id:dayNum` for a repeating one, so checking off
+// Monday's occurrence doesn't also check off Tuesday's. `dayNum == null`
+// (the rescue flow, which doesn't filter by day — see taskDueOnDay above)
+// falls back to the plain id too, since there's no single day to key against.
+export function taskKey(d, dayNum) {
+  if (dayNum == null || !d.repeatDays || !d.repeatDays.length) return d.id;
+  return d.id + ':' + dayNum;
+}
+
+// Whether a task's occurrence on `dayNum` is switched on (included in the
+// plan for a school task, or checked-done for a personal one) — defaults to
+// the same thing a freshly saved task starts as (see saveTaskEdit in
+// usePlanner.js: on for school, off for personal) whenever this exact
+// occurrence hasn't been toggled yet, rather than requiring every future
+// day of a repeating task to be pre-seeded into `tasks` up front.
+export function isTaskOn(tasks, d, dayNum) {
+  const key = taskKey(d, dayNum);
+  return key in tasks ? tasks[key] : d.category !== 'personal';
+}
+
+// Personal tasks (see TaskEditSheet's category toggle) never get a
+// study-time block, so they're excluded here regardless of day.
 export function activeIds(taskDefs, tasks, taskState, dayNum) {
   return taskDefs
-    .filter((t) => tasks[t.id] && ['moved', 'skipped'].indexOf((taskState[t.id] || {}).status) < 0)
-    .filter((t) => t.category !== 'personal' && (dayNum == null || t.day == null || t.day === dayNum))
+    .filter((t) => isTaskOn(tasks, t, dayNum) && ['moved', 'skipped'].indexOf((taskState[taskKey(t, dayNum)] || {}).status) < 0)
+    .filter((t) => t.category !== 'personal' && taskDueOnDay(t, dayNum))
     .map((t) => t.id);
 }
 

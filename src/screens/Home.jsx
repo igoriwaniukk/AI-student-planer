@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
-import { REFERENCE_DAY } from '../lib/plannerData';
-import { span, computeStreak, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn } from '../lib/plannerLogic';
+import { REFERENCE_DAY, NUM_TODAY } from '../lib/plannerData';
+import { span, computeStreak, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
+import { iconForTask } from '../lib/taskAuto';
 import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import WeekStrip from '../components/WeekStrip';
 import AmbientGlow from '../components/AmbientGlow';
+import TaskEditSheet from '../components/TaskEditSheet';
 import { Pill, BottomSheet, EnergyPicker, AnimatedNumber, Confetti, StatusPill, AchievementMedal } from '../components/ui';
 
 const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
@@ -265,16 +267,33 @@ function DayPlanPlaceholder({ info, onPlan }) {
   );
 }
 
-function TodayList({ planner }) {
+// Everything due today (school + personal + repeating tasks), as one
+// tappable checklist — independent of whether a plan has actually been
+// generated/approved for today yet, unlike the old TodayList this replaces,
+// which only ever showed anything once state.schedule had entries in it. A
+// school task already in state.schedule (only true when today happens to be
+// the currently active plan day — see planDayNum) renders as a read-only
+// progress row exactly as before, since its real "done" comes from the
+// session-finish flow (NextSessionCard's Start/Finish), not a plain tap
+// here; one that hasn't been scheduled yet is a plain checkbox toggling
+// whether it'll be included next time today gets planned. A personal task
+// never gets a schedule entry at all, so it's always a plain done checkbox.
+function TodayChecklist({ planner }) {
   const { t } = useLang();
-  const { state, def, ts } = planner;
+  const { state, def, ts, toggleTask, openTaskEdit } = planner;
   const sched = state.schedule || {};
-  const ids = Object.keys(sched).sort((a, b) => sched[a].start - sched[b].start);
-  const rows = ids.map((id) => {
+  const dueToday = state.taskDefs.filter((d) => taskDueOnDay(d, NUM_TODAY));
+  const school = dueToday.filter((d) => d.category !== 'personal');
+  const personal = dueToday.filter((d) => d.category === 'personal');
+  const scheduledIds = school.filter((d) => sched[d.id]).map((d) => d.id).sort((a, b) => sched[a].start - sched[b].start);
+  const scheduledSet = new Set(scheduledIds);
+  const rows = [];
+
+  scheduledIds.forEach((id) => {
     const d = def(id);
     const b = sched[id];
-    const st = ts(id);
-    return (
+    const st = ts(id, NUM_TODAY);
+    rows.push(
       <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 11, borderRadius: 14, background: st.status === 'in_progress' ? 'rgba(124,92,255,.08)' : 'rgba(255,255,255,.03)', border: st.status === 'in_progress' ? '1.5px solid rgba(124,92,255,.5)' : '1px solid rgba(255,255,255,.06)' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 11, color: '#8a8a99' }}>{span(b.start, b.start + b.dur)}</div>
@@ -284,19 +303,56 @@ function TodayList({ planner }) {
       </div>
     );
   });
-  state.taskDefs.forEach((d) => {
-    const st = ts(d.id);
-    if (st.status !== 'moved' && st.status !== 'skipped') return;
-    rows.push(
-      <div key={'x' + d.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 11, borderRadius: 14, background: 'rgba(255,255,255,.025)', border: '1px solid rgba(255,255,255,.06)' }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, color: '#8a8a99' }}>{st.status === 'moved' ? t('home.movedOther') : t('home.notInPlan')}</div>
-          <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{t(TASK_TEXT_KEY[d.id]?.short) || d.short}</div>
+  school.forEach((d) => {
+    if (scheduledSet.has(d.id)) return;
+    const st = ts(d.id, NUM_TODAY);
+    if (st.status === 'moved' || st.status === 'skipped') {
+      rows.push(
+        <div key={'x' + d.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 11, borderRadius: 14, background: 'rgba(255,255,255,.025)', border: '1px solid rgba(255,255,255,.06)' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 11, color: '#8a8a99' }}>{st.status === 'moved' ? t('home.movedOther') : t('home.notInPlan')}</div>
+            <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{t(TASK_TEXT_KEY[d.id]?.short) || d.short}</div>
+          </div>
+          <StatusPill status={st.status} />
         </div>
-        <StatusPill status={st.status} />
+      );
+      return;
+    }
+    const on = isTaskOn(state.tasks, d, NUM_TODAY);
+    rows.push(
+      <div
+        key={d.id}
+        onClick={() => toggleTask(d.id, NUM_TODAY)}
+        style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 11, borderRadius: 14, cursor: 'pointer', background: on ? 'rgba(124,92,255,.07)' : 'rgba(255,255,255,.03)', border: '1.5px solid ' + (on ? 'rgba(124,92,255,.55)' : 'rgba(255,255,255,.07)') }}
+      >
+        <div style={{ width: 22, height: 22, borderRadius: 7, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: on ? '#7c5cff' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (on ? '#7c5cff' : 'rgba(255,255,255,.18)') }}>
+          <svg width="11" height="9" viewBox="0 0 12 10" fill="none" style={{ opacity: on ? 1 : 0 }}><path d="M1 5l3.4 3.4L11 1.6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </div>
+        <span style={{ fontSize: 14 }}>{iconForTask(d)}</span>
+        <div style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 650 }}>{t(TASK_TEXT_KEY[d.id]?.title) || d.title}</div>
+        <span style={{ fontSize: 10.5, fontWeight: 650, color: '#8a8a99', padding: '4px 8px', borderRadius: 7, background: 'rgba(255,255,255,.05)' }}>{t('home.notPlannedYet')}</span>
+        <span onClick={(e) => { e.stopPropagation(); openTaskEdit(d.id); }} style={{ fontSize: 12, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('planner.edit')}</span>
       </div>
     );
   });
+  personal.forEach((d) => {
+    const done = isTaskOn(state.tasks, d, NUM_TODAY);
+    rows.push(
+      <div
+        key={d.id}
+        onClick={() => toggleTask(d.id, NUM_TODAY)}
+        style={{ padding: '11px 14px', borderRadius: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 11, background: done ? 'rgba(53,208,127,.06)' : 'rgba(255,255,255,.03)', border: '1px solid ' + (done ? 'rgba(53,208,127,.25)' : 'rgba(255,255,255,.07)') }}
+      >
+        <div style={{ width: 22, height: 22, borderRadius: 7, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: done ? '#35d07f' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (done ? '#35d07f' : 'rgba(255,255,255,.18)') }}>
+          <svg width="11" height="9" viewBox="0 0 12 10" fill="none" style={{ opacity: done ? 1 : 0 }}><path d="M1 5l3.4 3.4L11 1.6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </div>
+        <span style={{ fontSize: 14 }}>{iconForTask(d)}</span>
+        <div style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 650, textDecoration: done ? 'line-through' : 'none', color: done ? '#8a8a99' : '#f4f4f7' }}>{d.title}</div>
+        <span onClick={(e) => { e.stopPropagation(); openTaskEdit(d.id); }} style={{ fontSize: 12, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('planner.edit')}</span>
+      </div>
+    );
+  });
+
   if (!rows.length) return <div style={{ fontSize: 12.5, color: '#6f6f7d' }}>{t('home.noSessionsToday2')}</div>;
   return <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>{rows}</div>;
 }
@@ -491,19 +547,13 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
         );
       })()}
 
-      {isRealDay ? (
-        <>
-          <NextSessionCard planner={planner} />
+      {isRealDay ? <NextSessionCard planner={planner} /> : <DayPlanPlaceholder info={info} onPlan={() => planner.go('planner')} />}
 
-          <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
-            <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.todayPlan')}</div>
-            <div style={{ marginTop: 12 }}><TodayList planner={planner} /></div>
-            <div onClick={() => planner.go('plan')} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('home.seeFullPlan')} <span style={{ fontSize: 11 }}>›</span></div>
-          </div>
-        </>
-      ) : (
-        <DayPlanPlaceholder info={info} onPlan={() => planner.go('planner')} />
-      )}
+      <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
+        <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.todayTasks')}</div>
+        <div style={{ marginTop: 12 }}><TodayChecklist planner={planner} /></div>
+        <div onClick={() => { planner.update({ planToday: true }); planner.go('plan'); }} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('home.seeFullPlan')} <span style={{ fontSize: 11 }}>›</span></div>
+      </div>
 
       <div onClick={openEnergySheet} style={{ marginTop: 12, padding: '12px 14px', borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
         <div style={{ width: 36, height: 36, borderRadius: 11, background: 'rgba(124,92,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="14" height="14" viewBox="0 0 14 14"><path d="M8 1L3 8h3.2L6 13l5-7.2H7.6L8 1z" fill="#a58cff" /></svg></div>
@@ -572,6 +622,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
 
       <FinishSheet planner={planner} />
       <EnergySheet planner={planner} logEnergy={logEnergy} />
+      <TaskEditSheet planner={planner} />
       <AchievementModal achievement={pendingAchievement} onClose={() => setSeenAchievements(seenAchievements.concat(pendingAchievement.id))} />
       <MissedSessionModal
         session={!pendingAchievement ? missedSession : null}

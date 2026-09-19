@@ -1,4 +1,4 @@
-import { hm, fmt, formatMonthDay, weekdayOn } from '../lib/plannerLogic';
+import { hm, fmt, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
 import { iconForTask } from '../lib/taskAuto';
 import { BackButton, StickyFooter, PrimaryButton, ConfirmCard, Pill } from '../components/ui';
 import AmbientGlow from '../components/AmbientGlow';
@@ -19,7 +19,7 @@ export default function Plan({ planner }) {
   // entries — has nothing to render them with. Added here (via "+ Add
   // task" below) they'd otherwise vanish from this screen entirely despite
   // being saved, even though they're still visible on Planner/Tasks.
-  const personalTasks = state.taskDefs.filter((d) => d.category === 'personal' && (d.day == null || d.day === planDayNum));
+  const personalTasks = state.taskDefs.filter((d) => d.category === 'personal' && taskDueOnDay(d, planDayNum));
   const studyMins = schedIds.reduce((a, k) => a + sched[k].dur, 0);
   const studyEnd = nBlocks ? fmt(Math.max(...schedIds.map((k) => sched[k].start + sched[k].dur))) : '—';
   const blockWord = nBlocks === 1 ? t('plan.oneBlock') : (nBlocks > 1 && nBlocks < 5 ? t('plan.fewBlocks', { n: nBlocks }) : t('plan.manyBlocks', { n: nBlocks }));
@@ -59,11 +59,11 @@ export default function Plan({ planner }) {
         <>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#9a9aab', margin: '14px 0 10px' }}>{t('planner.alsoPlanned', { day: weekdayOn(planDayNum) })}</div>
           {personalTasks.map((d) => {
-            const done = state.tasks[d.id];
+            const done = isTaskOn(state.tasks, d, planDayNum);
             return (
               <div
                 key={d.id}
-                onClick={() => toggleTask(d.id)}
+                onClick={() => toggleTask(d.id, planDayNum)}
                 style={{ marginTop: 8, padding: '12px 14px', borderRadius: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 11, background: done ? 'rgba(53,208,127,.06)' : 'rgba(255,255,255,.03)', border: '1px solid ' + (done ? 'rgba(53,208,127,.25)' : 'rgba(255,255,255,.07)') }}
               >
                 <div style={{ width: 22, height: 22, borderRadius: 7, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: done ? '#35d07f' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (done ? '#35d07f' : 'rgba(255,255,255,.18)') }}>

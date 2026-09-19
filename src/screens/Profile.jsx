@@ -8,6 +8,7 @@ import { resizeImageToDataURL } from '../lib/image';
 import { Chip, EnergyPicker, AchievementMedal } from '../components/ui';
 import AmbientGlow from '../components/AmbientGlow';
 import NotificationBell from '../components/NotificationBell';
+import WheelTimePicker from '../components/WheelTimePicker';
 
 // Clicking the avatar (or its camera badge) opens the device's photo/file
 // picker; the chosen image is downscaled client-side (see lib/image.js)
@@ -159,8 +160,14 @@ function EditableRhythmCard({ profileDefaults, setProfileDefaults, planner }) {
 
       <div style={{ fontSize: 11.5, color: '#7a7a8a', margin: '16px 0 8px' }}>{t('profile.sleep')}</div>
       <div style={{ display: 'flex', gap: 12 }}>
-        <input type="time" value={bedtime} onChange={(e) => set('bedtime', e.target.value)} style={{ flex: 1 }} />
-        <input type="time" value={wake} onChange={(e) => set('wake', e.target.value)} style={{ flex: 1 }} />
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.08em', color: '#7a7a8a', marginBottom: 6, textAlign: 'center' }}>{t('onb.step3.bedtimeLabel')}</div>
+          <WheelTimePicker value={bedtime} onChange={(v) => set('bedtime', v)} />
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '.08em', color: '#7a7a8a', marginBottom: 6, textAlign: 'center' }}>{t('onb.step3.wakeLabel')}</div>
+          <WheelTimePicker value={wake} onChange={(v) => set('wake', v)} />
+        </div>
       </div>
 
       <div style={{ fontSize: 11.5, color: '#7a7a8a', margin: '16px 0 8px' }}>{t('profile.planningStyle')}</div>
