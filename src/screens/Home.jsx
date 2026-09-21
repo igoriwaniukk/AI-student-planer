@@ -616,7 +616,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
           in the scroll area, so nothing below it can push it clear the way
           it would if more content followed. */}
       <div onClick={() => planner.go('rescue')} style={{ marginTop: 12, marginRight: 60, padding: 15, borderRadius: 18, background: 'rgba(53,208,127,.06)', border: '1px solid rgba(53,208,127,.28)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-        <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(53,208,127,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🔄</div>
+        <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(53,208,127,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.2 8a5.2 5.2 0 01-8.9 3.7M2.8 8a5.2 5.2 0 018.9-3.7" stroke="#35d07f" strokeWidth="1.4" strokeLinecap="round" /><path d="M11.4 2.4v2.4H9M4.6 13.6v-2.4H7" stroke="#35d07f" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14.5, fontWeight: 700 }}>{t('home.rescueDay')}</div>
           <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 2 }}>{t('home.rescueDaySub')}</div>
