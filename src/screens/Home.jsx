@@ -615,9 +615,13 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
           (right:16 + 54px wide, see ChatWidget.jsx) — this is the last card
           in the scroll area, so nothing below it can push it clear the way
           it would if more content followed. */}
-      <div onClick={() => planner.go('rescue')} style={{ marginTop: 12, marginRight: 60, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}>
-        <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(245,165,36,.13)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M13.2 8a5.2 5.2 0 01-8.9 3.7M2.8 8a5.2 5.2 0 018.9-3.7" stroke="#f5a524" strokeWidth="1.3" strokeLinecap="round" /><path d="M11.4 2.4v2.4H9M4.6 13.6v-2.4H7" stroke="#f5a524" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
-        <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.25 }}>{t('home.rescueDay')}</div>
+      <div onClick={() => planner.go('rescue')} style={{ marginTop: 12, marginRight: 60, padding: 15, borderRadius: 18, background: 'rgba(53,208,127,.06)', border: '1px solid rgba(53,208,127,.28)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+        <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(53,208,127,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🔄</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14.5, fontWeight: 700 }}>{t('home.rescueDay')}</div>
+          <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 2 }}>{t('home.rescueDaySub')}</div>
+        </div>
+        <span style={{ fontSize: 15, color: '#6b6b7a' }}>›</span>
       </div>
 
       <FinishSheet planner={planner} />

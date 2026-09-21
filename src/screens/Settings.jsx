@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { version as APP_VERSION } from '../../package.json';
 import { upcomingExams, computeStreak } from '../lib/plannerLogic';
+import { NUM_TODAY } from '../lib/plannerData';
 import { useLang } from '../lib/useLang';
 import { useCustomReminders, resetAppData } from '../lib/store';
 import { usePushNotifications } from '../hooks/usePushNotifications';
@@ -39,7 +40,8 @@ export default function Settings({ planner, studyHistory, onSignOut, onDeleteAcc
   const [infoSheet, setInfoSheet] = useState(null);
   const streak = computeStreak(studyHistory || {});
   const hasUpcomingExam = upcomingExams(planner.state).some((e) => e.daysUntil >= 0 && e.daysUntil <= 14);
-  const { pushStatus, togglePush } = usePushNotifications({ streak, hasUpcomingExam, reminders: reminders.map((r) => r.text), lang });
+  const noPlanToday = !(planner.state.planApproved && planner.state.selectedDay === NUM_TODAY);
+  const { pushStatus, togglePush } = usePushNotifications({ streak, hasUpcomingExam, reminders: reminders.map((r) => r.text), lang, noPlanToday });
 
   const pushNote = {
     unsupported: t('notif.pushUnsupported'),

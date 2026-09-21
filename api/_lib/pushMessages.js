@@ -9,14 +9,24 @@ const TEXT = {
     streakNone: { title: '📚 Czas na naukę?', body: 'Zaplanuj dzisiejszą sesję i zacznij nową passę.' },
     exam: { title: '🎯 Zbliża się sprawdzian', body: 'Sprawdź plan przygotowań w aplikacji Student Planner.' },
     reminder: (text) => ({ title: '📌 Przypomnienie', body: text }),
+    restart: { title: '🔄 Zrestartuj swój dzień', body: 'Nie masz jeszcze planu na dziś — ułóż go teraz, zanim dzień się skończy.' },
   },
   en: {
     streakActive: (n) => ({ title: '🔥 Your streak: ' + n + (n === 1 ? ' day' : ' days') + '!', body: "Don't break it — mark today's study session as done." }),
     streakNone: { title: '📚 Time to study?', body: 'Plan a session today and start a new streak.' },
     exam: { title: '🎯 An exam is coming up', body: 'Check your prep plan in the Student Planner app.' },
     reminder: (text) => ({ title: '📌 Reminder', body: text }),
+    restart: { title: '🔄 Restart your day', body: "You don't have a plan for today yet — set one up before the day's gone." },
   },
 };
+
+// The "restart your day" nudge (see sendScheduledPushes in push.js) fully
+// replaces the usual rotation below rather than taking a turn in it — if
+// today still has no plan by the afternoon, that's the one thing worth
+// saying, not whichever slot the tick rotation happens to land on.
+export function composeRestartMessage(lang) {
+  return TEXT[lang === 'en' ? 'en' : 'pl'].restart;
+}
 
 export function composeMessage(state, tick) {
   const lang = state.lang === 'en' ? 'en' : 'pl';

@@ -4,9 +4,18 @@ import { isPushSupported, getExistingSubscription, subscribeToPush, unsubscribeF
 // Shared by the notification bell and the profile settings toggle, so both
 // entry points reflect (and drive) the same underlying browser push
 // subscription instead of tracking their own, possibly-drifting state.
-export function usePushNotifications({ streak, hasUpcomingExam, reminders, lang }) {
+// `noPlanToday`, when given, lets the server's scheduled push override its
+// usual streak/exam/reminder rotation with a "restart your day" nudge (see
+// api/_lib/pushMessages.js) once it's afternoon and nothing's been planned —
+// the server has no way to know this on its own, since it only ever sees
+// whatever snapshot the client last synced. `tzOffsetMinutes` (minutes east
+// of UTC, i.e. the negation of Date#getTimezoneOffset()) is synced
+// alongside it so the server can work out the subscriber's actual local
+// time instead of assuming its own clock's timezone.
+export function usePushNotifications({ streak, hasUpcomingExam, reminders, lang, noPlanToday }) {
   // idle | subscribed | denied | error | unsupported
   const [pushStatus, setPushStatus] = useState(() => (isPushSupported() ? 'idle' : 'unsupported'));
+  const tzOffsetMinutes = -new Date().getTimezoneOffset();
 
   useEffect(() => {
     if (!isPushSupported()) return;
@@ -14,11 +23,12 @@ export function usePushNotifications({ streak, hasUpcomingExam, reminders, lang 
   }, []);
 
   // Keeps the server's last-known snapshot fresh so its scheduled push text
-  // (streak / exam / reminder) stays accurate — a no-op until subscribed.
+  // (streak / exam / reminder / restart nudge) stays accurate — a no-op
+  // until subscribed.
   useEffect(() => {
     if (pushStatus !== 'subscribed') return;
-    syncPushState({ streak, hasUpcomingExam, reminders, lang });
-  }, [pushStatus, streak, hasUpcomingExam, reminders, lang]);
+    syncPushState({ streak, hasUpcomingExam, reminders, lang, noPlanToday, tzOffsetMinutes });
+  }, [pushStatus, streak, hasUpcomingExam, reminders, lang, noPlanToday, tzOffsetMinutes]);
 
   async function togglePush() {
     if (pushStatus === 'subscribed') {
@@ -27,7 +37,7 @@ export function usePushNotifications({ streak, hasUpcomingExam, reminders, lang 
       return;
     }
     try {
-      await subscribeToPush({ streak, hasUpcomingExam, reminders, lang });
+      await subscribeToPush({ streak, hasUpcomingExam, reminders, lang, noPlanToday, tzOffsetMinutes });
       setPushStatus('subscribed');
     } catch (err) {
       setPushStatus(err.message === 'denied' ? 'denied' : 'error');
