@@ -145,7 +145,11 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
             recordStudyDay({
               plannedMin: plannedMins,
               actualMin: totalActualMinutes,
-              completed: totalCount > 0 && doneCount === totalCount,
+              // "Completed" means at least one real task got done today, not
+              // every planned one — matches what confirmFinish (usePlanner.js)
+              // already credits the moment a single session finishes, so
+              // Finish day can only add to that, never contradict it.
+              completed: doneCount > 0,
             });
             finishDay();
           }}

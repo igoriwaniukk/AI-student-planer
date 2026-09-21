@@ -96,15 +96,35 @@ function useCloudSync(session) {
     if (!isSupabaseConfigured || !session) return undefined;
     const uid = session.user.id;
     let timer = null;
-    const onChange = () => {
+    let dirty = false;
+    const flush = () => {
+      if (!dirty) return;
+      dirty = false;
       clearTimeout(timer);
-      timer = setTimeout(() => {
-        pushToCloud(uid).then((result) => setSyncError(!result.ok));
-      }, 1500);
+      pushToCloud(uid).then((result) => setSyncError(!result.ok));
     };
+    const onChange = () => {
+      dirty = true;
+      clearTimeout(timer);
+      timer = setTimeout(flush, 1500);
+    };
+    // A change made right before closing the tab, reloading, or the app
+    // going to the background (switching apps, locking the screen — the
+    // events a plain `beforeunload` handler can miss, especially on mobile)
+    // used to just sit in this debounce and never reach Supabase. The next
+    // load's pullFromCloud() would then overwrite localStorage with
+    // whatever *did* make it up last, silently erasing the unsaved change —
+    // e.g. a task marked done right before closing showing as never done
+    // again. Flushing immediately on the first sign of the tab going away
+    // closes that window instead of waiting out the debounce.
+    const onHide = () => { if (document.visibilityState === 'hidden') flush(); };
+    document.addEventListener('visibilitychange', onHide);
+    window.addEventListener('pagehide', flush);
     window.addEventListener(STORAGE_CHANGED_EVENT, onChange);
     return () => {
       window.removeEventListener(STORAGE_CHANGED_EVENT, onChange);
+      document.removeEventListener('visibilitychange', onHide);
+      window.removeEventListener('pagehide', flush);
       clearTimeout(timer);
     };
   }, [session]);
@@ -119,7 +139,7 @@ const TAB_SCREENS = new Set(['home', 'calendar', 'tasks', 'profile']);
 // profile defaults onboarding just saved instead of whatever was there before.
 function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, activities, profileDefaults, setProfileDefaults, weeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities, onSignOut, onDeleteAccount, syncError }) {
   const [plannerData, setPlannerData] = usePlannerData();
-  const planner = usePlanner(profileDefaults, activities, recurringActivities, plannerData, setPlannerData);
+  const planner = usePlanner(profileDefaults, activities, recurringActivities, plannerData, setPlannerData, recordStudyDay);
   const { state } = planner;
   const screen = state.screen;
   const streak = computeStreak(studyHistory);
@@ -225,9 +245,20 @@ export default function App() {
     setEnergyLog((log) => log.concat({ at: new Date().toISOString(), level }).slice(-30));
   }
 
+  // Merges onto today's existing entry instead of overwriting it — a real
+  // study session finishing (see confirmFinish in usePlanner.js) can credit
+  // the streak the moment it happens, well before "Finish day" (Summary.jsx)
+  // supplies the fuller plannedMin/actualMin numbers, and neither call should
+  // be able to erase what the other already recorded. `completed` in
+  // particular is kept sticky (once true, always true) so a day that's
+  // already earned its streak credit can't later get un-completed by
+  // Finish day just because not every planned task got finished.
   function recordStudyDay(entry) {
     const today = new Date().toISOString().slice(0, 10);
-    setStudyHistory((h) => ({ ...h, [today]: entry }));
+    setStudyHistory((h) => {
+      const prev = h[today] || {};
+      return { ...h, [today]: { ...prev, ...entry, completed: !!(prev.completed || entry.completed) } };
+    });
   }
 
   async function handleSignOut() {

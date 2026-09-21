@@ -170,7 +170,7 @@ function initialState(defaults, activities, persisted) {
   return base;
 }
 
-export function usePlanner(defaults, activities, recurringActivities, persisted, setPersisted) {
+export function usePlanner(defaults, activities, recurringActivities, persisted, setPersisted, recordStudyDay) {
   // Aliased (not `t`) since several functions below use `t` as a local
   // parameter name for a time string, which would otherwise shadow this.
   const { t: translate } = useLang();
@@ -408,6 +408,16 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
         sessionReview: { ...s.sessionReview, [id]: { minutes: s.finishDur, hard: s.finishHard, know: s.finishKnow } },
       };
     });
+    // The streak now credits today the moment a real study session finishes,
+    // not only once "Finish day" (Summary.jsx) is explicitly completed —
+    // confirmFinish only ever runs for an actual scheduled study session
+    // (never a personal to-do, which uses toggleTask instead), so this is
+    // exactly the "did some real studying today" signal a streak should
+    // reward. recordStudyDay merges rather than overwrites (see App.jsx), so
+    // this can't clobber a fuller entry Finish day later writes, and — since
+    // that merge keeps `completed` sticky once true — Finish day can't un-set
+    // it either, even on a day where not everything planned got finished.
+    recordStudyDay?.({ completed: true });
   }
 
   // ---- block edit (plan screen, manual mode) ----
@@ -651,8 +661,12 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
         if (s.rescueDecisions[id] === 'moved') t[id] = { ...t[id], status: 'moved' };
       });
       const schedule = s.rescueSchedule || {};
+      // Rescue is always for today, not a hardcoded day-20 (a leftover from
+      // before NUM_TODAY existed) — selectedDay wrongly staying off today
+      // was making the "no plan today" push notification (see
+      // NotificationBell.jsx) think a just-rescued day still had no plan.
       return {
-        rescueSaved: true, rescueApplied: true, selectedDay: 20, planApproved: true,
+        rescueSaved: true, rescueApplied: true, selectedDay: NUM_TODAY, planApproved: true,
         taskState: t, schedule,
       };
     });

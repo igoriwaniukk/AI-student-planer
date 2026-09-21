@@ -1,7 +1,7 @@
 import { BackButton, StickyFooter, PrimaryButton, ConfirmCard } from '../components/ui';
 import AmbientGlow from '../components/AmbientGlow';
 import { useLang } from '../lib/useLang';
-import { REFERENCE_DAY } from '../lib/plannerData';
+import { NUM_TODAY } from '../lib/plannerData';
 import { weekdayDateLabel, span, fmt, hm, durOf, startOf } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import DayTimeline from '../components/DayTimeline';
@@ -43,7 +43,7 @@ export default function RescueResult({ planner }) {
         <span style={{ fontSize: 11, fontWeight: 650, color: '#c9baff', padding: '8px 14px', borderRadius: 999, background: 'rgba(124,92,255,.14)', border: '1px solid rgba(124,92,255,.45)' }}>{t('rr.readyToReview')}</span>
       </div>
       <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>{t('rr.title')}</div>
-      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('rr.date', { date: weekdayDateLabel(REFERENCE_DAY) })}</div>
+      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('rr.date', { date: weekdayDateLabel(NUM_TODAY) })}</div>
 
       <div style={{ marginTop: 18, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.14)' }}>
         <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em', lineHeight: 1.3 }}>{t('rr.kept')}</div>

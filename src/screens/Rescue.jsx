@@ -1,9 +1,25 @@
-import { REASON_OPTIONS, RESCUE_TIME_OPTIONS, PRIO_STYLE, REFERENCE_DAY } from '../lib/plannerData';
+import { useEffect, useState } from 'react';
+import { REASON_OPTIONS, RESCUE_TIME_OPTIONS, PRIO_STYLE, NUM_TODAY } from '../lib/plannerData';
 import { durOf, startOf, span, weekdayDateLabel, fmt } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import AmbientGlow from '../components/AmbientGlow';
 import { useLang } from '../lib/useLang';
+
+// The real current time, re-read every 30s — this screen is specifically
+// about "what's the situation right now," so a frozen clock (this used to
+// be a hardcoded "Teraz 16:50"/"Now 4:50 PM" string, always the same
+// regardless of when you actually opened it) undermines the whole premise.
+function NowClock() {
+  const { t } = useLang();
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(id);
+  }, []);
+  const time = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+  return <>{t('rescue.nowLabel', { time })}</>;
+}
 
 export default function Rescue({ planner }) {
   const { t } = useLang();
@@ -18,10 +34,10 @@ export default function Rescue({ planner }) {
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BackButton onClick={() => go('home')} />
-        <span style={{ fontSize: 11, fontWeight: 650, color: '#c9c9d6', padding: '8px 13px', borderRadius: 999, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)' }}>{t('rescue.now')}</span>
+        <span style={{ fontSize: 11, fontWeight: 650, color: '#c9c9d6', padding: '8px 13px', borderRadius: 999, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)' }}><NowClock /></span>
       </div>
       <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>{t('rescue.title')}</div>
-      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('rescue.date', { date: weekdayDateLabel(REFERENCE_DAY) })}</div>
+      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('rescue.date', { date: weekdayDateLabel(NUM_TODAY) })}</div>
 
       <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.09)' }}>
         <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>{t('rescue.delayedTitle')}</div>
