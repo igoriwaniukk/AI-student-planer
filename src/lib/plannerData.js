@@ -1,3 +1,5 @@
+import { KEYS } from './store';
+
 export const STATUS_LABEL = {
   planned: 'Zaplanowane', in_progress: 'W trakcie', paused: 'Wstrzymane',
   completed: 'Wykonane', moved: 'Przeniesione', skipped: 'Pominięte',
@@ -14,26 +16,67 @@ export const PRIO_STYLE = {
   'Niższy priorytet': { color: '#9a9aab', bg: 'rgba(255,255,255,.07)' },
 };
 // Day numbers throughout the app are a logical index, not a literal
-// day-of-month: num 19 is anchored to whatever real day the app happens to
-// be running on ("today"), 20 is the day after ("jutro" — deadlines are
-// phrased "za N dni" relative to it), and so on. Anything that needs an
-// actual day-of-month, weekday name, or month name converts a num through
-// realDateForNum()/dayInfo() (see plannerLogic.js) instead of treating the
-// raw num as a calendar date — so paging weeks forward in the UI rolls over
-// month/year boundaries correctly instead of drifting into numbers like 40.
-export const NUM_TODAY = 19;
-const TODAY_REAL = new Date();
-TODAY_REAL.setHours(0, 0, 0, 0);
+// day-of-month: num 19 is "today", 20 is the day after ("jutro" —
+// deadlines are phrased "za N dni" relative to it), and so on. Anything
+// that needs an actual day-of-month, weekday name, or month name converts a
+// num through realDateForNum()/dayInfo() (see plannerLogic.js) instead of
+// treating the raw num as a calendar date — so paging weeks forward in the
+// UI rolls over month/year boundaries correctly instead of drifting into
+// numbers like 40.
+//
+// NUM_TODAY has to actually advance by one every real day, not just mean
+// "whatever day it is right now" — otherwise a task saved as "today"
+// (day: 19) on Monday would silently become "today" again when the app is
+// reopened Tuesday (19 redefined as "now" all over again), reappearing with
+// its old completed status forever instead of correctly becoming
+// "yesterday". So a real anchor date is persisted once — synced like any
+// other durable field via cloudSync.js/store.js's KEYS, so every device
+// agrees on what day 19 actually was — and NUM_TODAY is computed as that
+// fixed anchor's day-num plus however many real days have elapsed since,
+// instead of being pinned at 19 forever.
+const ANCHOR_NUM = 19;
+
+function loadOrCreateAnchor() {
+  const todayISO = new Date().toISOString().slice(0, 10);
+  const fresh = { num: ANCHOR_NUM, dateISO: todayISO };
+  if (typeof localStorage === 'undefined') return fresh;
+  try {
+    const raw = localStorage.getItem(KEYS.dayAnchor);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed.dateISO === 'string' && Number.isFinite(parsed.num)) return parsed;
+    }
+    localStorage.setItem(KEYS.dayAnchor, JSON.stringify(fresh));
+  } catch {
+    // Storage unavailable/corrupted — fall back to an in-memory anchor for
+    // this load; NUM_TODAY just won't persist across reloads here, no worse
+    // than before this fix existed.
+  }
+  return fresh;
+}
+
+const ANCHOR = loadOrCreateAnchor();
+const ANCHOR_DATE = new Date(ANCHOR.dateISO + 'T00:00:00');
+const TODAY_MIDNIGHT = new Date();
+TODAY_MIDNIGHT.setHours(0, 0, 0, 0);
+const ELAPSED_DAYS_SINCE_ANCHOR = Math.round((TODAY_MIDNIGHT - ANCHOR_DATE) / 86400000);
+
+export const NUM_TODAY = ANCHOR.num + ELAPSED_DAYS_SINCE_ANCHOR;
+// Kept as the anchor's own real date (not "now") — realDateForNum below
+// measures every num relative to it, so num values that predate today
+// (like an old task's day: 19) keep resolving to the same fixed calendar
+// date they always have, instead of drifting forward with NUM_TODAY.
+const TODAY_REAL = ANCHOR_DATE;
 
 export function realDateForNum(num) {
   const d = new Date(TODAY_REAL);
-  d.setDate(d.getDate() + (num - NUM_TODAY));
+  d.setDate(d.getDate() + (num - ANCHOR.num));
   return d;
 }
 
 export const REFERENCE_DAY = NUM_TODAY + 1;
 
-const WEEKDAY_META = [
+export const WEEKDAY_META = [
   { label: 'Niedziela', short: 'ND', school: false },
   { label: 'Poniedziałek', short: 'PN', school: true },
   { label: 'Wtorek', short: 'WT', school: true },

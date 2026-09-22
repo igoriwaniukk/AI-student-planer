@@ -17,6 +17,7 @@ export const KEYS = {
   seenNotifSignature: 'sp_seenNotifSignature',
   dismissedMissedSession: 'sp_dismissedMissedSession',
   plannerData: 'sp_plannerData',
+  dayAnchor: 'sp_dayAnchor',
 };
 
 // Fired whenever any useLocalStorage value is written — cloudSync.js listens

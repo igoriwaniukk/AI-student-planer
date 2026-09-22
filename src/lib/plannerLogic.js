@@ -1,16 +1,18 @@
-import { EXAMS, PRIORITIES, REFERENCE_DAY, NUM_TODAY, WEEK_DAYS, realDateForNum } from './plannerData';
+import { EXAMS, PRIORITIES, REFERENCE_DAY, NUM_TODAY, WEEKDAY_META, realDateForNum } from './plannerData';
 import { getCurrentLang } from './i18n';
 
-// Weekday info repeats on a 7-day cycle from WEEK_DAYS' base range (16-22),
-// so this works for any day number — not just the ones in the initial
-// week — once a strip can page forward/backward. monthDay/monthIndex/year
-// are the real calendar values for that num, via realDateForNum, so the
-// day-of-month actually shown to the student wraps at real month/year
+// Looks the weekday up directly from num's real date (via realDateForNum)
+// rather than indexing into WEEK_DAYS by a fixed offset — WEEK_DAYS' own
+// window shifts along with NUM_TODAY (which now genuinely advances by a
+// real day at a time, see plannerData.js's day-anchor), so a formula
+// assuming it always starts at a fixed constant would drift out of sync
+// with which position actually holds which weekday. monthDay/monthIndex/
+// year are the real calendar values for that num, via realDateForNum, so
+// the day-of-month actually shown to the student wraps at real month/year
 // boundaries instead of just being the raw (unbounded) num.
 export function dayInfo(num) {
-  const idx = (((num - 16) % 7) + 7) % 7;
   const date = realDateForNum(num);
-  return { ...WEEK_DAYS[idx], num, monthDay: date.getDate(), monthIndex: date.getMonth(), year: date.getFullYear() };
+  return { ...WEEKDAY_META[date.getDay()], num, monthDay: date.getDate(), monthIndex: date.getMonth(), year: date.getFullYear() };
 }
 
 // Locale-aware "day-of-month + month name" (optionally + year) for a
