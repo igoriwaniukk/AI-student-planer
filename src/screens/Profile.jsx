@@ -256,16 +256,6 @@ export default function Profile({ studentName, setStudentName, profilePhoto, set
   const parts = (studentName || 'Ty').trim().split(/\s+/);
   const initials = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 
-  const points = computeTotalPoints(studyHistory || {}, energyLog || []);
-  const stats = {
-    streak,
-    points,
-    completedDays: Object.values(studyHistory || {}).filter((e) => e.completed).length,
-    energyCheckins: (energyLog || []).length,
-    recurringCount: (recurringActivities || []).length,
-  };
-  const unlockedAchievements = computeUnlockedAchievements(stats);
-
   return (
     <>
     <AmbientGlow />
@@ -287,17 +277,6 @@ export default function Profile({ studentName, setStudentName, profilePhoto, set
               <circle cx="8" cy="8" r="2.1" stroke="#c9c9d6" strokeWidth="1.2" />
             </svg>
           </div>
-        </div>
-      </div>
-
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 12, marginTop: 20 }}>
-        <div style={{ padding: 16, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', textAlign: 'center' }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#f5a524' }}>{streak}</div>
-          <div style={{ fontSize: 10.5, fontWeight: 650, color: '#8a8a99', marginTop: 6 }}>{t('profile.streak') || 'Streak'}</div>
-        </div>
-        <div style={{ padding: 16, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', textAlign: 'center' }}>
-          <div style={{ fontSize: 24, fontWeight: 800, color: '#a58cff' }}>{unlockedAchievements.length}</div>
-          <div style={{ fontSize: 10.5, fontWeight: 650, color: '#8a8a99', marginTop: 6 }}>{t('profile.earned') || 'Earned'}</div>
         </div>
       </div>
 
