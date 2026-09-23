@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { WEEK_DAYS, REFERENCE_DAY, realDateForNum } from '../lib/plannerData';
+import { WEEK_DAYS, REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
 import { DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 
@@ -10,7 +10,7 @@ const DRAG_THRESHOLD = 8;
 // inclusive) with an orange bar + caption, in their normal calendar
 // position — reordering them to the front used to break the day-of-week
 // reading order and looked broken (e.g. "20 21 22 16 17"). streakCount
-// marks the most recent `streakCount` days up to today with a warm flame
+// marks the most recent `streakCount` studied days with a warm flame
 // highlight, for a habit-streak view — the two modes are never used
 // together by any current caller.
 // pageable lets the whole 7-day window be dragged/swiped left or right by
@@ -19,7 +19,7 @@ const DRAG_THRESHOLD = 8;
 // exam/activity lookups in sync with which week is showing, instead of
 // this component silently owning that state.
 export default function WeekStrip({
-  selectedDay, onSelect, eventDays, examDay, streakCount = 0, topMargin = 22,
+  selectedDay, onSelect, eventDays, examDay, streakCount = 0, streakIncludesToday = false, topMargin = 22,
   pageable = false, weekOffset: controlledOffset, onOffsetChange,
 }) {
   const { t } = useLang();
@@ -34,8 +34,11 @@ export default function WeekStrip({
   const countdownSet = examDay != null
     ? new Set(baseWeek.filter((d) => d.num >= REFERENCE_DAY && d.num <= examDay).map((d) => d.num))
     : null;
+  // A streak ends today once today is studied, otherwise yesterday (see
+  // computeStreak) — never REFERENCE_DAY, which is tomorrow.
+  const streakEnd = streakIncludesToday ? NUM_TODAY : NUM_TODAY - 1;
   const streakSet = streakCount > 0
-    ? new Set(baseWeek.filter((d) => d.num <= REFERENCE_DAY && d.num > REFERENCE_DAY - streakCount).map((d) => d.num))
+    ? new Set(baseWeek.filter((d) => d.num <= streakEnd && d.num > streakEnd - streakCount).map((d) => d.num))
     : null;
   const daysUntilExam = examDay != null ? examDay - REFERENCE_DAY : null;
 

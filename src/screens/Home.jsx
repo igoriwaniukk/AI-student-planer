@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { REFERENCE_DAY, NUM_TODAY } from '../lib/plannerData';
-import { span, computeStreak, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
+import { span, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
 import { iconForTask } from '../lib/taskAuto';
 import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
@@ -10,8 +10,6 @@ import WeekStrip from '../components/WeekStrip';
 import AmbientGlow from '../components/AmbientGlow';
 import TaskEditSheet from '../components/TaskEditSheet';
 import { Pill, BottomSheet, EnergyPicker, AnimatedNumber, Confetti, StatusPill, AchievementMedal } from '../components/ui';
-
-const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100];
 
 function AchievementModal({ achievement, onClose }) {
   const { t } = useLang();
@@ -84,7 +82,7 @@ function StreakNotice({ notice, onDismiss }) {
 // Combines the streak count with the week strip so the days that make up
 // the streak are visible right where the count is, instead of a plain
 // number with the calendar buried further down the page.
-function StreakCard({ streak, selectedDay, onSelectDay, eventDays }) {
+function StreakCard({ streak, doneToday, selectedDay, onSelectDay, eventDays }) {
   const { t } = useLang();
   // Bumps the flame with a bigger, one-shot bounce right when the streak
   // ticks up, on top of its constant gentle pulse — a small reward beat
@@ -112,7 +110,10 @@ function StreakCard({ streak, selectedDay, onSelectDay, eventDays }) {
           <span style={{ fontSize: 13, fontWeight: 750, fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={streak} /></span>
         </div>
       </div>
-      <WeekStrip selectedDay={selectedDay} onSelect={onSelectDay} streakCount={streak} eventDays={eventDays} topMargin={12} pageable />
+      <WeekStrip selectedDay={selectedDay} onSelect={onSelectDay} streakCount={streak} streakIncludesToday={doneToday} eventDays={eventDays} topMargin={12} pageable />
+      <div style={{ marginTop: 10, paddingTop: 9, borderTop: '1px solid rgba(255,255,255,.06)', fontSize: 11.5, lineHeight: 1.4, textAlign: 'center', color: doneToday ? '#8ff0de' : '#f7c46c' }}>
+        {doneToday ? '✓ ' + t('home.streakSecured') : streak > 0 ? t('home.streakAtRisk', { n: streak }) : t('home.streakStart')}
+      </div>
     </div>
   );
 }
@@ -471,12 +472,15 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
   const unlockedAchievements = computeUnlockedAchievements(stats);
   const newlyUnlocked = unlockedAchievements.filter((a) => !seenAchievements.includes(a.id));
   const pendingAchievement = newlyUnlocked[0] || null;
-  const streakNotice =
-    lastSeenStreak > 0 && streak < lastSeenStreak
-      ? { type: 'broken', text: t('home.streakEndedTitle', { n: lastSeenStreak, word: t(lastSeenStreak === 1 ? 'day.one' : 'day.many') }) }
-      : streak > lastSeenStreak && STREAK_MILESTONES.includes(streak)
-        ? { type: 'milestone', text: t('home.streakMilestone', { n: streak }) }
-        : null;
+  // Increases are celebrated app-wide by StreakCelebration, so they're just
+  // recorded here — keeping lastSeenStreak current is what lets a later
+  // drop be recognized as a broken streak.
+  useEffect(() => {
+    if (streak > lastSeenStreak) setLastSeenStreak(streak);
+  }, [streak, lastSeenStreak, setLastSeenStreak]);
+  const streakNotice = lastSeenStreak > 0 && streak < lastSeenStreak
+    ? { type: 'broken', text: t('home.streakEndedTitle', { n: lastSeenStreak, word: t(lastSeenStreak === 1 ? 'day.one' : 'day.many') }) }
+    : null;
 
   const [deadlinesOpen, setDeadlinesOpen] = useState(false);
   const upcoming = upcomingExams(state).filter((e) => e.daysUntil >= 0);
@@ -530,7 +534,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
         </div>
       </div>
 
-      <StreakCard streak={streak} selectedDay={viewDay} onSelectDay={setViewDay} eventDays={new Set(upcoming.map((e) => e.day))} />
+      <StreakCard streak={streak} doneToday={studiedToday(studyHistory)} selectedDay={viewDay} onSelectDay={setViewDay} eventDays={new Set(upcoming.map((e) => e.day))} />
       <StreakNotice notice={streakNotice} onDismiss={() => setLastSeenStreak(streak)} />
 
       {state.rescueApplied && (() => {

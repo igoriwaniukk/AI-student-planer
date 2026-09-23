@@ -80,7 +80,7 @@ export async function sendScheduledPushes() {
       // noPlanToday goes true on some later day.
       await setServerState(subscription.endpoint, { ...s, lastRestartNudgeDate: localNow(s.tzOffsetMinutes).dateKey });
     } else {
-      message = composeMessage(s, nextTick);
+      message = composeMessage(s, nextTick, localNow(s.tzOffsetMinutes).dateKey);
     }
     try {
       await webpush.sendNotification(subscription, JSON.stringify(message));

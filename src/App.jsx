@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import TabBar from './components/TabBar';
+import StreakCelebration from './components/StreakCelebration';
 import ChatWidget from './components/ChatWidget';
 import QuickAddSheet from './components/QuickAddSheet';
 import { GeneratingOverlay } from './components/ui';
@@ -24,7 +25,11 @@ import {
 } from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
 import { LanguageProvider } from './lib/LanguageContext';
-import { computeStreak } from './lib/plannerLogic';
+import { computeStreak, studiedToday, localDateKey } from './lib/plannerLogic';
+import { NUM_TODAY } from './lib/plannerData';
+import { TASK_TEXT_KEY } from './lib/i18n';
+import { useLang } from './lib/useLang';
+import { useStreakPushSync } from './hooks/usePushNotifications';
 import { useAuth } from './lib/useAuth';
 import { isSupabaseConfigured } from './lib/supabaseClient';
 import { pullFromCloud, pushToCloud } from './lib/cloudSync';
@@ -144,6 +149,36 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
   const screen = state.screen;
   const streak = computeStreak(studyHistory);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const { t } = useLang();
+
+  // Celebrates the moment today's streak credit lands (first finished
+  // session — see confirmFinish/recordStudyDay). `completed` is sticky, so
+  // this flips false→true at most once per day; a value already true on
+  // load (e.g. pulled from the cloud) isn't a fresh earn and stays quiet.
+  const todayDone = studiedToday(studyHistory);
+  const prevTodayDone = useRef(todayDone);
+  const [celebrating, setCelebrating] = useState(false);
+  useEffect(() => {
+    if (todayDone && !prevTodayDone.current) setCelebrating(true);
+    prevTodayDone.current = todayDone;
+  }, [todayDone]);
+
+  const nextSessionTitle = (() => {
+    if (!(state.planApproved && state.selectedDay === NUM_TODAY)) return null;
+    const sched = state.schedule || {};
+    const nextId = Object.keys(sched)
+      .sort((a, b) => sched[a].start - sched[b].start)
+      .find((id) => ['planned', 'paused'].includes(planner.ts(id).status));
+    const d = nextId && planner.def(nextId);
+    return d ? t(TASK_TEXT_KEY[d.id]?.title) || d.title : null;
+  })();
+  const todayKey = localDateKey();
+  useStreakPushSync({
+    streak,
+    studiedTodayDate: todayDone ? todayKey : null,
+    nextSessionTitle,
+    nextSessionDate: nextSessionTitle ? todayKey : null,
+  });
 
   return (
     <div className="app-shell">
@@ -211,6 +246,8 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
       />
 
       {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} onFabClick={() => setQuickAddOpen(true)} fabActive={quickAddOpen} />}
+
+      {celebrating && <StreakCelebration streak={streak} onClose={() => setCelebrating(false)} />}
     </div>
   );
 }

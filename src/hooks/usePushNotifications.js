@@ -46,3 +46,16 @@ export function usePushNotifications({ streak, hasUpcomingExam, reminders, lang,
 
   return { pushStatus, togglePush };
 }
+
+// Mounted once for the whole app (the bell/settings callers above only sync
+// while those screens are open), so the server learns right away that
+// today's streak is secured or which session is next. The server merges
+// partial state, so this doesn't clobber reminders/exam synced elsewhere.
+// Dates are the device's local YYYY-MM-DD, so a stale snapshot from
+// yesterday is ignored instead of being read as "today".
+export function useStreakPushSync({ streak, studiedTodayDate, nextSessionTitle, nextSessionDate }) {
+  useEffect(() => {
+    if (!isPushSupported()) return;
+    syncPushState({ streak, studiedTodayDate, nextSessionTitle, nextSessionDate, tzOffsetMinutes: -new Date().getTimezoneOffset() });
+  }, [streak, studiedTodayDate, nextSessionTitle, nextSessionDate]);
+}

@@ -454,6 +454,16 @@ export function computeStreak(studyHistory) {
   return streak;
 }
 
+export function studiedToday(studyHistory) {
+  return !!studyHistory?.[new Date().toISOString().slice(0, 10)]?.completed;
+}
+
+// YYYY-MM-DD in the device's own timezone — what the push server compares
+// against its tz-shifted clock (see localNow in api/_lib/push.js).
+export function localDateKey(d = new Date()) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
 // A simple, transparent points score derived from real persisted history —
 // not a separately mutable counter — so it never drifts out of sync with
 // what actually happened: 20 pts per fully-completed study day, 2 pts per
