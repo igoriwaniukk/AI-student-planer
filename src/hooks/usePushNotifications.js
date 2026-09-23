@@ -53,9 +53,14 @@ export function usePushNotifications({ streak, hasUpcomingExam, reminders, lang,
 // partial state, so this doesn't clobber reminders/exam synced elsewhere.
 // Dates are the device's local YYYY-MM-DD, so a stale snapshot from
 // yesterday is ignored instead of being read as "today".
-export function useStreakPushSync({ streak, studiedTodayDate, nextSessionTitle, nextSessionDate }) {
+export function useStreakPushSync({ streak, studiedTodayDate, nextSessionTitle, nextSessionDate, unfinishedTitles, unfinishedDate, bedtime }) {
+  const unfinishedKey = JSON.stringify(unfinishedTitles || []);
   useEffect(() => {
     if (!isPushSupported()) return;
-    syncPushState({ streak, studiedTodayDate, nextSessionTitle, nextSessionDate, tzOffsetMinutes: -new Date().getTimezoneOffset() });
-  }, [streak, studiedTodayDate, nextSessionTitle, nextSessionDate]);
+    syncPushState({
+      streak, studiedTodayDate, nextSessionTitle, nextSessionDate,
+      unfinishedTitles: JSON.parse(unfinishedKey), unfinishedDate, bedtime,
+      tzOffsetMinutes: -new Date().getTimezoneOffset(),
+    });
+  }, [streak, studiedTodayDate, nextSessionTitle, nextSessionDate, unfinishedKey, unfinishedDate, bedtime]);
 }

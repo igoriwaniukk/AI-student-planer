@@ -1,6 +1,6 @@
 import webpush from 'web-push';
 import { saveSubscription, updateState, removeSubscription, allSubscriptions, bumpTick, setServerState } from './pushStore.js';
-import { composeMessage, composeRestartMessage } from './pushMessages.js';
+import { composeMessage, composeRestartMessage, composeUnfinishedMessage } from './pushMessages.js';
 
 // `tzOffsetMinutes` (minutes east of UTC, synced from the client — see
 // usePushNotifications.js) shifts the server's own clock to the
@@ -12,7 +12,7 @@ import { composeMessage, composeRestartMessage } from './pushMessages.js';
 function localNow(tzOffsetMinutes) {
   const offset = Number.isFinite(tzOffsetMinutes) ? tzOffsetMinutes : 0;
   const shifted = new Date(Date.now() + offset * 60000);
-  return { hour: shifted.getUTCHours(), dateKey: shifted.toISOString().slice(0, 10) };
+  return { hour: shifted.getUTCHours(), minutes: shifted.getUTCHours() * 60 + shifted.getUTCMinutes(), dateKey: shifted.toISOString().slice(0, 10) };
 }
 
 // True once it's 15:00 or later in the subscriber's own local time, today's
@@ -23,6 +23,21 @@ function shouldSendRestartNudge(state) {
   if (!state?.noPlanToday) return false;
   const { hour, dateKey } = localNow(state.tzOffsetMinutes);
   return hour >= 15 && state.lastRestartNudgeDate !== dateKey;
+}
+
+// Once per local day, from an hour before the subscriber's bedtime, when
+// today's plan still has sessions that weren't done (unfinishedTitles is
+// synced with its own local date, so yesterday's list never counts). A
+// bedtime after midnight (e.g. 00:30) is treated as 23:00.
+function shouldSendUnfinishedNudge(state) {
+  const titles = Array.isArray(state?.unfinishedTitles) ? state.unfinishedTitles.filter(Boolean) : [];
+  if (!titles.length) return false;
+  const { minutes, dateKey } = localNow(state.tzOffsetMinutes);
+  if (state.unfinishedDate !== dateKey || state.lastUnfinishedNudgeDate === dateKey) return false;
+  const m = /^(\d{1,2}):(\d{2})$/.exec(state.bedtime || '22:30');
+  const bed = m ? (+m[1]) * 60 + (+m[2]) : 22 * 60 + 30;
+  const threshold = bed < 6 * 60 ? 23 * 60 : bed - 60;
+  return minutes >= threshold;
 }
 
 export const VAPID_PUBLIC_KEY = process.env.VAPID_PUBLIC_KEY;
@@ -79,6 +94,9 @@ export async function sendScheduledPushes() {
       // — stamps today's local date so the nudge doesn't repeat again until
       // noPlanToday goes true on some later day.
       await setServerState(subscription.endpoint, { ...s, lastRestartNudgeDate: localNow(s.tzOffsetMinutes).dateKey });
+    } else if (shouldSendUnfinishedNudge(s)) {
+      message = composeUnfinishedMessage(s.lang, s.unfinishedTitles.filter(Boolean));
+      await setServerState(subscription.endpoint, { ...s, lastUnfinishedNudgeDate: localNow(s.tzOffsetMinutes).dateKey });
     } else {
       message = composeMessage(s, nextTick, localNow(s.tzOffsetMinutes).dateKey);
     }

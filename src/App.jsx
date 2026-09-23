@@ -25,7 +25,7 @@ import {
 } from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
 import { LanguageProvider } from './lib/LanguageContext';
-import { computeStreak, studiedToday, localDateKey } from './lib/plannerLogic';
+import { computeStreak, studiedToday, localDateKey, daySessionBreakdown, statusOn } from './lib/plannerLogic';
 import { NUM_TODAY } from './lib/plannerData';
 import { TASK_TEXT_KEY } from './lib/i18n';
 import { useLang } from './lib/useLang';
@@ -163,22 +163,48 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
     prevTodayDone.current = todayDone;
   }, [todayDone]);
 
-  const nextSessionTitle = (() => {
-    if (!(state.planApproved && state.selectedDay === NUM_TODAY)) return null;
-    const sched = state.schedule || {};
-    const nextId = Object.keys(sched)
-      .sort((a, b) => sched[a].start - sched[b].start)
-      .find((id) => ['planned', 'paused'].includes(planner.ts(id).status));
-    const d = nextId && planner.def(nextId);
+  const planIsToday = state.planApproved && state.selectedDay === NUM_TODAY;
+  const titleOf = (id) => {
+    const d = planner.def(id);
     return d ? t(TASK_TEXT_KEY[d.id]?.title) || d.title : null;
-  })();
+  };
+  const dayBreakdown = daySessionBreakdown(state, NUM_TODAY);
+  const nextSessionId = planIsToday
+    ? dayBreakdown.planned.find((id) => ['planned', 'paused'].includes(statusOn(state, id, NUM_TODAY)))
+    : null;
+  const nextSessionTitle = nextSessionId ? titleOf(nextSessionId) : null;
   const todayKey = localDateKey();
+  const summarizedToday = !!state.daySummaries?.[todayKey];
+  const unfinishedTitles = planIsToday && !summarizedToday ? dayBreakdown.unfinished.map(titleOf).filter(Boolean) : [];
   useStreakPushSync({
     streak,
     studiedTodayDate: todayDone ? todayKey : null,
     nextSessionTitle,
     nextSessionDate: nextSessionTitle ? todayKey : null,
+    unfinishedTitles,
+    unfinishedDate: unfinishedTitles.length ? todayKey : null,
+    bedtime: profileDefaults?.bedtime || null,
   });
+
+  // Opens the day summary once per day, by itself: when every session in
+  // today's plan is done, or once the last one's scheduled time has passed.
+  // Only from Home with nothing else on screen, and after the streak
+  // celebration is closed, so it never cuts into another flow.
+  const [clock, setClock] = useState(() => new Date());
+  useEffect(() => {
+    const id = setInterval(() => setClock(new Date()), 30000);
+    return () => clearInterval(id);
+  }, []);
+  const nowMinutes = clock.getHours() * 60 + clock.getMinutes();
+  const hasPlan = dayBreakdown.planned.length > 0 && (planIsToday || dayBreakdown.done.length > 0);
+  const allDone = dayBreakdown.done.length > 0 && dayBreakdown.unfinished.length === 0;
+  const timeUp = nowMinutes >= dayBreakdown.lastEnd && !state.activeTask;
+  const autoSummaryDue = hasPlan && (allDone || timeUp) && !summarizedToday && state.autoSummaryDate !== todayKey
+    && screen === 'home' && !celebrating && !state.finishTask && !state.generating;
+  useEffect(() => {
+    if (autoSummaryDue) planner.update({ screen: 'summary', autoSummaryDate: todayKey });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSummaryDue]);
 
   return (
     <div className="app-shell">

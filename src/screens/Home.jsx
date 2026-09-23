@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { REFERENCE_DAY, NUM_TODAY } from '../lib/plannerData';
-import { span, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
+import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
+import { span, hm, scheduleIsFor, finishedOnDay, localDateKey, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
 import { iconForTask } from '../lib/taskAuto';
 import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
@@ -176,9 +176,38 @@ function SmallBtn({ label, onClick, accent }) {
   );
 }
 
+function DaySummarizedCard({ summary, planner }) {
+  const { t } = useLang();
+  return (
+    <div style={{ marginTop: 18, padding: 16, borderRadius: 20, border: '1.5px solid rgba(53,208,127,.45)', background: 'linear-gradient(165deg,rgba(53,208,127,.1),rgba(53,208,127,.02))' }}>
+      <div style={{ fontSize: 18, fontWeight: 750, letterSpacing: '-.01em' }}>{t('home.daySummarizedTitle')}</div>
+      <div style={{ fontSize: 12.5, color: '#a3a3b3', marginTop: 8, lineHeight: 1.45 }}>{t('home.daySummarizedStats', { done: summary.done || 0, total: summary.total || 0, time: hm(summary.actualMin || 0) })}</div>
+      <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+        <SmallBtn label={t('home.seeSummary')} onClick={() => planner.go('summary')} />
+        <SmallBtn label={t('home.planTomorrow')} accent onClick={() => planner.update({ planToday: false, screen: 'planner' })} />
+      </div>
+    </div>
+  );
+}
+
+function PastDayCard({ info, summary }) {
+  const { t } = useLang();
+  return (
+    <div style={{ marginTop: 18, padding: 16, borderRadius: 20, border: '1px solid rgba(255,255,255,.1)', background: 'rgba(255,255,255,.03)' }}>
+      <div style={{ fontSize: 13, fontWeight: 650, color: '#a3a3b3' }}>{t(DAY_KEY[info.label]) || info.label}, {info.monthDay}</div>
+      <div style={{ fontSize: 14, fontWeight: 700, marginTop: 8, lineHeight: 1.35 }}>
+        {summary ? t('home.pastDaySummary', { done: summary.done || 0, total: summary.total || 0 }) : t('home.pastDayNoSummary')}
+      </div>
+      <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 6 }}>{t('home.pastDay')}</div>
+    </div>
+  );
+}
+
 function NextSessionCard({ planner }) {
   const { t } = useLang();
   const { state, def, ts, startSession, togglePause, openFinish, openBlockEdit, update } = planner;
+  const summary = state.daySummaries?.[localDateKey()];
+  if (summary) return <DaySummarizedCard summary={summary} planner={planner} />;
   const sched = state.schedule || {};
   const ids = Object.keys(sched).sort((a, b) => sched[a].start - sched[b].start);
   const active = state.activeTask;
@@ -252,18 +281,29 @@ function NextSessionCard({ planner }) {
   );
 }
 
-function DayPlanPlaceholder({ info, onPlan }) {
+// The Planner only builds a plan for today or tomorrow (state.planToday),
+// so a day further out can't be planned from here yet.
+function DayPlanPlaceholder({ info, day, planner }) {
   const { t } = useLang();
+  const { state, update } = planner;
+  const ready = state.planApproved && state.selectedDay === day;
+  const plannable = day === REFERENCE_DAY;
+  const btn = (label, screen) => (
+    <div
+      onClick={() => update({ planToday: false, screen })}
+      style={{ marginTop: 14, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+    >
+      {label}
+    </div>
+  );
   return (
     <div style={{ marginTop: 18, padding: 16, borderRadius: 20, border: '1.5px solid rgba(124,92,255,.55)', background: 'linear-gradient(165deg,rgba(124,92,255,.13),rgba(124,92,255,.03))' }}>
       <div style={{ fontSize: 13, fontWeight: 650, color: '#c9baff' }}>{t(DAY_KEY[info.label]) || info.label}, {info.monthDay}</div>
-      <div style={{ fontSize: 15, fontWeight: 700, marginTop: 8, lineHeight: 1.3 }}>{t('home.noPlanForDay')}</div>
-      <div
-        onClick={onPlan}
-        style={{ marginTop: 14, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
-      >
-        {t('home.planThisDay')}
+      <div style={{ fontSize: 15, fontWeight: 700, marginTop: 8, lineHeight: 1.3 }}>
+        {ready ? t('home.planReadyForDay', { n: Object.keys(state.schedule || {}).length }) : plannable ? t('home.noPlanForDay') : t('home.planLater')}
       </div>
+      {ready && plannable && btn(t('home.seePlan'), 'plan')}
+      {!ready && plannable && btn(t('home.planThisDay'), 'planner')}
     </div>
   );
 }
@@ -279,11 +319,25 @@ function DayPlanPlaceholder({ info, onPlan }) {
 // here; one that hasn't been scheduled yet is a plain checkbox toggling
 // whether it'll be included next time today gets planned. A personal task
 // never gets a schedule entry at all, so it's always a plain done checkbox.
-function TodayChecklist({ planner }) {
+function TodayChecklist({ planner, day }) {
   const { t } = useLang();
   const { state, def, ts, toggleTask, openTaskEdit } = planner;
-  const sched = state.schedule || {};
-  const dueToday = state.taskDefs.filter((d) => taskDueOnDay(d, NUM_TODAY));
+  const past = day < NUM_TODAY;
+  const future = day > NUM_TODAY;
+  const sched = scheduleIsFor(state, day) ? state.schedule || {} : {};
+  // A floating one-off task shares one done-state across every day it's due
+  // on, so once finished it belongs to the day it was finished — it
+  // shouldn't reappear, still ticked, on the next day. Finished before that
+  // day was recorded: kept only where today's plan (or today, for a to-do)
+  // still shows it.
+  const shownOnDay = (d) => {
+    if ((d.repeatDays && d.repeatDays.length) || d.day != null) return true;
+    const doneDay = finishedOnDay(state, d);
+    if (doneDay === null) return true;
+    if (doneDay !== undefined) return doneDay === day;
+    return d.category === 'personal' ? day === NUM_TODAY : !!sched[d.id];
+  };
+  const dueToday = state.taskDefs.filter((d) => taskDueOnDay(d, day) && shownOnDay(d));
   const school = dueToday.filter((d) => d.category !== 'personal');
   const personal = dueToday.filter((d) => d.category === 'personal');
   const scheduledIds = school.filter((d) => sched[d.id]).map((d) => d.id).sort((a, b) => sched[a].start - sched[b].start);
@@ -293,7 +347,7 @@ function TodayChecklist({ planner }) {
   scheduledIds.forEach((id) => {
     const d = def(id);
     const b = sched[id];
-    const st = ts(id, NUM_TODAY);
+    const st = ts(id, day);
     rows.push(
       <div key={id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 11, borderRadius: 14, background: st.status === 'in_progress' ? 'rgba(124,92,255,.08)' : 'rgba(255,255,255,.03)', border: st.status === 'in_progress' ? '1.5px solid rgba(124,92,255,.5)' : '1px solid rgba(255,255,255,.06)' }}>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -306,24 +360,27 @@ function TodayChecklist({ planner }) {
   });
   school.forEach((d) => {
     if (scheduledSet.has(d.id)) return;
-    const st = ts(d.id, NUM_TODAY);
-    if (st.status === 'moved' || st.status === 'skipped') {
+    const st = ts(d.id, day);
+    // On a later day a Restart-moved task is simply waiting to be planned,
+    // not "moved to another day" any more.
+    const shownStatus = future && st.status === 'moved' ? 'planned' : st.status;
+    if (shownStatus !== 'planned' || past) {
       rows.push(
         <div key={'x' + d.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 11, borderRadius: 14, background: 'rgba(255,255,255,.025)', border: '1px solid rgba(255,255,255,.06)' }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 11, color: '#8a8a99' }}>{st.status === 'moved' ? t('home.movedOther') : t('home.notInPlan')}</div>
+            {shownStatus !== 'planned' && <div style={{ fontSize: 11, color: '#8a8a99' }}>{shownStatus === 'moved' ? t('home.movedOther') : shownStatus === 'skipped' ? t('home.notInPlan') : ''}</div>}
             <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{t(TASK_TEXT_KEY[d.id]?.short) || d.short}</div>
           </div>
-          <StatusPill status={st.status} />
+          <StatusPill status={shownStatus} />
         </div>
       );
       return;
     }
-    const on = isTaskOn(state.tasks, d, NUM_TODAY);
+    const on = isTaskOn(state.tasks, d, day);
     rows.push(
       <div
         key={d.id}
-        onClick={() => toggleTask(d.id, NUM_TODAY)}
+        onClick={() => toggleTask(d.id, day)}
         style={{ display: 'flex', alignItems: 'center', gap: 11, padding: 11, borderRadius: 14, cursor: 'pointer', background: on ? 'rgba(124,92,255,.07)' : 'rgba(255,255,255,.03)', border: '1.5px solid ' + (on ? 'rgba(124,92,255,.55)' : 'rgba(255,255,255,.07)') }}
       >
         <div style={{ width: 22, height: 22, borderRadius: 7, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: on ? '#7c5cff' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (on ? '#7c5cff' : 'rgba(255,255,255,.18)') }}>
@@ -337,24 +394,24 @@ function TodayChecklist({ planner }) {
     );
   });
   personal.forEach((d) => {
-    const done = isTaskOn(state.tasks, d, NUM_TODAY);
+    const done = isTaskOn(state.tasks, d, day);
     rows.push(
       <div
         key={d.id}
-        onClick={() => toggleTask(d.id, NUM_TODAY)}
-        style={{ padding: '11px 14px', borderRadius: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 11, background: done ? 'rgba(53,208,127,.06)' : 'rgba(255,255,255,.03)', border: '1px solid ' + (done ? 'rgba(53,208,127,.25)' : 'rgba(255,255,255,.07)') }}
+        onClick={past ? undefined : () => toggleTask(d.id, day)}
+        style={{ padding: '11px 14px', borderRadius: 14, cursor: past ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: 11, background: done ? 'rgba(53,208,127,.06)' : 'rgba(255,255,255,.03)', border: '1px solid ' + (done ? 'rgba(53,208,127,.25)' : 'rgba(255,255,255,.07)') }}
       >
         <div style={{ width: 22, height: 22, borderRadius: 7, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: done ? '#35d07f' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (done ? '#35d07f' : 'rgba(255,255,255,.18)') }}>
           <svg width="11" height="9" viewBox="0 0 12 10" fill="none" style={{ opacity: done ? 1 : 0 }}><path d="M1 5l3.4 3.4L11 1.6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </div>
         <span style={{ fontSize: 14 }}>{iconForTask(d)}</span>
         <div style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 650, textDecoration: done ? 'line-through' : 'none', color: done ? '#8a8a99' : '#f4f4f7' }}>{d.title}</div>
-        <span onClick={(e) => { e.stopPropagation(); openTaskEdit(d.id); }} style={{ fontSize: 12, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('planner.edit')}</span>
+        {!past && <span onClick={(e) => { e.stopPropagation(); openTaskEdit(d.id); }} style={{ fontSize: 12, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('planner.edit')}</span>}
       </div>
     );
   });
 
-  if (!rows.length) return <div style={{ fontSize: 12.5, color: '#6f6f7d' }}>{t('home.noSessionsToday2')}</div>;
+  if (!rows.length) return <div style={{ fontSize: 12.5, color: '#6f6f7d' }}>{day === NUM_TODAY ? t('home.noSessionsToday2') : t('home.noTasksForDay')}</div>;
   return <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>{rows}</div>;
 }
 
@@ -451,9 +508,9 @@ function EnergyHistory({ energyLog }) {
 export default function Home({ planner, studentName, profilePhoto, energyLog = [], logEnergy = () => {}, studyHistory = {}, recurringActivities = [] }) {
   const { t } = useLang();
   const { state, ts, openEnergySheet } = planner;
-  const [viewDay, setViewDay] = useState(state.selectedDay);
+  const [viewDay, setViewDay] = useState(NUM_TODAY);
   const info = dayInfo(viewDay);
-  const isRealDay = viewDay === state.selectedDay;
+  const isRealDay = viewDay === NUM_TODAY;
   const dateLong = t('home.dateLong', { day: t(DAY_KEY[info.label]) || info.label, date: formatMonthDay(viewDay, { year: true }) });
   const parts = (studentName || 'Ty').trim().split(/\s+/);
   const initials = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
@@ -551,12 +608,18 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
         );
       })()}
 
-      {isRealDay ? <NextSessionCard planner={planner} /> : <DayPlanPlaceholder info={info} onPlan={() => planner.go('planner')} />}
+      {isRealDay
+        ? <NextSessionCard planner={planner} />
+        : viewDay < NUM_TODAY
+          ? <PastDayCard info={info} summary={state.daySummaries?.[localDateKey(realDateForNum(viewDay))]} />
+          : <DayPlanPlaceholder info={info} day={viewDay} planner={planner} />}
 
       <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
-        <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.todayTasks')}</div>
-        <div style={{ marginTop: 12 }}><TodayChecklist planner={planner} /></div>
-        <div onClick={() => { planner.update({ planToday: true }); planner.go('plan'); }} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('home.seeFullPlan')} <span style={{ fontSize: 11 }}>›</span></div>
+        <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>
+          {isRealDay ? t('home.todayTasks') : t('home.tasksForDay', { date: (t(DAY_KEY[info.label] + '.short') || info.short) + ' ' + info.monthDay })}
+        </div>
+        <div style={{ marginTop: 12 }}><TodayChecklist planner={planner} day={viewDay} /></div>
+        {isRealDay && <div onClick={() => { planner.update({ planToday: true }); planner.go('plan'); }} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('home.seeFullPlan')} <span style={{ fontSize: 11 }}>›</span></div>}
       </div>
 
       <div onClick={openEnergySheet} style={{ marginTop: 12, padding: '12px 14px', borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>

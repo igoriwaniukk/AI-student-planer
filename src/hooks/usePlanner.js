@@ -4,7 +4,7 @@ import { TASK_TEXT_KEY, VALUE_KEY } from '../lib/i18n';
 import {
   PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, NUM_TODAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES, realDateForNum,
 } from '../lib/plannerData';
-import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, isTaskOn } from '../lib/plannerLogic';
+import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, isTaskOn, daySessionBreakdown, localDateKey } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
 import { requestAIRescue } from '../lib/aiRescue';
 
@@ -17,6 +17,7 @@ import { requestAIRescue } from '../lib/aiRescue';
 const DURABLE_KEYS = [
   'taskDefs', 'tasks', 'taskState', 'schedule', 'durOverride', 'startOverride',
   'customExams', 'examGoals', 'examSessions', 'dismissedGoalPrompts', 'planApproved', 'selectedDay', 'sessionReview',
+  'daySummaries', 'autoSummaryDate',
 ];
 
 // The wheel date picker (see WheelDatePicker.jsx) always shows a concrete
@@ -151,6 +152,14 @@ function initialState(defaults, activities, persisted) {
     summaryFailed: false,
     daySummarized: false,
     unfinishedChoice: '',
+    // Saved results of each summarized day, keyed by local YYYY-MM-DD, so a
+    // day is summarized once and Home/past days can show what happened.
+    daySummaries: {},
+    // Local date the summary last auto-opened, so it pops up once per day.
+    autoSummaryDate: null,
+    // Per-task "tomorrow" | "drop" picks for unfinished sessions on the
+    // summary form (default "tomorrow"); applied by finishDay.
+    unfinishedChoices: {},
     skipReason: '',
 
     selectedDay: 19,
@@ -190,11 +199,13 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       durOverride: state.durOverride, startOverride: state.startOverride,
       customExams: state.customExams, examGoals: state.examGoals, examSessions: state.examSessions, dismissedGoalPrompts: state.dismissedGoalPrompts,
       planApproved: state.planApproved, selectedDay: state.selectedDay, sessionReview: state.sessionReview,
+      daySummaries: state.daySummaries, autoSummaryDate: state.autoSummaryDate,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     state.taskDefs, state.tasks, state.taskState, state.schedule, state.durOverride, state.startOverride,
     state.customExams, state.examGoals, state.examSessions, state.dismissedGoalPrompts, state.planApproved, state.selectedDay, state.sessionReview,
+    state.daySummaries, state.autoSummaryDate,
   ]);
 
   // Which real day the Planner/Plan screens are working with — toggled via
@@ -277,7 +288,14 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       if (!d) return {};
       const dn = dayNum != null ? dayNum : dayNumOf(s);
       const key = taskKey(d, dn);
-      return { tasks: { ...s.tasks, [key]: !isTaskOn(s.tasks, d, dn) } };
+      const on = !isTaskOn(s.tasks, d, dn);
+      // A personal to-do's checkbox is also its "done" flag — remember which
+      // day it was ticked so a floating (no fixed day) one doesn't reappear
+      // still ticked on later days (see finishedOnDay in plannerLogic.js).
+      if (d.category === 'personal') {
+        return { tasks: { ...s.tasks, [key]: on }, taskState: { ...s.taskState, [key]: { ...s.taskState[key], doneDay: on ? dn : null } } };
+      }
+      return { tasks: { ...s.tasks, [key]: on } };
     });
   }
 
@@ -402,7 +420,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       const d = def(id, s);
       const key = d ? taskKey(d, dayNumOf(s)) : id;
       const t = { ...s.taskState };
-      t[key] = { status: 'completed', actual: s.finishDur, hard: s.finishHard, know: s.finishKnow };
+      t[key] = { status: 'completed', actual: s.finishDur, hard: s.finishHard, know: s.finishKnow, day: dayNumOf(s) };
       return {
         taskState: t, activeTask: null, finishTask: null, sessionStart: null, sessionElapsedMs: 0, breakDismissed: false,
         sessionReview: { ...s.sessionReview, [id]: { minutes: s.finishDur, hard: s.finishHard, know: s.finishKnow } },
@@ -447,7 +465,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     update((s) => {
       const d = def(id, s);
       const key = d ? taskKey(d, dayNumOf(s)) : id;
-      const tsx = { ...s.taskState, [key]: { ...s.taskState[key], status: 'skipped' } };
+      const tsx = { ...s.taskState, [key]: { ...s.taskState[key], status: 'skipped', day: dayNumOf(s) } };
       const next = { ...s, taskState: tsx, constraints, dayNum: dayNumOf(s) };
       return { taskState: tsx, schedule: buildSchedule(next) };
     });
@@ -814,8 +832,53 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   }
 
   // ---- day summary ----
-  function finishDay() {
-    update({ summaryFailed: false, daySaved: true, daySummarized: true });
+  // Applies the unfinished-session picks, then saves today's results once.
+  // A moved one-off task gets tomorrow as its day (and leaves today's
+  // schedule); a repeating task's occurrence can't change day, so a one-off
+  // copy is added for tomorrow instead.
+  function finishDay(stats) {
+    update((s) => {
+      const choices = s.unfinishedChoices || {};
+      let taskDefs = s.taskDefs;
+      const tasks = { ...s.tasks };
+      const taskState = { ...s.taskState };
+      const schedule = { ...s.schedule };
+      let moved = 0;
+      let dropped = 0;
+      daySessionBreakdown(s, NUM_TODAY).unfinished.forEach((id) => {
+        const d = taskDefs.find((x) => x.id === id);
+        if (!d) return;
+        const key = taskKey(d, NUM_TODAY);
+        if (choices[id] === 'drop') {
+          taskState[key] = { ...taskState[key], status: 'skipped', day: NUM_TODAY };
+          dropped++;
+          return;
+        }
+        moved++;
+        if (d.repeatDays && d.repeatDays.length) {
+          const copyId = 'custom-' + Date.now() + '-' + moved;
+          taskDefs = taskDefs.concat({ ...d, id: copyId, day: REFERENCE_DAY, repeatDays: [] });
+          tasks[copyId] = true;
+          taskState[copyId] = { status: 'planned' };
+          taskState[key] = { ...taskState[key], status: 'moved' };
+        } else {
+          taskDefs = taskDefs.map((x) => (x.id === id ? { ...x, day: REFERENCE_DAY } : x));
+          tasks[id] = true;
+          taskState[id] = { status: 'planned' };
+          delete schedule[id];
+        }
+      });
+      const recent = Object.entries({ ...s.daySummaries, [localDateKey()]: { ...stats, moved, dropped, dayHard: s.dayHard, dayEnergy: s.dayEnergy } })
+        .sort(([a], [b]) => (a < b ? -1 : 1))
+        .slice(-60);
+      return {
+        taskDefs, tasks, taskState, schedule, unfinishedChoices: {},
+        daySummaries: Object.fromEntries(recent), summaryFailed: false, daySaved: true, daySummarized: true,
+      };
+    });
+  }
+  function setUnfinishedChoice(id, choice) {
+    update((s) => ({ unfinishedChoices: { ...s.unfinishedChoices, [id]: choice } }));
   }
   function goHomeSummarized() {
     update({ daySaved: false, screen: 'home' });
@@ -942,7 +1005,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     setField, addTopic, setTopic, removeTopic, deadlineSubmit, goHomeDeadline,
     openSession, pickSessionDate, pickSessionTime, pickSessionDur, cancelSession, saveSession,
     askOnlyDeadline, backToPrep, saveOnlyDeadline, confirmPrep,
-    finishDay, goHomeSummarized, saveLater, adjustSessionMinutes, setSessionField,
+    finishDay, setUnfinishedChoice, goHomeSummarized, saveLater, adjustSessionMinutes, setSessionField,
     keepEngTomorrow, openEngTime, pickEngTime, cancelEngTime, saveEngTime,
     applyAdaptive, declineAdaptive,
     setExamGrade, setExamImportance, adjustExamStudyMinutes, setExamStudyMinutes,

@@ -454,6 +454,43 @@ export function computeStreak(studyHistory) {
   return streak;
 }
 
+// state.schedule has no date of its own — it belongs to the approved plan's
+// day (selectedDay), or, before anything is approved, to today's draft.
+export function scheduleIsFor(state, dayNum) {
+  return state.planApproved ? state.selectedDay === dayNum : dayNum === NUM_TODAY;
+}
+
+export function statusOn(state, id, dayNum) {
+  const d = state.taskDefs.find((t) => t.id === id);
+  return (state.taskState[d ? taskKey(d, dayNum) : id] || {}).status || 'planned';
+}
+
+// Today's study sessions split by outcome — the single source for the day
+// summary, the auto-summary trigger and the end-of-day push. "unfinished"
+// also includes a task Restart-your-day moved off today's plan, since
+// nothing had rescheduled it anywhere yet.
+export function daySessionBreakdown(state, dayNum = NUM_TODAY) {
+  const sched = scheduleIsFor(state, dayNum) ? state.schedule || {} : {};
+  const school = (id) => state.taskDefs.some((d) => d.id === id && d.category !== 'personal');
+  const planned = Object.keys(sched).filter(school).sort((a, b) => sched[a].start - sched[b].start);
+  const done = planned.filter((id) => statusOn(state, id, dayNum) === 'completed');
+  const open = planned.filter((id) => ['planned', 'in_progress', 'paused'].includes(statusOn(state, id, dayNum)));
+  const moved = state.taskDefs
+    .filter((d) => d.category !== 'personal' && !sched[d.id] && taskDueOnDay(d, dayNum) && statusOn(state, d.id, dayNum) === 'moved')
+    .map((d) => d.id);
+  return { planned, done, unfinished: open.concat(moved), lastEnd: planned.reduce((m, id) => Math.max(m, sched[id].start + sched[id].dur), 0) };
+}
+
+// For a floating one-off task (no fixed day, no repeat — its done-state is
+// shared by every day it's due on): the day it was finished, null while
+// it's still open, or undefined when it was finished before that day
+// started being recorded.
+export function finishedOnDay(state, d) {
+  const st = state.taskState[d.id] || {};
+  if (d.category === 'personal') return isTaskOn(state.tasks, d, null) ? st.doneDay ?? undefined : null;
+  return ['completed', 'skipped'].includes(st.status) ? st.day ?? undefined : null;
+}
+
 export function studiedToday(studyHistory) {
   return !!studyHistory?.[new Date().toISOString().slice(0, 10)]?.completed;
 }
