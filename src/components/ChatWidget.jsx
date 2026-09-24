@@ -5,6 +5,7 @@ import { upcomingExams, hm, toMinutes, checkBlockConflict } from '../lib/planner
 import { VALUE_KEY, DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { BottomSheet, Chip } from './ui';
+import { PugImg, PugLive } from './PugMascot';
 
 // Claude's replies use light Markdown (bold, line breaks) — render that
 // instead of showing literal "**...**" and losing paragraph breaks.
@@ -24,62 +25,9 @@ function initialsOf(name) {
   return parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 }
 
-const PUG_SRC = '/pug-avatar.webp?v=2';
 const HELLO_OFF_KEY = 'sp_pugHelloOffDate';
 const HELLO_EVERY_MS = 3 * 60 * 1000;
 const HELLO_SHOW_MS = 4500;
-
-function prefersReducedMotion() {
-  return typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-}
-
-function PugImg({ size, animation }) {
-  return (
-    <img
-      src={PUG_SRC}
-      alt=""
-      width={size}
-      height={size}
-      draggable={false}
-      className={animation ? 'pug-anim' : undefined}
-      style={{ width: size, height: size, borderRadius: '50%', display: 'block', objectFit: 'cover', animation, transformOrigin: '50% 80%' }}
-    />
-  );
-}
-
-// The looping mascot clip (head tilt, tongue, tassel). Falls back to the
-// still image under reduced motion; `paused` freezes it (e.g. while the
-// chat sheet covers the button). The still is also the video's poster, so
-// nothing flashes while it loads.
-function PugLive({ size, paused = false, animation }) {
-  const ref = useRef(null);
-  const [still] = useState(prefersReducedMotion);
-  useEffect(() => {
-    const v = ref.current;
-    if (!v) return;
-    if (paused) v.pause();
-    else v.play().catch(() => {});
-  }, [paused]);
-  if (still) return <PugImg size={size} />;
-  return (
-    <video
-      ref={ref}
-      autoPlay
-      loop
-      muted
-      playsInline
-      disablePictureInPicture
-      poster={PUG_SRC}
-      width={size}
-      height={size}
-      className={animation ? 'pug-anim' : undefined}
-      style={{ width: size, height: size, borderRadius: '50%', display: 'block', objectFit: 'cover', animation, transformOrigin: '50% 80%', pointerEvents: 'none' }}
-    >
-      <source src="/pug-loop.webm?v=2" type="video/webm" />
-      <source src="/pug-loop.mp4?v=2" type="video/mp4" />
-    </video>
-  );
-}
 
 function Avatar({ role, studentName }) {
   if (role !== 'user') {

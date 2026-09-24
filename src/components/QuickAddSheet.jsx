@@ -5,6 +5,7 @@ import { DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { Chip } from './ui';
 import WheelTimePicker from './WheelTimePicker';
+import { PugLive } from './PugMascot';
 
 const inputStyle = { boxSizing: 'border-box', width: '100%', height: 50, borderRadius: 15, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)', padding: '0 15px', fontSize: 15, color: '#f4f4f7', fontFamily: 'inherit' };
 
@@ -97,7 +98,7 @@ export default function QuickAddSheet({ open, onClose, onAddExam, recurringActiv
               <div onClick={close} style={roundBtn}>✕</div>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 11, marginTop: 8 }}>
-              <img src="/pug-avatar.webp?v=2" alt="" width={46} height={46} style={{ borderRadius: '50%', boxShadow: '0 0 0 2.5px #8b6dff', flex: 'none' }} />
+              <PugLive size={52} style={{ boxShadow: '0 0 0 2.5px #8b6dff', flex: 'none' }} />
               <div style={{ fontSize: 13, fontWeight: 650, color: '#c9baff', background: 'rgba(124,92,255,.14)', border: '1px solid rgba(124,92,255,.35)', padding: '8px 12px', borderRadius: '14px 14px 14px 4px', animation: 'pugBubbleIn .3s cubic-bezier(.34,1.56,.64,1) .1s both' }}>
                 {t('quickAdd.pugAsk')}
               </div>
