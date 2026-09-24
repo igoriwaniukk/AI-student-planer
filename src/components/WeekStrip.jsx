@@ -10,8 +10,8 @@ const DRAG_THRESHOLD = 8;
 // inclusive) with an orange bar + caption, in their normal calendar
 // position — reordering them to the front used to break the day-of-week
 // reading order and looked broken (e.g. "20 21 22 16 17"). streakCount
-// marks the most recent `streakCount` studied days with a warm flame
-// highlight, for a habit-streak view — the two modes are never used
+// marks the most recent `streakCount` studied days with a dark purple pill
+// and a flame inside it, for a habit-streak view — the two modes are never used
 // together by any current caller.
 // pageable lets the whole 7-day window be dragged/swiped left or right by
 // a week — no arrow buttons, so the 7 days always fill the row evenly.
@@ -19,7 +19,7 @@ const DRAG_THRESHOLD = 8;
 // exam/activity lookups in sync with which week is showing, instead of
 // this component silently owning that state.
 export default function WeekStrip({
-  selectedDay, onSelect, eventDays, examDay, streakCount = 0, streakIncludesToday = false, topMargin = 22,
+  selectedDay, onSelect, eventDays, examDay, streakCount, streakIncludesToday = false, topMargin = 22,
   pageable = false, weekOffset: controlledOffset, onOffsetChange,
 }) {
   const { t } = useLang();
@@ -101,25 +101,23 @@ export default function WeekStrip({
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, padding: '9px 10px 10px', borderRadius: 999,
                     background: on
                       ? 'linear-gradient(160deg,#8b6dff,#6d4dff)'
-                      : isCountdown ? 'rgba(245,165,36,.1)' : isStreak ? 'rgba(245,101,36,.14)' : 'transparent',
+                      : isCountdown ? 'rgba(245,165,36,.1)' : isStreak ? '#241a4d' : 'transparent',
                     border: on
                       ? '1px solid transparent'
-                      : isCountdown ? '1px solid rgba(245,165,36,.35)' : isStreak ? '1px solid rgba(245,101,36,.38)' : '1px solid transparent',
+                      : isCountdown ? '1px solid rgba(245,165,36,.35)' : isStreak ? '1px solid rgba(139,109,255,.45)' : '1px solid transparent',
                     boxShadow: on ? '0 6px 18px rgba(109,77,255,.35)' : 'none',
                     animation: on
                       ? 'selectedDayPulse 2.4s ease-in-out infinite'
-                      : (isCountdown || isStreak) ? 'dayGlow 2.6s ease-in-out infinite' : 'none',
-                    '--glow-color': isCountdown ? 'rgba(245,165,36,.55)' : 'rgba(245,101,36,.55)',
+                      : isCountdown ? 'dayGlow 2.6s ease-in-out infinite' : 'none',
+                    '--glow-color': 'rgba(245,165,36,.55)',
                   }}
                 >
-                  <span style={{ fontSize: 10, fontWeight: 650, color: on ? 'rgba(255,255,255,.85)' : '#7a7a8a', letterSpacing: '.06em' }}>{shortLabel}</span>
+                  <span style={{ fontSize: 10, fontWeight: 650, color: on ? 'rgba(255,255,255,.85)' : isStreak && !isCountdown ? '#c9baff' : '#7a7a8a', letterSpacing: '.06em' }}>{shortLabel}</span>
                   <span style={{ fontSize: 17, fontWeight: on ? 750 : 700 }}>{realDateForNum(num).getDate()}</span>
+                  {/* In streak mode every pill keeps a flame-sized slot so the row stays level. */}
+                  {streakCount != null && <span style={{ fontSize: 10, lineHeight: 1, height: 11 }}>{isStreak && !isCountdown ? '🔥' : ''}</span>}
                 </div>
-                {isStreak && !isCountdown ? (
-                  <span style={{ fontSize: 9, lineHeight: 1 }}>🔥</span>
-                ) : (
-                  <span style={{ width: 4, height: 4, borderRadius: '50%', background: hasEvent && !on ? '#2ee6c5' : 'transparent' }} />
-                )}
+                <span style={{ width: 4, height: 4, borderRadius: '50%', background: hasEvent && !on ? '#2ee6c5' : 'transparent' }} />
                 {isCountdown && <div style={{ marginTop: -2, width: '50%', height: 3, borderRadius: 2, background: '#f5a524' }} />}
               </div>
             );

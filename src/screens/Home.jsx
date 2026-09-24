@@ -105,7 +105,7 @@ function StreakCard({ streak, doneToday, selectedDay, onSelectDay, eventDays }) 
     <div style={{ marginTop: 14, padding: '13px 15px 10px', borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.streak')}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 999, background: 'rgba(245,165,36,.14)', border: '1px solid rgba(245,165,36,.3)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 999, background: 'rgba(124,92,255,.18)', border: '1px solid rgba(139,109,255,.45)', color: '#e6dfff' }}>
           <span style={{ fontSize: 12.5, animation: bumping ? 'streakBump .7s ease' : (streak > 0 ? 'pulseGlow 1.8s ease-in-out infinite' : 'none') }}>🔥</span>
           <span style={{ fontSize: 13, fontWeight: 750, fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={streak} /></span>
         </div>
