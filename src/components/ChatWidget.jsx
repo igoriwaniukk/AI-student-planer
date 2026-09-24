@@ -29,6 +29,10 @@ const HELLO_OFF_KEY = 'sp_pugHelloOffDate';
 const HELLO_EVERY_MS = 3 * 60 * 1000;
 const HELLO_SHOW_MS = 4500;
 
+function prefersReducedMotion() {
+  return typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+}
+
 function PugImg({ size, animation }) {
   return (
     <img
@@ -40,6 +44,40 @@ function PugImg({ size, animation }) {
       className={animation ? 'pug-anim' : undefined}
       style={{ width: size, height: size, borderRadius: '50%', display: 'block', objectFit: 'cover', animation, transformOrigin: '50% 80%' }}
     />
+  );
+}
+
+// The looping mascot clip (head tilt, tongue, tassel). Falls back to the
+// still image under reduced motion; `paused` freezes it (e.g. while the
+// chat sheet covers the button). The still is also the video's poster, so
+// nothing flashes while it loads.
+function PugLive({ size, paused = false, animation }) {
+  const ref = useRef(null);
+  const [still] = useState(prefersReducedMotion);
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    if (paused) v.pause();
+    else v.play().catch(() => {});
+  }, [paused]);
+  if (still) return <PugImg size={size} />;
+  return (
+    <video
+      ref={ref}
+      autoPlay
+      loop
+      muted
+      playsInline
+      disablePictureInPicture
+      poster={PUG_SRC}
+      width={size}
+      height={size}
+      className={animation ? 'pug-anim' : undefined}
+      style={{ width: size, height: size, borderRadius: '50%', display: 'block', objectFit: 'cover', animation, transformOrigin: '50% 80%', pointerEvents: 'none' }}
+    >
+      <source src="/pug-loop.webm" type="video/webm" />
+      <source src="/pug-loop.mp4" type="video/mp4" />
+    </video>
   );
 }
 
@@ -285,7 +323,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
           boxShadow: '0 10px 28px rgba(109,77,255,.45), 0 0 0 1px rgba(255,255,255,.08) inset', zIndex: 45,
         }}
       >
-        <PugImg size={49} animation={open ? 'none' : hello ? 'pugHello 1.1s ease-in-out' : 'pugIdle 3.6s ease-in-out infinite'} />
+        <PugLive size={49} paused={open} animation={hello && !open ? 'pugHello 1.1s ease-in-out' : undefined} />
       </div>
       )}
 
@@ -293,7 +331,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
         <BottomSheet maxHeight="85%">
           <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
             <div style={{ width: 40, height: 40, flex: 'none', borderRadius: '50%', padding: 2, boxSizing: 'border-box', background: 'linear-gradient(155deg,#8b6dff,#6d4dff)', boxShadow: '0 6px 16px rgba(109,77,255,.4)' }}>
-              <PugImg size={36} animation="pugIdle 4.2s ease-in-out infinite" />
+              <PugLive size={36} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>{t('chat.title')}</div>

@@ -204,15 +204,8 @@ input, select, textarea {
   display: none;
 }
 
-/* Pulgo pug mascot (chat button/avatars): slow idle bob-and-tilt, a happy
-   hop when saying hi, and a pop-in for its speech bubble. */
-@keyframes pugIdle {
-  0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
-  20% { transform: translateY(-1.5px) rotate(-4deg) scale(1.02); }
-  40% { transform: translateY(0) rotate(0deg) scale(1); }
-  60% { transform: translateY(-1px) rotate(3deg) scale(1.03); }
-  80% { transform: translateY(0) rotate(0deg) scale(1); }
-}
+/* Pulgo pug mascot (chat button): a happy hop when saying hi, and a
+   pop-in for its speech bubble. The idle motion is the looping clip. */
 @keyframes pugHello {
   0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
   15% { transform: translateY(-7px) rotate(-8deg) scale(1.08); }
