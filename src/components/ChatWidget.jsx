@@ -24,7 +24,7 @@ function initialsOf(name) {
   return parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 }
 
-const PUG_SRC = '/pug-avatar.webp';
+const PUG_SRC = '/pug-avatar.webp?v=2';
 const HELLO_OFF_KEY = 'sp_pugHelloOffDate';
 const HELLO_EVERY_MS = 3 * 60 * 1000;
 const HELLO_SHOW_MS = 4500;
@@ -75,8 +75,8 @@ function PugLive({ size, paused = false, animation }) {
       className={animation ? 'pug-anim' : undefined}
       style={{ width: size, height: size, borderRadius: '50%', display: 'block', objectFit: 'cover', animation, transformOrigin: '50% 80%', pointerEvents: 'none' }}
     >
-      <source src="/pug-loop.webm" type="video/webm" />
-      <source src="/pug-loop.mp4" type="video/mp4" />
+      <source src="/pug-loop.webm?v=2" type="video/webm" />
+      <source src="/pug-loop.mp4?v=2" type="video/mp4" />
     </video>
   );
 }
