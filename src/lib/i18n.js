@@ -146,6 +146,9 @@ export const dict = {
 
     // ChatWidget
     'chat.title': 'Asystent AI',
+    'chat.pugHello0': 'Hej! Zapytaj mnie o cokolwiek 👋',
+    'chat.pugHello1': 'Pomóc Ci ułożyć plan nauki? 🐾',
+    'chat.pugHello2': 'Masz pytanie? Jestem tutaj! 🎓',
     'chat.subtitle': 'Zna Twoje sprawdziany i cele nauki',
     'chat.greeting': 'Cześć! Zapytaj mnie o naukę, sprawdziany albo plan dnia — na przykład:',
     'chat.suggestion1': 'Jak rozłożyć naukę do najbliższego sprawdzianu?',
@@ -917,6 +920,9 @@ export const dict = {
 
     // ChatWidget
     'chat.title': 'AI Assistant',
+    'chat.pugHello0': 'Hi! Ask me anything 👋',
+    'chat.pugHello1': 'Want help planning your study? 🐾',
+    'chat.pugHello2': 'Got a question? I\'m here! 🎓',
     'chat.subtitle': 'Knows your exams and study goals',
     'chat.greeting': "Hi! Ask me about studying, exams, or today's plan — for example:",
     'chat.suggestion1': "How should I spread out studying for my next exam?",

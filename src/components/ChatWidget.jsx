@@ -24,19 +24,47 @@ function initialsOf(name) {
   return parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 }
 
+const PUG_SRC = '/pug-avatar.webp';
+const HELLO_OFF_KEY = 'sp_pugHelloOffDate';
+const HELLO_EVERY_MS = 3 * 60 * 1000;
+const HELLO_SHOW_MS = 4500;
+
+function PugImg({ size, animation }) {
+  return (
+    <img
+      src={PUG_SRC}
+      alt=""
+      width={size}
+      height={size}
+      draggable={false}
+      className={animation ? 'pug-anim' : undefined}
+      style={{ width: size, height: size, borderRadius: '50%', display: 'block', objectFit: 'cover', animation, transformOrigin: '50% 80%' }}
+    />
+  );
+}
+
 function Avatar({ role, studentName }) {
+  if (role !== 'user') {
+    return <div style={{ flex: 'none', borderRadius: '50%', boxShadow: '0 0 0 1.5px rgba(139,109,255,.55)' }}><PugImg size={26} /></div>;
+  }
   return (
     <div
       style={{
         width: 26, height: 26, flex: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: role === 'user' ? 10.5 : 13, fontWeight: 700,
-        background: role === 'user' ? 'linear-gradient(150deg,#8b6dff,#6d4dff)' : 'linear-gradient(150deg,#2ee6c5,#1fb8a3)',
-        color: role === 'user' ? '#fff' : '#04241f',
+        fontSize: 10.5, fontWeight: 700, background: 'linear-gradient(150deg,#8b6dff,#6d4dff)', color: '#fff',
       }}
     >
-      {role === 'user' ? initialsOf(studentName) : '✨'}
+      {initialsOf(studentName)}
     </div>
   );
+}
+
+function todayKey() {
+  const d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+}
+function helloOffToday() {
+  try { return localStorage.getItem(HELLO_OFF_KEY) === todayKey(); } catch { return false; }
 }
 
 // Turns a Claude tool-use proposal into a human-readable summary and
@@ -203,28 +231,69 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
   // off-screen for this one screen rather than fight the layout with it.
   const fabHidden = planner.state.screen === 'rescue' && !open;
 
+  // "Hi! Ask me anything" bubble: once shortly after the app opens, then
+  // every few minutes while on Home — never over an open chat, and not
+  // again today once the student has actually opened the chat.
+  const [hello, setHello] = useState(false);
+  const [helloIdx, setHelloIdx] = useState(-1);
+  const onHome = planner.state.screen === 'home';
+  useEffect(() => {
+    if (open || !onHome || helloOffToday()) return undefined;
+    let hideTimer;
+    const say = () => {
+      if (helloOffToday()) return;
+      setHelloIdx((i) => i + 1);
+      setHello(true);
+      clearTimeout(hideTimer);
+      hideTimer = setTimeout(() => setHello(false), HELLO_SHOW_MS);
+    };
+    const first = setTimeout(say, 1500);
+    const every = setInterval(say, HELLO_EVERY_MS);
+    return () => { clearTimeout(first); clearInterval(every); clearTimeout(hideTimer); setHello(false); };
+  }, [open, onHome]);
+
+  function openChat() {
+    try { localStorage.setItem(HELLO_OFF_KEY, todayKey()); } catch { /* storage blocked — the bubble just keeps its schedule */ }
+    setHello(false);
+    setOpen(true);
+  }
+  const helloText = t('chat.pugHello' + (helloIdx % 3));
+
   return (
     <>
+      {!fabHidden && hello && !open && (
+        <div
+          onClick={openChat}
+          style={{
+            position: 'absolute', right: 18, bottom: 162, zIndex: 45, maxWidth: 200, padding: '9px 12px', borderRadius: '14px 14px 4px 14px',
+            background: '#15112b', border: '1px solid rgba(139,109,255,.5)', boxShadow: '0 8px 22px rgba(0,0,0,.45)',
+            fontSize: 12.5, fontWeight: 650, lineHeight: 1.35, color: '#e6dfff', cursor: 'pointer',
+            animation: 'pugBubbleIn .28s cubic-bezier(.34,1.56,.64,1) both',
+          }}
+        >
+          {helloText}
+        </div>
+      )}
       {!fabHidden && (
       <div
-        onClick={() => setOpen(true)}
+        onClick={openChat}
         className="fab-btn"
+        aria-label={t('chat.title')}
         style={{
-          position: 'absolute', right: 16, bottom: 100, width: 54, height: 54, borderRadius: '50%',
-          background: 'linear-gradient(155deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 22, cursor: 'pointer', boxShadow: '0 10px 28px rgba(109,77,255,.45), 0 0 0 1px rgba(255,255,255,.08) inset', zIndex: 45,
-          animation: open ? 'none' : 'fabAttention 4.5s ease-in-out infinite',
+          position: 'absolute', right: 16, bottom: 100, width: 54, height: 54, borderRadius: '50%', padding: 2.5, boxSizing: 'border-box',
+          background: 'linear-gradient(155deg,#8b6dff,#6d4dff)', cursor: 'pointer',
+          boxShadow: '0 10px 28px rgba(109,77,255,.45), 0 0 0 1px rgba(255,255,255,.08) inset', zIndex: 45,
         }}
       >
-        ✨
+        <PugImg size={49} animation={open ? 'none' : hello ? 'pugHello 1.1s ease-in-out' : 'pugIdle 3.6s ease-in-out infinite'} />
       </div>
       )}
 
       {open && (
         <BottomSheet maxHeight="85%">
           <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-            <div style={{ width: 38, height: 38, flex: 'none', borderRadius: 13, background: 'linear-gradient(155deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, boxShadow: '0 6px 16px rgba(109,77,255,.4)' }}>
-              <span style={{ display: 'inline-block', animation: 'sparkleTwinkle 2.6s ease-in-out infinite' }}>✨</span>
+            <div style={{ width: 40, height: 40, flex: 'none', borderRadius: '50%', padding: 2, boxSizing: 'border-box', background: 'linear-gradient(155deg,#8b6dff,#6d4dff)', boxShadow: '0 6px 16px rgba(109,77,255,.4)' }}>
+              <PugImg size={36} animation="pugIdle 4.2s ease-in-out infinite" />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>{t('chat.title')}</div>
