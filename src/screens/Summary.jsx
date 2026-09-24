@@ -265,7 +265,7 @@ function DaySaved({ planner, summary, justSaved }) {
   return (
     <div className="sc" style={{ position: 'absolute', inset: 0, zIndex: 80, background: '#08080c', overflowY: 'auto', padding: '80px 20px 40px' }}>
       {celebrate && <Confetti />}
-      <div style={{ width: 52, height: 52, borderRadius: 17, background: 'rgba(53,208,127,.14)', border: '1px solid rgba(53,208,127,.3)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="20" height="15" viewBox="0 0 13 11" fill="none"><path d="M1 5.6L4.6 9.4 12 1.6" stroke="#35d07f" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
+      <div style={{ width: 52, height: 52, borderRadius: 17, background: 'rgba(124,92,255,.16)', border: '1px solid rgba(124,92,255,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="20" height="15" viewBox="0 0 13 11" fill="none"><path d="M1 5.6L4.6 9.4 12 1.6" stroke="#a58cff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
       <div style={{ fontSize: 28, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>{t('sum.daySummarized')}</div>
       <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{weekdayDateLabel(NUM_TODAY)}</div>
       {justSaved && <div style={{ fontSize: 13.5, lineHeight: 1.5, color: '#a3a3b3', marginTop: 10 }}>{t('sum.savedDesc')}</div>}

@@ -179,7 +179,7 @@ function SmallBtn({ label, onClick, accent }) {
 function DaySummarizedCard({ summary, planner }) {
   const { t } = useLang();
   return (
-    <div style={{ marginTop: 18, padding: 16, borderRadius: 20, border: '1.5px solid rgba(53,208,127,.45)', background: 'linear-gradient(165deg,rgba(53,208,127,.1),rgba(53,208,127,.02))' }}>
+    <div style={{ marginTop: 18, padding: 16, borderRadius: 20, border: '1.5px solid rgba(124,92,255,.55)', background: 'linear-gradient(165deg,rgba(124,92,255,.13),rgba(124,92,255,.03))' }}>
       <div style={{ fontSize: 18, fontWeight: 750, letterSpacing: '-.01em' }}>{t('home.daySummarizedTitle')}</div>
       <div style={{ fontSize: 12.5, color: '#a3a3b3', marginTop: 8, lineHeight: 1.45 }}>{t('home.daySummarizedStats', { done: summary.done || 0, total: summary.total || 0, time: hm(summary.actualMin || 0) })}</div>
       <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
