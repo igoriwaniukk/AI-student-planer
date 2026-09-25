@@ -64,6 +64,40 @@ export function detectTaskMeta(name) {
 
 // A topic-relevant emoji for a saved task — subject-based for school tasks,
 // keyword-based (falling back to a generic note icon) for personal ones.
+export function iconForSubject(subject) {
+  return SUBJECT_ICON[subject] || '📘';
+}
+
+// A topic emoji for a weekly activity, from its name.
+const ACTIVITY_ICON_ENTRIES = [
+  ['⚽', ['football', 'soccer', 'piłk', 'nożn']],
+  ['🏀', ['basket', 'kosz']],
+  ['🏐', ['volley', 'siatk']],
+  ['🎾', ['tennis', 'tenis']],
+  ['🏊', ['swim', 'pływ', 'basen', 'pool']],
+  ['🎹', ['piano', 'pianin', 'fortepian', 'keyboard']],
+  ['🎸', ['guitar', 'gitar']],
+  ['🎻', ['violin', 'skrzyp']],
+  ['🎤', ['sing', 'śpiew', 'choir', 'chór', 'vocal', 'wokal']],
+  ['🎵', ['music', 'muzy']],
+  ['💃', ['dance', 'taniec', 'tańc', 'balet', 'ballet']],
+  ['🥋', ['karate', 'judo', 'taekwondo', 'boks', 'box', 'martial', 'mma']],
+  ['🏃', ['run', 'biega', 'bieg', 'athlet', 'lekkoatlet']],
+  ['🚴', ['bike', 'cycl', 'rower']],
+  ['🏋️', ['gym', 'siłowni', 'workout', 'trening', 'fitness']],
+  ['♟️', ['chess', 'szach']],
+  ['🎨', ['art', 'plasty', 'rysun', 'draw', 'paint', 'malow']],
+  ['🗣️', ['language', 'język', 'spanish', 'hiszpań', 'german', 'niemieck', 'french', 'francusk']],
+  ['📚', ['tutor', 'korepet', 'extra class', 'dodatkow']],
+  ['💻', ['coding', 'program', 'robot', 'informaty']],
+];
+
+export function iconForActivity(name) {
+  const n = (name || '').toLowerCase();
+  const hit = ACTIVITY_ICON_ENTRIES.find(([, keywords]) => keywords.some((k) => n.includes(k)));
+  return hit ? hit[0] : '🔁';
+}
+
 export function iconForTask(d) {
   if (d.category === 'personal') {
     const n = (d.title || '').toLowerCase();

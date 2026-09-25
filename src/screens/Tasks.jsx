@@ -1,22 +1,12 @@
 import { useState } from 'react';
-import { PRIO_STYLE, NUM_TODAY, REFERENCE_DAY } from '../lib/plannerData';
-import { durOf, formatMonthDay, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
+import { PRIO_STYLE, NUM_TODAY } from '../lib/plannerData';
+import { durOf, taskDayLabel, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
 import { iconForTask } from '../lib/taskAuto';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import AmbientGlow from '../components/AmbientGlow';
 import WeekStrip from '../components/WeekStrip';
 import TaskEditSheet from '../components/TaskEditSheet';
-
-// A task's own day-num resolved to the same Today/Tomorrow labels the
-// TaskEditSheet's day picker uses, or a real date once it's further out —
-// lets the main task list show when each task is actually planned for.
-function dayLabel(t, d) {
-  if (d.repeatDays && d.repeatDays.length) return t('taskEdit.dayRepeat');
-  if (d.day == null || d.day === REFERENCE_DAY) return t('taskEdit.dayTomorrow');
-  if (d.day === NUM_TODAY) return t('taskEdit.dayToday');
-  return formatMonthDay(d.day);
-}
 
 export default function Tasks({ planner }) {
   const { t } = useLang();
@@ -56,7 +46,7 @@ export default function Tasks({ planner }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     {!isPersonal && <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: d.color, textTransform: 'uppercase' }}>{t(VALUE_KEY[d.subject]) || d.subject}</span>}
-                    <span style={{ fontSize: 10, fontWeight: 650, padding: '3px 8px', borderRadius: 7, color: '#8fbaff', background: 'rgba(91,156,255,.13)' }}>{dayLabel(t, d)}</span>
+                    <span style={{ fontSize: 10, fontWeight: 650, padding: '3px 8px', borderRadius: 7, color: '#8fbaff', background: 'rgba(91,156,255,.13)' }}>{taskDayLabel(t, d)}</span>
                     <span style={{ fontSize: 10, fontWeight: 650, padding: '3px 8px', borderRadius: 7, color: ps.color, background: ps.bg }}>{t(VALUE_KEY[d.priority]) || d.priority}</span>
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3, marginTop: 6 }}>{t(TASK_TEXT_KEY[d.id]?.title) || d.title}</div>

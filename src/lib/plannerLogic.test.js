@@ -2,7 +2,9 @@ import { describe, it, expect, afterEach } from 'vitest';
 import {
   fmt, span, toMinutes, hm, activeIds, lightenForEnergy, buildSchedule, buildRescueSchedule,
   checkBlockConflict, computeStreak, computeTotalPoints, weeklyReview, examAtRisk,
+  daySessionBreakdown, weekStats, currentWeekNums, examPrepProgress,
 } from './plannerLogic';
+import { NUM_TODAY } from './plannerData';
 import { setCurrentLang } from './i18n';
 
 const taskDefs = [
@@ -214,5 +216,49 @@ describe('examAtRisk', () => {
 
   it('does not flag a goal that comfortably fits', () => {
     expect(examAtRisk(state, { id: 'x', daysUntil: 10 }, { studyMinutes: 200 })).toBe(false);
+  });
+});
+
+describe('daySessionBreakdown / weekStats / examPrepProgress', () => {
+  const week = currentWeekNums();
+  const defs = [
+    { id: 'a', category: 'school', subject: 'Angielski', title: 'A', dur: 30, color: '#f7a' },
+    { id: 'b', category: 'school', subject: 'Matematyka', title: 'B', dur: 40, day: week[0], color: '#8fb' },
+    { id: 'p', category: 'personal', title: 'Read book' },
+    { id: 'old', category: 'school', subject: 'Biologia', title: 'Old', dur: 20 },
+  ];
+  const state = {
+    taskDefs: defs,
+    tasks: { p: true },
+    taskState: {
+      a: { status: 'completed', actual: 45, day: NUM_TODAY },
+      b: { status: 'completed', actual: 15, day: week[0] },
+      p: { doneDay: NUM_TODAY },
+      old: { status: 'completed', actual: 50, day: week[0] - 1 },
+    },
+    // Tomorrow's plan is the active one — today's sessions aren't in it.
+    planApproved: true, selectedDay: NUM_TODAY + 1, schedule: {},
+    examSessions: { ex1: [{ dur: 30 }, { dur: 30, done: true }, { dur: 30 }, { dur: 30 }] },
+  };
+
+  it('counts a session finished today even when it is not in the active plan', () => {
+    const r = daySessionBreakdown(state, NUM_TODAY);
+    expect(r.done).toEqual([]);
+    expect(r.offPlanDone).toEqual(['a']);
+  });
+
+  it('sums this week\'s minutes, finished tasks and subject shares', () => {
+    const r = weekStats(state);
+    expect(r.days).toHaveLength(7);
+    expect(r.days.find((d) => d.num === NUM_TODAY).minutes).toBe(NUM_TODAY === week[0] ? 60 : 45);
+    expect(r.total).toBe(60);
+    expect(r.tasksDone).toBe(3);
+    expect(r.subjects.map((x) => [x.subject, x.pct])).toEqual([['Angielski', 75], ['Matematyka', 25]]);
+  });
+
+  it('measures exam prep by finished prep sessions', () => {
+    const s = { ...state, taskState: { ...state.taskState, 'examsession-ex1-0': { status: 'completed' } } };
+    expect(examPrepProgress(s, 'ex1')).toEqual({ done: 2, total: 4, pct: 50 });
+    expect(examPrepProgress(s, 'none')).toEqual({ done: 0, total: 0, pct: 0 });
   });
 });

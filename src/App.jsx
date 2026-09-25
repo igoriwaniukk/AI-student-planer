@@ -3,6 +3,7 @@ import TabBar from './components/TabBar';
 import StreakCelebration from './components/StreakCelebration';
 import ChatWidget from './components/ChatWidget';
 import QuickAddSheet from './components/QuickAddSheet';
+import Plans from './screens/Plans';
 import { GeneratingOverlay } from './components/ui';
 import Home from './screens/Home';
 import Calendar from './screens/Calendar';
@@ -149,6 +150,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
   const screen = state.screen;
   const streak = computeStreak(studyHistory);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
+  const [quickAddMode, setQuickAddMode] = useState('menu');
   const { t } = useLang();
 
   // Celebrates the moment today's streak credit lands (first finished
@@ -228,6 +230,14 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
       {screen === 'deadline' && <Deadline planner={planner} />}
       {screen === 'prep' && <Prep planner={planner} />}
       {screen === 'summary' && <Summary planner={planner} recordStudyDay={recordStudyDay} />}
+      {screen === 'plans' && (
+        <Plans
+          planner={planner}
+          recurringActivities={recurringActivities}
+          setRecurringActivities={setRecurringActivities}
+          onAddActivity={() => { setQuickAddMode('activity'); setQuickAddOpen(true); }}
+        />
+      )}
       {screen === 'profile' && (
         <Profile
           studentName={name}
@@ -264,8 +274,10 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
       />
 
       <QuickAddSheet
+        key={quickAddOpen ? quickAddMode : 'closed'}
         open={quickAddOpen}
-        onClose={() => setQuickAddOpen(false)}
+        initialMode={quickAddMode}
+        onClose={() => { setQuickAddOpen(false); setQuickAddMode('menu'); }}
         onAddExam={() => planner.go('deadline')}
         recurringActivities={recurringActivities}
         setRecurringActivities={setRecurringActivities}

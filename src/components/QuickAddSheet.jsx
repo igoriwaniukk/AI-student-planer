@@ -56,9 +56,9 @@ function Tile({ icon, title, desc, examples, accent, rgb, onClick }) {
 // kind of thing that shows up in their week: an exam date (routes into the
 // existing Deadline flow) or a recurring weekly activity (added right here,
 // since it's just a few fields). Full screen rather than a bottom sheet.
-export default function QuickAddSheet({ open, onClose, onAddExam, recurringActivities, setRecurringActivities }) {
+export default function QuickAddSheet({ open, onClose, onAddExam, recurringActivities, setRecurringActivities, initialMode = 'menu' }) {
   const { t } = useLang();
-  const [mode, setMode] = useState('menu');
+  const [mode, setMode] = useState(initialMode);
   const [name, setName] = useState('');
   const [day, setDay] = useState(RECUR_DAYS[0]);
   const [start, setStart] = useState('18:00');

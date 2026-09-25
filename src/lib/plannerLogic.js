@@ -478,7 +478,72 @@ export function daySessionBreakdown(state, dayNum = NUM_TODAY) {
   const moved = state.taskDefs
     .filter((d) => d.category !== 'personal' && !sched[d.id] && taskDueOnDay(d, dayNum) && statusOn(state, d.id, dayNum) === 'moved')
     .map((d) => d.id);
-  return { planned, done, unfinished: open.concat(moved), lastEnd: planned.reduce((m, id) => Math.max(m, sched[id].start + sched[id].dur), 0) };
+  // Sessions finished that day while today's plan wasn't the active one
+  // (e.g. tomorrow's plan was already approved) — still real work done.
+  const offPlanDone = state.taskDefs
+    .filter((d) => d.category !== 'personal' && !sched[d.id])
+    .filter((d) => {
+      const st = state.taskState[taskKey(d, dayNum)] || {};
+      return st.status === 'completed' && (st.day != null ? st.day === dayNum : taskDueOnDay(d, dayNum));
+    })
+    .map((d) => d.id);
+  return { planned, done, offPlanDone, unfinished: open.concat(moved), lastEnd: planned.reduce((m, id) => Math.max(m, sched[id].start + sched[id].dur), 0) };
+}
+
+// When a task is planned for, as the task list shows it: repeating, today,
+// tomorrow (also a task with no fixed day), or its date.
+export function taskDayLabel(t, d) {
+  if (d.repeatDays && d.repeatDays.length) return t('taskEdit.dayRepeat');
+  if (d.day == null || d.day === REFERENCE_DAY) return t('taskEdit.dayTomorrow');
+  if (d.day === NUM_TODAY) return t('taskEdit.dayToday');
+  return formatMonthDay(d.day);
+}
+
+// The Monday–Sunday week containing today, as day-nums.
+export function currentWeekNums() {
+  const monday = NUM_TODAY - ((realDateForNum(NUM_TODAY).getDay() + 6) % 7);
+  return Array.from({ length: 7 }, (_, i) => monday + i);
+}
+
+// Minutes studied per day, finished tasks and time per subject for this
+// week, read straight off taskState: every finished session records its day
+// and real minutes, and a ticked to-do its doneDay.
+export function weekStats(state) {
+  const nums = currentWeekNums();
+  const minutes = Object.fromEntries(nums.map((n) => [n, 0]));
+  const bySubject = {};
+  let tasksDone = 0;
+  const defs = new Map(state.taskDefs.map((d) => [d.id, d]));
+  Object.entries(state.taskState || {}).forEach(([key, st]) => {
+    const d = defs.get(key.split(':')[0]);
+    if (!d || !st) return;
+    if (d.category === 'personal') {
+      if (st.doneDay in minutes && isTaskOn(state.tasks, d, st.doneDay)) tasksDone++;
+      return;
+    }
+    if (st.status !== 'completed' || !(st.day in minutes)) return;
+    const mins = Math.max(0, Math.round(st.actual ?? d.dur ?? 0));
+    minutes[st.day] += mins;
+    tasksDone++;
+    const subject = d.subject || 'Inny';
+    if (!bySubject[subject]) bySubject[subject] = { subject, minutes: 0, color: d.color };
+    bySubject[subject].minutes += mins;
+  });
+  const total = nums.reduce((a, n) => a + minutes[n], 0);
+  const subjects = Object.values(bySubject)
+    .filter((x) => x.minutes > 0)
+    .sort((a, b) => b.minutes - a.minutes)
+    .map((x) => ({ ...x, pct: Math.round((x.minutes / total) * 100) }));
+  return { days: nums.map((num) => ({ num, minutes: minutes[num] })), total, tasksDone, subjects };
+}
+
+// How far an exam's prep plan has got: its prep sessions (see confirmPrep in
+// usePlanner.js) are real tasks, so a session counts once it's completed —
+// or ticked off on the exam itself.
+export function examPrepProgress(state, examId) {
+  const sessions = state.examSessions?.[examId] || [];
+  const done = sessions.filter((sess, i) => sess.done || (state.taskState['examsession-' + examId + '-' + i] || {}).status === 'completed').length;
+  return { done, total: sessions.length, pct: sessions.length ? Math.round((done / sessions.length) * 100) : 0 };
 }
 
 // For a floating one-off task (no fixed day, no repeat — its done-state is

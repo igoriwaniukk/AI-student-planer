@@ -15,9 +15,10 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
   }
 
   const sched = state.schedule || {};
-  const { planned, done: completedIds, unfinished } = daySessionBreakdown(state, NUM_TODAY);
+  const { planned, done, offPlanDone, unfinished } = daySessionBreakdown(state, NUM_TODAY);
+  const completedIds = done.concat(offPlanDone);
   const doneCount = completedIds.length;
-  const totalCount = planned.filter((id) => statusOn(state, id, NUM_TODAY) !== 'skipped').length + unfinished.filter((id) => !sched[id]).length;
+  const totalCount = planned.filter((id) => statusOn(state, id, NUM_TODAY) !== 'skipped').length + unfinished.filter((id) => !sched[id]).length + offPlanDone.length;
   const planOf = (id) => (sched[id] && sched[id].dur) || def(id).dur;
   const plannedMins = completedIds.reduce((a, id) => a + planOf(id), 0);
   const totalActualMinutes = completedIds.reduce((a, id) => a + (state.sessionReview[id]?.minutes || 0), 0);
