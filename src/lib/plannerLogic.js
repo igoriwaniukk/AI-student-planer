@@ -607,3 +607,30 @@ export function checkBlockConflict(id, start, dur, schedule, def, constraints) {
   if (clash.length) return { key: 'block.conflictOther', vars: { subject: def(clash[0]).subject } };
   return null;
 }
+
+// The running session's clock, shared by the focus screen, the running bar
+// and Home: its length is the planned block plus any "+1 min" taps, and a
+// pause stops the clock (sessionStart is null while paused).
+export function sessionDur(state) {
+  const id = state.activeTask;
+  if (!id) return 0;
+  return state.schedule?.[id]?.dur || state.taskDefs.find((d) => d.id === id)?.dur || 30;
+}
+
+export function sessionClock(state, now = Date.now()) {
+  const paused = !state.sessionStart;
+  const elapsedMs = (state.sessionElapsedMs || 0) + (paused ? 0 : now - state.sessionStart);
+  const totalMin = sessionDur(state) + (state.sessionExtraMin || 0);
+  const totalMs = totalMin * 60000;
+  const remainingMs = totalMs - elapsedMs;
+  const overtime = remainingMs < 0;
+  const abs = Math.abs(remainingMs);
+  const label = (overtime ? '+' : '') + Math.floor(abs / 60000) + ':' + String(Math.floor((abs % 60000) / 1000)).padStart(2, '0');
+  return {
+    paused, overtime, elapsedMs, totalMin, remainingMs, label,
+    remainingFrac: Math.min(1, Math.max(0, remainingMs / totalMs)),
+    beganAt: state.sessionBeganAt || now - elapsedMs,
+    // Moves later with every pause and "+1 min", so it's the real finish time.
+    endsAt: now + Math.max(0, remainingMs),
+  };
+}

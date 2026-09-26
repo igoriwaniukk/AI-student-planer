@@ -4,6 +4,9 @@ import StreakCelebration from './components/StreakCelebration';
 import ChatWidget from './components/ChatWidget';
 import QuickAddSheet from './components/QuickAddSheet';
 import Plans from './screens/Plans';
+import Focus from './screens/Focus';
+import FinishSheet from './components/FinishSheet';
+import RunningSessionBar from './components/RunningSessionBar';
 import { GeneratingOverlay } from './components/ui';
 import Home from './screens/Home';
 import Calendar from './screens/Calendar';
@@ -208,8 +211,11 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoSummaryDue]);
 
+  // A minimised session floats above the tab bar on the tab screens.
+  const showRunningBar = !!state.activeTask && TAB_SCREENS.has(screen);
+
   return (
-    <div className="app-shell">
+    <div className={'app-shell' + (showRunningBar ? ' session-running' : '')}>
       {screen === 'home' && (
         <Home
           planner={planner}
@@ -230,6 +236,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
       {screen === 'deadline' && <Deadline planner={planner} />}
       {screen === 'prep' && <Prep planner={planner} />}
       {screen === 'summary' && <Summary planner={planner} recordStudyDay={recordStudyDay} />}
+      {screen === 'focus' && <Focus planner={planner} />}
       {screen === 'plans' && (
         <Plans
           planner={planner}
@@ -271,7 +278,11 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
         logEnergy={logEnergy}
         recurringActivities={recurringActivities}
         setRecurringActivities={setRecurringActivities}
+        raised={showRunningBar}
       />
+
+      <FinishSheet planner={planner} />
+      {showRunningBar && <RunningSessionBar planner={planner} />}
 
       <QuickAddSheet
         key={quickAddOpen ? quickAddMode : 'closed'}

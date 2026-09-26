@@ -18,6 +18,8 @@ const DURABLE_KEYS = [
   'taskDefs', 'tasks', 'taskState', 'schedule', 'durOverride', 'startOverride',
   'customExams', 'examGoals', 'examSessions', 'dismissedGoalPrompts', 'planApproved', 'selectedDay', 'sessionReview',
   'daySummaries', 'autoSummaryDate',
+  // The running study session, so it keeps counting through a reload.
+  'activeTask', 'sessionStart', 'sessionElapsedMs', 'sessionBeganAt', 'sessionExtraMin', 'breakDismissed',
 ];
 
 // The wheel date picker (see WheelDatePicker.jsx) always shows a concrete
@@ -86,6 +88,10 @@ function initialState(defaults, activities, persisted) {
     activeTask: null,
     sessionStart: null,
     sessionElapsedMs: 0,
+    // When the running session was first started (sessionStart restarts on
+    // every resume) and the minutes added to it with "+1 min".
+    sessionBeganAt: null,
+    sessionExtraMin: 0,
     breakDismissed: false,
     finishTask: null,
     finishDur: 60,
@@ -176,6 +182,14 @@ function initialState(defaults, activities, persisted) {
       if (persisted[k] !== undefined) base[k] = persisted[k];
     });
   }
+  // A session still running from last time reopens on the focus screen; one
+  // whose task is gone or no longer in progress is dropped.
+  if (base.activeTask) {
+    const d = base.taskDefs.find((x) => x.id === base.activeTask);
+    const st = d && base.taskState[taskKey(d, NUM_TODAY)];
+    if (st && ['in_progress', 'paused'].includes(st.status)) base.screen = 'focus';
+    else Object.assign(base, { activeTask: null, sessionStart: null, sessionElapsedMs: 0, sessionBeganAt: null, sessionExtraMin: 0 });
+  }
   return base;
 }
 
@@ -200,12 +214,15 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       customExams: state.customExams, examGoals: state.examGoals, examSessions: state.examSessions, dismissedGoalPrompts: state.dismissedGoalPrompts,
       planApproved: state.planApproved, selectedDay: state.selectedDay, sessionReview: state.sessionReview,
       daySummaries: state.daySummaries, autoSummaryDate: state.autoSummaryDate,
+      activeTask: state.activeTask, sessionStart: state.sessionStart, sessionElapsedMs: state.sessionElapsedMs,
+      sessionBeganAt: state.sessionBeganAt, sessionExtraMin: state.sessionExtraMin, breakDismissed: state.breakDismissed,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     state.taskDefs, state.tasks, state.taskState, state.schedule, state.durOverride, state.startOverride,
     state.customExams, state.examGoals, state.examSessions, state.dismissedGoalPrompts, state.planApproved, state.selectedDay, state.sessionReview,
     state.daySummaries, state.autoSummaryDate,
+    state.activeTask, state.sessionStart, state.sessionElapsedMs, state.sessionBeganAt, state.sessionExtraMin, state.breakDismissed,
   ]);
 
   // Which real day the Planner/Plan screens are working with — toggled via
@@ -389,8 +406,14 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       const key = d ? taskKey(d, dayNumOf(s)) : id;
       const t = { ...s.taskState };
       t[key] = { ...t[key], status: 'in_progress' };
-      return { taskState: t, activeTask: id, sessionStart: Date.now(), sessionElapsedMs: 0, breakDismissed: false };
+      const now = Date.now();
+      return { taskState: t, activeTask: id, sessionStart: now, sessionBeganAt: now, sessionElapsedMs: 0, sessionExtraMin: 0, breakDismissed: false, screen: 'focus' };
     });
+  }
+  // "+1 min" on the focus screen: lengthens only the running session, never
+  // its block in the day's plan.
+  function addSessionMinute() {
+    update((s) => ({ sessionExtraMin: (s.sessionExtraMin || 0) + 1 }));
   }
   function togglePause(id) {
     update((s) => {
@@ -422,7 +445,8 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       const t = { ...s.taskState };
       t[key] = { status: 'completed', actual: s.finishDur, hard: s.finishHard, know: s.finishKnow, day: dayNumOf(s) };
       return {
-        taskState: t, activeTask: null, finishTask: null, sessionStart: null, sessionElapsedMs: 0, breakDismissed: false,
+        taskState: t, activeTask: null, finishTask: null, sessionStart: null, sessionElapsedMs: 0, sessionBeganAt: null, sessionExtraMin: 0, breakDismissed: false,
+        screen: s.screen === 'focus' ? 'home' : s.screen,
         sessionReview: { ...s.sessionReview, [id]: { minutes: s.finishDur, hard: s.finishHard, know: s.finishKnow } },
       };
     });
@@ -998,7 +1022,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     toggleTask, generatePlan, deadlineGenerate, rescueGenerate,
     startSession, togglePause, dismissBreakReminder, openFinish, cancelFinish, confirmFinish,
     openBlockEdit, moveBlockEdit, cancelBlockEdit, saveBlockEdit, removeBlock,
-    openTaskEdit, openNewTaskEdit, patchTaskEdit, stepTaskDur, cancelTaskEdit, saveTaskEdit, removeTaskDef,
+    addSessionMinute, openTaskEdit, openNewTaskEdit, patchTaskEdit, stepTaskDur, cancelTaskEdit, saveTaskEdit, removeTaskDef,
     toggleManualMode, regenerateOrCancel, confirmPlan, goHomeSaved,
     openEnergySheet, cancelEnergySheet, saveEnergySheet,
     toggleReason, setRescueTime, confirmRescue, goHomeRescued,

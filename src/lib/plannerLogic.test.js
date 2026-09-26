@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import {
   fmt, span, toMinutes, hm, activeIds, lightenForEnergy, buildSchedule, buildRescueSchedule,
   checkBlockConflict, computeStreak, computeTotalPoints, weeklyReview, examAtRisk,
-  daySessionBreakdown, weekStats, currentWeekNums, examPrepProgress,
+  daySessionBreakdown, weekStats, currentWeekNums, examPrepProgress, sessionClock,
 } from './plannerLogic';
 import { NUM_TODAY } from './plannerData';
 import { setCurrentLang } from './i18n';
@@ -260,5 +260,34 @@ describe('daySessionBreakdown / weekStats / examPrepProgress', () => {
     const s = { ...state, taskState: { ...state.taskState, 'examsession-ex1-0': { status: 'completed' } } };
     expect(examPrepProgress(s, 'ex1')).toEqual({ done: 2, total: 4, pct: 50 });
     expect(examPrepProgress(s, 'none')).toEqual({ done: 0, total: 0, pct: 0 });
+  });
+});
+
+describe('sessionClock', () => {
+  const base = { activeTask: 'eng', taskDefs: [{ id: 'eng', dur: 30 }], schedule: { eng: { start: 900, dur: 60 } } };
+  const T = 1_000_000_000_000;
+
+  it('counts down the planned block while running', () => {
+    const c = sessionClock({ ...base, sessionStart: T - 14 * 60000 - 13000, sessionElapsedMs: 0, sessionBeganAt: T - 14 * 60000 - 13000 }, T);
+    expect(c.label).toBe('45:47');
+    expect(c.totalMin).toBe(60);
+    expect(c.paused).toBe(false);
+    expect(c.endsAt).toBe(T + c.remainingMs);
+  });
+
+  it('stops while paused and adds "+1 min" taps to the length', () => {
+    const c = sessionClock({ ...base, sessionStart: null, sessionElapsedMs: 10 * 60000, sessionExtraMin: 2 }, T);
+    expect(c.paused).toBe(true);
+    expect(c.totalMin).toBe(62);
+    expect(c.label).toBe('52:00');
+    expect(c.endsAt).toBe(T + 52 * 60000);
+  });
+
+  it('counts up once over time', () => {
+    const c = sessionClock({ ...base, sessionStart: T - 62 * 60000 - 14000, sessionElapsedMs: 0 }, T);
+    expect(c.overtime).toBe(true);
+    expect(c.label).toBe('+2:14');
+    expect(c.remainingFrac).toBe(0);
+    expect(c.endsAt).toBe(T);
   });
 });

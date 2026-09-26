@@ -206,8 +206,17 @@ input, select, textarea {
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .pug-anim { animation: none !important; }
+  .pug-anim, .focus-breathe { animation: none !important; }
 }
+
+/* The focus screen's emoji, gently breathing while a session runs. */
+@keyframes focusBreathe {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+}
+/* A running session's bar floats above the tab bar, so the tab screens'
+   scroll areas get extra room at the bottom to scroll clear of it. */
+.app-shell.session-running > .sc { padding-bottom: 176px !important; }
 
 @keyframes quickAddIn {
   0% { opacity: 0; transform: translateY(18px); }

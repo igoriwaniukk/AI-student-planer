@@ -1,12 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
-import { span, hm, scheduleIsFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
+import { span, hm, sessionClock, scheduleIsFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
 import { iconForTask, iconForSubject } from '../lib/taskAuto';
 import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY, getCurrentLang } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import WeekStrip from '../components/WeekStrip';
+import { useNow } from '../hooks/useNow';
 import TaskEditSheet from '../components/TaskEditSheet';
 import { Pill, BottomSheet, EnergyPicker, AnimatedNumber, Confetti, StatusPill, AchievementMedal } from '../components/ui';
 
@@ -117,48 +118,6 @@ function StreakCard({ streak, doneToday, selectedDay, onSelectDay, eventDays }) 
   );
 }
 
-function SessionTimer({ state, dur, dismissBreakReminder }) {
-  const { t } = useLang();
-  const [now, setNow] = useState(() => Date.now());
-  const paused = !state.sessionStart;
-
-  useEffect(() => {
-    if (paused) return undefined;
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, [paused]);
-
-  const elapsedMs = state.sessionElapsedMs + (paused ? 0 : now - state.sessionStart);
-  const totalMs = dur * 60000;
-  const remainingMs = totalMs - elapsedMs;
-  const overtime = remainingMs < 0;
-  const displayMs = Math.abs(remainingMs);
-  const mm = Math.floor(displayMs / 60000);
-  const ss = Math.floor((displayMs % 60000) / 1000);
-  const label = (overtime ? '+' : '') + mm + ':' + (ss < 10 ? '0' : '') + ss;
-  const pct = Math.min(100, Math.round((elapsedMs / totalMs) * 100));
-  const showBreak = !paused && !overtime && !state.breakDismissed && elapsedMs >= 25 * 60000 && dur >= 40;
-
-  return (
-    <div style={{ marginTop: 14 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 11, color: '#8a8a99' }}>{overtime ? t('home.overtime') : t('home.remaining')}</span>
-        <span style={{ fontSize: 28, fontWeight: 750, fontVariantNumeric: 'tabular-nums', color: overtime ? '#f5a524' : '#f4f4f7' }}>{label}</span>
-      </div>
-      <div style={{ marginTop: 8, height: 6, borderRadius: 99, background: 'rgba(255,255,255,.1)', overflow: 'hidden' }}>
-        <div style={{ width: pct + '%', height: '100%', borderRadius: 99, background: overtime ? '#f5a524' : 'linear-gradient(90deg,#7c5cff,#2ee6c5)', transition: 'width .5s ease' }} />
-      </div>
-      {showBreak && (
-        <div style={{ marginTop: 11, padding: 11, borderRadius: 13, background: 'rgba(46,230,197,.08)', border: '1px solid rgba(46,230,197,.25)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ fontSize: 15 }}>🌿</span>
-          <div style={{ flex: 1, fontSize: 12, lineHeight: 1.4, color: '#c9c9d6' }}>{t('home.breakReminder')}</div>
-          <span onClick={dismissBreakReminder} style={{ fontSize: 12, fontWeight: 650, color: '#8ff0de', cursor: 'pointer' }}>{t('home.ok')}</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
 function SmallBtn({ label, onClick, accent }) {
   return (
     <div
@@ -212,7 +171,7 @@ function PastDayCard({ info, summary }) {
 
 function NextSessionCard({ planner }) {
   const { t } = useLang();
-  const { state, def, ts, startSession, togglePause, openFinish, openBlockEdit, update } = planner;
+  const { state, def, ts, startSession, update } = planner;
   const summary = state.daySummaries?.[localDateKey()];
   if (summary) return <DaySummarizedCard summary={summary} planner={planner} />;
   const sched = state.schedule || {};
@@ -248,17 +207,19 @@ function NextSessionCard({ planner }) {
   const d = def(nextId);
   const b = sched[nextId];
   const st = ts(nextId);
-  const running = st.status === 'in_progress' || st.status === 'paused';
+  const running = !!active && (st.status === 'in_progress' || st.status === 'paused');
+
+  // A running session lives on the focus screen; Home just points back to it.
+  if (running) return <RunningSessionCard planner={planner} d={d} />;
+  if (!b) return null;
 
   return box(
     <>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#c9baff', padding: '6px 11px', borderRadius: 999, background: 'rgba(124,92,255,.22)', border: '1px solid rgba(124,92,255,.4)' }}>
-          {running ? t('home.sessionInProgress') : t('home.nextSession')}
+          {t('home.nextSession')}
         </span>
-        <span style={{ fontSize: 11.5, fontWeight: 650, color: st.status === 'paused' ? '#f5a524' : '#8a8a99' }}>
-          {st.status === 'paused' ? t('home.paused') : span(b.start, b.start + b.dur)}
-        </span>
+        <span style={{ fontSize: 11.5, fontWeight: 650, color: '#8a8a99' }}>{span(b.start, b.start + b.dur)}</span>
       </div>
       <div style={{ fontSize: 13, fontWeight: 650, color: d.color, marginTop: 14 }}>{t(VALUE_KEY[d.subject]) || d.subject}</div>
       <div style={{ fontSize: 22, fontWeight: 750, lineHeight: 1.22, letterSpacing: '-.02em', marginTop: 8 }}>{t(TASK_TEXT_KEY[d.id]?.title) || d.title}</div>
@@ -266,25 +227,31 @@ function NextSessionCard({ planner }) {
         <Pill text={b.dur + ' min'} color="#2ee6c5" bg="rgba(46,230,197,.13)" />
         {d.deadline && <Pill text={t(TASK_TEXT_KEY[d.id]?.deadline) || d.deadline} color="#f5a524" bg="rgba(245,165,36,.13)" />}
       </div>
-      {running ? (
-        <>
-          <SessionTimer state={state} dur={b.dur} dismissBreakReminder={planner.dismissBreakReminder} />
-          <div style={{ display: 'flex', gap: 9, marginTop: 14 }}>
-            <SmallBtn label={st.status === 'paused' ? t('home.resume') : t('home.pause')} onClick={() => togglePause(nextId)} />
-            <SmallBtn label={t('home.reschedule')} onClick={() => openBlockEdit(nextId)} />
-            <SmallBtn label={t('home.finish')} accent onClick={() => openFinish(nextId, b.dur)} />
-          </div>
-        </>
-      ) : (
-        <div
-          onClick={() => startSession(nextId)}
-          style={{ marginTop: 14, height: 52, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, fontSize: 15.5, fontWeight: 700, cursor: 'pointer', boxShadow: '0 10px 24px rgba(109,77,255,.3)' }}
-        >
-          {t('home.startSession')}
-        </div>
-      )}
+      <div
+        onClick={() => startSession(nextId)}
+        style={{ marginTop: 14, height: 52, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, fontSize: 15.5, fontWeight: 700, cursor: 'pointer', boxShadow: '0 10px 24px rgba(109,77,255,.3)' }}
+      >
+        {t('home.startSession')}
+      </div>
     </>,
-    !running,
+  );
+}
+
+function RunningSessionCard({ planner, d }) {
+  const { t } = useLang();
+  const { state, go } = planner;
+  const now = useNow(true);
+  const c = sessionClock(state, now);
+  return (
+    <div style={{ marginTop: 18, padding: 16, borderRadius: 20, border: '1.5px solid rgba(124,92,255,.55)', background: 'linear-gradient(165deg,rgba(124,92,255,.13),rgba(124,92,255,.03))', display: 'flex', alignItems: 'center', gap: 13 }}>
+      <div style={{ width: 46, height: 46, borderRadius: '50%', flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, background: 'radial-gradient(circle at 40% 35%,#b9a6ff,#8b6dff)', opacity: c.paused ? 0.55 : 1 }}>{iconForTask(d)}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: c.paused ? '#f5a524' : '#c9baff' }}>{c.paused ? t('home.paused').toUpperCase() : t('home.sessionInProgress')}</div>
+        <div style={{ fontSize: 14.5, fontWeight: 700, marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t(TASK_TEXT_KEY[d.id]?.title) || d.title}</div>
+        <div style={{ fontSize: 12.5, fontWeight: 700, marginTop: 2, fontVariantNumeric: 'tabular-nums', color: c.overtime ? '#f5a524' : '#a3a3b3' }}>{c.label}</div>
+      </div>
+      <SmallBtn label={t('focus.open')} accent onClick={() => go('focus')} />
+    </div>
   );
 }
 
@@ -510,45 +477,6 @@ function WeekCard({ planner, streak }) {
   );
 }
 
-function FinishSheet({ planner }) {
-  const { t } = useLang();
-  const { state, def, cancelFinish, confirmFinish, update } = planner;
-  if (!state.finishTask) return null;
-  const d = def(state.finishTask);
-  const HARD = ['Łatwa', 'W sam raz', 'Trudna'];
-  const KNOW = ['Nie umiem', 'Częściowo umiem', 'Dobrze umiem', 'Opanowane'];
-  return (
-    <BottomSheet>
-      <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{t('home.finishSession', { title: t(TASK_TEXT_KEY[d.id]?.title) || d.title })}</div>
-      <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 6 }}>{t('home.finishSessionSub')}</div>
-      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('home.actualTime')}</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-        <div onClick={() => update((s) => ({ finishDur: Math.max(5, s.finishDur - 5) }))} style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, cursor: 'pointer' }}>−</div>
-        <div style={{ flex: 1, textAlign: 'center', fontSize: 21, fontWeight: 750 }}>{state.finishDur} min</div>
-        <div onClick={() => update((s) => ({ finishDur: s.finishDur + 5 }))} style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, cursor: 'pointer' }}>+</div>
-      </div>
-      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('home.howHard')}</div>
-      <div style={{ display: 'flex', gap: 9 }}>
-        {HARD.map((x) => (
-          <div key={x} onClick={() => update({ finishHard: x })} style={{ flex: 1, height: 44, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, cursor: 'pointer', background: state.finishHard === x ? 'rgba(124,92,255,.14)' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (state.finishHard === x ? 'rgba(124,92,255,.6)' : 'rgba(255,255,255,.09)'), color: state.finishHard === x ? '#e6dfff' : '#c9c9d6' }}>{t(VALUE_KEY[x]) || x}</div>
-        ))}
-      </div>
-      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('home.howWell')}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-        {KNOW.map((x) => (
-          <div key={x} onClick={() => update({ finishKnow: x })} style={{ padding: '14px 15px', fontSize: 14, fontWeight: state.finishKnow === x ? 700 : 550, cursor: 'pointer', color: state.finishKnow === x ? '#e6dfff' : '#c9c9d6', background: state.finishKnow === x ? 'rgba(124,92,255,.14)' : 'rgba(255,255,255,.03)', borderRadius: 13, border: '1px solid rgba(255,255,255,.06)', display: 'flex', justifyContent: 'space-between' }}>
-            {t(VALUE_KEY[x]) || x}{state.finishKnow === x && <span style={{ color: '#a58cff' }}>✓</span>}
-          </div>
-        ))}
-      </div>
-      <div style={{ display: 'flex', gap: 11, marginTop: 18, paddingBottom: 8 }}>
-        <div onClick={cancelFinish} style={{ flex: 1, height: 50, borderRadius: 15, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 650, cursor: 'pointer' }}>{t('home.cancel')}</div>
-        <div onClick={confirmFinish} style={{ flex: 1.4, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>{t('home.finishSessionBtn')}</div>
-      </div>
-    </BottomSheet>
-  );
-}
-
 function EnergySheet({ planner, logEnergy }) {
   const { t } = useLang();
   const { state, cancelEnergySheet, saveEnergySheet, update } = planner;
@@ -764,7 +692,6 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
         <span style={{ fontSize: 15, color: '#6b6b7a' }}>›</span>
       </div>
 
-      <FinishSheet planner={planner} />
       <EnergySheet planner={planner} logEnergy={logEnergy} />
       <TaskEditSheet planner={planner} />
       <AchievementModal achievement={pendingAchievement} onClose={() => setSeenAchievements(seenAchievements.concat(pendingAchievement.id))} />
