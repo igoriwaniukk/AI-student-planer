@@ -9,3 +9,5 @@ When Igor asks to change how something looks (design, colours, icons, layout, "m
 
 ## App look
 Dark background `#08080c`, purple accents `#8b6dff → #6d4dff`, `#a58cff`, `#c9baff`; orange `#f5a524` for deadlines/streak, teal `#2ee6c5` for weekly activities, green `#35d07f` for done. Mascot: the pug in a graduation cap and suit (`src/components/PugMascot.jsx`, `public/pug-*`). UI text is Polish and English (`src/lib/i18n.js`).
+
+Subject emojis live in `SUBJECT_ICON` (`src/lib/taskAuto.js`); English is 💬. Never use 🔤 anywhere — it renders as an ugly "abc" box.

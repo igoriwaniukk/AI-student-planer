@@ -46,7 +46,7 @@ const PERSONAL_ICON_ENTRIES = [
 ];
 
 const SUBJECT_ICON = {
-  Matematyka: '📐', Biologia: '🧬', Angielski: '🔤', Polski: '📖',
+  Matematyka: '📐', Biologia: '🧬', Angielski: '💬', Polski: '📖',
   Historia: '🏛️', Geografia: '🌍', Fizyka: '⚛️', Chemia: '🧪', Inny: '📘',
 };
 
