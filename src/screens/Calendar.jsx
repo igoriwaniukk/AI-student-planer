@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import WeekStrip from '../components/WeekStrip';
-import AmbientGlow from '../components/AmbientGlow';
 import { BackButton, Pill, SectionTitle } from '../components/ui';
 import { upcomingExams, dayInfo, formatMonthDay } from '../lib/plannerLogic';
 import { REFERENCE_DAY } from '../lib/plannerData';
@@ -50,7 +49,6 @@ export default function Calendar({ planner, activities, recurringActivities = []
 
   return (
     <>
-    <AmbientGlow />
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px', position: 'relative', zIndex: 1 }}>
       <BackButton onClick={() => go('home')} />
       <div style={{ fontSize: 20, fontWeight: 750, letterSpacing: '-.02em', marginTop: 20 }}>{t('cal.title')}</div>

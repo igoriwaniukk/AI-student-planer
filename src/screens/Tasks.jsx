@@ -4,7 +4,6 @@ import { durOf, taskDayLabel, taskDueOnDay, isTaskOn } from '../lib/plannerLogic
 import { iconForTask } from '../lib/taskAuto';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
-import AmbientGlow from '../components/AmbientGlow';
 import WeekStrip from '../components/WeekStrip';
 import TaskEditSheet from '../components/TaskEditSheet';
 
@@ -17,7 +16,6 @@ export default function Tasks({ planner }) {
 
   return (
     <>
-    <AmbientGlow />
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px', position: 'relative', zIndex: 1 }}>
       <div style={{ fontSize: 20, fontWeight: 750, letterSpacing: '-.02em', marginTop: 20 }}>{t('tasks.title')}</div>
       <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 4 }}>{t('tasks.subtitle')}</div>

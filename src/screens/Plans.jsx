@@ -4,7 +4,6 @@ import { upcomingExams, examPrepProgress, finishedOnDay, taskDayLabel, formatMon
 import { iconForTask, iconForSubject, iconForActivity } from '../lib/taskAuto';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
-import AmbientGlow from '../components/AmbientGlow';
 import TaskEditSheet from '../components/TaskEditSheet';
 import { BackButton, BottomSheet } from '../components/ui';
 
@@ -151,7 +150,6 @@ export default function Plans({ planner, recurringActivities, setRecurringActivi
 
   return (
     <>
-      <AmbientGlow />
       <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 120px', position: 'relative', zIndex: 1 }}>
         <BackButton onClick={() => go('home')} />
         <div style={{ fontSize: 24, fontWeight: 780, letterSpacing: '-.02em', marginTop: 18 }}>{t('plans.title')}</div>

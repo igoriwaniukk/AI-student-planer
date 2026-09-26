@@ -1,5 +1,4 @@
 import { BackButton, StickyFooter, PrimaryButton, ConfirmCard } from '../components/ui';
-import AmbientGlow from '../components/AmbientGlow';
 import { useLang } from '../lib/useLang';
 import { NUM_TODAY } from '../lib/plannerData';
 import { weekdayDateLabel, span, fmt, hm, durOf, startOf } from '../lib/plannerLogic';
@@ -36,7 +35,6 @@ export default function RescueResult({ planner }) {
 
   return (
     <>
-    <AmbientGlow />
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BackButton onClick={() => go('rescue')} />

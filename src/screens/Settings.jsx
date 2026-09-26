@@ -6,7 +6,6 @@ import { useLang } from '../lib/useLang';
 import { useCustomReminders, resetAppData } from '../lib/store';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { BackButton, Chip, BottomSheet } from '../components/ui';
-import AmbientGlow from '../components/AmbientGlow';
 
 function SectionCard({ title, children }) {
   return (
@@ -63,7 +62,6 @@ export default function Settings({ planner, studyHistory, onSignOut, onDeleteAcc
 
   return (
     <>
-    <AmbientGlow />
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 40px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <BackButton onClick={() => planner.go('profile')} />

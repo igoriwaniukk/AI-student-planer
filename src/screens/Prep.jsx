@@ -1,5 +1,4 @@
 import { BackButton, StickyFooter, PrimaryButton, BottomSheet, OptionRow, ConfirmCard } from '../components/ui';
-import AmbientGlow from '../components/AmbientGlow';
 import { VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { REFERENCE_DAY } from '../lib/plannerData';
@@ -43,7 +42,6 @@ export default function Prep({ planner }) {
 
   return (
     <>
-    <AmbientGlow />
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BackButton onClick={() => go('deadline')} />

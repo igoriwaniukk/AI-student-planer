@@ -7,7 +7,6 @@ import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } fro
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY, getCurrentLang } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import WeekStrip from '../components/WeekStrip';
-import AmbientGlow from '../components/AmbientGlow';
 import TaskEditSheet from '../components/TaskEditSheet';
 import { Pill, BottomSheet, EnergyPicker, AnimatedNumber, Confetti, StatusPill, AchievementMedal } from '../components/ui';
 
@@ -661,7 +660,6 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
   })();
   return (
     <>
-      <AmbientGlow />
       <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
         <div>

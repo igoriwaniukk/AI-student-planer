@@ -4,9 +4,8 @@ import { useLang } from '../lib/useLang';
 import { VALUE_KEY } from '../lib/i18n';
 import { STATUS_COLOR } from '../lib/plannerData';
 
-// Every screen wraps its own content in `position: relative; z-index: 1`
-// (see AmbientGlow.jsx) so it paints above the background glow — but that
-// same wrapper also traps any full-screen overlay rendered inside it (like
+// Every screen wraps its own content in `position: relative; z-index: 1` —
+// and that wrapper also traps any full-screen overlay rendered inside it (like
 // BottomSheet below) under a single effective stacking rank of 1, no matter
 // what z-index the overlay itself declares. The floating chat button and
 // tab bar live outside that wrapper with explicit z-index 40-45, so they

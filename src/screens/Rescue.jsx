@@ -3,7 +3,6 @@ import { REASON_OPTIONS, RESCUE_TIME_OPTIONS, PRIO_STYLE, NUM_TODAY } from '../l
 import { durOf, startOf, span, weekdayDateLabel, fmt } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
-import AmbientGlow from '../components/AmbientGlow';
 import { useLang } from '../lib/useLang';
 
 // The real current time, re-read every 30s — this screen is specifically
@@ -30,7 +29,6 @@ export default function Rescue({ planner }) {
 
   return (
     <>
-    <AmbientGlow />
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BackButton onClick={() => go('home')} />

@@ -3,7 +3,6 @@ import { durOf, hm, weekdayDateLabel, fmt, span, freeWindows, taskDueOnDay, isTa
 import { iconForTask } from '../lib/taskAuto';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import WheelTimePicker from '../components/WheelTimePicker';
-import AmbientGlow from '../components/AmbientGlow';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import TaskEditSheet from '../components/TaskEditSheet';
@@ -32,7 +31,6 @@ export default function Planner({ planner }) {
 
   return (
     <>
-    <AmbientGlow />
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 176px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BackButton onClick={() => go('home')} />

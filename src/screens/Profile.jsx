@@ -6,7 +6,6 @@ import { VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { resizeImageToDataURL } from '../lib/image';
 import { Chip, EnergyPicker, AchievementMedal } from '../components/ui';
-import AmbientGlow from '../components/AmbientGlow';
 import NotificationBell from '../components/NotificationBell';
 import WheelTimePicker from '../components/WheelTimePicker';
 
@@ -258,7 +257,6 @@ export default function Profile({ studentName, setStudentName, profilePhoto, set
 
   return (
     <>
-    <AmbientGlow />
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginTop: 8 }}>
         <AvatarPicker photo={profilePhoto} setPhoto={setProfilePhoto} initials={initials} />

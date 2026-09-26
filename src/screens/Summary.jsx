@@ -3,7 +3,6 @@ import { HARD_OPTIONS, KNOW_OPTIONS, DAY_HARD_OPTIONS, NUM_TODAY } from '../lib/
 import { hm, zad, weekdayDateLabel, daySessionBreakdown, statusOn, localDateKey } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, PrimaryButton, EnergyPicker, OptionRow, ListRow, Chip, Confetti } from '../components/ui';
-import AmbientGlow from '../components/AmbientGlow';
 import { useLang } from '../lib/useLang';
 
 export default function Summary({ planner, recordStudyDay = () => {} }) {
@@ -37,7 +36,6 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
 
   return (
     <>
-    <AmbientGlow />
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px', position: 'relative', zIndex: 1 }}>
       <BackButton onClick={() => go('home')} />
       <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>{t('sum.title')}</div>

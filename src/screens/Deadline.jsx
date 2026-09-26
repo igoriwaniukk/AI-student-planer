@@ -2,7 +2,6 @@ import { KINDS, SUBJECTS, GOALS, LEVELS, REFERENCE_DAY } from '../lib/plannerDat
 import { formatMonthDay, daysUntilFromISODate } from '../lib/plannerLogic';
 import { VALUE_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, Chip, ListRow, ConfirmCard, LabelRequired } from '../components/ui';
-import AmbientGlow from '../components/AmbientGlow';
 import WheelDatePicker from '../components/WheelDatePicker';
 import WheelTimePicker from '../components/WheelTimePicker';
 import { useLang } from '../lib/useLang';
@@ -33,7 +32,6 @@ export default function Deadline({ planner }) {
 
   return (
     <>
-    <AmbientGlow />
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px', position: 'relative', zIndex: 1 }}>
       <BackButton onClick={() => planner.go('home')} />
       <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>{t('dl.title')}</div>
