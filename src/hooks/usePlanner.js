@@ -4,7 +4,7 @@ import { TASK_TEXT_KEY, VALUE_KEY } from '../lib/i18n';
 import {
   PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, NUM_TODAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES, realDateForNum,
 } from '../lib/plannerData';
-import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, isTaskOn, daySessionBreakdown, localDateKey } from '../lib/plannerLogic';
+import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, isTaskOn, daySessionBreakdown, localDateKey, sessionDur } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
 import { requestAIRescue } from '../lib/aiRescue';
 
@@ -92,6 +92,7 @@ function initialState(defaults, activities, persisted) {
     // every resume) and the minutes added to it with "+1 min".
     sessionBeganAt: null,
     sessionExtraMin: 0,
+    focusDone: null,
     breakDismissed: false,
     finishTask: null,
     finishDur: 60,
@@ -446,7 +447,11 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       t[key] = { status: 'completed', actual: s.finishDur, hard: s.finishHard, know: s.finishKnow, day: dayNumOf(s) };
       return {
         taskState: t, activeTask: null, finishTask: null, sessionStart: null, sessionElapsedMs: 0, sessionBeganAt: null, sessionExtraMin: 0, breakDismissed: false,
-        screen: s.screen === 'focus' ? 'home' : s.screen,
+        // Finished on the focus screen: it stays up briefly for the finish
+        // animation (see Focus.jsx), then goes Home by itself.
+        focusDone: s.screen === 'focus' && s.activeTask === id
+          ? { id, beganAt: s.sessionBeganAt, endedAt: Date.now(), totalMin: sessionDur(s) + (s.sessionExtraMin || 0) }
+          : null,
         sessionReview: { ...s.sessionReview, [id]: { minutes: s.finishDur, hard: s.finishHard, know: s.finishKnow } },
       };
     });

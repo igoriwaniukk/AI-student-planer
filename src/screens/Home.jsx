@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
-import { span, hm, sessionClock, scheduleIsFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
+import { span, hm, zad, sessionClock, dayOpenTasks, scheduleIsFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
 import { iconForTask, iconForSubject } from '../lib/taskAuto';
 import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
@@ -170,7 +170,7 @@ function PastDayCard({ info, summary }) {
 }
 
 function NextSessionCard({ planner }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const { state, def, ts, startSession, update } = planner;
   const summary = state.daySummaries?.[localDateKey()];
   if (summary) return <DaySummarizedCard summary={summary} planner={planner} />;
@@ -190,6 +190,27 @@ function NextSessionCard({ planner }) {
 
   if (!nextId) {
     const done = ids.filter((id) => ts(id).status === 'completed').length;
+    // Sessions finished but to-dos (or unplanned tasks) still open: the day
+    // isn't done yet, so point at what's left instead of the summary.
+    const open = done ? dayOpenTasks(state, NUM_TODAY) : [];
+    if (open.length) {
+      const names = open.slice(0, 3).map((x) => t(TASK_TEXT_KEY[x.id]?.title) || x.title).join(', ') + (open.length > 3 ? ' +' + (open.length - 3) : '');
+      return box(
+        <>
+          <div style={{ fontSize: 18, fontWeight: 750, letterSpacing: '-.01em' }}>{t('home.sessionsDoneTitle')}</div>
+          <div style={{ fontSize: 12.5, color: '#a3a3b3', marginTop: 8, lineHeight: 1.45 }}>
+            {t('home.tasksLeft', { count: lang === 'en' ? open.length + (open.length === 1 ? ' task' : ' tasks') : zad(open.length), names })}
+          </div>
+          <div
+            onClick={() => document.getElementById('today-tasks')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+            style={{ marginTop: 14, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+          >
+            {t('home.goToTasks')}
+          </div>
+          <div onClick={() => update({ screen: 'summary', dayEnded: true })} style={{ marginTop: 12, textAlign: 'center', fontSize: 12.5, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('home.summarizeAnyway')}</div>
+        </>,
+      );
+    }
     return box(
       <>
         <div style={{ fontSize: 18, fontWeight: 750, letterSpacing: '-.01em' }}>{done ? t('home.allDone') : t('home.noSessionsPlanned')}</div>
@@ -635,7 +656,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
           ? <PastDayCard info={info} summary={state.daySummaries?.[localDateKey(realDateForNum(viewDay))]} />
           : <DayPlanPlaceholder info={info} day={viewDay} planner={planner} />}
 
-      <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
+      <div id="today-tasks" style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
         <TodayChecklist
           planner={planner} day={viewDay}
           heading={isRealDay ? t('home.todayTasks') : t('home.tasksForDay', { date: (t(DAY_KEY[info.label] + '.short') || info.short) + ' ' + info.monthDay })}

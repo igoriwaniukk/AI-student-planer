@@ -43,6 +43,7 @@ const PERSONAL_ICON_ENTRIES = [
   ['🚗', ['car', 'samoch', 'drive']],
   ['🌱', ['plant', 'roślin', 'water the', 'podlej']],
   ['📦', ['package', 'paczk', 'delivery', 'dostaw']],
+  ['📚', [' read', 'book', 'czyta', 'książk', 'ksiazk', 'lektur']],
 ];
 
 const SUBJECT_ICON = {
@@ -64,6 +65,12 @@ export function detectTaskMeta(name) {
 
 // A topic-relevant emoji for a saved task — subject-based for school tasks,
 // keyword-based (falling back to a generic note icon) for personal ones.
+// Which animated focus-ring icon each subject gets (see SubjectArt.jsx).
+export const SUBJECT_ART = {
+  Matematyka: 'math', Biologia: 'dna', Angielski: 'speech', Polski: 'book', Historia: 'scroll',
+  Geografia: 'globe', Fizyka: 'atom', Chemia: 'tube', Inny: 'book',
+};
+
 export function iconForSubject(subject) {
   return SUBJECT_ICON[subject] || '📘';
 }
@@ -100,7 +107,7 @@ export function iconForActivity(name) {
 
 export function iconForTask(d) {
   if (d.category === 'personal') {
-    const n = (d.title || '').toLowerCase();
+    const n = ' ' + (d.title || '').toLowerCase();
     const hit = PERSONAL_ICON_ENTRIES.find(([, keywords]) => keywords.some((k) => n.includes(k)));
     return hit ? hit[0] : '📝';
   }

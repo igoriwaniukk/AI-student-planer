@@ -206,7 +206,7 @@ input, select, textarea {
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .pug-anim, .focus-breathe { animation: none !important; }
+  .pug-anim, .focus-breathe, .focus-spark, .focus-spark *, .sa-art * { animation: none !important; }
 }
 
 /* The focus screen's emoji, gently breathing while a session runs. */
@@ -222,3 +222,86 @@ input, select, textarea {
   0% { opacity: 0; transform: translateY(18px); }
   100% { opacity: 1; transform: translateY(0); }
 }
+
+/* ---- Focus ring: the spark circling the ring once a minute, pulsing ---- */
+@keyframes focusOrbit { to { transform: rotate(360deg); } }
+@keyframes focusSparkPulse {
+  0%, 100% { opacity: .6; filter: drop-shadow(0 0 3px rgba(255,255,255,.7)); }
+  50% { opacity: 1; filter: drop-shadow(0 0 9px rgba(255,255,255,1)); }
+}
+.focus-paused, .focus-paused * { animation-play-state: paused !important; }
+
+/* ---- Subject art (SubjectArt.jsx): idle loops, then .sa-done finish ---- */
+.sa-art .sa-page-flip, .sa-art .sa-book-open, .sa-art .sa-book-shut, .sa-art .sa-dot, .sa-art .sa-word, .sa-art .sa-bubble,
+.sa-art .sa-ruler, .sa-art .sa-sym, .sa-art .sa-rung, .sa-art .sa-bub, .sa-art .sa-tube, .sa-art .sa-puff, .sa-art .sa-nucleus,
+.sa-art .sa-lands, .sa-art .sa-pin, .sa-art .sa-paper, .sa-art .sa-roll-bottom, .sa-art .sa-pop, .sa-art .sa-spark, .sa-art .sa-helix { transform-box: fill-box; }
+.sa-paused * { animation-play-state: paused !important; }
+
+.sa-spark { opacity: 0; }
+.sa-done .sa-spark { animation: saSparkPop .9s ease-out .35s both; }
+@keyframes saSparkPop { 0% { opacity: 0; transform: scale(.2); } 40% { opacity: 1; transform: scale(1.2); } 100% { opacity: 0; transform: scale(.8) translateY(-6px); } }
+.sa-tick { stroke-dasharray: 60; stroke-dashoffset: 60; }
+.sa-done .sa-tick { animation: saDraw .5s ease-out .25s forwards; }
+@keyframes saDraw { to { stroke-dashoffset: 0; } }
+.sa-pop { opacity: 0; transform: scale(.3); transform-origin: center; }
+.sa-done .sa-pop { animation: saPopIn .5s cubic-bezier(.3,1.6,.5,1) .2s forwards; }
+@keyframes saPopIn { to { opacity: 1; transform: scale(1); } }
+.sa-hide-on-done { transition: opacity .3s; }
+.sa-done .sa-hide-on-done { opacity: 0; }
+
+.sa-page-flip { transform-origin: left center; animation: saPageFlip 3.2s ease-in-out infinite; }
+@keyframes saPageFlip { 0%, 35% { transform: scaleX(1); fill: #fffaf0; } 62% { fill: #e6ddff; } 85%, 100% { transform: scaleX(-1); fill: #fffaf0; } }
+.sa-book-open { transform-origin: center; animation: saBob 3.2s ease-in-out infinite; }
+@keyframes saBob { 0%, 100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-3px) rotate(1deg); } }
+.sa-done .sa-book-open { animation: saBookClose .45s ease-in forwards; }
+@keyframes saBookClose { to { transform: scaleX(.05); opacity: 0; } }
+.sa-book-shut { opacity: 0; transform-origin: center bottom; }
+.sa-done .sa-book-shut { animation: saThump .55s cubic-bezier(.3,1.5,.5,1) .35s forwards; }
+@keyframes saThump { 0% { opacity: 1; transform: scale(.4,.9); } 60% { opacity: 1; transform: scale(1.08,.94); } 100% { opacity: 1; transform: scale(1); } }
+
+.sa-dot { animation: saTyping 1.4s ease-in-out infinite; }
+@keyframes saTyping { 0%, 60%, 100% { transform: translateY(0); opacity: .45; } 30% { transform: translateY(-6px); opacity: 1; } }
+.sa-word { opacity: 0; animation: saWordUp 4.2s ease-out infinite; }
+@keyframes saWordUp { 0% { opacity: 0; transform: translateY(8px); } 15% { opacity: 1; } 60% { opacity: 0; transform: translateY(-22px); } 100% { opacity: 0; } }
+.sa-done .sa-word, .sa-done .sa-sym { animation: none; opacity: 0; }
+.sa-bubble { transform-origin: center; animation: saBubbleBob 3s ease-in-out infinite; }
+@keyframes saBubbleBob { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg); } }
+
+.sa-ruler { transform-origin: left bottom; animation: saRock 3s ease-in-out infinite; }
+@keyframes saRock { 0%, 100% { transform: rotate(-4deg); } 50% { transform: rotate(3deg); } }
+.sa-sym { opacity: 0; animation: saSymUp 4s ease-out infinite; }
+@keyframes saSymUp { 0% { opacity: 0; transform: translateY(10px) scale(.7); } 20% { opacity: 1; } 70% { opacity: 0; transform: translateY(-24px) scale(1); } 100% { opacity: 0; } }
+
+.sa-rung { transform-origin: center; animation: saTwist 2.4s ease-in-out infinite alternate; }
+@keyframes saTwist { from { transform: scaleX(1); } to { transform: scaleX(-1); } }
+.sa-done .sa-helix { animation: saGlow 1s ease-out forwards; }
+@keyframes saGlow { 0% { filter: none; } 50% { filter: drop-shadow(0 0 10px #fff); } 100% { filter: drop-shadow(0 0 4px #fff); } }
+
+.sa-bub { opacity: 0; animation: saRise 2.4s ease-in infinite; }
+@keyframes saRise { 0% { opacity: 0; transform: translateY(0); } 15%, 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-30px); } }
+.sa-tube { transform-origin: center bottom; animation: saTubeTilt 3.4s ease-in-out infinite; }
+@keyframes saTubeTilt { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(4deg); } }
+.sa-puff { opacity: 0; }
+.sa-done .sa-puff { animation: saPuff 1.1s ease-out both; }
+@keyframes saPuff { 0% { opacity: 0; transform: scale(.2); } 30% { opacity: .95; } 100% { opacity: 0; transform: scale(1.8) translateY(-10px); } }
+
+.sa-nucleus { transform-origin: center; animation: saBeat 1.6s ease-in-out infinite; }
+@keyframes saBeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+.sa-ray { opacity: 0; stroke-dasharray: 14; stroke-dashoffset: 14; }
+.sa-done .sa-ray { animation: saRay .7s ease-out .2s forwards; }
+@keyframes saRay { 0% { opacity: 1; stroke-dashoffset: 14; } 60% { opacity: 1; stroke-dashoffset: 0; } 100% { opacity: 0; stroke-dashoffset: -14; } }
+
+.sa-lands { animation: saTurn 7s linear infinite; }
+@keyframes saTurn { from { transform: translateX(0); } to { transform: translateX(-80px); } }
+.sa-pin { opacity: 0; }
+.sa-done .sa-pin { animation: saPinDrop .7s cubic-bezier(.3,1.6,.5,1) .15s forwards; }
+@keyframes saPinDrop { 0% { opacity: 1; transform: translateY(-40px); } 100% { opacity: 1; transform: translateY(0); } }
+
+.sa-line { stroke-dasharray: 40; stroke-dashoffset: 40; animation: saWrite 4s ease-in-out infinite; }
+@keyframes saWrite { 0% { stroke-dashoffset: 40; } 30%, 80% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+.sa-paper { transform-origin: top center; animation: saSway 4s ease-in-out infinite; }
+@keyframes saSway { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.96); } }
+.sa-done .sa-paper { animation: saRollUp .5s ease-in forwards; }
+@keyframes saRollUp { to { transform: scaleY(0); } }
+.sa-done .sa-roll-bottom { animation: saRollBottom .5s ease-in forwards; }
+@keyframes saRollBottom { to { transform: translateY(-58px); } }

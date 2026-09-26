@@ -29,7 +29,7 @@ import {
 } from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
 import { LanguageProvider } from './lib/LanguageContext';
-import { computeStreak, studiedToday, localDateKey, daySessionBreakdown, statusOn } from './lib/plannerLogic';
+import { computeStreak, studiedToday, localDateKey, daySessionBreakdown, statusOn, dayOpenTasks, wrapUpMinutes } from './lib/plannerLogic';
 import { NUM_TODAY } from './lib/plannerData';
 import { TASK_TEXT_KEY } from './lib/i18n';
 import { useLang } from './lib/useLang';
@@ -180,7 +180,9 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
   const nextSessionTitle = nextSessionId ? titleOf(nextSessionId) : null;
   const todayKey = localDateKey();
   const summarizedToday = !!state.daySummaries?.[todayKey];
-  const unfinishedTitles = planIsToday && !summarizedToday ? dayBreakdown.unfinished.map(titleOf).filter(Boolean) : [];
+  // Open to-dos and unplanned tasks count as unfinished too.
+  const openToday = dayOpenTasks(state, NUM_TODAY);
+  const unfinishedTitles = summarizedToday ? [] : (planIsToday ? dayBreakdown.unfinished : []).concat(openToday.map((d) => d.id)).map(titleOf).filter(Boolean);
   useStreakPushSync({
     streak,
     studiedTodayDate: todayDone ? todayKey : null,
@@ -191,8 +193,9 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
     bedtime: profileDefaults?.bedtime || null,
   });
 
-  // Opens the day summary once per day, by itself: when every session in
-  // today's plan is done, or once the last one's scheduled time has passed.
+  // Opens the day summary once per day, by itself: when everything for today
+  // is done (sessions and to-dos), or an hour before bedtime if something is
+  // still open.
   // Only from Home with nothing else on screen, and after the streak
   // celebration is closed, so it never cuts into another flow.
   const [clock, setClock] = useState(() => new Date());
@@ -202,9 +205,9 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
   }, []);
   const nowMinutes = clock.getHours() * 60 + clock.getMinutes();
   const hasPlan = dayBreakdown.planned.length > 0 && (planIsToday || dayBreakdown.done.length > 0);
-  const allDone = dayBreakdown.done.length > 0 && dayBreakdown.unfinished.length === 0;
-  const timeUp = nowMinutes >= dayBreakdown.lastEnd && !state.activeTask;
-  const autoSummaryDue = hasPlan && (allDone || timeUp) && !summarizedToday && state.autoSummaryDate !== todayKey
+  const allDone = dayBreakdown.done.length > 0 && dayBreakdown.unfinished.length === 0 && openToday.length === 0;
+  const wrapUpTime = nowMinutes >= wrapUpMinutes(profileDefaults?.bedtime) && !state.activeTask;
+  const autoSummaryDue = hasPlan && (allDone || wrapUpTime) && !summarizedToday && state.autoSummaryDate !== todayKey
     && screen === 'home' && !celebrating && !state.finishTask && !state.generating;
   useEffect(() => {
     if (autoSummaryDue) planner.update({ screen: 'summary', autoSummaryDate: todayKey });
@@ -296,7 +299,8 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
 
       {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} onFabClick={() => setQuickAddOpen(true)} fabActive={quickAddOpen} />}
 
-      {celebrating && <StreakCelebration streak={streak} onClose={() => setCelebrating(false)} />}
+      {/* Waits for the focus screen's finish animation before celebrating. */}
+      {celebrating && screen !== 'focus' && <StreakCelebration streak={streak} onClose={() => setCelebrating(false)} />}
     </div>
   );
 }

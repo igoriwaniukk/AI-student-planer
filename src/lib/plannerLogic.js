@@ -552,7 +552,10 @@ export function examPrepProgress(state, examId) {
 // started being recorded.
 export function finishedOnDay(state, d) {
   const st = state.taskState[d.id] || {};
-  if (d.category === 'personal') return isTaskOn(state.tasks, d, null) ? st.doneDay ?? undefined : null;
+  if (d.category === 'personal') {
+    if (st.status === 'skipped') return st.day ?? undefined;
+    return isTaskOn(state.tasks, d, null) ? st.doneDay ?? undefined : null;
+  }
   return ['completed', 'skipped'].includes(st.status) ? st.day ?? undefined : null;
 }
 
@@ -633,4 +636,28 @@ export function sessionClock(state, now = Date.now()) {
     // Moves later with every pause and "+1 min", so it's the real finish time.
     endsAt: now + Math.max(0, remainingMs),
   };
+}
+
+// What's still open on a day besides its planned sessions: unticked to-dos
+// and school tasks that never got a session. Any of these means the day
+// isn't done yet (Home's "all done" card, the automatic summary). A task
+// already in another day's approved plan belongs to that day instead.
+export function dayOpenTasks(state, dayNum = NUM_TODAY) {
+  const sched = scheduleIsFor(state, dayNum) ? state.schedule || {} : {};
+  const otherPlan = state.planApproved && state.selectedDay !== dayNum ? state.schedule || {} : {};
+  return state.taskDefs.filter((d) => {
+    if (!taskDueOnDay(d, dayNum) || sched[d.id] || otherPlan[d.id]) return false;
+    const st = state.taskState[taskKey(d, dayNum)] || {};
+    if (d.category === 'personal') return !isTaskOn(state.tasks, d, dayNum) && st.status !== 'skipped';
+    return (st.status || 'planned') === 'planned' && isTaskOn(state.tasks, d, dayNum);
+  });
+}
+
+// Minutes after midnight when an unfinished day gets wrapped up anyway: an
+// hour before bedtime (a bedtime after midnight counts as 23:00) — the same
+// moment the end-of-day push goes out (see api/_lib/push.js).
+export function wrapUpMinutes(bedtime) {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(bedtime || '22:30');
+  const bed = m ? (+m[1]) * 60 + (+m[2]) : 22 * 60 + 30;
+  return bed < 6 * 60 ? 23 * 60 : bed - 60;
 }
