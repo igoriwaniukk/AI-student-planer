@@ -4,7 +4,7 @@ import { TASK_TEXT_KEY, VALUE_KEY } from '../lib/i18n';
 import {
   PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, NUM_TODAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES, realDateForNum,
 } from '../lib/plannerData';
-import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, isTaskOn, daySessionBreakdown, localDateKey, sessionDur } from '../lib/plannerLogic';
+import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, isTaskOn, daySessionBreakdown, localDateKey, sessionDur, dayOpenTasks } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
 import { requestAIRescue } from '../lib/aiRescue';
 
@@ -872,32 +872,39 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       const tasks = { ...s.tasks };
       const taskState = { ...s.taskState };
       const schedule = { ...s.schedule };
-      let moved = 0;
+      let kept = 0;
       let dropped = 0;
-      daySessionBreakdown(s, NUM_TODAY).unfinished.forEach((id) => {
+      let missed = 0;
+      // Unfinished sessions plus open to-dos / unplanned tasks. Nothing is
+      // moved to a date: a one-off stays open with no fixed day (so it keeps
+      // showing until done) or is let go; a repeating task's occurrence for
+      // today just counts as missed — it comes back anyway.
+      const leftover = daySessionBreakdown(s, NUM_TODAY).unfinished.concat(dayOpenTasks(s, NUM_TODAY).map((d) => d.id));
+      leftover.forEach((id) => {
         const d = taskDefs.find((x) => x.id === id);
         if (!d) return;
         const key = taskKey(d, NUM_TODAY);
+        const personal = d.category === 'personal';
+        if (d.repeatDays && d.repeatDays.length) {
+          if (!personal) taskState[key] = { ...taskState[key], status: 'skipped', day: NUM_TODAY };
+          missed++;
+          return;
+        }
         if (choices[id] === 'drop') {
           taskState[key] = { ...taskState[key], status: 'skipped', day: NUM_TODAY };
+          if (personal) tasks[key] = false;
           dropped++;
           return;
         }
-        moved++;
-        if (d.repeatDays && d.repeatDays.length) {
-          const copyId = 'custom-' + Date.now() + '-' + moved;
-          taskDefs = taskDefs.concat({ ...d, id: copyId, day: REFERENCE_DAY, repeatDays: [] });
-          tasks[copyId] = true;
-          taskState[copyId] = { status: 'planned' };
-          taskState[key] = { ...taskState[key], status: 'moved' };
-        } else {
-          taskDefs = taskDefs.map((x) => (x.id === id ? { ...x, day: REFERENCE_DAY } : x));
+        kept++;
+        if (d.day != null) taskDefs = taskDefs.map((x) => (x.id === id ? { ...x, day: null } : x));
+        if (!personal) {
           tasks[id] = true;
           taskState[id] = { status: 'planned' };
           delete schedule[id];
         }
       });
-      const recent = Object.entries({ ...s.daySummaries, [localDateKey()]: { ...stats, moved, dropped, dayHard: s.dayHard, dayEnergy: s.dayEnergy } })
+      const recent = Object.entries({ ...s.daySummaries, [localDateKey()]: { ...stats, kept, dropped, missed, dayHard: s.dayHard, dayEnergy: s.dayEnergy } })
         .sort(([a], [b]) => (a < b ? -1 : 1))
         .slice(-60);
       return {

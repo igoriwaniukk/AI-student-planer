@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach } from 'vitest';
 import {
   fmt, span, toMinutes, hm, activeIds, lightenForEnergy, buildSchedule, buildRescueSchedule,
   checkBlockConflict, computeStreak, computeTotalPoints, weeklyReview, examAtRisk,
-  daySessionBreakdown, weekStats, currentWeekNums, examPrepProgress, sessionClock,
+  daySessionBreakdown, weekStats, currentWeekNums, examPrepProgress, sessionClock, dayOpenTasks, wrapUpMinutes, taskShortLabel,
 } from './plannerLogic';
 import { NUM_TODAY } from './plannerData';
 import { setCurrentLang } from './i18n';
@@ -289,5 +289,43 @@ describe('sessionClock', () => {
     expect(c.label).toBe('+2:14');
     expect(c.remainingFrac).toBe(0);
     expect(c.endsAt).toBe(T);
+  });
+});
+
+describe('dayOpenTasks / wrapUpMinutes / taskShortLabel', () => {
+  const base = {
+    taskDefs: [
+      { id: 'hw', category: 'school', subject: 'Inny', title: 'Homework', dur: 30, day: NUM_TODAY },
+      { id: 'rb', category: 'personal', title: 'Read book' },
+      { id: 'walk', category: 'personal', title: 'Walk', repeatDays: [] , day: NUM_TODAY },
+      { id: 'tmr', category: 'school', subject: 'Matematyka', title: 'Algebra', dur: 40 },
+    ],
+    tasks: { hw: true, rb: false, walk: true, tmr: true },
+    taskState: { hw: { status: 'completed', day: NUM_TODAY } },
+    planApproved: true, selectedDay: NUM_TODAY, schedule: { hw: { start: 900, dur: 30 } },
+  };
+
+  it('keeps the day open while a to-do or unplanned task is left', () => {
+    expect(dayOpenTasks(base).map((d) => d.id)).toEqual(['rb', 'tmr']);
+  });
+
+  it('ignores ticked, let-go and other-day-plan tasks', () => {
+    const s = { ...base, tasks: { ...base.tasks, rb: true }, taskState: { ...base.taskState, tmr: { status: 'skipped', day: NUM_TODAY } } };
+    expect(dayOpenTasks(s)).toEqual([]);
+    const tomorrowPlan = { ...base, selectedDay: NUM_TODAY + 1, schedule: { tmr: { start: 900, dur: 40 } }, tasks: { ...base.tasks, rb: true } };
+    expect(dayOpenTasks(tomorrowPlan).map((d) => d.id)).toEqual([]);
+  });
+
+  it('wraps up an hour before bedtime, 23:00 for a bedtime after midnight', () => {
+    expect(wrapUpMinutes('22:30')).toBe(21 * 60 + 30);
+    expect(wrapUpMinutes('00:30')).toBe(23 * 60);
+    expect(wrapUpMinutes(undefined)).toBe(21 * 60 + 30);
+  });
+
+  it('labels a task with its subject in the current language', () => {
+    const t = (k) => ({ 'value.inny': 'Other' }[k] || '');
+    const tl = (k) => (k === undefined ? '' : t(k));
+    expect(taskShortLabel(tl, { id: 'x', category: 'school', subject: 'Inny', title: 'Homework' }).endsWith(' — Homework')).toBe(true);
+    expect(taskShortLabel(tl, { id: 'y', category: 'personal', title: 'Read book' })).toBe('Read book');
   });
 });

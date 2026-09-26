@@ -1,5 +1,5 @@
 import { EXAMS, PRIORITIES, REFERENCE_DAY, NUM_TODAY, WEEKDAY_META, realDateForNum } from './plannerData';
-import { getCurrentLang } from './i18n';
+import { getCurrentLang, VALUE_KEY, TASK_TEXT_KEY } from './i18n';
 
 // Looks the weekday up directly from num's real date (via realDateForNum)
 // rather than indexing into WEEK_DAYS by a fixed offset — WEEK_DAYS' own
@@ -660,4 +660,15 @@ export function wrapUpMinutes(bedtime) {
   const m = /^(\d{1,2}):(\d{2})$/.exec(bedtime || '22:30');
   const bed = m ? (+m[1]) * 60 + (+m[2]) : 22 * 60 + 30;
   return bed < 6 * 60 ? 23 * 60 : bed - 60;
+}
+
+// "Subject — title" for a task row, always in the current language: the
+// stored `short` text froze the subject name in whichever language the task
+// was created in ("Inny — Homework"). The student's own title stays as typed.
+export function taskShortLabel(t, d) {
+  const fixed = t(TASK_TEXT_KEY[d.id]?.short);
+  if (fixed) return fixed;
+  const title = t(TASK_TEXT_KEY[d.id]?.title) || d.title;
+  if (d.category === 'personal' || !d.subject) return title;
+  return (t(VALUE_KEY[d.subject]) || d.subject) + ' — ' + title;
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
-import { span, hm, zad, sessionClock, dayOpenTasks, scheduleIsFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
+import { span, hm, zad, taskShortLabel, sessionClock, dayOpenTasks, scheduleIsFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
 import { iconForTask, iconForSubject } from '../lib/taskAuto';
 import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
@@ -340,7 +340,7 @@ function TodayChecklist({ planner, day, heading }) {
   const rows = [];
   let doneCount = 0;
   let countable = 0;
-  const titleOf = (d) => t(TASK_TEXT_KEY[d.id]?.short) || d.short || d.title;
+  const titleOf = (d) => taskShortLabel(t, d);
 
   scheduledIds.forEach((id) => {
     const d = def(id);

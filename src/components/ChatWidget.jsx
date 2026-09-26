@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useChat } from '../hooks/useChat';
 import { buildChatContext } from '../lib/chatContext';
-import { upcomingExams, hm, toMinutes, checkBlockConflict } from '../lib/plannerLogic';
+import { upcomingExams, hm, toMinutes, checkBlockConflict, taskShortLabel } from '../lib/plannerLogic';
 import { VALUE_KEY, DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { BottomSheet, Chip } from './ui';
@@ -86,7 +86,7 @@ function describeAction(action, planner, deps, t) {
   }
   if (name === 'complete_session') {
     const d = planner.def(args.sessionId);
-    const label = d?.short || subj(d?.subject) || args.sessionId;
+    const label = d ? taskShortLabel(t, d) : args.sessionId;
     return {
       summary: t('chat.actionComplete', { label, time: args.actualMinutes != null ? ' (' + hm(args.actualMinutes) + ')' : '' }),
       confirmedSummary: t('chat.actionCompleteDone', { label }),
@@ -100,7 +100,7 @@ function describeAction(action, planner, deps, t) {
   }
   if (name === 'reschedule_session') {
     const d = planner.def(args.sessionId);
-    const label = d?.short || subj(d?.subject) || args.sessionId;
+    const label = d ? taskShortLabel(t, d) : args.sessionId;
     const startMin = toMinutes(args.newStart);
     const sched = planner.state.schedule || {};
     const dur = (sched[args.sessionId] || {}).dur || d?.dur || 30;

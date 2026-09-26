@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { HARD_OPTIONS, KNOW_OPTIONS, DAY_HARD_OPTIONS, NUM_TODAY } from '../lib/plannerData';
-import { hm, zad, weekdayDateLabel, daySessionBreakdown, statusOn, localDateKey } from '../lib/plannerLogic';
+import { hm, zad, weekdayDateLabel, daySessionBreakdown, statusOn, localDateKey, dayOpenTasks } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, PrimaryButton, EnergyPicker, OptionRow, ListRow, Chip, Confetti } from '../components/ui';
 import { useLang } from '../lib/useLang';
@@ -24,8 +24,15 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
   const totalDiffVal = totalActualMinutes - plannedMins;
   const sign = (n) => (n >= 0 ? '+' : '') + n;
   const choices = state.unfinishedChoices || {};
-  const movedPick = unfinished.filter((id) => choices[id] !== 'drop').length;
-  const droppedPick = unfinished.length - movedPick;
+  // Everything left open today: unfinished sessions plus open to-dos and
+  // unplanned tasks. One-offs stay on the list (or are let go) — nothing is
+  // moved to a date; a repeating task's occurrence just counts as missed.
+  const leftover = unfinished.concat(dayOpenTasks(state, NUM_TODAY).map((d) => d.id));
+  const repeats = (id) => !!def(id)?.repeatDays?.length;
+  const choosable = leftover.filter((id) => !repeats(id));
+  const droppedPick = choosable.filter((id) => choices[id] === 'drop').length;
+  const keptPick = choosable.length - droppedPick;
+  const missedCount = leftover.length - choosable.length;
   // A math-specific follow-up observation ("math took longer than planned")
   // only makes sense when math was actually part of today's plan.
   const mathIncludedToday = completedIds.includes('math');
@@ -82,25 +89,30 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
         );
       })}
 
-      {unfinished.length > 0 && (
+      {leftover.length > 0 && (
         <>
           <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 6px' }}>{t('sum.unfinishedTitle')}</div>
           <div style={{ fontSize: 12.5, lineHeight: 1.45, color: '#8a8a99', marginBottom: 12 }}>{t('sum.unfinishedDesc')}</div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {unfinished.map((id) => {
+            {leftover.map((id) => {
               const d = def(id);
               const drop = choices[id] === 'drop';
+              const label = d.category === 'personal' ? t('sum.todoLabel') : (t(VALUE_KEY[d.subject]) || d.subject || '').toUpperCase();
               return (
                 <div key={id} style={{ padding: 14, borderRadius: 18, background: 'rgba(245,165,36,.05)', border: '1px solid rgba(245,165,36,.25)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                    <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: d.color }}>{(t(VALUE_KEY[d.subject]) || d.subject || '').toUpperCase()}</span>
+                    <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: d.color || '#a58cff' }}>{label}</span>
                     <span style={{ fontSize: 10.5, fontWeight: 750, color: '#f7c46c', padding: '4px 9px', borderRadius: 8, background: 'rgba(245,165,36,.14)' }}>{t('sum.notDoneBadge')}</span>
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3, marginTop: 7 }}>{titleOf(id)}</div>
-                  <div style={{ display: 'flex', gap: 9, marginTop: 12 }}>
-                    <OptionRow label={t('sum.moveTomorrow')} active={!drop} onClick={() => setUnfinishedChoice(id, 'tomorrow')} />
-                    <OptionRow label={t('sum.drop')} active={drop} onClick={() => setUnfinishedChoice(id, 'drop')} />
-                  </div>
+                  {repeats(id) ? (
+                    <div style={{ fontSize: 12.5, color: '#8a8a99', marginTop: 8 }}>🔁 {t('sum.missedToday')}</div>
+                  ) : (
+                    <div style={{ display: 'flex', gap: 9, marginTop: 12 }}>
+                      <OptionRow label={t('sum.keep')} active={!drop} onClick={() => setUnfinishedChoice(id, 'keep')} />
+                      <OptionRow label={t('sum.drop')} active={drop} onClick={() => setUnfinishedChoice(id, 'drop')} />
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -140,7 +152,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
       <div style={{ marginTop: 14, padding: 15, borderRadius: 18, background: 'rgba(46,230,197,.06)', border: '1px solid rgba(46,230,197,.22)' }}>
         <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#8ff0de' }}>{t('sum.tipTomorrow')}</div>
         <div style={{ fontSize: 13.5, lineHeight: 1.5, fontWeight: 650, marginTop: 9 }}>
-          {movedPick > 0 ? t('sum.tipUnfinished') : t('sum.tipHardest')}
+          {keptPick > 0 ? t('sum.tipUnfinished') : t('sum.tipHardest')}
         </div>
       </div>
 
@@ -151,7 +163,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
             const d = def(id);
             return <Row key={id} label={t(VALUE_KEY[d.subject]) || d.subject || titleOf(id)} value={t('sum.doneIn', { min: state.sessionReview[id]?.minutes || 0 })} />;
           })}
-          {unfinished.length > 0 && <Row label={t('sum.unfinishedTitle')} value={t('sum.unfinishedRow', { moved: movedPick, dropped: droppedPick })} />}
+          {leftover.length > 0 && <Row label={t('sum.unfinishedTitle')} value={t('sum.unfinishedRow', { kept: keptPick, dropped: droppedPick, missed: missedCount })} />}
           <Row label={t('sum.day')} value={t('sum.dayValue', { value: t(VALUE_KEY[state.dayHard]) || state.dayHard })} />
           <Row label={t('sum.energy')} value={t('sum.energyValue', { value: t(VALUE_KEY[state.dayEnergy]) || state.dayEnergy })} />
         </div>
@@ -271,6 +283,7 @@ function DaySaved({ planner, summary, justSaved }) {
 
       <div style={{ marginTop: 20, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', flexDirection: 'column', gap: 11 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><span style={{ color: '#35d07f', fontSize: 12 }}>✓</span><span style={{ fontSize: 13.5, fontWeight: 650, color: '#5fdd9b' }}>{doneShort}</span></div>
+        {summary.kept > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><span style={{ color: '#8a8a99', fontSize: 12 }}>↺</span><span style={{ fontSize: 13.5, color: '#c9c9d6' }}>{t('sum.keptN', { n: summary.kept })}</span></div>}
         {summary.moved > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><span style={{ color: '#8a8a99', fontSize: 12 }}>→</span><span style={{ fontSize: 13.5, color: '#c9c9d6' }}>{t('sum.movedToTomorrowN', { n: summary.moved })}</span></div>}
         {summary.dropped > 0 && <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><span style={{ color: '#8a8a99', fontSize: 12 }}>×</span><span style={{ fontSize: 13.5, color: '#c9c9d6' }}>{t('sum.droppedN', { n: summary.dropped })}</span></div>}
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><span style={{ color: '#8a8a99', fontSize: 12 }}>•</span><span style={{ fontSize: 13.5, color: '#c9c9d6' }}>{t('sum.realStudyTime', { time: hm(summary.actualMin || 0) })}</span></div>
