@@ -1,5 +1,5 @@
 import webpush from 'web-push';
-import { saveSubscription, updateState, removeSubscription, allSubscriptions, bumpTick, setServerState } from './pushStore.js';
+import { saveSubscription, updateState, removeSubscription, allSubscriptions, bumpTick } from './pushStore.js';
 import { composeMessage, composeRestartMessage, composeUnfinishedMessage } from './pushMessages.js';
 
 // `tzOffsetMinutes` (minutes east of UTC, synced from the client — see
@@ -89,14 +89,14 @@ export async function sendScheduledPushes() {
     let message;
     if (shouldSendRestartNudge(s)) {
       message = composeRestartMessage(s.lang);
-      // Recorded directly (bypassing the client-merge path in updateState)
-      // since this write is the server's own bookkeeping, not a client sync
-      // — stamps today's local date so the nudge doesn't repeat again until
-      // noPlanToday goes true on some later day.
-      await setServerState(subscription.endpoint, { ...s, lastRestartNudgeDate: localNow(s.tzOffsetMinutes).dateKey });
+      // Only its own "last sent" field is written — writing back the whole
+      // snapshot read at the start of the loop would undo any client sync
+      // that landed meanwhile. Stamps today's local date so the nudge
+      // doesn't repeat until noPlanToday goes true on some later day.
+      await updateState(subscription.endpoint, { lastRestartNudgeDate: localNow(s.tzOffsetMinutes).dateKey });
     } else if (shouldSendUnfinishedNudge(s)) {
       message = composeUnfinishedMessage(s.lang, s.unfinishedTitles.filter(Boolean));
-      await setServerState(subscription.endpoint, { ...s, lastUnfinishedNudgeDate: localNow(s.tzOffsetMinutes).dateKey });
+      await updateState(subscription.endpoint, { lastUnfinishedNudgeDate: localNow(s.tzOffsetMinutes).dateKey });
     } else {
       message = composeMessage(s, nextTick, localNow(s.tzOffsetMinutes).dateKey);
     }

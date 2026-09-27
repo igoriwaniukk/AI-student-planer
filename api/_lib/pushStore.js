@@ -14,21 +14,25 @@ export async function saveSubscription(subscription, state) {
 // tzOffsetMinutes) — a raw overwrite would wipe out lastRestartNudgeDate
 // (see sendScheduledPushes in push.js), which only the server ever sets, on
 // the very next unrelated client sync.
+//
+// Read-then-write can lose an update when two writes overlap (two client
+// syncs, or a sync and the cron) — the later one saves its snapshot over the
+// earlier one's fields. So after writing, it reads the row back and re-applies
+// its own fields if they were overwritten meanwhile.
 export async function updateState(endpoint, state) {
   if (!supabaseAdminConfigured) return false;
-  const { data } = await supabaseAdmin.from('push_subscriptions').select('state').eq('endpoint', endpoint).single();
-  const merged = { ...(data?.state || {}), ...(state || {}) };
-  const { error } = await supabaseAdmin.from('push_subscriptions').update({ state: merged }).eq('endpoint', endpoint);
-  return !error;
-}
-
-// Used only by the server itself (see sendScheduledPushes) to record that
-// today's restart nudge has already gone out, without going through the
-// client-merge path above — the caller already has the fresh row in hand.
-export async function setServerState(endpoint, state) {
-  if (!supabaseAdminConfigured) return false;
-  const { error } = await supabaseAdmin.from('push_subscriptions').update({ state: state || {} }).eq('endpoint', endpoint);
-  return !error;
+  const patch = state || {};
+  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const { data } = await supabaseAdmin.from('push_subscriptions').select('state').eq('endpoint', endpoint).single();
+    const merged = { ...(data?.state || {}), ...patch };
+    const { error } = await supabaseAdmin.from('push_subscriptions').update({ state: merged }).eq('endpoint', endpoint);
+    if (error) return false;
+    const { data: after } = await supabaseAdmin.from('push_subscriptions').select('state').eq('endpoint', endpoint).single();
+    const saved = after?.state || {};
+    if (Object.keys(patch).every((k) => same(saved[k], patch[k]))) return true;
+  }
+  return true;
 }
 
 export async function removeSubscription(endpoint) {

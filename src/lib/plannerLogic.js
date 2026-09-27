@@ -69,8 +69,19 @@ export function daysUntilFromISODate(isoDate) {
   return Math.round((target - today) / 86400000);
 }
 
+// Which plural form a count takes: Polish has 1 / 2–4 (but not 12–14, and
+// also 22–24, 32–34…) / everything else; English just one / many.
+export function pluralForm(n) {
+  const a = Math.abs(n);
+  if (a === 1) return 'one';
+  if (getCurrentLang() === 'en') return 'many';
+  const last = a % 10;
+  const lastTwo = a % 100;
+  return last >= 2 && last <= 4 && !(lastTwo >= 12 && lastTwo <= 14) ? 'few' : 'many';
+}
+
 export function zad(n) {
-  return n + (n === 1 ? ' zadanie' : (n >= 2 && n <= 4 ? ' zadania' : ' zadań'));
+  return n + ' ' + { one: 'zadanie', few: 'zadania', many: 'zadań' }[pluralForm(n)];
 }
 
 // A task recurs on chosen weekdays (see the "Repeat" chip in TaskEditSheet)
@@ -607,9 +618,10 @@ export function localDateKey(d = new Date()) {
 // not a separately mutable counter — so it never drifts out of sync with
 // what actually happened: 20 pts per fully-completed study day, 2 pts per
 // energy check-in.
-export function computeTotalPoints(studyHistory, energyLog) {
+export function computeTotalPoints(studyHistory, energyLog, checkinCount = 0) {
   const completedDays = Object.values(studyHistory || {}).filter((e) => e.completed).length;
-  const checkins = (energyLog || []).length;
+  // The log is capped at 30 entries; the lifetime count keeps growing.
+  const checkins = Math.max(checkinCount || 0, (energyLog || []).length);
   return completedDays * 20 + checkins * 2;
 }
 

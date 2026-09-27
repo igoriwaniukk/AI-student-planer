@@ -8,6 +8,7 @@ export const KEYS = {
   profileDefaults: 'sp_profileDefaults',
   weeklyCapacityMinutes: 'sp_weeklyCapacityMinutes',
   energyLog: 'sp_energyLog',
+  energyCheckinCount: 'sp_energyCheckinCount',
   studyHistory: 'sp_studyHistory',
   recurringActivities: 'sp_recurringActivities',
   seenAchievements: 'sp_seenAchievements',
@@ -92,6 +93,12 @@ export function useWeeklyCapacity() {
 // Real-world (not demo-day) log of energy check-ins: [{ at: ISOString, level }].
 export function useEnergyLog() {
   return useLocalStorage(KEYS.energyLog, []);
+}
+
+// Lifetime number of energy check-ins — the log itself keeps only the last
+// 30, so points can't be counted from its length.
+export function useEnergyCheckinCount() {
+  return useLocalStorage(KEYS.energyCheckinCount, 0);
 }
 
 // Real-world log of completed-study days, keyed by real ISO date, used for

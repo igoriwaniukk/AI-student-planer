@@ -24,7 +24,7 @@ import Onboarding from './screens/Onboarding';
 import Auth, { NewPasswordScreen } from './screens/Auth';
 import {
   useStudentName, useProfilePhoto, useSchoolPlan, useActivities, useProfileDefaults,
-  useWeeklyCapacity, useEnergyLog, useStudyHistory, useRecurringActivities, useLanguage, usePlannerData,
+  useWeeklyCapacity, useEnergyLog, useStudyHistory, useRecurringActivities, useLanguage, usePlannerData, useEnergyCheckinCount,
   KEYS, STORAGE_CHANGED_EVENT,
 } from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
@@ -186,7 +186,7 @@ const LOADED_DAY = localDateKey();
 // Mounted only once onboarding is done, so usePlanner's initial state (a lazy
 // useState initializer, which only ever runs on first mount) picks up the
 // profile defaults onboarding just saved instead of whatever was there before.
-function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, activities, profileDefaults, setProfileDefaults, weeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities, onSignOut, onDeleteAccount, syncError }) {
+function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, activities, profileDefaults, setProfileDefaults, weeklyCapacity, energyLog, energyCheckins, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities, onSignOut, onDeleteAccount, syncError }) {
   const [plannerData, setPlannerData] = usePlannerData();
   const planner = usePlanner(profileDefaults, activities, recurringActivities, plannerData, setPlannerData, recordStudyDay);
   const { state } = planner;
@@ -276,6 +276,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
           studentName={name}
           profilePhoto={profilePhoto}
           energyLog={energyLog}
+          energyCheckins={energyCheckins}
           logEnergy={logEnergy}
           studyHistory={studyHistory}
           recurringActivities={recurringActivities}
@@ -312,6 +313,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
           setProfileDefaults={setProfileDefaults}
           studyHistory={studyHistory}
           energyLog={energyLog}
+          energyCheckins={energyCheckins}
           recurringActivities={recurringActivities}
           state={state}
           streak={streak}
@@ -378,12 +380,14 @@ export default function App() {
   const [profileDefaults, setProfileDefaults] = useProfileDefaults();
   const [weeklyCapacity] = useWeeklyCapacity();
   const [energyLog, setEnergyLog] = useEnergyLog();
+  const [energyCheckins, setEnergyCheckins] = useEnergyCheckinCount();
   const [studyHistory, setStudyHistory] = useStudyHistory();
   const [recurringActivities, setRecurringActivities] = useRecurringActivities();
   const [lang, setLang] = useLanguage();
 
   function logEnergy(level) {
     setEnergyLog((log) => log.concat({ at: new Date().toISOString(), level }).slice(-30));
+    setEnergyCheckins((n) => Math.max(n || 0, energyLog.length) + 1);
   }
 
   // Merges onto today's existing entry instead of overwriting it — a real
@@ -473,6 +477,7 @@ export default function App() {
         setProfileDefaults={setProfileDefaults}
         weeklyCapacity={weeklyCapacity}
         energyLog={energyLog}
+          energyCheckins={energyCheckins}
         logEnergy={logEnergy}
         studyHistory={studyHistory}
         recordStudyDay={recordStudyDay}

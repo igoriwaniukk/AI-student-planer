@@ -206,11 +206,11 @@ function AchievementDetail({ achievement, unlocked, onClose }) {
 // All achievements — locked and unlocked — so the student can see what
 // they've earned (per their tap on the "achievement unlocked" popup) and
 // what's still ahead, instead of only ever seeing the one-off unlock toast.
-function AchievementsCard({ studyHistory, energyLog, recurringActivities }) {
+function AchievementsCard({ studyHistory, energyLog, energyCheckins, recurringActivities }) {
   const { t } = useLang();
   const [selected, setSelected] = useState(null);
   const streak = computeStreak(studyHistory || {});
-  const points = computeTotalPoints(studyHistory || {}, energyLog || []);
+  const points = computeTotalPoints(studyHistory || {}, energyLog || [], energyCheckins);
   const stats = {
     streak,
     points,
@@ -250,7 +250,7 @@ function AchievementsCard({ studyHistory, energyLog, recurringActivities }) {
   );
 }
 
-export default function Profile({ studentName, setStudentName, profilePhoto, setProfilePhoto, schoolPlan, activities, planner, profileDefaults, setProfileDefaults, studyHistory, energyLog, recurringActivities, state, streak }) {
+export default function Profile({ studentName, setStudentName, profilePhoto, setProfilePhoto, schoolPlan, activities, planner, profileDefaults, setProfileDefaults, studyHistory, energyLog, energyCheckins = 0, recurringActivities, state, streak }) {
   const { t } = useLang();
   const parts = (studentName || 'Ty').trim().split(/\s+/);
   const initials = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
@@ -304,7 +304,7 @@ export default function Profile({ studentName, setStudentName, profilePhoto, set
 
       <WeeklyReviewCard studyHistory={studyHistory} />
 
-      <AchievementsCard studyHistory={studyHistory} energyLog={energyLog} recurringActivities={recurringActivities} />
+      <AchievementsCard studyHistory={studyHistory} energyLog={energyLog} energyCheckins={energyCheckins} recurringActivities={recurringActivities} />
     </div>
     </>
   );

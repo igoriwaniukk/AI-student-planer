@@ -143,7 +143,7 @@ export default function Plans({ planner, recurringActivities, setRecurringActivi
   });
   const daysPill = (n) => (
     <span style={{ fontSize: 11, fontWeight: 700, padding: '4px 9px', borderRadius: 8, color: '#f5a524', background: 'rgba(245,165,36,.15)', flex: 'none' }}>
-      {n === 0 ? t('plans.today') : t('plans.inDays', { n })}
+      {n === 0 ? t('plans.today') : n === 1 ? t('plans.tomorrow') : t('plans.inDays', { n })}
     </span>
   );
   const shortDay = (label) => t(DAY_KEY[label] + '.short') || label;

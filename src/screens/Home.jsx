@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
-import { span, hm, zad, taskShortLabel, daysPill, sessionClock, dayOpenTasks, scheduleIsFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
+import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, scheduleIsFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
 import { iconForTask, iconForSubject } from '../lib/taskAuto';
 import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
@@ -297,7 +297,7 @@ function DayPlanPlaceholder({ info, day, planner }) {
     <div style={{ marginTop: 18, padding: 16, borderRadius: 20, border: '1.5px solid rgba(124,92,255,.55)', background: 'linear-gradient(165deg,rgba(124,92,255,.13),rgba(124,92,255,.03))' }}>
       <div style={{ fontSize: 13, fontWeight: 650, color: '#c9baff' }}>{t(DAY_KEY[info.label]) || info.label}, {info.monthDay}</div>
       <div style={{ fontSize: 15, fontWeight: 700, marginTop: 8, lineHeight: 1.3 }}>
-        {ready ? t('home.planReadyForDay', { n: Object.keys(state.schedule || {}).length }) : plannable ? t('home.noPlanForDay') : t('home.planLater')}
+        {ready ? t('home.planReadyForDay_' + pluralForm(Object.keys(state.schedule || {}).length), { n: Object.keys(state.schedule || {}).length }) : plannable ? t('home.noPlanForDay') : t('home.planLater')}
       </div>
       {ready && plannable && btn(t('home.seePlan'), 'plan')}
       {!ready && plannable && btn(t('home.planThisDay'), 'planner')}
@@ -551,7 +551,7 @@ function EnergyHistory({ energyLog }) {
   );
 }
 
-export default function Home({ planner, studentName, profilePhoto, energyLog = [], logEnergy = () => {}, studyHistory = {}, recurringActivities = [] }) {
+export default function Home({ planner, studentName, profilePhoto, energyLog = [], energyCheckins = 0, logEnergy = () => {}, studyHistory = {}, recurringActivities = [] }) {
   const { t } = useLang();
   const { state, ts, openEnergySheet } = planner;
   const [viewDay, setViewDay] = useState(NUM_TODAY);
@@ -562,7 +562,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
   const initials = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 
   const streak = computeStreak(studyHistory);
-  const points = computeTotalPoints(studyHistory, energyLog);
+  const points = computeTotalPoints(studyHistory, energyLog, energyCheckins);
   const [seenAchievements, setSeenAchievements] = useSeenAchievements();
   const [lastSeenStreak, setLastSeenStreak] = useLastSeenStreak();
   const stats = {
@@ -640,7 +640,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
 
       {state.rescueApplied && (() => {
         const movedCount = Object.values(state.rescueDecisions || {}).filter((d) => d === 'moved').length;
-        const movedWord = movedCount === 1 ? t('rr.movedOne') : (movedCount > 1 && movedCount < 5 ? t('rr.movedFew', { n: movedCount }) : t('rr.movedMany', { n: movedCount }));
+        const movedWord = t({ one: 'rr.movedOne', few: 'rr.movedFew', many: 'rr.movedMany' }[pluralForm(movedCount)], { n: movedCount });
         return (
           <div style={{ marginTop: 18, padding: 15, borderRadius: 18, background: 'rgba(53,208,127,.06)', border: '1px solid rgba(53,208,127,.22)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>

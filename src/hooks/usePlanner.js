@@ -514,6 +514,24 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     recordStudyDay?.({ completed: true });
   }
 
+  // A session finished outside the focus screen (e.g. from the chat): the
+  // same bookkeeping as confirmFinish — today's key, today's day, minutes,
+  // and the day's streak credit.
+  function completeSession(id, minutes) {
+    update((s) => {
+      const d = def(id, s);
+      if (!d) return {};
+      const key = taskKey(d, NUM_TODAY);
+      const actual = minutes ?? ((s.schedule && s.schedule[id] && s.schedule[id].dur) || d.dur || 30);
+      return {
+        taskState: { ...s.taskState, [key]: { ...s.taskState[key], status: 'completed', actual, day: NUM_TODAY } },
+        sessionReview: { ...s.sessionReview, [id]: { ...(s.sessionReview && s.sessionReview[id]), minutes: actual } },
+        ...(s.activeTask === id ? { activeTask: null, sessionStart: null, sessionElapsedMs: 0, sessionBeganAt: null, sessionExtraMin: 0 } : {}),
+      };
+    });
+    recordStudyDay?.({ completed: true });
+  }
+
   // ---- block edit (plan screen, manual mode) ----
   function openBlockEdit(id) {
     update((s) => ({ blockEdit: { id, start: s.schedule[id].start, dur: s.schedule[id].dur, msg: null } }));
@@ -1119,7 +1137,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     toggleTask, generatePlan, deadlineGenerate, rescueGenerate,
     startSession, togglePause, dismissBreakReminder, openFinish, cancelFinish, confirmFinish,
     openBlockEdit, moveBlockEdit, cancelBlockEdit, saveBlockEdit, removeBlock,
-    addSessionMinute, openTaskEdit, openNewTaskEdit, patchTaskEdit, stepTaskDur, cancelTaskEdit, saveTaskEdit, removeTaskDef,
+    addSessionMinute, completeSession, openTaskEdit, openNewTaskEdit, patchTaskEdit, stepTaskDur, cancelTaskEdit, saveTaskEdit, removeTaskDef,
     toggleManualMode, regenerateOrCancel, confirmPlan, goHomeSaved,
     openEnergySheet, cancelEnergySheet, saveEnergySheet,
     toggleReason, setRescueTime, confirmRescue, goHomeRescued,

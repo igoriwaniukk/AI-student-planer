@@ -6,6 +6,7 @@ import {
 } from './plannerLogic';
 import { NUM_TODAY } from './plannerData';
 import { setCurrentLang } from './i18n';
+import { detectTaskMeta, iconForTask, iconForActivity } from './taskAuto';
 
 const taskDefs = [
   { id: 'math', subject: 'Matematyka', title: 'Funkcje kwadratowe', dur: 60, priority: 'Wysoki priorytet' },
@@ -401,5 +402,23 @@ describe('bedtime and restart-day rules', () => {
     const state = { a: { status: 'moved', day: NUM_TODAY } };
     expect(activeIds(defs, { a: true }, state, NUM_TODAY)).toEqual([]);
     expect(activeIds(defs, { a: true }, state, NUM_TODAY + 1)).toEqual(['a']);
+  });
+});
+
+describe('task keyword detection', () => {
+  it('does not turn chores into History', () => {
+    for (const name of ['Cooking dinner', 'Kupić warzywa', 'Pay for parking', 'Wyjazd do Warszawy']) {
+      expect(detectTaskMeta(name).category).toBe('personal');
+    }
+  });
+
+  it('still recognises real subjects and icons', () => {
+    expect(detectTaskMeta('Notes about the war and the king')).toEqual({ category: 'school', subject: 'Historia' });
+    expect(detectTaskMeta('Biologia — komórki').subject).toBe('Biologia');
+    expect(detectTaskMeta('Praca domowa z polskiego').category).toBe('school');
+    expect(iconForTask({ category: 'personal', title: 'Read book' })).toBe('📚');
+    expect(iconForTask({ category: 'personal', title: 'Buy bread' })).toBe('📝');
+    expect(iconForActivity('Birthday party')).toBe('🔁');
+    expect(iconForActivity('Trening piłki nożnej')).toBe('⚽');
   });
 });

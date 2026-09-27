@@ -12,7 +12,7 @@ const SUBJECT_KEYWORDS = {
   Biologia: ['biolog', 'genetic', 'genetyk', 'cell', 'komórk', 'ecosystem', 'ekosystem', 'photosynth', 'fotosyntez'],
   Angielski: ['english', 'angielsk', 'vocabulary', 'słówk', 'grammar', 'gramatyk'],
   Polski: ['polish', 'język polski', 'literatur', 'lektur', 'essay', 'wypracowani', 'poem', 'wiersz'],
-  Historia: ['history', 'histori', 'ancient', 'starożytn', 'war', 'wojn', 'king', 'król'],
+  Historia: ['history', 'histori', 'ancient', 'starożytn', '=war', '=wars', 'wojn', '=king', '=kings', 'król'],
   Geografia: ['geograph', 'geografi', 'map', 'mapa', 'climate', 'klimat', 'continent', 'kontynent'],
   Fizyka: ['physics', 'fizyk', 'force', 'siła', 'motion', 'ruch', 'velocity', 'prędkoś'],
   Chemia: ['chemistry', 'chemi', 'reaction', 'reakcj', 'molecule', 'cząsteczk', 'acid', 'kwas'],
@@ -39,11 +39,11 @@ const PERSONAL_ICON_ENTRIES = [
   ['🩺', ['doctor', 'lekarz', 'dentist', 'dentyst', 'appointment', 'wizyta']],
   ['🏋️', ['gym', 'siłowni', 'workout', 'trening', 'exercise', 'ćwiczeni fizyczn']],
   ['🎁', ['birthday', 'urodziny', 'gift', 'prezent']],
-  ['💳', ['bill', 'rachunek', 'pay ', 'zapłać', 'payment']],
-  ['🚗', ['car', 'samoch', 'drive']],
+  ['💳', ['bill', 'rachunek', '=pay', 'zapłać', 'payment']],
+  ['🚗', ['=car', '=cars', 'samoch', 'drive']],
   ['🌱', ['plant', 'roślin', 'water the', 'podlej']],
   ['📦', ['package', 'paczk', 'delivery', 'dostaw']],
-  ['📚', [' read', 'book', 'czyta', 'książk', 'ksiazk', 'lektur']],
+  ['📚', ['read', '=book', '=books', 'czyta', 'książk', 'ksiazk', 'lektur']],
 ];
 
 const SUBJECT_ICON = {
@@ -52,13 +52,26 @@ const SUBJECT_ICON = {
 };
 
 // { category: 'school'|'personal', subject: string|null }
+// Keywords match the start of a word ("biolog" → "biologia"), never the
+// middle of one — "king" used to match "cooking"/"parking" and "war"
+// "warzywa"/"Warszawa", turning chores into History. "=word" must be the
+// whole word; a keyword with a space matches that phrase from a word start.
+function hasKeyword(text, keywords) {
+  const words = (text || '').toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  const phrase = ' ' + words.join(' ');
+  return keywords.some((k) => {
+    if (k.startsWith('=')) return words.includes(k.slice(1));
+    if (k.includes(' ')) return phrase.includes(' ' + k.trim());
+    return words.some((w) => w.startsWith(k));
+  });
+}
+
 export function detectTaskMeta(name) {
-  const n = (name || '').toLowerCase();
-  if (n.trim()) {
+  if ((name || '').trim()) {
     for (const subject of Object.keys(SUBJECT_KEYWORDS)) {
-      if (SUBJECT_KEYWORDS[subject].some((k) => n.includes(k))) return { category: 'school', subject };
+      if (hasKeyword(name, SUBJECT_KEYWORDS[subject])) return { category: 'school', subject };
     }
-    if (GENERAL_SCHOOL_KEYWORDS.some((k) => n.includes(k))) return { category: 'school', subject: 'Inny' };
+    if (hasKeyword(name, GENERAL_SCHOOL_KEYWORDS)) return { category: 'school', subject: 'Inny' };
   }
   return { category: 'personal', subject: null };
 }
@@ -88,27 +101,25 @@ const ACTIVITY_ICON_ENTRIES = [
   ['🎤', ['sing', 'śpiew', 'choir', 'chór', 'vocal', 'wokal']],
   ['🎵', ['music', 'muzy']],
   ['💃', ['dance', 'taniec', 'tańc', 'balet', 'ballet']],
-  ['🥋', ['karate', 'judo', 'taekwondo', 'boks', 'box', 'martial', 'mma']],
-  ['🏃', ['run', 'biega', 'bieg', 'athlet', 'lekkoatlet']],
+  ['🥋', ['karate', 'judo', 'taekwondo', 'boks', '=box', 'boxing', 'martial', 'mma']],
+  ['🏃', ['=run', 'running', 'biega', 'bieg', 'athlet', 'lekkoatlet']],
   ['🚴', ['bike', 'cycl', 'rower']],
   ['🏋️', ['gym', 'siłowni', 'workout', 'trening', 'fitness']],
   ['♟️', ['chess', 'szach']],
-  ['🎨', ['art', 'plasty', 'rysun', 'draw', 'paint', 'malow']],
+  ['🎨', ['=art', '=arts', 'plasty', 'rysun', 'draw', 'paint', 'malow']],
   ['🗣️', ['language', 'język', 'spanish', 'hiszpań', 'german', 'niemieck', 'french', 'francusk']],
   ['📚', ['tutor', 'korepet', 'extra class', 'dodatkow']],
   ['💻', ['coding', 'program', 'robot', 'informaty']],
 ];
 
 export function iconForActivity(name) {
-  const n = (name || '').toLowerCase();
-  const hit = ACTIVITY_ICON_ENTRIES.find(([, keywords]) => keywords.some((k) => n.includes(k)));
+  const hit = ACTIVITY_ICON_ENTRIES.find(([, keywords]) => hasKeyword(name, keywords));
   return hit ? hit[0] : '🔁';
 }
 
 export function iconForTask(d) {
   if (d.category === 'personal') {
-    const n = ' ' + (d.title || '').toLowerCase();
-    const hit = PERSONAL_ICON_ENTRIES.find(([, keywords]) => keywords.some((k) => n.includes(k)));
+    const hit = PERSONAL_ICON_ENTRIES.find(([, keywords]) => hasKeyword(d.title, keywords));
     return hit ? hit[0] : '📝';
   }
   return SUBJECT_ICON[d.subject] || '📘';

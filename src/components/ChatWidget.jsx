@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useChat } from '../hooks/useChat';
 import { buildChatContext } from '../lib/chatContext';
-import { upcomingExams, hm, toMinutes, checkBlockConflict, taskShortLabel } from '../lib/plannerLogic';
+import { upcomingExams, hm, toMinutes, checkBlockConflict, taskShortLabel, daysPill } from '../lib/plannerLogic';
 import { VALUE_KEY, DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { BottomSheet, Chip } from './ui';
@@ -62,8 +62,8 @@ function describeAction(action, planner, deps, t) {
   if (name === 'add_exam') {
     const label = subj(args.subject) + (args.title ? ' — ' + args.title : '');
     return {
-      summary: t('chat.actionAddExam', { label, days: args.daysUntil, grade: subj(args.grade), importance: subj(args.importance), time: hm(args.studyMinutes) }),
-      confirmedSummary: t('chat.actionAddExamDone', { label, days: args.daysUntil }),
+      summary: t('chat.actionAddExam', { label, when: daysPill(t, args.daysUntil).toLowerCase(), grade: subj(args.grade), importance: subj(args.importance), time: hm(args.studyMinutes) }),
+      confirmedSummary: t('chat.actionAddExamDone', { label, when: daysPill(t, args.daysUntil).toLowerCase() }),
       run: () => planner.addCustomExam(args),
     };
   }
@@ -90,12 +90,7 @@ function describeAction(action, planner, deps, t) {
     return {
       summary: t('chat.actionComplete', { label, time: args.actualMinutes != null ? ' (' + hm(args.actualMinutes) + ')' : '' }),
       confirmedSummary: t('chat.actionCompleteDone', { label }),
-      run: () =>
-        planner.update((s) => {
-          const b = (s.schedule || {})[args.sessionId];
-          const actual = args.actualMinutes != null ? args.actualMinutes : b ? b.dur : d?.dur || 30;
-          return { taskState: { ...s.taskState, [args.sessionId]: { ...s.taskState[args.sessionId], status: 'completed', actual } } };
-        }),
+      run: () => planner.completeSession(args.sessionId, args.actualMinutes ?? undefined),
     };
   }
   if (name === 'reschedule_session') {

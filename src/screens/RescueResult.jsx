@@ -1,7 +1,7 @@
 import { BackButton, StickyFooter, PrimaryButton, ConfirmCard } from '../components/ui';
 import { useLang } from '../lib/useLang';
 import { NUM_TODAY } from '../lib/plannerData';
-import { weekdayDateLabel, span, fmt, hm, durOf, startOf } from '../lib/plannerLogic';
+import { weekdayDateLabel, span, fmt, hm, durOf, startOf, pluralForm } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import DayTimeline from '../components/DayTimeline';
 
@@ -29,7 +29,7 @@ export default function RescueResult({ planner }) {
   const totalMinutes = scheduledIds.reduce((a, id) => a + schedule[id].dur, 0);
   const nBlocks = scheduledIds.length;
   const blockWord = nBlocks === 1 ? t('plan.oneBlock') : (nBlocks > 1 && nBlocks < 5 ? t('plan.fewBlocks', { n: nBlocks }) : t('plan.manyBlocks', { n: nBlocks }));
-  const movedWord = movedCount === 1 ? t('rr.movedOne') : (movedCount > 1 && movedCount < 5 ? t('rr.movedFew', { n: movedCount }) : t('rr.movedMany', { n: movedCount }));
+  const movedWord = t({ one: 'rr.movedOne', few: 'rr.movedFew', many: 'rr.movedMany' }[pluralForm(movedCount)], { n: movedCount });
   const studyEnd = nBlocks ? fmt(Math.max(...scheduledIds.map((id) => schedule[id].start + schedule[id].dur))) : '—';
   const earliestStart = nBlocks ? Math.min(...scheduledIds.map((id) => schedule[id].start)) : null;
 
