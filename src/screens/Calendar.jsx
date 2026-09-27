@@ -2,7 +2,7 @@ import { useState } from 'react';
 import WeekStrip from '../components/WeekStrip';
 import { BackButton, Pill, SectionTitle } from '../components/ui';
 import { upcomingExams, dayInfo, formatMonthDay, daysPill } from '../lib/plannerLogic';
-import { REFERENCE_DAY, WEEK_DAYS } from '../lib/plannerData';
+import { NUM_TODAY, WEEK_DAYS } from '../lib/plannerData';
 import { DAY_KEY, VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import DayTimeline from '../components/DayTimeline';
@@ -31,7 +31,9 @@ function Row({ icon, title, sub, right }) {
 export default function Calendar({ planner, activities, recurringActivities = [] }) {
   const { t } = useLang();
   const { state, go, update } = planner;
-  const [calDay, setCalDay] = useState(state.selectedDay || REFERENCE_DAY);
+  // Opens on the approved plan's day while it's still ahead, otherwise on
+  // today — an old plan's day would open the calendar on a past week.
+  const [calDay, setCalDay] = useState(state.selectedDay >= NUM_TODAY ? state.selectedDay : NUM_TODAY);
   const [weekOffset, setWeekOffset] = useState(0);
   const info = dayInfo(calDay);
   const dayLabel = t(DAY_KEY[info.label]) || info.label;
