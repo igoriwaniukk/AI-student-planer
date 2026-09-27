@@ -40,14 +40,14 @@ export default function Settings({ planner, studyHistory, onSignOut, onDeleteAcc
   const streak = computeStreak(studyHistory || {});
   const hasUpcomingExam = upcomingExams(planner.state).some((e) => e.daysUntil >= 0 && e.daysUntil <= 14);
   const noPlanToday = !(planner.state.planApproved && planner.state.selectedDay === NUM_TODAY);
-  const { pushStatus, togglePush } = usePushNotifications({ streak, hasUpcomingExam, reminders: reminders.map((r) => r.text), lang, noPlanToday });
+  const { pushStatus, togglePush, native } = usePushNotifications({ streak, hasUpcomingExam, reminders: reminders.map((r) => r.text), lang, noPlanToday });
 
   const pushNote = {
     unsupported: t('notif.pushUnsupported'),
-    denied: t('notif.pushDenied'),
+    denied: t(native ? 'notif.appDenied' : 'notif.pushDenied'),
     error: t('notif.pushError'),
-    subscribed: t('notif.pushOnNote'),
-    idle: t('notif.pushOffNote'),
+    subscribed: t(native ? 'notif.appOnNote' : 'notif.pushOnNote'),
+    idle: t(native ? 'notif.appOffNote' : 'notif.pushOffNote'),
   }[pushStatus];
 
   async function confirmDelete() {

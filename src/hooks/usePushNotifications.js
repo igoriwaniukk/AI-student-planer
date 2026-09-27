@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { isPushSupported, getExistingSubscription, subscribeToPush, unsubscribeFromPush, syncPushState } from '../lib/pushNotifications';
+import { isNativeApp, askApp, postToApp, onAppMessage, appRemindersEnabled, setAppRemindersEnabled } from '../lib/nativeBridge';
 
 // Shared by the notification bell and the profile settings toggle, so both
 // entry points reflect (and drive) the same underlying browser push
@@ -12,25 +13,66 @@ import { isPushSupported, getExistingSubscription, subscribeToPush, unsubscribeF
 // of UTC, i.e. the negation of Date#getTimezoneOffset()) is synced
 // alongside it so the server can work out the subscriber's actual local
 // time instead of assuming its own clock's timezone.
+//
+// Inside the iPhone app there's no web push at all: the same switch turns
+// the app's own reminders on/off (see useAppReminders) and asks the phone
+// for notification permission; `native` tells the screens which notes to show.
 export function usePushNotifications({ streak, hasUpcomingExam, reminders, lang, noPlanToday }) {
+  const native = isNativeApp();
   // idle | subscribed | denied | error | unsupported
-  const [pushStatus, setPushStatus] = useState(() => (isPushSupported() ? 'idle' : 'unsupported'));
+  const [pushStatus, setPushStatus] = useState(() => (native || isPushSupported() ? 'idle' : 'unsupported'));
   const tzOffsetMinutes = -new Date().getTimezoneOffset();
 
   useEffect(() => {
-    if (!isPushSupported()) return;
+    if (native) {
+      // Re-checked on coming back, e.g. after turning notifications on in
+      // the iPhone's Settings.
+      const apply = (status) => {
+        if (status === 'denied') setPushStatus('denied');
+        else setPushStatus(status === 'granted' && appRemindersEnabled() ? 'subscribed' : 'idle');
+      };
+      const check = () => askApp('notif-status', {}, 5000).then((r) => apply(r.status));
+      check();
+      const onVisible = () => { if (document.visibilityState === 'visible') check(); };
+      document.addEventListener('visibilitychange', onVisible);
+      // The app asks for permission by itself the first time it has a
+      // reminder to schedule, then tells us the answer.
+      const off = onAppMessage((msg) => { if (msg.type === 'notif-status') apply(msg.status); });
+      return () => { document.removeEventListener('visibilitychange', onVisible); off(); };
+    }
+    if (!isPushSupported()) return undefined;
     getExistingSubscription().then((sub) => setPushStatus(sub ? 'subscribed' : 'idle'));
-  }, []);
+    return undefined;
+  }, [native]);
 
   // Keeps the server's last-known snapshot fresh so its scheduled push text
   // (streak / exam / reminder / restart nudge) stays accurate — a no-op
   // until subscribed.
   useEffect(() => {
-    if (pushStatus !== 'subscribed') return;
+    if (native || pushStatus !== 'subscribed') return;
     syncPushState({ streak, hasUpcomingExam, reminders, lang, noPlanToday, tzOffsetMinutes });
-  }, [pushStatus, streak, hasUpcomingExam, reminders, lang, noPlanToday, tzOffsetMinutes]);
+  }, [native, pushStatus, streak, hasUpcomingExam, reminders, lang, noPlanToday, tzOffsetMinutes]);
 
   async function togglePush() {
+    if (native) {
+      if (pushStatus === 'subscribed') {
+        setAppRemindersEnabled(false);
+        setPushStatus('idle');
+        return;
+      }
+      if (pushStatus === 'denied') {
+        postToApp('open-settings');
+        return;
+      }
+      const r = await askApp('notif-request', {}, 60000);
+      if (r.status === 'granted') {
+        setAppRemindersEnabled(true);
+        setPushStatus('subscribed');
+      } else {
+        setPushStatus('denied');
+      }
+      return;
+    }
     if (pushStatus === 'subscribed') {
       await unsubscribeFromPush();
       setPushStatus('idle');
@@ -44,7 +86,7 @@ export function usePushNotifications({ streak, hasUpcomingExam, reminders, lang,
     }
   }
 
-  return { pushStatus, togglePush };
+  return { pushStatus, togglePush, native };
 }
 
 // Mounted once for the whole app (the bell/settings callers above only sync

@@ -58,11 +58,10 @@ export default function Auth({ signUp, signIn, signInWithGoogle, signInWithApple
     setError('');
     setInfo('');
     setBusy(true);
-    const { error: err } = await startOAuth();
-    if (err) {
-      setBusy(false);
-      setError(err.message);
-    }
+    const { error: err, cancelled } = await startOAuth();
+    // Closing the iPhone app's sign-in sheet just brings the buttons back.
+    if (err || cancelled) setBusy(false);
+    if (err) setError(err.message);
   }
 
   return (

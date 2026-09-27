@@ -23,6 +23,8 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 export function isPushSupported() {
+  // The iPhone app uses its own reminders instead (see useAppReminders).
+  if (typeof window !== 'undefined' && window.PulgoNative) return false;
   return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
 }
 

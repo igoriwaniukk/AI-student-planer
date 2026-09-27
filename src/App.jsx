@@ -34,6 +34,8 @@ import { NUM_TODAY } from './lib/plannerData';
 import { TASK_TEXT_KEY } from './lib/i18n';
 import { useLang } from './lib/useLang';
 import { useStreakPushSync } from './hooks/usePushNotifications';
+import { useAppReminders } from './hooks/useAppReminders';
+import { postToApp } from './lib/nativeBridge';
 import { useAuth } from './lib/useAuth';
 import { isSupabaseConfigured } from './lib/supabaseClient';
 import { pullFromCloud, pushToCloud, cloudChangedSinceSync } from './lib/cloudSync';
@@ -194,7 +196,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
   const streak = computeStreak(studyHistory);
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [quickAddMode, setQuickAddMode] = useState('menu');
-  const { t } = useLang();
+  const { t, lang } = useLang();
 
   // Celebrates the moment today's streak credit lands (first finished
   // session — see confirmFinish/recordStudyDay). `completed` is sticky, so
@@ -232,6 +234,8 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
     unfinishedDate: unfinishedTitles.length ? todayKey : null,
     bedtime: profileDefaults?.bedtime || null,
   });
+  // Inside the iPhone app: the same data becomes reminders on the phone.
+  useAppReminders({ state, studyHistory, bedtime: profileDefaults?.bedtime, unfinishedTitles, titleOf, lang });
 
   // Opens the day summary once per day, by itself: when everything for today
   // is done (sessions and to-dos), or an hour before bedtime if something is
@@ -406,7 +410,15 @@ export default function App() {
     });
   }
 
+  // Tells the iPhone app (if this runs inside it) the language for its own
+  // screens and whether anyone is signed in; signing out clears its reminders.
+  const signedIn = !isSupabaseConfigured || !!session;
+  useEffect(() => {
+    if (!authLoading) postToApp('web-state', { lang, signedIn });
+  }, [authLoading, lang, signedIn]);
+
   async function handleSignOut() {
+    postToApp('signed-out');
     await signOut();
     sessionStorage.removeItem(SYNCED_FLAG);
     localStorage.removeItem(LOCAL_OWNER_FLAG);
@@ -417,6 +429,7 @@ export default function App() {
   async function handleDeleteAccount() {
     const { error } = await deleteAccount();
     if (error) return { error };
+    postToApp('signed-out');
     sessionStorage.removeItem(SYNCED_FLAG);
     localStorage.removeItem(LOCAL_OWNER_FLAG);
     Object.values(KEYS).forEach((k) => localStorage.removeItem(k));

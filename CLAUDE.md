@@ -11,3 +11,6 @@ When Igor asks to change how something looks (design, colours, icons, layout, "m
 Dark background `#08080c`, purple accents `#8b6dff → #6d4dff`, `#a58cff`, `#c9baff`; orange `#f5a524` for deadlines/streak, teal `#2ee6c5` for weekly activities, green `#35d07f` for done. Mascot: the pug in a graduation cap and suit (`src/components/PugMascot.jsx`, `public/pug-*`). UI text is Polish and English (`src/lib/i18n.js`).
 
 Subject emojis live in `SUBJECT_ICON` (`src/lib/taskAuto.js`); English is 💬. Never use 🔤 anywhere — it renders as an ugly "abc" box.
+
+## iPhone app
+`mobile/` (Expo) is a thin shell that shows the live website in a web view — build every feature in the website, never a second copy in `mobile/`. The website talks to the app through `src/lib/nativeBridge.js` (sign-in sheet, reminders from `src/lib/appReminders.js`, haptics); the site URL is `mobile/app.json` → `expo.extra.appUrl`. Steps for the App Store are in `APP_STORE_READINESS.md`.

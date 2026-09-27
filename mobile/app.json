@@ -2,23 +2,65 @@
   "expo": {
     "name": "Pulgo",
     "slug": "pulgo",
+    "scheme": "pulgo",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "backgroundColor": "#08080c",
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.igoriwaniuk.pulgo",
+      "buildNumber": "1",
+      "supportsTablet": false,
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleAllowMixedLocalizations": true,
+        "CFBundleLocalizations": [
+          "pl",
+          "en"
+        ],
+        "CFBundleDevelopmentRegion": "pl"
+      }
     },
     "android": {
+      "package": "com.igoriwaniuk.pulgo",
+      "versionCode": 1,
       "adaptiveIcon": {
         "backgroundColor": "#1a1440",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png"
-      }
+      },
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.VIBRATE"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-web-browser",
+      "expo-localization",
+      "expo-apple-authentication",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#08080c",
+          "image": "./assets/splash-pug.png",
+          "imageWidth": 180,
+          "resizeMode": "contain"
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#8b6dff"
+        }
+      ]
+    ],
+    "extra": {
+      "appUrl": "https://ai-student-planer-igor-4a92.vercel.app"
     }
   }
 }

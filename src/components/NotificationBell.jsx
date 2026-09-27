@@ -28,7 +28,7 @@ export default function NotificationBell({ state, streak = 0, inline = false }) 
   // your day" card) — the server uses this to override its usual push
   // rotation with a nudge once it's afternoon and still true.
   const noPlanToday = !(state.planApproved && state.selectedDay === NUM_TODAY);
-  const { pushStatus, togglePush } = usePushNotifications({ streak, hasUpcomingExam, reminders: reminders.map((r) => r.text), lang, noPlanToday });
+  const { pushStatus, togglePush, native } = usePushNotifications({ streak, hasUpcomingExam, reminders: reminders.map((r) => r.text), lang, noPlanToday });
 
   function handleOpen() {
     setOpen(true);
@@ -54,10 +54,10 @@ export default function NotificationBell({ state, streak = 0, inline = false }) 
 
   const pushNote = {
     unsupported: t('notif.pushUnsupported'),
-    denied: t('notif.pushDenied'),
+    denied: t(native ? 'notif.appDenied' : 'notif.pushDenied'),
     error: t('notif.pushError'),
-    subscribed: t('notif.pushOnNote'),
-    idle: t('notif.pushOffNote'),
+    subscribed: t(native ? 'notif.appOnNote' : 'notif.pushOnNote'),
+    idle: t(native ? 'notif.appOffNote' : 'notif.pushOffNote'),
   }[pushStatus];
 
   return (
