@@ -1,4 +1,4 @@
-import { activeIds, checkBlockConflict, durOf } from './plannerLogic';
+import { rescueCandidates, checkBlockConflict, durOf } from './plannerLogic';
 import { getCurrentLang } from './i18n';
 import { authedFetch } from './authFetch';
 
@@ -38,7 +38,7 @@ export function toValidatedRescue(blocks, moved, ids, taskDefs, durOverride, ava
 // unavailable, unreachable, or proposes something invalid; callers use that
 // as the signal to fall back to the deterministic rescue packer.
 export async function requestAIRescue({ taskDefs, tasks, taskState, energy, durOverride, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints }) {
-  const ids = activeIds(taskDefs, tasks, taskState);
+  const ids = rescueCandidates(taskDefs, tasks, taskState);
   if (!ids.length) return null;
   const items = ids.map((id) => {
     const d = taskDefs.find((t) => t.id === id);

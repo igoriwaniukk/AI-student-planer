@@ -116,11 +116,30 @@ export function isTaskOn(tasks, d, dayNum) {
 
 // Personal tasks (see TaskEditSheet's category toggle) never get a
 // study-time block, so they're excluded here regardless of day.
+// A task "moved" off a day by Restart-your-day only leaves that one day
+// (its recorded `day`); a skipped/let-go task stays out.
 export function activeIds(taskDefs, tasks, taskState, dayNum) {
+  const out = (st) => st.status === 'skipped' || (st.status === 'moved' && (dayNum == null || st.day === dayNum));
   return taskDefs
-    .filter((t) => isTaskOn(tasks, t, dayNum) && ['moved', 'skipped'].indexOf((taskState[taskKey(t, dayNum)] || {}).status) < 0)
+    .filter((t) => isTaskOn(tasks, t, dayNum) && !out(taskState[taskKey(t, dayNum)] || {}))
     .filter((t) => t.category !== 'personal' && taskDueOnDay(t, dayNum))
     .map((t) => t.id);
+}
+
+// Minutes after midnight right now, rounded up to the next 5 — the earliest
+// a session planned for today can still start.
+export function roundedNowMinutes() {
+  const d = new Date();
+  return Math.ceil((d.getHours() * 60 + d.getMinutes()) / 5) * 5;
+}
+
+// What Restart-your-day may rearrange: today's tasks that aren't finished
+// or already running — never other days' tasks.
+export function rescueCandidates(taskDefs, tasks, taskState) {
+  return activeIds(taskDefs, tasks, taskState, NUM_TODAY).filter((id) => {
+    const d = taskDefs.find((t) => t.id === id);
+    return !['completed', 'in_progress', 'paused'].includes((taskState[taskKey(d, NUM_TODAY)] || {}).status);
+  });
 }
 
 // At low energy, sessions the student hasn't manually resized are
@@ -158,11 +177,12 @@ export function dayConstraints({ wake, bedtime, recurringActivities, dayNum = RE
       return { start, end: start + a.dur, label: a.name };
     })
     .sort((a, b) => a.start - b.start);
-  return {
-    wakeMinutes: timeStrToMinutes(wake || '06:30'),
-    bedtimeMinutes: timeStrToMinutes(bedtime || '22:30'),
-    blocks,
-  };
+  const wakeMinutes = timeStrToMinutes(wake || '06:30');
+  let bedtimeMinutes = timeStrToMinutes(bedtime || '22:30');
+  // A bedtime after midnight (e.g. 00:30) ends the same evening, not the
+  // start of the day — otherwise there'd be no free time at all.
+  if (bedtimeMinutes <= wakeMinutes) bedtimeMinutes += 24 * 60;
+  return { wakeMinutes, bedtimeMinutes, blocks };
 }
 
 // The real gaps between wake and bedtime once the day's blocked activities
@@ -204,17 +224,23 @@ export function buildSchedule({ taskDefs, tasks, taskState, energy, pref, durOve
   const c = constraints || dayConstraints();
   const brk = (pref === 'Więcej krótkich przerw' || energy === 'Niska') ? 15 : 10;
   const sched = {};
-  let cur = c.wakeMinutes;
+  // Planning today in the afternoon starts now, not back at wake time.
+  let cur = dayNum === NUM_TODAY ? Math.max(c.wakeMinutes, roundedNowMinutes()) : c.wakeMinutes;
   const ids = activeIds(taskDefs, tasks, taskState, dayNum);
-  ids.forEach((id, i) => {
+  let placed = 0;
+  ids.forEach((id) => {
     const d = taskDefs.find((t) => t.id === id);
     const dur = (durOverride && durOverride[id]) || lightenForEnergy(d.dur, energy);
-    if (i > 0) cur += brk;
+    if (placed > 0) cur += brk;
     cur = skipBlockedWindows(cur, dur, c.blocks);
+    // A chosen start is a preference: it still steps past fixed activities,
+    // and a session that would run past bedtime is left unplanned.
     const ov = startOverride ? startOverride[id] : null;
-    const start = ov == null ? cur : ov;
+    const start = ov == null ? cur : skipBlockedWindows(ov, dur, c.blocks);
+    if (start + dur > c.bedtimeMinutes) return;
     sched[id] = { start, dur };
     cur = start + dur;
+    placed++;
   });
   return sched;
 }
@@ -225,7 +251,7 @@ export function buildSchedule({ taskDefs, tasks, taskState, energy, pref, durOve
 // 15-minute floor before giving up on a task and marking it 'moved'.
 export function buildRescueSchedule({ taskDefs, tasks, taskState, energy, durOverride, availableMinutes, constraints }) {
   const c = constraints || dayConstraints();
-  const ids = activeIds(taskDefs, tasks, taskState);
+  const ids = rescueCandidates(taskDefs, tasks, taskState);
   const ordered = [...ids].sort((a, b) => {
     const rank = (id) => {
       const i = PRIORITIES.indexOf(taskDefs.find((t) => t.id === id).priority);

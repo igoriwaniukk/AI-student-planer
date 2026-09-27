@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
   fmt, span, toMinutes, hm, activeIds, lightenForEnergy, buildSchedule, buildRescueSchedule,
   checkBlockConflict, computeStreak, computeTotalPoints, weeklyReview, examAtRisk,
-  daySessionBreakdown, weekStats, currentWeekNums, examPrepProgress, sessionClock, dayOpenTasks, wrapUpMinutes, taskShortLabel, studiedToday, localDateKey, buildPrepDayNums, upcomingExams,
+  daySessionBreakdown, weekStats, currentWeekNums, examPrepProgress, sessionClock, dayOpenTasks, wrapUpMinutes, taskShortLabel, studiedToday, localDateKey, buildPrepDayNums, upcomingExams, dayConstraints,
 } from './plannerLogic';
 import { NUM_TODAY } from './plannerData';
 import { setCurrentLang } from './i18n';
@@ -82,13 +82,29 @@ describe('buildSchedule', () => {
   });
 
   it('jumps a block that would straddle a blocked window to right after it', () => {
-    // A single big task starting at 930 would run 930→1230, straddling
+    // A single big task starting at 930 would run 930→1130, straddling
     // 1080–1140 — it must be pushed to start at 1140 instead.
-    const bigDef = [{ id: 'big', subject: 'Matematyka', title: 'Maraton', dur: 300, priority: 'Wysoki priorytet' }];
+    const bigDef = [{ id: 'big', subject: 'Matematyka', title: 'Maraton', dur: 200, priority: 'Wysoki priorytet' }];
     const sched = buildSchedule({
       taskDefs: bigDef, tasks: { big: true }, taskState: { big: { status: 'planned' } }, energy: 'Normalna', pref: 'Wolny wieczór', constraints,
     });
     expect(sched.big.start).toBe(1140);
+  });
+
+  it('leaves a session unplanned rather than running past bedtime', () => {
+    const bigDef = [{ id: 'big', subject: 'Matematyka', title: 'Maraton', dur: 300, priority: 'Wysoki priorytet' }];
+    const sched = buildSchedule({
+      taskDefs: bigDef, tasks: { big: true }, taskState: { big: { status: 'planned' } }, energy: 'Normalna', pref: 'Wolny wieczór', constraints,
+    });
+    expect(sched.big).toBeUndefined();
+  });
+
+  it('a chosen start still steps past a fixed activity', () => {
+    const sched = buildSchedule({
+      taskDefs: [taskDefs[0]], tasks: { math: true }, taskState: { math: { status: 'planned' } }, energy: 'Normalna', pref: 'Wolny wieczór',
+      startOverride: { math: 1090 }, constraints,
+    });
+    expect(sched.math.start).toBe(1140);
   });
 
   it('respects durOverride and startOverride', () => {
@@ -370,5 +386,20 @@ describe('exam dates and prep days', () => {
         expect(d).toBeLessThan(examDay);
       });
     }
+  });
+});
+
+describe('bedtime and restart-day rules', () => {
+  it('a bedtime after midnight still leaves the evening free', () => {
+    const c = dayConstraints({ wake: '08:00', bedtime: '00:30' });
+    expect(c.bedtimeMinutes).toBe(24 * 60 + 30);
+    expect(checkBlockConflict('x', 19 * 60, 60, {}, () => ({ subject: '' }), c)).toBeNull();
+  });
+
+  it('a task moved off one day can still be planned on another', () => {
+    const defs = [{ id: 'a', category: 'school', subject: 'Inny', title: 'A', dur: 30 }];
+    const state = { a: { status: 'moved', day: NUM_TODAY } };
+    expect(activeIds(defs, { a: true }, state, NUM_TODAY)).toEqual([]);
+    expect(activeIds(defs, { a: true }, state, NUM_TODAY + 1)).toEqual(['a']);
   });
 });

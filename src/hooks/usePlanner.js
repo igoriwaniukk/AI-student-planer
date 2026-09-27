@@ -4,7 +4,7 @@ import { TASK_TEXT_KEY, VALUE_KEY } from '../lib/i18n';
 import {
   PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, NUM_TODAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES, realDateForNum,
 } from '../lib/plannerData';
-import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, isTaskOn, taskDueOnDay, daySessionBreakdown, localDateKey, sessionDur, dayOpenTasks, timeStrToMinutes } from '../lib/plannerLogic';
+import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, isTaskOn, taskDueOnDay, daySessionBreakdown, localDateKey, sessionDur, dayOpenTasks, timeStrToMinutes, roundedNowMinutes, scheduleIsFor } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
 import { requestAIRescue } from '../lib/aiRescue';
 
@@ -255,6 +255,19 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     wake: state.wakeOverride || defaults?.wake, bedtime: state.bedtimeOverride || defaults?.bedtime,
     recurringActivities, dayNum: planDayNum,
   });
+  // The same limits for any given day (a task's own day, today's rescue).
+  function constraintsFor(dayNum) {
+    return dayConstraints({
+      wake: state.wakeOverride || defaults?.wake, bedtime: state.bedtimeOverride || defaults?.bedtime,
+      recurringActivities, dayNum,
+    });
+  }
+  // Today's limits from right now: sessions planned or rescued for today
+  // can't start in the past.
+  function todayFromNow() {
+    const c = constraintsFor(NUM_TODAY);
+    return { ...c, wakeMinutes: Math.max(c.wakeMinutes, roundedNowMinutes()) };
+  }
 
   // Lays out a draft plan on start — never an approved one, whose times
   // (moved by hand or picked by the AI) are the student's own.
@@ -383,7 +396,8 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   // something that fails the same conflict checks manual edits go through.
   function generatePlan() {
     update({ manualMode: false, blockEdit: null });
-    const work = requestAIPlan({ ...state, constraints, dayNum: dayNumOf(state) });
+    const planConstraints = dayNumOf(state) === NUM_TODAY ? todayFromNow() : constraints;
+    const work = requestAIPlan({ ...state, constraints: planConstraints, dayNum: dayNumOf(state) });
     runGen(PLAN_LABELS, (result, s) => ({
       generating: false, screen: 'plan',
       schedule: result ? result.schedule : buildSchedule({ ...s, constraints, dayNum: dayNumOf(s) }),
@@ -411,16 +425,18 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   function rescueGenerate() {
     update({ rescueFailed: false });
     const availableMinutes = RESCUE_TIME_MINUTES[state.rescueTime] ?? 90;
+    // Rescue is always today's, from now on — whatever day the Planner was on.
+    const rescueConstraints = todayFromNow();
     const work = requestAIRescue({
       taskDefs: state.taskDefs, tasks: state.tasks, taskState: state.taskState, durOverride: state.durOverride,
-      energy: state.rescueEnergy, availableMinutes, reasons: state.reasons, constraints,
+      energy: state.rescueEnergy, availableMinutes, reasons: state.reasons, constraints: rescueConstraints,
       activitiesNote: state.activitiesNote, activitiesSelected: state.activitiesSelected, prioritySubjects: state.prioritySubjects,
       studyTime: state.studyTime,
     });
     runGen(RESCUE_LABELS, (result, s) => {
       const fallback = result || buildRescueSchedule({
         taskDefs: s.taskDefs, tasks: s.tasks, taskState: s.taskState, durOverride: s.durOverride,
-        energy: s.rescueEnergy, availableMinutes, constraints,
+        energy: s.rescueEnergy, availableMinutes, constraints: rescueConstraints,
       });
       return {
         generating: false, screen: 'rescueResult',
@@ -635,7 +651,12 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       // land on a time a recurring activity already owns. Only school tasks
       // occupy a time slot, so a personal task has nothing to conflict with.
       if (!isPersonal) {
-        const conflict = checkBlockConflict(id, startMin, fm.dur, s.schedule, (cid) => def(cid, s), constraints);
+        // Checked against the task's own day — its fixed activities and, if
+        // that day has a plan, its sessions — not whichever day the Planner
+        // happens to be on.
+        const taskDay = isRepeat ? planDayNum : (day ?? planDayNum);
+        const daySchedule = scheduleIsFor(s, taskDay) ? s.schedule : {};
+        const conflict = checkBlockConflict(id, startMin, fm.dur, daySchedule, (cid) => def(cid, s), constraintsFor(taskDay));
         if (conflict) {
           const vars = conflict.vars?.subject ? { ...conflict.vars, subject: translate(VALUE_KEY[conflict.vars.subject]) || conflict.vars.subject } : conflict.vars;
           return { editErrors: { start: translate(conflict.key, vars) } };
@@ -742,8 +763,13 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   function confirmRescue() {
     update((s) => {
       const t = { ...s.taskState };
+      // Moved off today only (its day is recorded) — it can still be
+      // planned on any other day; see activeIds.
       Object.keys(s.rescueDecisions || {}).forEach((id) => {
-        if (s.rescueDecisions[id] === 'moved') t[id] = { ...t[id], status: 'moved' };
+        if (s.rescueDecisions[id] !== 'moved') return;
+        const d = def(id, s);
+        const key = d ? taskKey(d, NUM_TODAY) : id;
+        t[key] = { ...t[key], status: 'moved', day: NUM_TODAY };
       });
       const schedule = s.rescueSchedule || {};
       // Rescue is always for today, not a hardcoded day-20 (a leftover from
