@@ -672,3 +672,10 @@ export function taskShortLabel(t, d) {
   if (d.category === 'personal' || !d.subject) return title;
   return (t(VALUE_KEY[d.subject]) || d.subject) + ' — ' + title;
 }
+
+// "Today" / "Tomorrow" / "In N days" for an exam countdown pill.
+export function daysPill(t, n) {
+  if (n === 0) return t('cal.todayPill');
+  if (n === 1) return t('cal.tomorrowPill');
+  return t('cal.inDaysPill', { n });
+}

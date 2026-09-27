@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import WeekStrip from '../components/WeekStrip';
 import { BackButton, Pill, SectionTitle } from '../components/ui';
-import { upcomingExams, dayInfo, formatMonthDay } from '../lib/plannerLogic';
-import { REFERENCE_DAY } from '../lib/plannerData';
+import { upcomingExams, dayInfo, formatMonthDay, daysPill } from '../lib/plannerLogic';
+import { REFERENCE_DAY, WEEK_DAYS } from '../lib/plannerData';
 import { DAY_KEY, VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import DayTimeline from '../components/DayTimeline';
@@ -36,11 +36,13 @@ export default function Calendar({ planner, activities, recurringActivities = []
   const info = dayInfo(calDay);
   const dayLabel = t(DAY_KEY[info.label]) || info.label;
 
-  const weekStart = 16 + weekOffset * 7;
+  // The same 7 days the week strip shows (it moves with the real date).
+  const weekStart = WEEK_DAYS[0].num + weekOffset * 7;
   const weekEnd = weekStart + 6;
-  const weekExams = upcomingExams(state).filter((e) => e.day >= weekStart && e.day <= weekEnd);
+  // Only exams still ahead — one that's already happened isn't "upcoming".
+  const weekExams = upcomingExams(state).filter((e) => e.daysUntil >= 0 && e.day >= weekStart && e.day <= weekEnd);
   const eventDays = new Set(weekExams.map((e) => e.day));
-  const nearestExamDay = weekExams.filter((e) => e.daysUntil >= 0).sort((a, b) => a.day - b.day)[0]?.day ?? null;
+  const nearestExamDay = [...weekExams].sort((a, b) => a.day - b.day)[0]?.day ?? null;
 
   const sched = calDay === state.selectedDay ? (state.schedule || {}) : {};
   const sessionIds = Object.keys(sched).sort((a, b) => sched[a].start - sched[b].start);
@@ -66,7 +68,7 @@ export default function Calendar({ planner, activities, recurringActivities = []
             <Card key={e.id} style={{ background: 'rgba(245,165,36,.06)', border: '1px solid rgba(245,165,36,.28)', animation: 'cardGlowPulse 3.4s ease-in-out infinite', '--glow-color': 'rgba(245,165,36,.4)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
                 <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: e.color }}>{(t(VALUE_KEY[e.subject]) || e.subject).toUpperCase()}</span>
-                <Pill text={e.daysUntil === 1 ? t('cal.tomorrowPill') : t('cal.inDaysPill', { n: e.daysUntil })} color="#f5a524" bg="rgba(245,165,36,.15)" />
+                <Pill text={daysPill(t, e.daysUntil)} color="#f5a524" bg="rgba(245,165,36,.15)" />
               </div>
               <div style={{ fontSize: 15, fontWeight: 700, marginTop: 6 }}>{t(VALUE_KEY[e.title]) || e.title}</div>
               <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 3 }}>{t(DAY_KEY[dayInfo(e.day).label]) || dayInfo(e.day).label}, {formatMonthDay(e.day)}</div>

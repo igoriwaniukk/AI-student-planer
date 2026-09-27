@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { upcomingExams } from '../lib/plannerLogic';
+import { upcomingExams, daysPill } from '../lib/plannerLogic';
 import { NUM_TODAY } from '../lib/plannerData';
 import { useCustomReminders, useSeenNotifSignature } from '../lib/store';
 import { useLang } from '../lib/useLang';
@@ -100,7 +100,7 @@ export default function NotificationBell({ state, streak = 0, inline = false }) 
                         <div style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: e.color }}>{(t(VALUE_KEY[e.subject]) || e.subject).toUpperCase()}</div>
                         <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 2 }}>{t(VALUE_KEY[e.title]) || e.title}</div>
                       </div>
-                      <span style={{ fontSize: 12, fontWeight: 700, color: '#f5a524', flex: 'none' }}>{e.daysUntil === 1 ? t('cal.tomorrowPill') : t('cal.inDaysPill', { n: e.daysUntil })}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: '#f5a524', flex: 'none' }}>{daysPill(t, e.daysUntil)}</span>
                     </div>
                   ))}
                 </div>

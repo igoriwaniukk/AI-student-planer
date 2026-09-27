@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { WEEK_DAYS, REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
+import { daysPill } from '../lib/plannerLogic';
 import { DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 
@@ -126,7 +127,7 @@ export default function WeekStrip({
       </div>
       {countdownSet && daysUntilExam >= 0 && (
         <div style={{ marginTop: 9, fontSize: 11.5, fontWeight: 650, color: '#f5a524', textAlign: 'center' }}>
-          {t('cal.examCountdown', { when: daysUntilExam === 1 ? t('cal.tomorrowPill').toLowerCase() : t('cal.inDaysPill', { n: daysUntilExam }).toLowerCase() })}
+          {t('cal.examCountdown', { when: daysPill(t, daysUntilExam).toLowerCase() })}
         </div>
       )}
     </div>

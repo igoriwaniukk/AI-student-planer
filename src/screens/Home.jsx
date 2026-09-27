@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
-import { span, hm, zad, taskShortLabel, sessionClock, dayOpenTasks, scheduleIsFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
+import { span, hm, zad, taskShortLabel, daysPill, sessionClock, dayOpenTasks, scheduleIsFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
 import { iconForTask, iconForSubject } from '../lib/taskAuto';
 import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
@@ -687,7 +687,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
             <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.nextDeadline')}</div>
             <div style={{ fontSize: 14, fontWeight: 700, marginTop: 4 }}>{t(VALUE_KEY[nearestExam.title]) || nearestExam.title}</div>
           </div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#f5a524', flex: 'none' }}>{nearestExam.daysUntil === 1 ? t('cal.tomorrowPill') : t('cal.inDaysPill', { n: nearestExam.daysUntil })}</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#f5a524', flex: 'none' }}>{daysPill(t, nearestExam.daysUntil)}</div>
         </div>
       )}
 
