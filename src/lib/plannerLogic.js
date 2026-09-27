@@ -460,7 +460,8 @@ export function computeStreak(studyHistory) {
 // state.schedule has no date of its own — it belongs to the approved plan's
 // day (selectedDay), or, before anything is approved, to today's draft.
 export function scheduleIsFor(state, dayNum) {
-  return state.planApproved ? state.selectedDay === dayNum : dayNum === NUM_TODAY;
+  if (state.planApproved) return state.selectedDay === dayNum;
+  return dayNum === (state.planToday === false ? REFERENCE_DAY : NUM_TODAY);
 }
 
 export function statusOn(state, id, dayNum) {

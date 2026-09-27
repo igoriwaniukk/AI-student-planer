@@ -4,7 +4,7 @@ import { TASK_TEXT_KEY, VALUE_KEY } from '../lib/i18n';
 import {
   PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, NUM_TODAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES, realDateForNum,
 } from '../lib/plannerData';
-import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, isTaskOn, daySessionBreakdown, localDateKey, sessionDur, dayOpenTasks } from '../lib/plannerLogic';
+import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, isTaskOn, taskDueOnDay, daySessionBreakdown, localDateKey, sessionDur, dayOpenTasks } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
 import { requestAIRescue } from '../lib/aiRescue';
 
@@ -169,7 +169,7 @@ function initialState(defaults, activities, persisted) {
     unfinishedChoices: {},
     skipReason: '',
 
-    selectedDay: 19,
+    selectedDay: NUM_TODAY,
     planApproved: false,
     dayEnded: false,
 
@@ -182,6 +182,11 @@ function initialState(defaults, activities, persisted) {
     DURABLE_KEYS.forEach((k) => {
       if (persisted[k] !== undefined) base[k] = persisted[k];
     });
+  }
+  // An approved plan whose day has passed is retired, so its sessions stop
+  // showing up as today's (a draft for today is laid out on mount).
+  if (base.planApproved && base.selectedDay < NUM_TODAY) {
+    Object.assign(base, { planApproved: false, selectedDay: NUM_TODAY, schedule: null });
   }
   // A session still running from last time reopens on the focus screen; one
   // whose task is gone or no longer in progress is dropped.
@@ -245,8 +250,10 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     recurringActivities, dayNum: planDayNum,
   });
 
+  // Lays out a draft plan on start — never an approved one, whose times
+  // (moved by hand or picked by the AI) are the student's own.
   useEffect(() => {
-    setState((s) => ({ ...s, schedule: buildSchedule({ ...s, constraints, dayNum: dayNumOf(s) }) }));
+    setState((s) => (s.planApproved ? s : { ...s, schedule: buildSchedule({ ...s, constraints, dayNum: dayNumOf(s) }) }));
     return () => clearInterval(timerRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -277,6 +284,22 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   // handed, which may not match the render this closure was created in.
   function dayNumOf(s) {
     return s.planToday ? NUM_TODAY : REFERENCE_DAY;
+  }
+  // The day the current schedule belongs to: an approved plan's own day,
+  // otherwise whichever day the Planner is drafting.
+  function schedDay(s) {
+    return s.planApproved ? s.selectedDay : dayNumOf(s);
+  }
+  // After an edit, a draft schedule is simply laid out again. An approved
+  // plan is only patched — a removed task leaves it (block === null), an
+  // edited one keeps its place with its new start/length — so nothing the
+  // student arranged moves by itself.
+  function scheduleAfterEdit(s, next, id, block) {
+    if (!s.planApproved) return buildSchedule({ ...next, constraints, dayNum: dayNumOf(s) });
+    const sched = { ...(s.schedule || {}) };
+    if (block === null) delete sched[id];
+    else if (block && sched[id]) sched[id] = { ...sched[id], ...block };
+    return sched;
   }
 
   function def(id, st) {
@@ -401,10 +424,12 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   }
 
   // ---- home / session lifecycle ----
+  // A session always happens today, whatever day the Planner's Today/
+  // Tomorrow switch was last left on.
   function startSession(id) {
     update((s) => {
       const d = def(id, s);
-      const key = d ? taskKey(d, dayNumOf(s)) : id;
+      const key = d ? taskKey(d, NUM_TODAY) : id;
       const t = { ...s.taskState };
       t[key] = { ...t[key], status: 'in_progress' };
       const now = Date.now();
@@ -419,7 +444,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   function togglePause(id) {
     update((s) => {
       const d = def(id, s);
-      const key = d ? taskKey(d, dayNumOf(s)) : id;
+      const key = d ? taskKey(d, NUM_TODAY) : id;
       const t = { ...s.taskState };
       const pausing = t[key].status !== 'paused';
       t[key] = { ...t[key], status: pausing ? 'paused' : 'in_progress' };
@@ -442,9 +467,9 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     update((s) => {
       const id = s.finishTask;
       const d = def(id, s);
-      const key = d ? taskKey(d, dayNumOf(s)) : id;
+      const key = d ? taskKey(d, NUM_TODAY) : id;
       const t = { ...s.taskState };
-      t[key] = { status: 'completed', actual: s.finishDur, hard: s.finishHard, know: s.finishKnow, day: dayNumOf(s) };
+      t[key] = { status: 'completed', actual: s.finishDur, hard: s.finishHard, know: s.finishKnow, day: NUM_TODAY };
       return {
         taskState: t, activeTask: null, finishTask: null, sessionStart: null, sessionElapsedMs: 0, sessionBeganAt: null, sessionExtraMin: 0, breakDismissed: false,
         // Finished on the focus screen: it stays up briefly for the finish
@@ -487,16 +512,19 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       if (!b || b.msg) return {};
       const sched = { ...s.schedule, [b.id]: { start: b.start, dur: b.dur } };
       const dov = { ...s.durOverride, [b.id]: b.dur };
-      return { schedule: sched, durOverride: dov, blockEdit: null };
+      // Remembered as the task's start too, so a later re-layout keeps it.
+      const sov = { ...s.startOverride, [b.id]: b.start };
+      return { schedule: sched, durOverride: dov, startOverride: sov, blockEdit: null };
     });
   }
   function removeBlock(id) {
     update((s) => {
       const d = def(id, s);
-      const key = d ? taskKey(d, dayNumOf(s)) : id;
-      const tsx = { ...s.taskState, [key]: { ...s.taskState[key], status: 'skipped', day: dayNumOf(s) } };
-      const next = { ...s, taskState: tsx, constraints, dayNum: dayNumOf(s) };
-      return { taskState: tsx, schedule: buildSchedule(next) };
+      const day = schedDay(s);
+      const key = d ? taskKey(d, day) : id;
+      const tsx = { ...s.taskState, [key]: { ...s.taskState[key], status: 'skipped', day } };
+      const next = { ...s, taskState: tsx };
+      return { taskState: tsx, schedule: scheduleAfterEdit(s, next, id, null) };
     });
   }
 
@@ -629,8 +657,12 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       // in plannerLogic.js) the first time that day is actually looked at.
       const tasks = isNew && !isRepeat ? { ...s.tasks, [id]: !isPersonal } : s.tasks;
       const taskState = isNew && !isRepeat ? { ...s.taskState, [id]: { status: 'planned' } } : s.taskState;
-      const next = { ...s, taskDefs: defs, durOverride, startOverride, tasks, taskState, constraints, dayNum: dayNumOf(s) };
-      return { taskDefs: defs, durOverride, startOverride, tasks, taskState, schedule: buildSchedule(next), taskEdit: null, editErrors: {}, teToast: true };
+      const next = { ...s, taskDefs: defs, durOverride, startOverride, tasks, taskState };
+      // In an approved plan an edited task keeps its block (with the new
+      // time/length) — or leaves the plan if it no longer belongs to that day.
+      const edited = defs.find((t) => t.id === id);
+      const block = isPersonal ? undefined : (s.planApproved && !taskDueOnDay(edited, s.selectedDay) ? null : { start: startMin, dur: fm.dur });
+      return { taskDefs: defs, durOverride, startOverride, tasks, taskState, schedule: scheduleAfterEdit(s, next, id, block), taskEdit: null, editErrors: {}, teToast: true };
     });
     clearTimeout(toastTimerRef.current);
     toastTimerRef.current = setTimeout(() => update({ teToast: false }), 2200);
@@ -657,8 +689,8 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       delete startOverride[id];
       const sessionReview = { ...s.sessionReview };
       delete sessionReview[id];
-      const next = { ...s, taskDefs: defs, tasks, taskState, durOverride, startOverride, constraints, dayNum: dayNumOf(s) };
-      return { taskDefs: defs, tasks, taskState, durOverride, startOverride, sessionReview, schedule: buildSchedule(next), taskEdit: null };
+      const next = { ...s, taskDefs: defs, tasks, taskState, durOverride, startOverride };
+      return { taskDefs: defs, tasks, taskState, durOverride, startOverride, sessionReview, schedule: scheduleAfterEdit(s, next, id, null), taskEdit: null };
     });
   }
 

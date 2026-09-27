@@ -174,10 +174,12 @@ function NextSessionCard({ planner }) {
   const { state, def, ts, startSession, update } = planner;
   const summary = state.daySummaries?.[localDateKey()];
   if (summary) return <DaySummarizedCard summary={summary} planner={planner} />;
-  const sched = state.schedule || {};
-  const ids = Object.keys(sched).sort((a, b) => sched[a].start - sched[b].start);
-  const active = state.activeTask;
-  const nextId = active || ids.filter((id) => ['planned', 'paused'].includes(ts(id).status))[0];
+  // Only today's plan counts here — not tomorrow's (already approved in the
+  // evening) — and never a session whose task was since deleted.
+  const sched = scheduleIsFor(state, NUM_TODAY) ? state.schedule || {} : {};
+  const ids = Object.keys(sched).filter((id) => def(id)).sort((a, b) => sched[a].start - sched[b].start);
+  const active = state.activeTask && def(state.activeTask) ? state.activeTask : null;
+  const nextId = active || ids.filter((id) => ['planned', 'paused'].includes(ts(id, NUM_TODAY).status))[0];
 
   // The glow pulses to draw the eye to the session waiting to be started —
   // once it's actually running (or paused mid-way), that's already been
@@ -189,7 +191,7 @@ function NextSessionCard({ planner }) {
   );
 
   if (!nextId) {
-    const done = ids.filter((id) => ts(id).status === 'completed').length;
+    const done = ids.filter((id) => ts(id, NUM_TODAY).status === 'completed').length;
     // Sessions finished but to-dos (or unplanned tasks) still open: the day
     // isn't done yet, so point at what's left instead of the summary.
     const open = done ? dayOpenTasks(state, NUM_TODAY) : [];
@@ -227,7 +229,7 @@ function NextSessionCard({ planner }) {
 
   const d = def(nextId);
   const b = sched[nextId];
-  const st = ts(nextId);
+  const st = ts(nextId, NUM_TODAY);
   const running = !!active && (st.status === 'in_progress' || st.status === 'paused');
 
   // A running session lives on the focus screen; Home just points back to it.
@@ -599,9 +601,9 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
     if (!isRealDay) return null;
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    const sched = state.schedule || {};
+    const sched = scheduleIsFor(state, NUM_TODAY) ? state.schedule || {} : {};
     const missedId = Object.keys(sched)
-      .filter((id) => ts(id).status === 'planned' && nowMinutes > sched[id].start + sched[id].dur)
+      .filter((id) => planner.def(id) && ts(id, NUM_TODAY).status === 'planned' && nowMinutes > sched[id].start + sched[id].dur)
       .sort((a, b) => sched[a].start - sched[b].start)[0];
     if (!missedId || missedId === dismissedMissedSession) return null;
     const d = planner.def(missedId);

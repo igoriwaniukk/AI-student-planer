@@ -1,4 +1,5 @@
-import { upcomingExams, computeStreak, fmt } from './plannerLogic';
+import { upcomingExams, computeStreak, fmt, scheduleIsFor } from './plannerLogic';
+import { NUM_TODAY } from './plannerData';
 
 // Compact snapshot of the student's plan/goals sent to the AI chat backend
 // with each message, instead of the full app state (keeps the request small
@@ -22,7 +23,8 @@ export function buildChatContext({ state, weeklyCapacity, profileDefaults, study
     .filter((e) => e.daysUntil >= 0 && e.daysUntil <= 7)
     .reduce((a, e) => a + (state.examGoals?.[e.id]?.studyMinutes || 0), 0);
 
-  const sched = state.schedule || {};
+  // Only today's plan — an approved plan for tomorrow isn't today's sessions.
+  const sched = scheduleIsFor(state, NUM_TODAY) ? state.schedule || {} : {};
   const todaySessions = (state.taskDefs || [])
     .filter((d) => sched[d.id])
     .map((d) => ({
