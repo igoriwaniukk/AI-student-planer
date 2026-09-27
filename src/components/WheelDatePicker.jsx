@@ -27,7 +27,8 @@ function toISO(year, monthIdx, day) {
 export default function WheelDatePicker({ value, onChange, minDate }) {
   const { lang } = useLang();
   const monthNames = MONTH_NAMES[lang] || MONTH_NAMES.en;
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const todayIso = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
   const base = value || minDate || todayIso;
   const [year, month1, day] = base.split('-').map(Number);
   const monthIdx = month1 - 1;

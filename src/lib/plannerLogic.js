@@ -438,15 +438,18 @@ export function upcomingExams(state) {
 }
 
 // Consecutive real-world days (ending today or yesterday) with a fully
-// completed study day recorded in studyHistory (keyed by real ISO date).
+// completed study day recorded in studyHistory — keyed by the local
+// calendar date (localDateKey), stepping back one calendar day at a time,
+// so studying at 00:30 counts for the new day and clock changes can't skip
+// or repeat a day.
 export function computeStreak(studyHistory) {
   const d = new Date();
-  if (!studyHistory[d.toISOString().slice(0, 10)]?.completed) {
+  if (!studyHistory[localDateKey(d)]?.completed) {
     d.setDate(d.getDate() - 1); // today not logged yet — count from yesterday instead
   }
   let streak = 0;
   for (;;) {
-    const entry = studyHistory[d.toISOString().slice(0, 10)];
+    const entry = studyHistory[localDateKey(d)];
     if (!entry || !entry.completed) break;
     streak++;
     d.setDate(d.getDate() - 1);
@@ -560,7 +563,7 @@ export function finishedOnDay(state, d) {
 }
 
 export function studiedToday(studyHistory) {
-  return !!studyHistory?.[new Date().toISOString().slice(0, 10)]?.completed;
+  return !!studyHistory?.[localDateKey()]?.completed;
 }
 
 // YYYY-MM-DD in the device's own timezone — what the push server compares
@@ -584,7 +587,7 @@ export function weeklyReview(studyHistory) {
   const entries = [];
   const d = new Date();
   for (let i = 0; i < 7; i++) {
-    const entry = studyHistory[d.toISOString().slice(0, 10)];
+    const entry = studyHistory[localDateKey(d)];
     if (entry) entries.push(entry);
     d.setDate(d.getDate() - 1);
   }

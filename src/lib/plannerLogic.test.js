@@ -1,8 +1,8 @@
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
   fmt, span, toMinutes, hm, activeIds, lightenForEnergy, buildSchedule, buildRescueSchedule,
   checkBlockConflict, computeStreak, computeTotalPoints, weeklyReview, examAtRisk,
-  daySessionBreakdown, weekStats, currentWeekNums, examPrepProgress, sessionClock, dayOpenTasks, wrapUpMinutes, taskShortLabel,
+  daySessionBreakdown, weekStats, currentWeekNums, examPrepProgress, sessionClock, dayOpenTasks, wrapUpMinutes, taskShortLabel, studiedToday, localDateKey,
 } from './plannerLogic';
 import { NUM_TODAY } from './plannerData';
 import { setCurrentLang } from './i18n';
@@ -327,5 +327,29 @@ describe('dayOpenTasks / wrapUpMinutes / taskShortLabel', () => {
     const tl = (k) => (k === undefined ? '' : t(k));
     expect(taskShortLabel(tl, { id: 'x', category: 'school', subject: 'Inny', title: 'Homework' }).endsWith(' — Homework')).toBe(true);
     expect(taskShortLabel(tl, { id: 'y', category: 'personal', title: 'Read book' })).toBe('Read book');
+  });
+});
+
+// Study days are keyed by the local calendar date, so they behave the same
+// in any time zone (run with TZ=Europe/Warsaw to cover the Polish case).
+describe('study days use the local date', () => {
+  afterEach(() => vi.useRealTimers());
+  const key = (y, m, d) => localDateKey(new Date(y, m - 1, d, 12));
+
+  it('just after midnight, today is the new day', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 8, 27, 0, 30));
+    expect(studiedToday({ [key(2026, 9, 26)]: { completed: true } })).toBe(false);
+    expect(computeStreak({ [key(2026, 9, 26)]: { completed: true }, [key(2026, 9, 25)]: { completed: true } })).toBe(2);
+  });
+
+  it('counts each day once across the clock changes', () => {
+    vi.useFakeTimers();
+    for (const [y, m, d] of [[2026, 10, 26], [2027, 3, 29]]) {
+      vi.setSystemTime(new Date(y, m - 1, d, 1, 30));
+      const history = {};
+      for (let i = 1; i <= 10; i++) history[key(y, m, d - i)] = { completed: true };
+      expect(computeStreak(history)).toBe(10);
+    }
   });
 });

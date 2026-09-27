@@ -1,5 +1,5 @@
 import { KINDS, SUBJECTS, GOALS, LEVELS, REFERENCE_DAY } from '../lib/plannerData';
-import { formatMonthDay, daysUntilFromISODate } from '../lib/plannerLogic';
+import { formatMonthDay, daysUntilFromISODate, localDateKey } from '../lib/plannerLogic';
 import { VALUE_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, Chip, ListRow, ConfirmCard, LabelRequired } from '../components/ui';
 import WheelDatePicker from '../components/WheelDatePicker';
@@ -18,7 +18,6 @@ function daysLabel(t, daysUntil) {
   return t('cal.inDaysPill', { n: daysUntil });
 }
 
-const TODAY_ISO = new Date().toISOString().slice(0, 10);
 
 export default function Deadline({ planner }) {
   const { t } = useLang();
@@ -66,7 +65,7 @@ export default function Deadline({ planner }) {
       <div style={{ display: 'flex', gap: 9 }}>
         <div style={{ flex: 3 }}>
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', color: '#7a7a8a', marginBottom: 6, textAlign: 'center' }}>{t('dl.date')}</div>
-          <WheelDatePicker value={state.examDate} minDate={TODAY_ISO} onChange={(v) => setField('examDate', v)} />
+          <WheelDatePicker value={state.examDate} minDate={localDateKey()} onChange={(v) => setField('examDate', v)} />
         </div>
         <div style={{ flex: 2 }}>
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', color: '#7a7a8a', marginBottom: 6, textAlign: 'center' }}>{t('dl.time')}</div>

@@ -180,6 +180,8 @@ function useCloudSync(session) {
 }
 
 const TAB_SCREENS = new Set(['home', 'calendar', 'tasks', 'profile']);
+// The local date this page load's day numbers were computed for.
+const LOADED_DAY = localDateKey();
 
 // Mounted only once onboarding is done, so usePlanner's initial state (a lazy
 // useState initializer, which only ever runs on first mount) picks up the
@@ -241,6 +243,17 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
     const id = setInterval(() => setClock(new Date()), 30000);
     return () => clearInterval(id);
   }, []);
+  // "Today" (NUM_TODAY and friends) is worked out once when the app loads,
+  // so an app left open past midnight would keep showing yesterday. When
+  // the local date moves on — noticed on this clock or on coming back to
+  // the foreground — reload; everything durable is already saved.
+  useEffect(() => {
+    const check = () => { if (localDateKey() !== LOADED_DAY) window.location.reload(); };
+    check();
+    const onVisible = () => { if (document.visibilityState === 'visible') check(); };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => document.removeEventListener('visibilitychange', onVisible);
+  }, [clock]);
   const nowMinutes = clock.getHours() * 60 + clock.getMinutes();
   const hasPlan = dayBreakdown.planned.length > 0 && (planIsToday || dayBreakdown.done.length > 0);
   const allDone = dayBreakdown.done.length > 0 && dayBreakdown.unfinished.length === 0 && openToday.length === 0;
@@ -382,7 +395,7 @@ export default function App() {
   // already earned its streak credit can't later get un-completed by
   // Finish day just because not every planned task got finished.
   function recordStudyDay(entry) {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = localDateKey();
     setStudyHistory((h) => {
       const prev = h[today] || {};
       return { ...h, [today]: { ...prev, ...entry, completed: !!(prev.completed || entry.completed) } };

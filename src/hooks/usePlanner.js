@@ -30,7 +30,7 @@ const DURABLE_KEYS = [
 function defaultExamDateISO() {
   const d = new Date();
   d.setDate(d.getDate() + 11);
-  return d.toISOString().slice(0, 10);
+  return localDateKey(d);
 }
 
 function initialState(defaults, activities, persisted) {
@@ -506,7 +506,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   function dayChoiceForNum(dayNum) {
     if (dayNum == null || dayNum === REFERENCE_DAY) return { dayChoice: 'tomorrow', dayDate: '' };
     if (dayNum === NUM_TODAY) return { dayChoice: 'today', dayDate: '' };
-    return { dayChoice: 'pick', dayDate: realDateForNum(dayNum).toISOString().slice(0, 10) };
+    return { dayChoice: 'pick', dayDate: localDateKey(realDateForNum(dayNum)) };
   }
   // The reverse: today/tomorrow/an explicit picked date all resolve down to
   // the same day-num space (NUM_TODAY-relative) everything else here uses.

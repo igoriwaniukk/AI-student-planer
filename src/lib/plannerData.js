@@ -37,7 +37,8 @@ export const PRIO_STYLE = {
 const ANCHOR_NUM = 19;
 
 function loadOrCreateAnchor() {
-  const todayISO = new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const todayISO = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
   const fresh = { num: ANCHOR_NUM, dateISO: todayISO };
   if (typeof localStorage === 'undefined') return fresh;
   try {

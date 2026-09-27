@@ -531,8 +531,8 @@ const ENERGY_EMOJI = { Niska: '🔋', Normalna: '⚡', Wysoka: '🔥' };
 
 function EnergyHistory({ energyLog }) {
   const { t, lang } = useLang();
-  const today = new Date().toISOString().slice(0, 10);
-  const todays = energyLog.filter((e) => e.at.slice(0, 10) === today).slice(-5);
+  const today = localDateKey();
+  const todays = energyLog.filter((e) => localDateKey(new Date(e.at)) === today).slice(-5);
   if (!todays.length) return null;
   return (
     <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>

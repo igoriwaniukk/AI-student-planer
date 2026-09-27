@@ -1,4 +1,5 @@
 import { SUBJECTS, PRIORITIES, RECUR_DAYS } from '../lib/plannerData';
+import { localDateKey } from '../lib/plannerLogic';
 import { VALUE_KEY, DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { detectTaskMeta, iconForTask } from '../lib/taskAuto';
@@ -6,7 +7,6 @@ import { BottomSheet, Chip } from './ui';
 import WheelDatePicker from './WheelDatePicker';
 import WheelTimePicker from './WheelTimePicker';
 
-const TODAY_ISO = new Date().toISOString().slice(0, 10);
 const WEEKDAYS_5 = RECUR_DAYS.slice(0, 5);
 
 export default function TaskEditSheet({ planner }) {
@@ -61,12 +61,12 @@ export default function TaskEditSheet({ planner }) {
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
         <Chip label={t('taskEdit.dayToday')} active={fm.dayChoice === 'today'} onClick={() => patchTaskEdit({ dayChoice: 'today' })} />
         <Chip label={t('taskEdit.dayTomorrow')} active={fm.dayChoice === 'tomorrow'} onClick={() => patchTaskEdit({ dayChoice: 'tomorrow' })} />
-        <Chip label={t('taskEdit.dayPick')} active={fm.dayChoice === 'pick'} onClick={() => patchTaskEdit({ dayChoice: 'pick', dayDate: fm.dayDate || TODAY_ISO })} />
+        <Chip label={t('taskEdit.dayPick')} active={fm.dayChoice === 'pick'} onClick={() => patchTaskEdit({ dayChoice: 'pick', dayDate: fm.dayDate || localDateKey() })} />
         <Chip label={t('taskEdit.dayRepeat')} active={fm.dayChoice === 'repeat'} onClick={() => patchTaskEdit({ dayChoice: 'repeat' })} />
       </div>
       {fm.dayChoice === 'pick' && (
         <div style={{ marginTop: 10 }}>
-          <WheelDatePicker value={fm.dayDate} minDate={TODAY_ISO} onChange={(v) => patchTaskEdit({ dayDate: v })} />
+          <WheelDatePicker value={fm.dayDate} minDate={localDateKey()} onChange={(v) => patchTaskEdit({ dayDate: v })} />
         </div>
       )}
       {fm.dayChoice === 'repeat' && (
