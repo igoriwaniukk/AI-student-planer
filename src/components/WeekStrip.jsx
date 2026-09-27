@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { WEEK_DAYS, REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
+import { WEEK_DAYS, NUM_TODAY, realDateForNum } from '../lib/plannerData';
 import { daysPill } from '../lib/plannerLogic';
 import { DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
@@ -33,7 +33,7 @@ export default function WeekStrip({
 
   const baseWeek = weekOffset ? WEEK_DAYS.map((d) => ({ ...d, num: d.num + weekOffset * 7 })) : WEEK_DAYS;
   const countdownSet = examDay != null
-    ? new Set(baseWeek.filter((d) => d.num >= REFERENCE_DAY && d.num <= examDay).map((d) => d.num))
+    ? new Set(baseWeek.filter((d) => d.num >= NUM_TODAY && d.num <= examDay).map((d) => d.num))
     : null;
   // A streak ends today once today is studied, otherwise yesterday (see
   // computeStreak) — never REFERENCE_DAY, which is tomorrow.
@@ -41,7 +41,7 @@ export default function WeekStrip({
   const streakSet = streakCount > 0
     ? new Set(baseWeek.filter((d) => d.num <= streakEnd && d.num > streakEnd - streakCount).map((d) => d.num))
     : null;
-  const daysUntilExam = examDay != null ? examDay - REFERENCE_DAY : null;
+  const daysUntilExam = examDay != null ? examDay - NUM_TODAY : null;
 
   function handlePointerDown(e) {
     dragStartX.current = e.clientX;

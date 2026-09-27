@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
   fmt, span, toMinutes, hm, activeIds, lightenForEnergy, buildSchedule, buildRescueSchedule,
   checkBlockConflict, computeStreak, computeTotalPoints, weeklyReview, examAtRisk,
-  daySessionBreakdown, weekStats, currentWeekNums, examPrepProgress, sessionClock, dayOpenTasks, wrapUpMinutes, taskShortLabel, studiedToday, localDateKey,
+  daySessionBreakdown, weekStats, currentWeekNums, examPrepProgress, sessionClock, dayOpenTasks, wrapUpMinutes, taskShortLabel, studiedToday, localDateKey, buildPrepDayNums, upcomingExams,
 } from './plannerLogic';
 import { NUM_TODAY } from './plannerData';
 import { setCurrentLang } from './i18n';
@@ -350,6 +350,25 @@ describe('study days use the local date', () => {
       const history = {};
       for (let i = 1; i <= 10; i++) history[key(y, m, d - i)] = { completed: true };
       expect(computeStreak(history)).toBe(10);
+    }
+  });
+});
+
+describe('exam dates and prep days', () => {
+  it('an exam in N days is N days away and on that day', () => {
+    const exam = { id: 'e', subject: 'Chemia', title: 'Test', day: NUM_TODAY + 3, v: 2 };
+    expect(upcomingExams({ customExams: [exam] })[0].daysUntil).toBe(3);
+  });
+
+  it('never puts a prep session on or after the exam', () => {
+    for (const daysAway of [1, 2, 3, 11]) {
+      const examDay = NUM_TODAY + daysAway;
+      const days = buildPrepDayNums(5, examDay);
+      expect(days).toHaveLength(5);
+      days.forEach((d) => {
+        expect(d).toBeGreaterThanOrEqual(NUM_TODAY);
+        expect(d).toBeLessThan(examDay);
+      });
     }
   });
 });

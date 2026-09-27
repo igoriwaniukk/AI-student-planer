@@ -1,4 +1,4 @@
-import { KINDS, SUBJECTS, GOALS, LEVELS, REFERENCE_DAY } from '../lib/plannerData';
+import { KINDS, SUBJECTS, GOALS, LEVELS, NUM_TODAY } from '../lib/plannerData';
 import { formatMonthDay, daysUntilFromISODate, localDateKey } from '../lib/plannerLogic';
 import { VALUE_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, Chip, ListRow, ConfirmCard, LabelRequired } from '../components/ui';
@@ -135,7 +135,7 @@ export default function Deadline({ planner }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 14 }}>
           <Row label={t('dl.kind')} value={t(VALUE_KEY[state.kind]) || state.kind} />
           <Row label={t('dl.subject')} value={t(VALUE_KEY[state.subject]) || state.subject} />
-          <Row label={t('dl.deadline')} value={state.examDate ? t('dl.deadlineValue', { date: formatMonthDay(REFERENCE_DAY + daysUntil), time: state.examTime || '09:00' }) : '—'} />
+          <Row label={t('dl.deadline')} value={state.examDate ? t('dl.deadlineValue', { date: formatMonthDay(NUM_TODAY + daysUntil), time: state.examTime || '09:00' }) : '—'} />
           <Row label={t('dl.left')} value={state.examDate ? (dateValid ? daysLabel(t, daysUntil) : t('dl.datePassed')) : '—'} />
           <Row label={t('dl.scope')} value={state.topics.length === 1 ? t('dl.oneTopic') : t('dl.nTopics', { n: state.topics.length })} />
           <Row label={t('dl.difficulty')} value={t('dl.difficultyValue', { level: difficultyLabel })} />

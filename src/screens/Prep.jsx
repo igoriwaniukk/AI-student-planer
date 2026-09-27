@@ -1,7 +1,7 @@
 import { BackButton, StickyFooter, PrimaryButton, BottomSheet, OptionRow, ConfirmCard } from '../components/ui';
 import { VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
-import { REFERENCE_DAY } from '../lib/plannerData';
+import { NUM_TODAY } from '../lib/plannerData';
 import { weekdayDateLabel, formatMonthDay, daysUntilFromISODate } from '../lib/plannerLogic';
 
 function sesji(n) {
@@ -35,7 +35,7 @@ export default function Prep({ planner }) {
   const hUnit = lang === 'en' ? 'hr' : 'godz.';
   const totalLabel = totalMin >= 60 ? Math.floor(totalMin / 60) + ' ' + hUnit + (totalMin % 60 ? ' ' + (totalMin % 60) + ' min' : '') : totalMin + ' min';
   const daysUntil = daysUntilFromISODate(state.examDate) ?? 11;
-  const examDay = REFERENCE_DAY + daysUntil;
+  const examDay = NUM_TODAY + daysUntil;
   // A real starting estimate from the student's own self-assessed knowledge
   // level (Deadline screen, 1-5) instead of an invented fixed number.
   const readinessPct = Math.round(((state.level - 1) / 4) * 100);

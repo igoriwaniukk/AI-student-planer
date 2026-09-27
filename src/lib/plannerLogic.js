@@ -56,9 +56,10 @@ export function range(start, durMinutes) {
 
 // Whole real-world days between today and an ISO "YYYY-MM-DD" date string
 // (the Deadline screen's actual date input) — negative once the date has
-// passed. Feeding this back into REFERENCE_DAY + daysUntil lets a real
-// picked date reuse all the existing REFERENCE_DAY-relative date-label
-// helpers (formatMonthDay, weekdayDateLabel) instead of duplicating them.
+// passed. NUM_TODAY + daysUntil is that date's day-num, so a picked date can
+// reuse the day-num date-label helpers (formatMonthDay, weekdayDateLabel).
+// (Exams used to be stored as REFERENCE_DAY + daysUntil — one day late,
+// since REFERENCE_DAY is tomorrow; see the migration in usePlanner.)
 export function daysUntilFromISODate(isoDate) {
   if (!isoDate) return null;
   const today = new Date();
@@ -394,17 +395,20 @@ export function buildPrepSessions(topics, difficulty) {
 // The actual day-num behind each of buildPrepDates' labels below — needed
 // so a confirmed prep session can become a real task on the right day
 // (see confirmPrep in usePlanner.js), not just a label on the Prep screen.
-export function buildPrepDayNums(count, examDay = REFERENCE_DAY + 11) {
-  const startDay = REFERENCE_DAY + 1;
-  const endDay = examDay - 1;
+// Sessions are spread from tomorrow to the day before the exam — or all on
+// today when the exam is tomorrow — so none lands on or after the exam; with
+// more sessions than days, some days get two.
+export function buildPrepDayNums(count, examDay = NUM_TODAY + 11) {
+  const lastDay = Math.max(NUM_TODAY, examDay - 1);
+  const firstDay = Math.min(REFERENCE_DAY, lastDay);
   const days = [];
   for (let i = 0; i < count; i++) {
-    days.push(count === 1 ? endDay : Math.round(startDay + ((endDay - startDay) * i) / (count - 1)));
+    days.push(count === 1 ? lastDay : Math.round(firstDay + ((lastDay - firstDay) * i) / (count - 1)));
   }
   return days;
 }
 
-export function buildPrepDates(count, examDay = REFERENCE_DAY + 11) {
+export function buildPrepDates(count, examDay = NUM_TODAY + 11) {
   return buildPrepDayNums(count, examDay).map(prepDayLabel);
 }
 
@@ -433,7 +437,7 @@ export function upcomingExams(state) {
   const builtIn = EXAMS.filter((e) => !e.requires || state[e.requires]);
   const all = builtIn.concat(state.customExams || []);
   return all
-    .map((e) => ({ ...e, daysUntil: e.day - REFERENCE_DAY }))
+    .map((e) => ({ ...e, daysUntil: e.day - NUM_TODAY }))
     .sort((a, b) => a.daysUntil - b.daysUntil);
 }
 

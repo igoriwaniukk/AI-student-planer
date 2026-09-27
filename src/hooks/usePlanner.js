@@ -4,7 +4,7 @@ import { TASK_TEXT_KEY, VALUE_KEY } from '../lib/i18n';
 import {
   PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, NUM_TODAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES, realDateForNum,
 } from '../lib/plannerData';
-import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, isTaskOn, taskDueOnDay, daySessionBreakdown, localDateKey, sessionDur, dayOpenTasks } from '../lib/plannerLogic';
+import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, isTaskOn, taskDueOnDay, daySessionBreakdown, localDateKey, sessionDur, dayOpenTasks, timeStrToMinutes } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
 import { requestAIRescue } from '../lib/aiRescue';
 
@@ -182,6 +182,12 @@ function initialState(defaults, activities, persisted) {
     DURABLE_KEYS.forEach((k) => {
       if (persisted[k] !== undefined) base[k] = persisted[k];
     });
+  }
+  // Exams saved before v: 2 sit one day late (they were stored as tomorrow +
+  // days until the exam); move each back once. Marked per exam, so an old
+  // copy synced from another device is corrected too, never twice.
+  if (base.customExams.some((e) => e.v !== 2)) {
+    base.customExams = base.customExams.map((e) => (e.v === 2 ? e : { ...e, day: e.day - 1, v: 2 }));
   }
   // An approved plan whose day has passed is retired, so its sessions stop
   // showing up as today's (a draft for today is laid out on mount).
@@ -388,7 +394,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   function deadlineGenerate() {
     update((s) => {
       const sessions = buildPrepSessions(s.topics, s.difficulty);
-      const examDay = REFERENCE_DAY + (daysUntilFromISODate(s.examDate) ?? 11);
+      const examDay = NUM_TODAY + (daysUntilFromISODate(s.examDate) ?? 11);
       return {
         deadlineFailed: false, prepSessions: sessions, prepDates: buildPrepDates(sessions.length, examDay),
         prepDayNums: buildPrepDayNums(sessions.length, examDay), sessionEdits: {},
@@ -887,7 +893,14 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       const taskDefs = s.taskDefs.concat(sessionTaskDefs);
       const tasks = { ...s.tasks };
       sessionTaskDefs.forEach((d) => { tasks[d.id] = true; });
-      return { examSessions: { ...s.examSessions, [id]: sessions }, taskDefs, tasks };
+      // The time picked for each session on the Prep screen becomes its
+      // start, instead of being dropped (it used to land at wake time).
+      const startOverride = { ...s.startOverride };
+      sessions.forEach((sess, i) => {
+        const start = String(sess.time || '').split('–')[0];
+        if (/^\d{1,2}:\d{2}$/.test(start)) startOverride[sessionTaskDefs[i].id] = timeStrToMinutes(start);
+      });
+      return { examSessions: { ...s.examSessions, [id]: sessions }, taskDefs, tasks, startOverride };
     });
     update({ prepSaved: true });
   }
@@ -1012,7 +1025,8 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   }
   function addCustomExam({ subject, title, daysUntil, grade, importance, studyMinutes, color }) {
     const id = 'custom-' + Date.now();
-    const exam = { id, subject, title, color: color || '#8fbaff', day: REFERENCE_DAY + daysUntil };
+    // v: 2 = day is the exam's real date (see the migration in initialState).
+    const exam = { id, subject, title, color: color || '#8fbaff', day: NUM_TODAY + daysUntil, v: 2 };
     update((s) => ({
       customExams: s.customExams.concat(exam),
       examGoals: { ...s.examGoals, [id]: { grade, importance, studyMinutes, answered: true } },
@@ -1032,8 +1046,21 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       const taskDefs = s.taskDefs.filter((t) => !t.id.startsWith(prefix));
       const tasks = { ...s.tasks };
       const taskState = { ...s.taskState };
-      s.taskDefs.forEach((t) => { if (t.id.startsWith(prefix)) { delete tasks[t.id]; delete taskState[t.id]; } });
-      return { customExams: s.customExams.filter((e) => e.id !== id), examGoals, examSessions, taskDefs, tasks, taskState };
+      // …and out of the plan, so no screen is left pointing at a session
+      // whose task no longer exists.
+      const schedule = { ...(s.schedule || {}) };
+      const durOverride = { ...s.durOverride };
+      const startOverride = { ...s.startOverride };
+      const sessionReview = { ...s.sessionReview };
+      s.taskDefs.forEach((t) => {
+        if (!t.id.startsWith(prefix)) return;
+        [tasks, taskState, schedule, durOverride, startOverride, sessionReview].forEach((map) => { delete map[t.id]; });
+      });
+      const activeGone = s.activeTask && s.activeTask.startsWith(prefix);
+      return {
+        customExams: s.customExams.filter((e) => e.id !== id), examGoals, examSessions, taskDefs, tasks, taskState, schedule, durOverride, startOverride, sessionReview,
+        ...(activeGone ? { activeTask: null, sessionStart: null, sessionElapsedMs: 0, sessionBeganAt: null, sessionExtraMin: 0 } : {}),
+      };
     });
   }
   // Toggles one prep session's done state — the only thing driving that
