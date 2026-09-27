@@ -36,7 +36,7 @@ import { useLang } from './lib/useLang';
 import { useStreakPushSync } from './hooks/usePushNotifications';
 import { useAuth } from './lib/useAuth';
 import { isSupabaseConfigured } from './lib/supabaseClient';
-import { pullFromCloud, pushToCloud } from './lib/cloudSync';
+import { pullFromCloud, pushToCloud, cloudChangedSinceSync } from './lib/cloudSync';
 
 // Marks (per browser tab session, in sessionStorage so it survives the
 // reload a fresh pull triggers below) which signed-in user's cloud data has
@@ -68,6 +68,12 @@ function useCloudSync(session) {
   // on the next successful sync.
   const [syncError, setSyncError] = useState(false);
   const ready = !isSupabaseConfigured || !session || alreadySynced || pulled;
+  // Uploads stay off until this tab has successfully pulled (or did so
+  // earlier this session), so nothing unsynced can overwrite the cloud copy.
+  const canPushRef = useRef(alreadySynced);
+  useEffect(() => {
+    if (alreadySynced) canPushRef.current = true;
+  }, [alreadySynced]);
 
   useEffect(() => {
     if (!isSupabaseConfigured || !session || alreadySynced) return undefined;
@@ -83,22 +89,34 @@ function useCloudSync(session) {
     }
 
     let cancelled = false;
-    (async () => {
+    let retryTimer = null;
+    const attempt = async () => {
       const pullResult = await pullFromCloud(uid);
       if (cancelled) return;
-      if (!pullResult.ok) setSyncError(true);
+      // A failed pull must never be read as "no cloud data": uploading now
+      // would overwrite the account with this device's empty defaults. Let
+      // the student in with what's local, keep uploads off (see
+      // canPushRef) and try again shortly.
+      if (!pullResult.ok) {
+        setSyncError(true);
+        setPulled(true);
+        retryTimer = setTimeout(attempt, 15000);
+        return;
+      }
       sessionStorage.setItem(SYNCED_FLAG, uid);
       localStorage.setItem(LOCAL_OWNER_FLAG, uid);
       if (pullResult.hadData) {
         window.location.reload();
         return;
       }
+      canPushRef.current = true;
       const pushResult = await pushToCloud(uid);
       if (cancelled) return;
-      if (!pushResult.ok) setSyncError(true);
+      setSyncError(!pushResult.ok);
       setPulled(true);
-    })();
-    return () => { cancelled = true; };
+    };
+    attempt();
+    return () => { cancelled = true; clearTimeout(retryTimer); };
   }, [session, alreadySynced]);
 
   useEffect(() => {
@@ -107,11 +125,28 @@ function useCloudSync(session) {
     let timer = null;
     let dirty = false;
     const flush = () => {
-      if (!dirty) return;
+      if (!dirty || !canPushRef.current) return;
       dirty = false;
       clearTimeout(timer);
-      pushToCloud(uid).then((result) => setSyncError(!result.ok));
+      pushToCloud(uid).then((result) => {
+        setSyncError(!result.ok);
+        // Another device had saved in between: its copy was merged in, so
+        // reload to show the merged data instead of re-saving the old state.
+        if (result.conflict) window.location.reload();
+      });
     };
+    // Back in the foreground (or freshly loaded in an already-synced tab):
+    // if another device saved meanwhile and nothing here is waiting to be
+    // uploaded, pull its copy instead of keeping — and later re-uploading —
+    // this device's older one.
+    const checkCloud = async () => {
+      if (dirty || !canPushRef.current) return;
+      if (await cloudChangedSinceSync(uid)) {
+        const pulledResult = await pullFromCloud(uid);
+        if (pulledResult.ok && pulledResult.hadData && !dirty) window.location.reload();
+      }
+    };
+    checkCloud();
     const onChange = () => {
       dirty = true;
       clearTimeout(timer);
@@ -126,7 +161,10 @@ function useCloudSync(session) {
     // e.g. a task marked done right before closing showing as never done
     // again. Flushing immediately on the first sign of the tab going away
     // closes that window instead of waiting out the debounce.
-    const onHide = () => { if (document.visibilityState === 'hidden') flush(); };
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') flush();
+      else checkCloud();
+    };
     document.addEventListener('visibilitychange', onHide);
     window.addEventListener('pagehide', flush);
     window.addEventListener(STORAGE_CHANGED_EVENT, onChange);

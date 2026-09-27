@@ -35,8 +35,17 @@ export function useLocalStorage(key, initialValue) {
     }
   });
 
+  // Only a real change is written and announced — re-saving identical state
+  // (e.g. the planner persisting on every start) used to trigger a cloud
+  // upload of this device's possibly outdated copy.
   useEffect(() => {
-    localStorage.setItem(key, JSON.stringify(value));
+    const next = JSON.stringify(value);
+    try {
+      if (localStorage.getItem(key) === next) return;
+      localStorage.setItem(key, next);
+    } catch {
+      return;
+    }
     window.dispatchEvent(new Event(STORAGE_CHANGED_EVENT));
   }, [key, value]);
 
