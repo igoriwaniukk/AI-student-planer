@@ -1,5 +1,7 @@
 # Pulgo — logic audit
 
+> **Status: all 20 issues fixed** on branch `claude/app-appearance-kprdoo` and merged into `main` (commits `0654810` … `0e810c5`, plus the Restart screen list). Kept here as a record of what was wrong.
+
 Only confirmed problems are listed, most serious first. Each one was checked by running the real code (unit-level scripts in the Europe/Warsaw time zone, Playwright with a fake clock) or by an exact code trace with concrete inputs. Line numbers refer to commit `35fcb49`.
 
 ---

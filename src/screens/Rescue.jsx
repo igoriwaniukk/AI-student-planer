@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { REASON_OPTIONS, RESCUE_TIME_OPTIONS, PRIO_STYLE, NUM_TODAY } from '../lib/plannerData';
-import { durOf, startOf, span, weekdayDateLabel, fmt } from '../lib/plannerLogic';
+import { durOf, startOf, span, weekdayDateLabel, fmt, rescueCandidates } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import { useLang } from '../lib/useLang';
@@ -22,10 +22,12 @@ function NowClock() {
 
 export default function Rescue({ planner }) {
   const { t } = useLang();
-  const { state, constraints, ts, toggleReason, setRescueTime, update, openTaskEdit, rescueGenerate, go, computeActiveIds } = planner;
+  const { state, constraints, ts, toggleReason, setRescueTime, update, openTaskEdit, rescueGenerate, go } = planner;
   const notEnoughTime = state.rescueTime === '45 min' && !state.rescueMoved;
   const noSafeBlock = state.rescueTime === 'Własny czas';
-  const remainingCount = computeActiveIds(state.taskDefs, state.tasks, state.taskState).length;
+  // Only what a restart can still rearrange: today's unfinished tasks.
+  const remainingIds = rescueCandidates(state.taskDefs, state.tasks, state.taskState);
+  const remainingCount = remainingIds.length;
 
   return (
     <>
@@ -58,11 +60,11 @@ export default function Rescue({ planner }) {
 
       <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('rescue.remaining')}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
-        {state.taskDefs.filter((d) => d.category !== 'personal').map((d) => {
+        {state.taskDefs.filter((d) => remainingIds.includes(d.id)).map((d) => {
           const ps = PRIO_STYLE[d.priority] || PRIO_STYLE['Normalny priorytet'];
           const dur = durOf(d.id, state.taskDefs, state.durOverride);
           const start = startOf(d.id, state);
-          const st = ts(d.id);
+          const st = ts(d.id, NUM_TODAY);
           return (
             <div key={d.id} style={{ padding: 14, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
