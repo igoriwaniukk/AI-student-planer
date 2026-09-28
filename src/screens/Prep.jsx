@@ -58,7 +58,7 @@ export default function Prep({ planner }) {
           <span style={{ fontSize: 12, fontWeight: 650, color: '#e2e2ea', padding: '7px 11px', borderRadius: 9, background: 'rgba(255,255,255,.07)' }}>{t('prep.daysToExam', { n: daysUntil })}</span>
           <span style={{ fontSize: 12, fontWeight: 650, color: '#8ff0de', padding: '7px 11px', borderRadius: 9, background: 'rgba(46,230,197,.13)' }}>{t('prep.lastReview')}</span>
         </div>
-        <div style={{ fontSize: 12.5, lineHeight: 1.5, color: '#a3a3b3', marginTop: 12 }}>{t('prep.flowDesc')}</div>
+        <div style={{ fontSize: 12.5, lineHeight: 1.5, color: '#a3a3b3', marginTop: 12 }}>{state.prepRationale || t('prep.flowDesc')}</div>
         <div style={{ height: 1, background: 'rgba(255,255,255,.09)', margin: '14px -16px' }} />
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
           <span style={{ fontSize: 13, color: '#9a9aab' }}>{t('prep.estimatedReadiness')}</span>

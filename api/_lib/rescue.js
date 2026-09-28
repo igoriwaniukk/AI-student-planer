@@ -1,4 +1,5 @@
 import { anthropic, ANTHROPIC_MODEL, anthropicErrorResponse } from './anthropic.js';
+import { contextLines, taskExtras } from './context.js';
 
 export const RESCUE_TOOL = {
   name: 'propose_rescue',
@@ -58,10 +59,10 @@ function buildRescueSystemPrompt(lang) {
   ].join('\n');
 }
 
-function buildRescueUserMessage(tasks, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints) {
+export function buildRescueUserMessage(tasks, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints, context) {
   const lines = [
     `Uczniowi zostało dziś tylko ${availableMinutes} minut na naukę (availableMinutes = ${availableMinutes}). Oto zadania do rozdysponowania:`,
-    ...tasks.map((t) => `- taskId: ${t.taskId}, przedmiot: ${t.subject}, tytuł: ${t.title}, oryginalny czas trwania: ${t.durationMinutes} min, priorytet: ${t.priority}`),
+    ...tasks.map((t) => `- taskId: ${t.taskId}, przedmiot: ${t.subject}, tytuł: ${t.title}, oryginalny czas trwania: ${t.durationMinutes} min, priorytet: ${t.priority}${taskExtras(t)}`),
     `Poziom energii ucznia teraz: ${energy}.`,
     `Powody, dla których dzień się nie ułożył: ${(reasons && reasons.length ? reasons : ['nieznany']).join(', ')}.`,
   ];
@@ -85,10 +86,12 @@ function buildRescueUserMessage(tasks, energy, availableMinutes, reasons, activi
   if (activitiesNote) {
     lines.push(`Dodatkowy kontekst podany przez ucznia (weź go pod uwagę, jeśli jest istotny): ${activitiesNote}`);
   }
+  lines.push(...contextLines(context));
+  if (context) lines.push('Chroń w pierwszej kolejności zadania przygotowujące do najbliższego sprawdzianu.');
   return lines.join('\n');
 }
 
-export async function handlePlanRescue({ tasks, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints, lang }) {
+export async function handlePlanRescue({ tasks, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints, context, lang }) {
   if (!anthropic) {
     return { status: 500, body: { error: 'Brak klucza ANTHROPIC_API_KEY na serwerze. Ustaw go w środowisku i uruchom serwer ponownie.' } };
   }
@@ -106,7 +109,7 @@ export async function handlePlanRescue({ tasks, energy, availableMinutes, reason
       system: buildRescueSystemPrompt(lang),
       tools: [RESCUE_TOOL],
       tool_choice: { type: 'tool', name: 'propose_rescue' },
-      messages: [{ role: 'user', content: buildRescueUserMessage(tasks, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints) }],
+      messages: [{ role: 'user', content: buildRescueUserMessage(tasks, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints, context) }],
     });
 
     const toolUse = response.content.find((b) => b.type === 'tool_use');

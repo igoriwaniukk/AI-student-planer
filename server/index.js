@@ -3,6 +3,7 @@ import express from 'express';
 import { handleChat } from '../api/_lib/chat.js';
 import { handlePlanGenerate } from '../api/_lib/plan.js';
 import { handlePlanRescue } from '../api/_lib/rescue.js';
+import { handlePlanPrep } from '../api/_lib/prep.js';
 import { pushEnabled, handleVapidPublicKey, handleSubscribe, handlePushState, handleUnsubscribe, sendScheduledPushes } from '../api/_lib/push.js';
 import { guardAiRequest } from '../api/_lib/auth.js';
 import { handleAccountDelete } from '../api/_lib/account.js';
@@ -37,6 +38,10 @@ app.post('/api/plan/generate', async (req, res) => {
 app.post('/api/plan/rescue', async (req, res) => {
   if (!(await guardAiRequest(req, res))) return;
   respond(res, handlePlanRescue, req.body || {});
+});
+app.post('/api/plan/prep', async (req, res) => {
+  if (!(await guardAiRequest(req, res))) return;
+  respond(res, handlePlanPrep, req.body || {});
 });
 
 app.post('/api/account/delete', async (req, res) => {

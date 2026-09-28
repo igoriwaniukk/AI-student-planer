@@ -464,7 +464,7 @@ export const dict = {
     'settings.version': 'Wersja {v}',
     'settings.privacyPolicy': 'Polityka prywatności',
     'settings.termsOfService': 'Regulamin',
-    'settings.privacyPolicyText': 'Ta aplikacja przechowuje Twoje dane (imię, plan lekcji, zadania, sprawdziany, dziennik energii, zajęcia cykliczne) na koncie w Supabase, powiązanym z Twoim logowaniem. Dane synchronizują się między urządzeniami, na których jesteś zalogowany/a.\n\nGdy prosisz o wygenerowanie planu dnia albo planu ratunkowego lub piszesz w czacie, Twoje zadania, sprawdziany, preferencje, poziom energii i treść wiadomości są wysyłane do usługi AI (Claude, Anthropic) wyłącznie po to, by odpowiedzieć — nic więcej nie jest do niej przekazywane.\n\nDane nie są sprzedawane ani udostępniane osobom trzecim w celach marketingowych. Możesz usunąć wszystkie swoje dane w każdej chwili w Ustawieniach → Usuń konto — usunięcie jest trwałe i natychmiastowe.',
+    'settings.privacyPolicyText': 'Ta aplikacja przechowuje Twoje dane (imię, plan lekcji, zadania, sprawdziany, dziennik energii, zajęcia cykliczne) na koncie w Supabase, powiązanym z Twoim logowaniem. Dane synchronizują się między urządzeniami, na których jesteś zalogowany/a.\n\nGdy prosisz o plan dnia, plan nauki do sprawdzianu albo plan ratunkowy lub piszesz w czacie, Twoje zadania i ich notatki, rzeczy do zrobienia, sprawdziany, stałe zajęcia, preferencje, poziom energii, uwaga do planu i treść wiadomości są wysyłane do usługi AI (Claude, Anthropic) wyłącznie po to, by odpowiedzieć — nic więcej nie jest do niej przekazywane.\n\nDane nie są sprzedawane ani udostępniane osobom trzecim w celach marketingowych. Możesz usunąć wszystkie swoje dane w każdej chwili w Ustawieniach → Usuń konto — usunięcie jest trwałe i natychmiastowe.',
     'settings.termsText': 'Pulgo to narzędzie pomagające planować naukę — nie gwarantuje wyników w nauce ani zdania sprawdzianów. Odpowiadasz za treść zadań i sprawdzianów, które dodajesz.\n\nKorzystasz z aplikacji na własną odpowiedzialność; staramy się, aby działała poprawnie, ale mogą zdarzyć się błędy lub przerwy w działaniu.\n\nKonto i wszystkie dane możesz usunąć w dowolnym momencie w Ustawieniach.',
 
     // Home — extra fixed/demo strings
@@ -544,6 +544,7 @@ export const dict = {
     'planner.aiBreaks': 'AI uwzględni przerwy i pozostawi bufor.',
     'planner.energyQ': 'Ile energii przewidujesz?',
     'planner.prefQ': 'Na czym najbardziej Ci zależy?',
+    'ai.reviewTitle': 'Powtórka: {exam}',
     'planner.noteLabel': 'Dodatkowa uwaga dla planera',
     'planner.optional': '(opcjonalnie)',
     'planner.notePlaceholder': 'Na przykład: po treningu mogę mieć mniej energii.',
@@ -1310,7 +1311,7 @@ export const dict = {
     'settings.version': 'Version {v}',
     'settings.privacyPolicy': 'Privacy Policy',
     'settings.termsOfService': 'Terms of Service',
-    'settings.privacyPolicyText': "This app stores your data (name, class schedule, tasks, exams, energy log, recurring activities) in a Supabase account tied to your login. Data syncs across every device you're signed into.\n\nWhen you ask for a day plan or a rescue plan, or write in the chat, your tasks, exams, preferences, energy level and message are sent to an AI service (Claude, by Anthropic) solely to answer you — nothing else is shared with it.\n\nYour data is never sold or shared with third parties for marketing. You can delete all of your data at any time from Settings → Delete account — deletion is permanent and immediate.",
+    'settings.privacyPolicyText': "This app stores your data (name, class schedule, tasks, exams, energy log, recurring activities) in a Supabase account tied to your login. Data syncs across every device you're signed into.\n\nWhen you ask for a day plan, an exam study plan or a rescue plan, or write in the chat, your tasks and their notes, to-dos, exams, weekly activities, preferences, energy level, note to the planner and message are sent to an AI service (Claude, by Anthropic) solely to answer you — nothing else is shared with it.\n\nYour data is never sold or shared with third parties for marketing. You can delete all of your data at any time from Settings → Delete account — deletion is permanent and immediate.",
     'settings.termsText': "Pulgo is a tool to help you plan your studying — it doesn't guarantee study results or exam outcomes. You're responsible for the content of the tasks and exams you add.\n\nYou use the app at your own risk; we try to keep it working correctly, but bugs or downtime can happen.\n\nYou can delete your account and all your data at any time from Settings.",
 
     'status.planned': 'Planned', 'status.in_progress': 'In progress', 'status.paused': 'Paused',
@@ -1354,6 +1355,7 @@ export const dict = {
     'planner.aiBreaks': "AI will include breaks and leave a buffer.",
     'planner.energyQ': 'How much energy do you expect?',
     'planner.prefQ': 'What matters most to you?',
+    'ai.reviewTitle': 'Review: {exam}',
     'planner.noteLabel': 'Extra note for the planner',
     'planner.optional': '(optional)',
     'planner.notePlaceholder': "For example: I might have less energy after training.",

@@ -2,10 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { useLang } from '../lib/useLang';
 import { TASK_TEXT_KEY, VALUE_KEY } from '../lib/i18n';
 import {
-  PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, NUM_TODAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES, realDateForNum,
+  PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, NUM_TODAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES, realDateForNum, LEVELS,
 } from '../lib/plannerData';
-import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, isTaskOn, taskDueOnDay, daySessionBreakdown, localDateKey, sessionDur, sessionClock, dayOpenTasks, timeStrToMinutes, roundedNowMinutes, planFor, draftFor, workingPlan, plannedElsewhere } from '../lib/plannerLogic';
+import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, dayInfo, prepDayLabel, isTaskOn, taskDueOnDay, daySessionBreakdown, localDateKey, sessionDur, sessionClock, dayOpenTasks, timeStrToMinutes, roundedNowMinutes, planFor, draftFor, workingPlan, plannedElsewhere } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
+import { planningContextForAI, taskForAI, examsForAI, busyOnDay, weeklyActivitiesForAI, dateOf } from '../lib/aiContext';
+import { requestAIPrep, toPrepCards } from '../lib/aiPrep';
 import { requestAIRescue } from '../lib/aiRescue';
 
 // The only slice of usePlanner's state that survives a reload / syncs across
@@ -31,6 +33,15 @@ function defaultExamDateISO() {
   const d = new Date();
   d.setDate(d.getDate() + 11);
   return localDateKey(d);
+}
+
+// Removes task definitions and their on/off and status entries.
+function withoutTasks(s, ids) {
+  const drop = new Set(ids);
+  const tasks = { ...s.tasks };
+  const taskState = { ...s.taskState };
+  ids.forEach((id) => { delete tasks[id]; delete taskState[id]; });
+  return { taskDefs: s.taskDefs.filter((d) => !drop.has(d.id)), tasks, taskState };
 }
 
 export function initialState(defaults, activities, persisted) {
@@ -61,6 +72,10 @@ export function initialState(defaults, activities, persisted) {
     // default". Not persisted, same as planToday above.
     wakeOverride: null,
     bedtimeOverride: null,
+    // The AI's short explanation of the exam study plan on the Prep screen.
+    prepRationale: null,
+    // "Extra note for the planner" — sent to the AI with this plan only.
+    planNote: '',
     energy: defaults?.energy || 'Normalna',
     pref: defaults?.pref || 'Wolny wieczór',
     // Free-form context from onboarding (extracurriculars + note) — passed
@@ -204,6 +219,9 @@ export function initialState(defaults, activities, persisted) {
   const upcoming = (map) => Object.fromEntries(Object.entries(map || {}).filter(([day, sched]) => +day >= NUM_TODAY && sched));
   base.plans = upcoming(base.plans);
   base.drafts = upcoming(base.drafts);
+  // A review session the AI suggested exists only while its draft does.
+  const orphans = base.taskDefs.filter((d) => d.pendingDraft && !(base.drafts[d.day] && base.drafts[d.day][d.id])).map((d) => d.id);
+  if (orphans.length) Object.assign(base, withoutTasks(base, orphans));
   // A session still running from last time reopens on the focus screen; one
   // whose task is gone or no longer in progress is dropped.
   if (base.activeTask) {
@@ -331,7 +349,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     const tasks = { ...s.tasks };
     s.taskDefs.forEach((d) => {
       const st = (s.taskState[taskKey(d, day)] || {}).status;
-      if (plannedElsewhere(s, d, day) || ['completed', 'in_progress', 'paused'].includes(st)) tasks[taskKey(d, day)] = false;
+      if (d.pendingDraft || plannedElsewhere(s, d, day) || ['completed', 'in_progress', 'paused'].includes(st)) tasks[taskKey(d, day)] = false;
     });
     return tasks;
   }
@@ -436,29 +454,91 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   // something that fails the same conflict checks manual edits go through.
   // The result is a draft for that day: whatever plan the day already had
   // stays in force until the new one is approved (confirmPlan).
+  // The AI gets everything the student has added (see aiContext.js) and
+  // may suggest review sessions for a close exam; those become tasks marked
+  // pendingDraft until the plan is approved (or leave with the draft).
   function generatePlan() {
     update({ manualMode: false, blockEdit: null });
     const day = dayNumOf(state);
     const planConstraints = day === NUM_TODAY ? todayFromNow() : constraints;
     const tasks = plannableTasks(state, day);
-    const work = requestAIPlan({ ...state, tasks, constraints: planConstraints, dayNum: day });
-    runGen(PLAN_LABELS, (result, s) => ({
-      generating: false, screen: 'plan', planToday: day === NUM_TODAY,
-      drafts: { ...s.drafts, [day]: result ? result.schedule : buildSchedule({ ...s, tasks: plannableTasks(s, day), constraints: planConstraints, dayNum: day }) },
-      planAIRationale: result ? result.rationale : null,
-    }), work);
+    const work = requestAIPlan({ ...state, tasks, constraints: planConstraints, dayNum: day, recurringActivities });
+    runGen(PLAN_LABELS, (result, cur) => {
+      const stale = cur.taskDefs.filter((d) => d.pendingDraft && d.day === day).map((d) => d.id);
+      const s = { ...cur, ...withoutTasks(cur, stale) };
+      const draft = result ? { ...result.schedule } : buildSchedule({ ...s, tasks: plannableTasks(s, day), constraints: planConstraints, dayNum: day });
+      const stamp = Date.now().toString(36);
+      const extraDefs = (result?.extras || []).map((x, i) => {
+        const title = translate('ai.reviewTitle', { exam: x.examTitle }) + (x.focus ? ' — ' + x.focus : '');
+        return {
+          id: 'aireview-' + stamp + '-' + i, category: 'school', subject: x.subject, title, dur: x.dur, day,
+          priority: 'Wysoki priorytet', color: '#f5a524', short: x.subject + ' — ' + title,
+          examId: x.examId, aiSuggested: true, pendingDraft: true,
+        };
+      });
+      const tasksOn = { ...s.tasks };
+      const taskState = { ...s.taskState };
+      extraDefs.forEach((d, i) => {
+        tasksOn[d.id] = true;
+        taskState[d.id] = { status: 'planned' };
+        draft[d.id] = { start: result.extras[i].start, dur: d.dur };
+      });
+      return {
+        generating: false, screen: 'plan', planToday: day === NUM_TODAY,
+        taskDefs: s.taskDefs.concat(extraDefs), tasks: tasksOn, taskState,
+        drafts: { ...s.drafts, [day]: draft },
+        planAIRationale: result ? result.rationale : null,
+      };
+    }, work);
   }
 
+  // The days an exam's study sessions can go on: from today (if there's
+  // still time left today) or tomorrow up to the day before the exam, at
+  // most the last three weeks of that.
+  const PREP_MAX_DAYS = 21;
+  function prepDays(examDay) {
+    const lastDay = Math.max(NUM_TODAY, examDay - 1);
+    const now = todayFromNow();
+    const firstDay = now.bedtimeMinutes - now.wakeMinutes >= 30 || lastDay === NUM_TODAY ? NUM_TODAY : NUM_TODAY + 1;
+    const days = [];
+    for (let day = Math.max(firstDay, lastDay - PREP_MAX_DAYS + 1); day <= lastDay; day++) {
+      const c = day === NUM_TODAY ? now : constraintsFor(day);
+      days.push({
+        day, date: dateOf(day), weekday: dayInfo(day).label, wakeMinutes: c.wakeMinutes, bedtimeMinutes: c.bedtimeMinutes, blocks: c.blocks,
+        busy: busyOnDay(state, day),
+        dueTasks: state.taskDefs.filter((d) => d.category !== 'personal' && d.day === day).map((d) => d.title),
+      });
+    }
+    return days;
+  }
+
+  // The AI plans the study sessions around the student's real days (other
+  // exams, plans, activities); the fixed template is the fallback.
   function deadlineGenerate() {
-    update((s) => {
+    const examDay = NUM_TODAY + (daysUntilFromISODate(state.examDate) ?? 11);
+    const days = prepDays(examDay);
+    const exam = {
+      kind: state.kind, subject: state.subject, title: state.nameValue.trim(), date: dateOf(examDay), time: state.examTime,
+      daysUntil: examDay - NUM_TODAY, topics: state.topics.map((x) => x.trim()).filter(Boolean),
+      difficulty: state.difficulty, level: LEVELS[state.level - 1] || '', goal: state.goal,
+    };
+    const context = { exams: examsForAI(state), weeklyActivities: weeklyActivitiesForAI(recurringActivities) };
+    const work = requestAIPrep({ exam, days, context });
+    update({ deadlineFailed: false, sessionEdits: {} });
+    runGen(PREP_LABELS, (result, s) => {
+      if (result) {
+        return {
+          generating: false, screen: 'prep', prepSessions: toPrepCards(result.sessions),
+          prepDayNums: result.sessions.map((x) => x.day), prepDates: result.sessions.map((x) => prepDayLabel(x.day)),
+          prepRationale: result.rationale,
+        };
+      }
       const sessions = buildPrepSessions(s.topics, s.difficulty);
-      const examDay = NUM_TODAY + (daysUntilFromISODate(s.examDate) ?? 11);
       return {
-        deadlineFailed: false, prepSessions: sessions, prepDates: buildPrepDates(sessions.length, examDay),
-        prepDayNums: buildPrepDayNums(sessions.length, examDay), sessionEdits: {},
+        generating: false, screen: 'prep', prepSessions: sessions, prepDates: buildPrepDates(sessions.length, examDay),
+        prepDayNums: buildPrepDayNums(sessions.length, examDay), prepRationale: null,
       };
-    });
-    runGen(PREP_LABELS, 'prep');
+    }, work);
   }
 
   // Asks Claude to decide what stays (maybe shortened) and what gets moved
@@ -476,6 +556,8 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       energy: state.rescueEnergy, availableMinutes, reasons: state.reasons, constraints: rescueConstraints,
       activitiesNote: state.activitiesNote, activitiesSelected: state.activitiesSelected, prioritySubjects: state.prioritySubjects,
       studyTime: state.studyTime,
+      context: planningContextForAI(state, { dayNum: NUM_TODAY, recurringActivities }),
+      taskView: (d, dur) => taskForAI(state, d, dur),
     });
     runGen(RESCUE_LABELS, (result, s) => {
       const fallback = result || buildRescueSchedule({
@@ -613,6 +695,8 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       const tsx = { ...s.taskState, [key]: { ...s.taskState[key], status: 'skipped', day } };
       const sched = { ...workingPlan(s, day) };
       delete sched[id];
+      // A session the AI only suggested just goes away.
+      if (d && d.pendingDraft) return { ...withoutTasks(s, [id]), ...setWorking(s, day, sched) };
       return { taskState: tsx, ...setWorking(s, day, sched) };
     });
   }
@@ -817,7 +901,13 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       });
       const drafts = { ...s.drafts };
       delete drafts[day];
-      return { saved: true, manualMode: false, plans: { ...s.plans, [day]: { ...draft, ...kept } }, drafts };
+      const approved = { ...draft, ...kept };
+      // AI-suggested review sessions in the approved plan become ordinary
+      // tasks; any it no longer holds are dropped.
+      const unused = s.taskDefs.filter((d) => d.pendingDraft && d.day === day && !approved[d.id]).map((d) => d.id);
+      const cleaned = withoutTasks(s, unused);
+      const taskDefs = cleaned.taskDefs.map((d) => (d.pendingDraft && approved[d.id] ? { ...d, pendingDraft: false } : d));
+      return { saved: true, manualMode: false, plans: { ...s.plans, [day]: approved }, drafts, ...cleaned, taskDefs };
     });
   }
   function goHomeSaved() {

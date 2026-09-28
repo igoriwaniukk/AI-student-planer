@@ -158,6 +158,8 @@ export default function Planner({ planner }) {
         <span style={{ fontSize: 12, color: '#7a7a8a' }}>{t('planner.optional')}</span>
       </div>
       <textarea
+        value={state.planNote || ''}
+        onChange={(e) => update({ planNote: e.target.value })}
         placeholder={t('planner.notePlaceholder')}
         style={{ width: '100%', boxSizing: 'border-box', minHeight: 96, borderRadius: 16, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', padding: 14, fontSize: 13.5, lineHeight: 1.5, color: '#f4f4f7', fontFamily: 'inherit', resize: 'vertical' }}
       />

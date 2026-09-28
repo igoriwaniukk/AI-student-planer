@@ -37,19 +37,20 @@ export function toValidatedRescue(blocks, moved, ids, taskDefs, durOverride, ava
 // time is actually left. Returns null (never throws) whenever the AI is
 // unavailable, unreachable, or proposes something invalid; callers use that
 // as the signal to fall back to the deterministic rescue packer.
-export async function requestAIRescue({ taskDefs, tasks, taskState, energy, durOverride, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints }) {
+export async function requestAIRescue({ taskDefs, tasks, taskState, energy, durOverride, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints, context, taskView }) {
   const ids = rescueCandidates(taskDefs, tasks, taskState);
   if (!ids.length) return null;
   const items = ids.map((id) => {
     const d = taskDefs.find((t) => t.id === id);
-    return { taskId: id, subject: d.subject, title: d.title, priority: d.priority, durationMinutes: durOf(id, taskDefs, durOverride) };
+    const dur = durOf(id, taskDefs, durOverride);
+    return taskView ? taskView(d, dur) : { taskId: id, subject: d.subject, title: d.title, priority: d.priority, durationMinutes: dur };
   });
 
   try {
     const res = await authedFetch('/api/plan/rescue', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tasks: items, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints, lang: getCurrentLang() }),
+      body: JSON.stringify({ tasks: items, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints, context, lang: getCurrentLang() }),
     });
     if (!res.ok) return null;
     const data = await res.json();

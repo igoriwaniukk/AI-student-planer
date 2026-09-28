@@ -374,7 +374,7 @@ export function weekdayDateLabel(num, { year = false } = {}) {
   return weekdayName(num) + ', ' + formatMonthDay(num, { year });
 }
 
-function prepDayLabel(day) {
+export function prepDayLabel(day) {
   const lang = getCurrentLang();
   const idx = realDateForNum(day).getDay();
   return WEEKDAYS[lang === 'en' ? 'en' : 'pl'][idx] + ', ' + formatMonthDay(day);
