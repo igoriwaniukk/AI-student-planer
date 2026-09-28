@@ -498,11 +498,26 @@ export function computeStreak(studyHistory) {
   return streak;
 }
 
-// state.schedule has no date of its own — it belongs to the approved plan's
-// day (selectedDay), or, before anything is approved, to today's draft.
-export function scheduleIsFor(state, dayNum) {
-  if (state.planApproved) return state.selectedDay === dayNum;
-  return dayNum === (state.planToday === false ? REFERENCE_DAY : NUM_TODAY);
+// Approved plans are kept per day (state.plans[dayNum]), so today's and
+// tomorrow's live side by side; a plan built but not approved yet waits in
+// state.drafts[dayNum] and doesn't count until it is.
+export function planFor(state, dayNum) {
+  return (state.plans && state.plans[dayNum]) || null;
+}
+export function draftFor(state, dayNum) {
+  return (state.drafts && state.drafts[dayNum]) || null;
+}
+// What the review screen shows and edits for a day: its draft if there is
+// one, otherwise its approved plan.
+export function workingPlan(state, dayNum) {
+  return draftFor(state, dayNum) || planFor(state, dayNum) || {};
+}
+// A one-off task already in another upcoming day's approved plan belongs to
+// that day, so it isn't planned (or listed as open) anywhere else. Each
+// occurrence of a repeating task is its own thing.
+export function plannedElsewhere(state, d, dayNum) {
+  if (d.repeatDays && d.repeatDays.length) return false;
+  return Object.keys(state.plans || {}).some((k) => +k !== dayNum && +k >= NUM_TODAY && state.plans[k] && state.plans[k][d.id]);
 }
 
 export function statusOn(state, id, dayNum) {
@@ -515,7 +530,7 @@ export function statusOn(state, id, dayNum) {
 // also includes a task Restart-your-day moved off today's plan, since
 // nothing had rescheduled it anywhere yet.
 export function daySessionBreakdown(state, dayNum = NUM_TODAY) {
-  const sched = scheduleIsFor(state, dayNum) ? state.schedule || {} : {};
+  const sched = planFor(state, dayNum) || {};
   const school = (id) => state.taskDefs.some((d) => d.id === id && d.category !== 'personal');
   const planned = Object.keys(sched).filter(school).sort((a, b) => sched[a].start - sched[b].start);
   const done = planned.filter((id) => statusOn(state, id, dayNum) === 'completed');
@@ -663,7 +678,7 @@ export function checkBlockConflict(id, start, dur, schedule, def, constraints) {
 export function sessionDur(state) {
   const id = state.activeTask;
   if (!id) return 0;
-  return state.schedule?.[id]?.dur || state.taskDefs.find((d) => d.id === id)?.dur || 30;
+  return planFor(state, NUM_TODAY)?.[id]?.dur || state.taskDefs.find((d) => d.id === id)?.dur || 30;
 }
 
 export function sessionClock(state, now = Date.now()) {
@@ -689,10 +704,9 @@ export function sessionClock(state, now = Date.now()) {
 // isn't done yet (Home's "all done" card, the automatic summary). A task
 // already in another day's approved plan belongs to that day instead.
 export function dayOpenTasks(state, dayNum = NUM_TODAY) {
-  const sched = scheduleIsFor(state, dayNum) ? state.schedule || {} : {};
-  const otherPlan = state.planApproved && state.selectedDay !== dayNum ? state.schedule || {} : {};
+  const sched = planFor(state, dayNum) || {};
   return state.taskDefs.filter((d) => {
-    if (!taskDueOnDay(d, dayNum) || sched[d.id] || otherPlan[d.id]) return false;
+    if (!taskDueOnDay(d, dayNum) || sched[d.id] || plannedElsewhere(state, d, dayNum)) return false;
     const st = state.taskState[taskKey(d, dayNum)] || {};
     if (d.category === 'personal') return !isTaskOn(state.tasks, d, dayNum) && st.status !== 'skipped';
     return (st.status || 'planned') === 'planned' && isTaskOn(state.tasks, d, dayNum);

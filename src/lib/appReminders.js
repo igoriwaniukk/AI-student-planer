@@ -1,5 +1,5 @@
 import { NUM_TODAY, realDateForNum } from './plannerData';
-import { computeStreak, studiedToday, statusOn, sessionClock, upcomingExams, wrapUpMinutes, fmt, pluralForm } from './plannerLogic';
+import { computeStreak, studiedToday, statusOn, sessionClock, upcomingExams, wrapUpMinutes, fmt, pluralForm, planFor } from './plannerLogic';
 import { VALUE_KEY } from './i18n';
 
 // The reminders the iPhone app schedules on the phone itself (local
@@ -33,13 +33,15 @@ export function buildAppReminders({ state, studyHistory, bedtime, unfinishedTitl
   const add = (r) => { if (r.at > nowMs) out.push(r); };
   const name = (id) => titleOf(id) || t('appRem.sessionFallback');
 
-  // 1. A planned session starts in 10 minutes (today's or tomorrow's plan).
-  const planDay = state.selectedDay;
-  if (state.planApproved && state.schedule && (planDay === NUM_TODAY || planDay === NUM_TODAY + 1)) {
+  // 1. A planned session starts in 10 minutes (today's and tomorrow's
+  // approved plans; drafts don't count).
+  [NUM_TODAY, NUM_TODAY + 1].forEach((planDay) => {
+    const plan = planFor(state, planDay);
+    if (!plan) return;
     const day = planDay === NUM_TODAY ? today : tomorrow;
-    Object.keys(state.schedule).forEach((id) => {
+    Object.keys(plan).forEach((id) => {
       if (id === state.activeTask || statusOn(state, id, planDay) !== 'planned') return;
-      const start = state.schedule[id].start;
+      const start = plan[id].start;
       add({
         id: 'session:' + id + ':' + planDay,
         at: atMinutes(day, start - SESSION_LEAD_MIN),
@@ -47,7 +49,7 @@ export function buildAppReminders({ state, studyHistory, bedtime, unfinishedTitl
         body: t('appRem.sessionBody', { time: fmt(start) }),
       });
     });
-  }
+  });
 
   // The running session's time is up (the phone may be locked by then).
   if (state.activeTask && state.sessionStart) {

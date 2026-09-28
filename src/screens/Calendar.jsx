@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import WeekStrip from '../components/WeekStrip';
 import { BackButton, Pill, SectionTitle } from '../components/ui';
-import { upcomingExams, dayInfo, formatMonthDay, daysPill } from '../lib/plannerLogic';
+import { upcomingExams, dayInfo, formatMonthDay, daysPill, planFor } from '../lib/plannerLogic';
 import { NUM_TODAY, WEEK_DAYS } from '../lib/plannerData';
 import { DAY_KEY, VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
@@ -31,9 +31,7 @@ function Row({ icon, title, sub, right }) {
 export default function Calendar({ planner, activities, recurringActivities = [] }) {
   const { t } = useLang();
   const { state, go, update } = planner;
-  // Opens on the approved plan's day while it's still ahead, otherwise on
-  // today — an old plan's day would open the calendar on a past week.
-  const [calDay, setCalDay] = useState(state.selectedDay >= NUM_TODAY ? state.selectedDay : NUM_TODAY);
+  const [calDay, setCalDay] = useState(NUM_TODAY);
   const [weekOffset, setWeekOffset] = useState(0);
   const info = dayInfo(calDay);
   const dayLabel = t(DAY_KEY[info.label]) || info.label;
@@ -46,7 +44,7 @@ export default function Calendar({ planner, activities, recurringActivities = []
   const eventDays = new Set(weekExams.map((e) => e.day));
   const nearestExamDay = [...weekExams].sort((a, b) => a.day - b.day)[0]?.day ?? null;
 
-  const sched = calDay === state.selectedDay ? (state.schedule || {}) : {};
+  const sched = planFor(state, calDay) || {};
   const sessionIds = Object.keys(sched).sort((a, b) => sched[a].start - sched[b].start);
   const selectedActivities = activities?.selected || [];
   const dayRecurring = recurringActivities.filter((a) => a.day === info.label);

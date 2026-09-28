@@ -1,7 +1,7 @@
 import { BackButton, StickyFooter, PrimaryButton, ConfirmCard } from '../components/ui';
 import { useLang } from '../lib/useLang';
 import { NUM_TODAY } from '../lib/plannerData';
-import { weekdayDateLabel, span, fmt, hm, durOf, startOf, pluralForm } from '../lib/plannerLogic';
+import { weekdayDateLabel, span, fmt, hm, durOf, startOf, pluralForm, planFor } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import DayTimeline from '../components/DayTimeline';
 
@@ -60,7 +60,8 @@ export default function RescueResult({ planner }) {
           const d = def(id);
           const decision = decisions[id];
           const style = DECISION_STYLE[decision] || DECISION_STYLE.kept;
-          const prev = state.schedule?.[id] || { start: startOf(id, state), dur: durOf(id, state.taskDefs, state.durOverride) };
+          const todayPlan = planFor(state, NUM_TODAY);
+          const prev = todayPlan?.[id] || { start: startOf(id, { schedule: todayPlan, startOverride: state.startOverride }), dur: durOf(id, state.taskDefs, state.durOverride) };
           const next = schedule[id];
           const badge = decision === 'moved' ? t('rr.moved') : decision === 'shortened' ? t('rr.shortened') : t('rr.stays');
           const from = span(prev.start, prev.start + prev.dur) + ' · ' + prev.dur + ' min';

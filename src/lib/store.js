@@ -152,7 +152,7 @@ export function useDismissedMissedSession() {
   return useLocalStorage(KEYS.dismissedMissedSession, '');
 }
 
-// The durable slice of usePlanner's state (custom tasks, today's schedule
+// The durable slice of usePlanner's state (custom tasks, the day plans
 // and their status, custom exams and their study goals) — everything the
 // student actually created, as opposed to which screen/modal happens to be
 // open right now. See DURABLE_KEYS in usePlanner.js for exactly what's

@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { useChat } from '../hooks/useChat';
 import { buildChatContext } from '../lib/chatContext';
-import { upcomingExams, hm, toMinutes, checkBlockConflict, taskShortLabel, daysPill } from '../lib/plannerLogic';
+import { upcomingExams, hm, toMinutes, checkBlockConflict, taskShortLabel, daysPill, planFor } from '../lib/plannerLogic';
+import { NUM_TODAY, REFERENCE_DAY } from '../lib/plannerData';
 import { VALUE_KEY, DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { BottomSheet, Chip } from './ui';
@@ -97,9 +98,11 @@ function describeAction(action, planner, deps, t) {
     const d = planner.def(args.sessionId);
     const label = d ? taskShortLabel(t, d) : args.sessionId;
     const startMin = toMinutes(args.newStart);
-    const sched = planner.state.schedule || {};
+    // The plan (today's or tomorrow's) that has this session; today's otherwise.
+    const planDay = [NUM_TODAY, REFERENCE_DAY].find((day) => planFor(planner.state, day)?.[args.sessionId]) ?? NUM_TODAY;
+    const sched = planFor(planner.state, planDay) || {};
     const dur = (sched[args.sessionId] || {}).dur || d?.dur || 30;
-    const conflict = checkBlockConflict(args.sessionId, startMin, dur, sched, planner.def, planner.constraints);
+    const conflict = checkBlockConflict(args.sessionId, startMin, dur, sched, planner.def, planner.constraintsFor(planDay));
     const conflictText = conflict ? t(conflict.key, { ...conflict.vars, subject: conflict.vars?.subject ? subj(conflict.vars.subject) : '' }) : '';
     return {
       summary: t('chat.actionReschedule', { label, time: args.newStart }),
@@ -107,7 +110,7 @@ function describeAction(action, planner, deps, t) {
       run: () => {
         if (conflict) return;
         planner.update((s) => ({
-          schedule: { ...s.schedule, [args.sessionId]: { start: startMin, dur } },
+          plans: { ...s.plans, [planDay]: { ...(planFor(s, planDay) || {}), [args.sessionId]: { start: startMin, dur } } },
           durOverride: { ...s.durOverride, [args.sessionId]: dur },
         }));
       },

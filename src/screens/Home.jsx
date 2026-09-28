@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
-import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, scheduleIsFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
+import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, planFor, draftFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
 import { iconForTask, iconForSubject } from '../lib/taskAuto';
 import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
@@ -176,7 +176,7 @@ function NextSessionCard({ planner }) {
   if (summary) return <DaySummarizedCard summary={summary} planner={planner} />;
   // Only today's plan counts here — not tomorrow's (already approved in the
   // evening) — and never a session whose task was since deleted.
-  const sched = scheduleIsFor(state, NUM_TODAY) ? state.schedule || {} : {};
+  const sched = planFor(state, NUM_TODAY) || {};
   const ids = Object.keys(sched).filter((id) => def(id)).sort((a, b) => sched[a].start - sched[b].start);
   const active = state.activeTask && def(state.activeTask) ? state.activeTask : null;
   const nextId = active || ids.filter((id) => ['planned', 'paused'].includes(ts(id, NUM_TODAY).status))[0];
@@ -213,12 +213,27 @@ function NextSessionCard({ planner }) {
         </>,
       );
     }
+    // Today's plan was built but not approved yet: point back to it.
+    if (!done && draftFor(state, NUM_TODAY)) {
+      return box(
+        <>
+          <div style={{ fontSize: 18, fontWeight: 750, letterSpacing: '-.01em' }}>{t('home.draftReadyTitle')}</div>
+          <div style={{ fontSize: 12.5, color: '#a3a3b3', marginTop: 8, lineHeight: 1.45 }}>{t('home.draftReadySub')}</div>
+          <div
+            onClick={() => update({ planToday: true, screen: 'plan' })}
+            style={{ marginTop: 14, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
+          >
+            {t('home.reviewDraft')}
+          </div>
+        </>,
+      );
+    }
     return box(
       <>
         <div style={{ fontSize: 18, fontWeight: 750, letterSpacing: '-.01em' }}>{done ? t('home.allDone') : t('home.noSessionsPlanned')}</div>
         <div style={{ fontSize: 12.5, color: '#a3a3b3', marginTop: 8, lineHeight: 1.45 }}>{done ? t('home.allDoneSub') : t('home.noSessionsPlannedSub')}</div>
         <div
-          onClick={() => update({ screen: done ? 'summary' : 'planner', dayEnded: true })}
+          onClick={() => update({ screen: done ? 'summary' : 'planner', planToday: true, dayEnded: true })}
           style={{ marginTop: 14, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
         >
           {done ? t('home.summarizeDay') : t('home.planDay')}
@@ -283,8 +298,11 @@ function RunningSessionCard({ planner, d }) {
 function DayPlanPlaceholder({ info, day, planner }) {
   const { t } = useLang();
   const { state, update } = planner;
-  const ready = state.planApproved && state.selectedDay === day;
+  const plan = planFor(state, day);
+  const draft = draftFor(state, day);
+  const ready = !!plan;
   const plannable = day === REFERENCE_DAY;
+  const count = Object.keys(plan || {}).length;
   const btn = (label, screen) => (
     <div
       onClick={() => update({ planToday: false, screen })}
@@ -297,10 +315,11 @@ function DayPlanPlaceholder({ info, day, planner }) {
     <div style={{ marginTop: 18, padding: 16, borderRadius: 20, border: '1.5px solid rgba(124,92,255,.55)', background: 'linear-gradient(165deg,rgba(124,92,255,.13),rgba(124,92,255,.03))' }}>
       <div style={{ fontSize: 13, fontWeight: 650, color: '#c9baff' }}>{t(DAY_KEY[info.label]) || info.label}, {info.monthDay}</div>
       <div style={{ fontSize: 15, fontWeight: 700, marginTop: 8, lineHeight: 1.3 }}>
-        {ready ? t('home.planReadyForDay_' + pluralForm(Object.keys(state.schedule || {}).length), { n: Object.keys(state.schedule || {}).length }) : plannable ? t('home.noPlanForDay') : t('home.planLater')}
+        {draft && plannable ? t('home.draftReadyForDay') : ready ? t('home.planReadyForDay_' + pluralForm(count), { n: count }) : plannable ? t('home.noPlanForDay') : t('home.planLater')}
       </div>
-      {ready && plannable && btn(t('home.seePlan'), 'plan')}
-      {!ready && plannable && btn(t('home.planThisDay'), 'planner')}
+      {draft && plannable && btn(t('home.reviewDraft'), 'plan')}
+      {!draft && ready && plannable && btn(t('home.seePlan'), 'plan')}
+      {!draft && !ready && plannable && btn(t('home.planThisDay'), 'planner')}
     </div>
   );
 }
@@ -308,9 +327,8 @@ function DayPlanPlaceholder({ info, day, planner }) {
 // Everything due today (school + personal + repeating tasks), as one
 // tappable checklist — independent of whether a plan has actually been
 // generated/approved for today yet, unlike the old TodayList this replaces,
-// which only ever showed anything once state.schedule had entries in it. A
-// school task already in state.schedule (only true when today happens to be
-// the currently active plan day — see planDayNum) renders as a read-only
+// which only ever showed anything once a schedule had entries in it. A
+// school task already in that day's approved plan (see planFor) renders as a read-only
 // progress row exactly as before, since its real "done" comes from the
 // session-finish flow (NextSessionCard's Start/Finish), not a plain tap
 // here; one that hasn't been scheduled yet is a plain checkbox toggling
@@ -321,7 +339,7 @@ function TodayChecklist({ planner, day, heading }) {
   const { state, def, ts, toggleTask, openTaskEdit } = planner;
   const past = day < NUM_TODAY;
   const future = day > NUM_TODAY;
-  const sched = scheduleIsFor(state, day) ? state.schedule || {} : {};
+  const sched = planFor(state, day) || {};
   // A floating one-off task shares one done-state across every day it's due
   // on, so once finished it belongs to the day it was finished — it
   // shouldn't reappear, still ticked, on the next day. Finished before that
@@ -601,7 +619,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
     if (!isRealDay) return null;
     const now = new Date();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    const sched = scheduleIsFor(state, NUM_TODAY) ? state.schedule || {} : {};
+    const sched = planFor(state, NUM_TODAY) || {};
     const missedId = Object.keys(sched)
       .filter((id) => planner.def(id) && ts(id, NUM_TODAY).status === 'planned' && nowMinutes > sched[id].start + sched[id].dur)
       .sort((a, b) => sched[a].start - sched[b].start)[0];

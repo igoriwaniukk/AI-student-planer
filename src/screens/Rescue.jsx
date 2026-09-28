@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { REASON_OPTIONS, RESCUE_TIME_OPTIONS, PRIO_STYLE, NUM_TODAY } from '../lib/plannerData';
-import { durOf, startOf, span, weekdayDateLabel, fmt, rescueCandidates } from '../lib/plannerLogic';
+import { durOf, startOf, span, weekdayDateLabel, fmt, rescueCandidates, planFor } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import { useLang } from '../lib/useLang';
@@ -63,7 +63,7 @@ export default function Rescue({ planner }) {
         {state.taskDefs.filter((d) => remainingIds.includes(d.id)).map((d) => {
           const ps = PRIO_STYLE[d.priority] || PRIO_STYLE['Normalny priorytet'];
           const dur = durOf(d.id, state.taskDefs, state.durOverride);
-          const start = startOf(d.id, state);
+          const start = startOf(d.id, { schedule: planFor(state, NUM_TODAY), startOverride: state.startOverride });
           const st = ts(d.id, NUM_TODAY);
           return (
             <div key={d.id} style={{ padding: 14, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>

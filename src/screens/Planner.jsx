@@ -1,5 +1,5 @@
 import { PRIO_STYLE } from '../lib/plannerData';
-import { durOf, hm, weekdayDateLabel, fmt, span, freeWindows, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
+import { durOf, hm, weekdayDateLabel, fmt, span, freeWindows, taskDueOnDay, isTaskOn, plannedElsewhere } from '../lib/plannerLogic';
 import { iconForTask } from '../lib/taskAuto';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import WheelTimePicker from '../components/WheelTimePicker';
@@ -18,7 +18,8 @@ export default function Planner({ planner }) {
   // either day, matching how tasks behaved before that field existed, and a
   // repeating task (see taskDueOnDay) applies whenever this day falls on one
   // of its chosen weekdays.
-  const schedulableTasks = state.taskDefs.filter((d) => d.category !== 'personal' && taskDueOnDay(d, planDayNum));
+  // A one-off task already in the other day's approved plan belongs there.
+  const schedulableTasks = state.taskDefs.filter((d) => d.category !== 'personal' && taskDueOnDay(d, planDayNum) && !plannedElsewhere(state, d, planDayNum));
   const personalTasks = state.taskDefs.filter((d) => d.category === 'personal' && taskDueOnDay(d, planDayNum));
   const enabledTasks = schedulableTasks.filter((d) => isTaskOn(state.tasks, d, planDayNum));
   const nTasks = enabledTasks.length;

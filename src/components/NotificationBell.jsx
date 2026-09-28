@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { upcomingExams, daysPill } from '../lib/plannerLogic';
+import { upcomingExams, daysPill, planFor } from '../lib/plannerLogic';
 import { NUM_TODAY } from '../lib/plannerData';
 import { useCustomReminders, useSeenNotifSignature } from '../lib/store';
 import { useLang } from '../lib/useLang';
@@ -27,7 +27,7 @@ export default function NotificationBell({ state, streak = 0, inline = false }) 
   // No approved plan for today's real calendar day (see Home.jsx's "Restart
   // your day" card) — the server uses this to override its usual push
   // rotation with a nudge once it's afternoon and still true.
-  const noPlanToday = !(state.planApproved && state.selectedDay === NUM_TODAY);
+  const noPlanToday = !planFor(state, NUM_TODAY);
   const { pushStatus, togglePush, native } = usePushNotifications({ streak, hasUpcomingExam, reminders: reminders.map((r) => r.text), lang, noPlanToday });
 
   function handleOpen() {

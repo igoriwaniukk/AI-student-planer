@@ -253,15 +253,16 @@ describe('daySessionBreakdown / weekStats / examPrepProgress', () => {
       p: { doneDay: NUM_TODAY },
       old: { status: 'completed', actual: 50, day: week[0] - 1 },
     },
-    // Tomorrow's plan is the active one — today's sessions aren't in it.
-    planApproved: true, selectedDay: NUM_TODAY + 1, schedule: {},
+    // Only tomorrow has a plan — today's sessions aren't in any.
+    plans: { [NUM_TODAY + 1]: {} },
     examSessions: { ex1: [{ dur: 30 }, { dur: 30, done: true }, { dur: 30 }, { dur: 30 }] },
   };
 
   it('counts a session finished today even when it is not in the active plan', () => {
     const r = daySessionBreakdown(state, NUM_TODAY);
     expect(r.done).toEqual([]);
-    expect(r.offPlanDone).toEqual(['a']);
+    // b was finished on Monday, which is today when the tests run on a Monday.
+    expect(r.offPlanDone).toEqual(NUM_TODAY === week[0] ? ['a', 'b'] : ['a']);
   });
 
   it('sums this week\'s minutes, finished tasks and subject shares', () => {
@@ -281,7 +282,7 @@ describe('daySessionBreakdown / weekStats / examPrepProgress', () => {
 });
 
 describe('sessionClock', () => {
-  const base = { activeTask: 'eng', taskDefs: [{ id: 'eng', dur: 30 }], schedule: { eng: { start: 900, dur: 60 } } };
+  const base = { activeTask: 'eng', taskDefs: [{ id: 'eng', dur: 30 }], plans: { [NUM_TODAY]: { eng: { start: 900, dur: 60 } } } };
   const T = 1_000_000_000_000;
 
   it('counts down the planned block while running', () => {
@@ -319,7 +320,7 @@ describe('dayOpenTasks / wrapUpMinutes / taskShortLabel', () => {
     ],
     tasks: { hw: true, rb: false, walk: true, tmr: true },
     taskState: { hw: { status: 'completed', day: NUM_TODAY } },
-    planApproved: true, selectedDay: NUM_TODAY, schedule: { hw: { start: 900, dur: 30 } },
+    plans: { [NUM_TODAY]: { hw: { start: 900, dur: 30 } } },
   };
 
   it('keeps the day open while a to-do or unplanned task is left', () => {
@@ -329,7 +330,7 @@ describe('dayOpenTasks / wrapUpMinutes / taskShortLabel', () => {
   it('ignores ticked, let-go and other-day-plan tasks', () => {
     const s = { ...base, tasks: { ...base.tasks, rb: true }, taskState: { ...base.taskState, tmr: { status: 'skipped', day: NUM_TODAY } } };
     expect(dayOpenTasks(s)).toEqual([]);
-    const tomorrowPlan = { ...base, selectedDay: NUM_TODAY + 1, schedule: { tmr: { start: 900, dur: 40 } }, tasks: { ...base.tasks, rb: true } };
+    const tomorrowPlan = { ...base, plans: { ...base.plans, [NUM_TODAY + 1]: { tmr: { start: 900, dur: 40 } } }, tasks: { ...base.tasks, rb: true } };
     expect(dayOpenTasks(tomorrowPlan).map((d) => d.id)).toEqual([]);
   });
 

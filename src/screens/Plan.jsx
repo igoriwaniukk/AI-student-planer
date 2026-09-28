@@ -1,4 +1,4 @@
-import { hm, fmt, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
+import { hm, fmt, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn, workingPlan, draftFor, activeIds } from '../lib/plannerLogic';
 import { iconForTask } from '../lib/taskAuto';
 import { BackButton, StickyFooter, PrimaryButton, ConfirmCard, Pill } from '../components/ui';
 import { useLang } from '../lib/useLang';
@@ -8,11 +8,15 @@ import DayTimeline from '../components/DayTimeline';
 
 export default function Plan({ planner }) {
   const { t } = useLang();
-  const { state, planDayNum, toggleManualMode, regenerateOrCancel, confirmPlan, goHomeSaved, go, openNewTaskEdit, openTaskEdit, toggleTask } = planner;
-  const sched = state.schedule || {};
+  const { state, planDayNum, plannableTasks, toggleManualMode, regenerateOrCancel, confirmPlan, goHomeSaved, go, openNewTaskEdit, openTaskEdit, toggleTask } = planner;
+  // The day's draft while one waits for approval, otherwise its approved plan.
+  const sched = workingPlan(state, planDayNum);
+  const isDraft = !!draftFor(state, planDayNum);
   const schedIds = Object.keys(sched);
   const nBlocks = schedIds.length;
-  const nTasks = state.taskDefs.filter((d) => state.tasks[d.id] && d.category !== 'personal').length;
+  // Every task this day's plan is built from (not ones belonging to the
+  // other day's plan, nor sessions already done) got a slot.
+  const allFit = activeIds(state.taskDefs, plannableTasks(state, planDayNum), state.taskState, planDayNum).every((id) => sched[id]);
   // Personal tasks (see TaskEditSheet's auto-detected category) never get a
   // scheduled block, so DayTimeline — which only ever shows schedule
   // entries — has nothing to render them with. Added here (via "+ Add
@@ -29,11 +33,10 @@ export default function Plan({ planner }) {
     <>
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 120px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        {/* Once a plan is approved, this screen is reached by viewing an
-            already-saved plan (Home's "See full plan"), so back should exit
-            to Home — not into the Planner form, which is only meant for the
-            one-time review right after generating a brand new plan. */}
-        <BackButton onClick={() => go(state.planApproved ? 'home' : 'planner')} />
+        {/* Reviewing a fresh draft, back returns to the Planner form (the
+            draft is kept); viewing an approved plan (Home's "See full
+            plan"), back exits to Home. */}
+        <BackButton onClick={() => go(isDraft ? 'planner' : 'home')} />
         <span style={{ fontSize: 11, fontWeight: 650, color: '#c9baff', padding: '8px 14px', borderRadius: 999, background: 'rgba(124,92,255,.14)', border: '1px solid rgba(124,92,255,.45)' }}>{t('plan.readyToReview')}</span>
       </div>
       <div style={{ fontSize: 12.5, color: '#8a8a99', marginTop: 20 }}>{t('plan.date', { date: formatMonthDay(planDayNum, { year: true }) })}</div>
@@ -43,7 +46,7 @@ export default function Plan({ planner }) {
         <span style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('plan.dayPlan')}</span>
         {state.manualMode && <span style={{ fontSize: 11, fontWeight: 650, color: '#c9baff' }}>{t('plan.manualMode')}</span>}
       </div>
-      <DayTimeline schedule={state.schedule} planner={planner} t={t} />
+      <DayTimeline schedule={sched} planner={planner} t={t} />
       {/* Editing here previously only covered blocks the plan already had
           (change time, remove) — there was no way to add one that wasn't
           already in it, short of backing out to the Planner form and
@@ -89,7 +92,7 @@ export default function Plan({ planner }) {
         <div style={{ height: 1, background: 'rgba(255,255,255,.09)', margin: '14px -16px' }} />
         <div style={{ display: 'flex', gap: 9 }}>
           <span style={{ color: '#35d07f', fontSize: 12 }}>✓</span>
-          <span style={{ fontSize: 12.5, fontWeight: 650, lineHeight: 1.45, color: '#5fdd9b' }}>{nBlocks === nTasks ? t('plan.allFit') : t('plan.someSkipped')}</span>
+          <span style={{ fontSize: 12.5, fontWeight: 650, lineHeight: 1.45, color: '#5fdd9b' }}>{allFit ? t('plan.allFit') : t('plan.someSkipped')}</span>
         </div>
       </div>
 

@@ -20,7 +20,7 @@ const taskDefs = [
   { id: 'math', subject: 'Matematyka', title: 'Funkcje', dur: 45 },
   { id: 'bio', subject: 'Biologia', title: 'Genetyka', dur: 30 },
 ];
-const baseState = { taskDefs, tasks: {}, taskState: {}, schedule: null, planApproved: false, selectedDay: NUM_TODAY, customExams: [] };
+const baseState = { taskDefs, tasks: {}, taskState: {}, plans: {}, drafts: {}, customExams: [] };
 const titleOf = (id) => taskDefs.find((d) => d.id === id)?.title;
 const tPl = (key, vars) => translate('pl', key, vars);
 const tEn = (key, vars) => translate('en', key, vars);
@@ -41,8 +41,7 @@ describe('buildAppReminders', () => {
     vi.setSystemTime(at(16, 0));
     const state = {
       ...baseState,
-      planApproved: true,
-      schedule: { math: { start: 15 * 60, dur: 45 }, bio: { start: 17 * 60, dur: 30 } },
+      plans: { [NUM_TODAY]: { math: { start: 15 * 60, dur: 45 }, bio: { start: 17 * 60, dur: 30 } } },
     };
     const list = build({ state });
     expect(list).toHaveLength(1);
@@ -57,9 +56,7 @@ describe('buildAppReminders', () => {
     vi.setSystemTime(at(20, 0));
     const state = {
       ...baseState,
-      planApproved: true,
-      selectedDay: NUM_TODAY + 1,
-      schedule: { math: { start: 16 * 60, dur: 45 }, bio: { start: 17 * 60, dur: 30 } },
+      plans: { [NUM_TODAY + 1]: { math: { start: 16 * 60, dur: 45 }, bio: { start: 17 * 60, dur: 30 } } },
       taskState: { bio: { status: 'completed' } },
     };
     const list = build({ state }).filter((r) => r.id.startsWith('session'));
@@ -70,7 +67,7 @@ describe('buildAppReminders', () => {
   it('ignores an old approved plan', () => {
     vi.useFakeTimers();
     vi.setSystemTime(at(8, 0));
-    const state = { ...baseState, planApproved: true, selectedDay: NUM_TODAY - 2, schedule: { math: { start: 16 * 60, dur: 45 } } };
+    const state = { ...baseState, plans: { [NUM_TODAY - 2]: { math: { start: 16 * 60, dur: 45 } } } };
     expect(build({ state })).toEqual([]);
   });
 

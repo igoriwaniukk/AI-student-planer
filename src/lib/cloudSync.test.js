@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 // A tiny in-memory stand-in for the one Supabase table the sync uses.
-const cloud = { row: null, fail: false };
+const cloud = { row: null, fail: false, pg: false };
 vi.mock('./supabaseClient', () => ({
   isSupabaseConfigured: true,
   supabase: {
@@ -13,7 +13,8 @@ vi.mock('./supabaseClient', () => ({
       }),
       upsert: async (row) => {
         if (cloud.fail) return { error: new Error('offline') };
-        cloud.row = { data: row.data, updated_at: row.updated_at };
+        // `pg`: the stamp comes back the way Postgres prints a timestamptz.
+        cloud.row = { data: row.data, updated_at: cloud.pg ? row.updated_at.replace('Z', '+00:00') : row.updated_at };
         return { error: null };
       },
     }),
@@ -30,7 +31,7 @@ globalThis.localStorage = {
 const { pullFromCloud, pushToCloud, cloudChangedSinceSync } = await import('./cloudSync');
 
 describe('cloud sync', () => {
-  beforeEach(() => { mem.clear(); cloud.row = null; cloud.fail = false; });
+  beforeEach(() => { mem.clear(); cloud.row = null; cloud.fail = false; cloud.pg = false; });
 
   it('a failed pull reports failure, not "no data"', async () => {
     cloud.fail = true;
@@ -57,5 +58,41 @@ describe('cloud sync', () => {
     expect(await pushToCloud('u')).toMatchObject({ ok: true, conflict: false });
     expect(cloud.row.data.name).toBe('Igor W');
     expect(await cloudChangedSinceSync('u')).toBe(false);
+  });
+
+  it('a second edit on the same device is not mistaken for another device (Postgres stamp format)', async () => {
+    cloud.pg = true;
+    cloud.row = { data: { plannerData: { v: 'start' } }, updated_at: '2026-09-28T10:00:00.000+00:00' };
+    await pullFromCloud('u');
+    localStorage.setItem('sp_plannerData', JSON.stringify({ v: 'edit 1' }));
+    expect(await pushToCloud('u')).toMatchObject({ ok: true, conflict: false });
+    localStorage.setItem('sp_plannerData', JSON.stringify({ v: 'edit 2' }));
+    expect(await pushToCloud('u')).toMatchObject({ ok: true, conflict: false, tookRemote: false });
+    expect(JSON.parse(localStorage.getItem('sp_plannerData'))).toEqual({ v: 'edit 2' });
+    expect(cloud.row.data.plannerData).toEqual({ v: 'edit 2' });
+    expect(await cloudChangedSinceSync('u')).toBe(false);
+  });
+
+  it('in a real clash, this device keeps what it changed and takes the rest from the other device', async () => {
+    cloud.row = { data: { name: 'Igor', plannerData: { v: 'start' } }, updated_at: '2026-09-28T10:00:00Z' };
+    await pullFromCloud('u');
+    // The laptop renames; this phone edits the plan.
+    cloud.row = { data: { name: 'Igor W', plannerData: { v: 'start' } }, updated_at: '2026-09-28T10:05:00Z' };
+    localStorage.setItem('sp_plannerData', JSON.stringify({ v: 'phone plan' }));
+    const res = await pushToCloud('u');
+    expect(res).toMatchObject({ ok: true, conflict: true, tookRemote: true });
+    expect(cloud.row.data).toMatchObject({ name: 'Igor W', plannerData: { v: 'phone plan' } });
+    expect(JSON.parse(localStorage.getItem('sp_plannerData'))).toEqual({ v: 'phone plan' });
+    expect(JSON.parse(localStorage.getItem('sp_name'))).toBe('Igor W');
+  });
+
+  it('no reload is needed when the other device changed nothing this one lacks', async () => {
+    cloud.row = { data: { name: 'Igor', plannerData: { v: 'start' } }, updated_at: '2026-09-28T10:00:00Z' };
+    await pullFromCloud('u');
+    // Another save happened, but with the same data.
+    cloud.row = { ...cloud.row, updated_at: '2026-09-28T10:05:00Z' };
+    localStorage.setItem('sp_plannerData', JSON.stringify({ v: 'phone plan' }));
+    expect(await pushToCloud('u')).toMatchObject({ ok: true, conflict: true, tookRemote: false });
+    expect(cloud.row.data.plannerData).toEqual({ v: 'phone plan' });
   });
 });

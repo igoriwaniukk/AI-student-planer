@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { HARD_OPTIONS, KNOW_OPTIONS, DAY_HARD_OPTIONS, NUM_TODAY } from '../lib/plannerData';
-import { hm, zad, weekdayDateLabel, daySessionBreakdown, statusOn, localDateKey, dayOpenTasks } from '../lib/plannerLogic';
+import { hm, zad, weekdayDateLabel, daySessionBreakdown, statusOn, localDateKey, dayOpenTasks, planFor } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, PrimaryButton, EnergyPicker, OptionRow, ListRow, Chip, Confetti } from '../components/ui';
 import { useLang } from '../lib/useLang';
@@ -13,7 +13,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
     return <DaySaved planner={planner} summary={saved} justSaved={!!state.daySaved} />;
   }
 
-  const sched = state.schedule || {};
+  const sched = planFor(state, NUM_TODAY) || {};
   const { planned, done, offPlanDone, unfinished } = daySessionBreakdown(state, NUM_TODAY);
   const completedIds = done.concat(offPlanDone);
   const doneCount = completedIds.length;

@@ -29,7 +29,7 @@ import {
 } from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
 import { LanguageProvider } from './lib/LanguageContext';
-import { computeStreak, studiedToday, localDateKey, daySessionBreakdown, statusOn, dayOpenTasks, wrapUpMinutes } from './lib/plannerLogic';
+import { computeStreak, studiedToday, localDateKey, daySessionBreakdown, statusOn, dayOpenTasks, wrapUpMinutes, planFor } from './lib/plannerLogic';
 import { NUM_TODAY } from './lib/plannerData';
 import { TASK_TEXT_KEY } from './lib/i18n';
 import { useLang } from './lib/useLang';
@@ -132,9 +132,9 @@ function useCloudSync(session) {
       clearTimeout(timer);
       pushToCloud(uid).then((result) => {
         setSyncError(!result.ok);
-        // Another device had saved in between: its copy was merged in, so
-        // reload to show the merged data instead of re-saving the old state.
-        if (result.conflict) window.location.reload();
+        // Another device had saved in between and some of its changes were
+        // taken in: reload so the app shows them.
+        if (result.tookRemote) window.location.reload();
       });
     };
     // Back in the foreground (or freshly loaded in an already-synced tab):
@@ -210,7 +210,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
     prevTodayDone.current = todayDone;
   }, [todayDone]);
 
-  const planIsToday = state.planApproved && state.selectedDay === NUM_TODAY;
+  const planIsToday = !!planFor(state, NUM_TODAY);
   const titleOf = (id) => {
     const d = planner.def(id);
     return d ? t(TASK_TEXT_KEY[d.id]?.title) || d.title : null;
