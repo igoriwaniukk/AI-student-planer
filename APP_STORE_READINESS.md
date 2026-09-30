@@ -35,6 +35,8 @@ Because the app shows the live website, **every website change reaches the iPhon
 | 🔥 Streak at risk | 2 hours before bedtime, if you haven't studied yet today and have a streak. |
 | 📋 Unfinished tasks | 1 hour before bedtime, listing what's still open. |
 | 🎯 Exam tomorrow | 19:00 the evening before each exam (up to 30 days ahead). |
+| 🔄 Restart your day (missed session) | 15 min after a session in today's plan should have ended if it was never started — once a day. Tapping it opens the Restart screen. |
+| 🔄 Restart your day (no plan) | 14:00, if today has no approved plan and tasks are still due. Tapping it opens the Restart screen. |
 | ✅ Session time's up | When a running focus session ends. It isn't shown while you're looking at the focus screen. |
 
 The list is rebuilt every time something changes in Pulgo (a finished task clears its reminder right away) and each time the app is opened.

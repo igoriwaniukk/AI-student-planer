@@ -35,7 +35,7 @@ import { TASK_TEXT_KEY } from './lib/i18n';
 import { useLang } from './lib/useLang';
 import { useStreakPushSync } from './hooks/usePushNotifications';
 import { useAppReminders } from './hooks/useAppReminders';
-import { postToApp } from './lib/nativeBridge';
+import { postToApp, isNativeApp, askApp, onAppMessage } from './lib/nativeBridge';
 import { useAuth } from './lib/useAuth';
 import { isSupabaseConfigured } from './lib/supabaseClient';
 import { pullFromCloud, pushToCloud, cloudChangedSinceSync } from './lib/cloudSync';
@@ -236,6 +236,14 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
   });
   // Inside the iPhone app: the same data becomes reminders on the phone.
   useAppReminders({ state, studyHistory, bedtime: profileDefaults?.bedtime, unfinishedTitles, titleOf, lang });
+  // …and tapping a "Restart your day" reminder opens that screen.
+  useEffect(() => {
+    if (!isNativeApp()) return undefined;
+    const open = (screen) => { if (screen === 'rescue') planner.go('rescue'); };
+    askApp('pending-open', {}, 5000).then((r) => open(r.screen));
+    return onAppMessage((msg) => { if (msg.type === 'open') open(msg.screen); });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Opens the day summary once per day, by itself: when everything for today
   // is done (sessions and to-dos), or an hour before bedtime if something is

@@ -739,3 +739,31 @@ export function daysPill(t, n) {
   if (n === 1) return t('cal.tomorrowPill');
   return t('cal.inDaysPill', { n });
 }
+
+// Why today needs a restart right now, if it does — the one rule behind the
+// Home card and the phone reminders:
+// - missed: a session in today's approved plan wasn't started by its end
+//   time (the latest such session is named);
+// - noPlan: from 14:00, today has no approved plan while tasks are still due.
+// Nothing while a session runs, once the day is summarized, or with nothing
+// left to do. `key` changes with each new reason, so "Not now" only hides
+// the card until something new goes off track.
+export const NO_PLAN_NUDGE_MINUTES = 14 * 60;
+export function offTrackReason(state, nowMinutes) {
+  if (state.activeTask || state.daySummaries?.[localDateKey()]) return null;
+  const plan = planFor(state, NUM_TODAY) || {};
+  const def = (id) => state.taskDefs.find((d) => d.id === id);
+  const sessions = Object.keys(plan).filter((id) => def(id));
+  const open = dayOpenTasks(state, NUM_TODAY);
+  if (sessions.length) {
+    const missed = sessions
+      .filter((id) => statusOn(state, id, NUM_TODAY) === 'planned' && nowMinutes > plan[id].start + plan[id].dur)
+      .sort((a, b) => plan[a].start - plan[b].start);
+    if (!missed.length) return null;
+    const id = missed[missed.length - 1];
+    const pending = sessions.filter((x) => ['planned', 'paused'].includes(statusOn(state, x, NUM_TODAY)));
+    return { kind: 'missed', key: 'missed:' + id + ':' + NUM_TODAY, id, count: missed.length, start: plan[id].start, end: plan[id].start + plan[id].dur, left: pending.length + open.length };
+  }
+  if (nowMinutes >= NO_PLAN_NUDGE_MINUTES && open.length) return { kind: 'noPlan', key: 'noplan:' + NUM_TODAY, left: open.length };
+  return null;
+}

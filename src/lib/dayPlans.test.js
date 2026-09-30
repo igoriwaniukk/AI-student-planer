@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { planFor, draftFor, workingPlan, plannedElsewhere, daySessionBreakdown, dayOpenTasks } from './plannerLogic';
+import { planFor, draftFor, workingPlan, plannedElsewhere, daySessionBreakdown, dayOpenTasks, offTrackReason, localDateKey } from './plannerLogic';
 import { NUM_TODAY } from './plannerData';
 import { initialState } from '../hooks/usePlanner';
 
@@ -62,5 +62,36 @@ describe('moving saved data to per-day plans', () => {
     expect(Object.keys(s.plans).map(Number).sort()).toEqual([TODAY, TOMORROW]);
     expect(Object.keys(s.drafts).map(Number)).toEqual([TOMORROW]);
     expect(s.schedule).toBeUndefined();
+  });
+});
+
+describe('when the day needs a restart', () => {
+  const base = {
+    taskDefs: [
+      { id: 'a', category: 'school', subject: 'Matematyka', title: 'Algebra', dur: 40, day: TODAY },
+      { id: 'b', category: 'school', subject: 'Biologia', title: 'Cells', dur: 30, day: TODAY },
+      { id: 'r', category: 'personal', title: 'Read', day: TODAY },
+    ],
+    tasks: { a: true, b: true }, taskState: {}, daySummaries: {},
+  };
+  const withPlan = { ...base, plans: { [TODAY]: { a: { start: 960, dur: 40 }, b: { start: 1110, dur: 30 } } } };
+
+  it('names the missed session once its time has passed', () => {
+    expect(offTrackReason(withPlan, 999)).toBeNull();
+    expect(offTrackReason(withPlan, 1001)).toMatchObject({ kind: 'missed', id: 'a', count: 1, left: 3, key: 'missed:a:' + TODAY });
+    expect(offTrackReason(withPlan, 1150)).toMatchObject({ id: 'b', count: 2 });
+  });
+
+  it('stays quiet while a session runs, after it was done, or once the day is summarized', () => {
+    expect(offTrackReason({ ...withPlan, activeTask: 'a' }, 1001)).toBeNull();
+    expect(offTrackReason({ ...withPlan, taskState: { a: { status: 'completed' } } }, 1001)).toBeNull();
+    expect(offTrackReason({ ...withPlan, daySummaries: { [localDateKey()]: {} } }, 1001)).toBeNull();
+  });
+
+  it('from 14:00 with no plan and tasks left', () => {
+    const noPlan = { ...base, plans: {} };
+    expect(offTrackReason(noPlan, 13 * 60 + 59)).toBeNull();
+    expect(offTrackReason(noPlan, 14 * 60)).toMatchObject({ kind: 'noPlan', left: 3, key: 'noplan:' + TODAY });
+    expect(offTrackReason({ ...noPlan, taskDefs: [] }, 16 * 60)).toBeNull();
   });
 });

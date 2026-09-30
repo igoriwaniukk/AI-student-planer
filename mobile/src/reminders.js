@@ -72,7 +72,7 @@ async function replaceAll(list, onAsked) {
   for (const r of items) {
     await Notifications.scheduleNotificationAsync({
       identifier: String(r.id),
-      content: { title: String(r.title), body: r.body ? String(r.body) : undefined, sound: 'default' },
+      content: { title: String(r.title), body: r.body ? String(r.body) : undefined, sound: 'default', data: r.open ? { open: String(r.open) } : {} },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: r.at, channelId: CHANNEL_ID },
     });
   }

@@ -6,6 +6,7 @@ import { WebView } from 'react-native-webview';
 import * as SplashScreen from 'expo-splash-screen';
 import * as WebBrowser from 'expo-web-browser';
 import * as Haptics from 'expo-haptics';
+import * as Notifications from 'expo-notifications';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import OfflineScreen from './src/OfflineScreen';
 import { APP_URL, APP_ORIGIN, APP_VERSION, COLORS } from './src/config';
@@ -65,6 +66,12 @@ function Shell() {
   const [failure, setFailure] = useState(null);
   const [retrying, setRetrying] = useState(false);
   const [webKey, setWebKey] = useState(0);
+  // A tapped reminder can ask for a screen (Restart your day). It's handed to
+  // the website once the page says it's ready (its 'pending-open' request),
+  // or straight away if it already is.
+  const pendingOpen = useRef(null);
+  const webReady = useRef(false);
+  const handledResponse = useRef(null);
 
   const hideSplash = useCallback(() => {
     if (splashHidden.current) return;
@@ -85,6 +92,24 @@ function Shell() {
     const js = `window.dispatchEvent(new CustomEvent('pulgo-native', { detail: ${JSON.stringify(msg)} })); true;`;
     webRef.current?.injectJavaScript(js);
   }, []);
+
+  const handleResponse = useCallback((response) => {
+    if (!response) return;
+    const id = response.notification.request.identifier + ':' + response.notification.date;
+    const screen = response.notification.request.content.data?.open;
+    if (!screen || handledResponse.current === id) return;
+    handledResponse.current = id;
+    if (webReady.current) send({ type: 'open', screen });
+    else pendingOpen.current = screen;
+  }, [send]);
+
+  useEffect(() => {
+    // Opened by tapping a reminder while the app was closed…
+    Notifications.getLastNotificationResponseAsync().then(handleResponse).catch(() => {});
+    // …or while it was running in the background.
+    const sub = Notifications.addNotificationResponseReceivedListener(handleResponse);
+    return () => sub.remove();
+  }, [handleResponse]);
 
   const retry = useCallback(() => {
     setRetrying(true);
@@ -141,6 +166,11 @@ function Shell() {
       case 'apple-signin':
         reply(await signInWithApple());
         break;
+      case 'pending-open':
+        webReady.current = true;
+        reply({ screen: pendingOpen.current });
+        pendingOpen.current = null;
+        break;
       case 'haptic':
         Haptics.notificationAsync(msg.kind === 'success' ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Warning).catch(() => {});
         break;
@@ -179,6 +209,7 @@ function Shell() {
           onOpenWindow={(e) => openOutside(e.nativeEvent.targetUrl)}
           setSupportMultipleWindows={false}
           onNavigationStateChange={(nav) => { canGoBack.current = nav.canGoBack; }}
+          onLoadStart={() => { webReady.current = false; }}
           onLoadEnd={() => { setRetrying(false); hideSplash(); }}
           onError={(e) => {
             const code = e.nativeEvent.code;

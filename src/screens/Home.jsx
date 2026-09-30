@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
-import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, planFor, draftFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
+import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, planFor, draftFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn, offTrackReason, fmt } from '../lib/plannerLogic';
 import { iconForTask, iconForSubject } from '../lib/taskAuto';
 import { computeUnlockedAchievements } from '../lib/achievements';
 import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
@@ -35,26 +35,60 @@ function AchievementModal({ achievement, onClose }) {
   );
 }
 
-// Same visual language as the achievement-unlock popup, but for a planned
-// session whose time has already passed without being started/finished —
-// nudges straight into the rescue-day flow instead of just a dead-end toast.
-function MissedSessionModal({ session, onRescue, onDismiss }) {
+const RESTART_ICON = (color) => (
+  <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M13.2 8a5.2 5.2 0 01-8.9 3.7M2.8 8a5.2 5.2 0 018.9-3.7" stroke={color} strokeWidth="1.5" strokeLinecap="round" /><path d="M11.4 2.4v2.4H9M4.6 13.6v-2.4H7" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+);
+
+// Shown under the next-session card only while the day is off track (see
+// offTrackReason): a missed session, or no plan yet by the afternoon. Two
+// looks take turns by day so Home doesn't feel the same every day — a
+// purple card (A) and the pug asking (C).
+function RestartCard({ reason, planner, onDismiss }) {
   const { t } = useLang();
-  if (!session) return null;
-  return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(6,6,10,.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 340, padding: 28, borderRadius: 24, background: '#101018', border: '1px solid rgba(255,255,255,.1)', textAlign: 'center', animation: 'stepIconPop .4s cubic-bezier(.34,1.56,.64,1) both' }}>
-        <div style={{ fontSize: 44, marginBottom: 14 }}>⏰</div>
-        <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.1em', color: '#f5a524' }}>{t('rescue.missedTitle')}</div>
-        <div style={{ fontSize: 19, fontWeight: 750, marginTop: 8 }}>{t('rescue.missedHeading', { title: session.title })}</div>
-        <div style={{ fontSize: 13, color: '#a3a3b3', marginTop: 8, lineHeight: 1.5 }}>{t('rescue.missedDesc')}</div>
-        <div
-          onClick={onRescue}
-          style={{ marginTop: 20, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
-        >
-          {t('home.rescueDay')}
+  const d = reason.kind === 'missed' ? planner.def(reason.id) : null;
+  const name = d ? t(TASK_TEXT_KEY[d.id]?.title) || d.title : '';
+  const left = reason.left + ' ' + t('appRem.tasks.' + pluralForm(reason.left));
+  const restart = () => planner.go('rescue');
+  const notNow = <div onClick={onDismiss} style={{ padding: '0 8px', fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('restart.notNow')}</div>;
+
+  if (NUM_TODAY % 2 === 1) {
+    const text = reason.kind === 'missed'
+      ? t('restart.pugMissed', { name, time: fmt(reason.start), left })
+      : t('restart.pugNoPlan', { left });
+    return (
+      <div style={{ marginTop: 14, padding: 14, borderRadius: 20, border: '1px solid rgba(165,140,255,.35)', background: 'linear-gradient(160deg,#1c1640,#0f0c24)', display: 'flex', gap: 12, alignItems: 'flex-start', animation: 'fadeUp .3s ease both' }}>
+        <img src="/pug-avatar.webp" alt="" style={{ width: 52, height: 52, borderRadius: '50%', flex: 'none', boxShadow: '0 0 18px rgba(139,109,255,.5)' }} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ padding: '11px 13px', borderRadius: '4px 16px 16px 16px', background: 'rgba(255,255,255,.07)', fontSize: 13.5, lineHeight: 1.45, color: '#ececf3' }}>{text}</div>
+          <div style={{ display: 'flex', gap: 9, marginTop: 11, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div onClick={restart} style={{ height: 40, padding: '0 18px', borderRadius: 999, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>{t('restart.pugButton')}</div>
+            {notNow}
+          </div>
         </div>
-        <div onClick={onDismiss} style={{ marginTop: 14, fontSize: 13, fontWeight: 650, color: '#8a8a99', cursor: 'pointer' }}>{t('home.later')}</div>
+      </div>
+    );
+  }
+
+  const missedLine = reason.kind === 'missed'
+    ? (reason.count > 1
+      ? t('restart.missedMany', { n: reason.count, sessions: t('restart.sessions.' + pluralForm(reason.count)) })
+      : t('restart.missedOne', { name, time: span(reason.start, reason.end) })) + ' · '
+    : '';
+  return (
+    <div style={{ marginTop: 14, padding: 16, borderRadius: 20, border: '1.5px solid rgba(139,109,255,.75)', background: 'linear-gradient(165deg,rgba(124,92,255,.26),rgba(124,92,255,.06))', boxShadow: '0 0 28px rgba(124,92,255,.35)', animation: 'fadeUp .3s ease both' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 13, flex: 'none', background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{RESTART_ICON('#fff')}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#c9baff' }}>{t(reason.kind === 'missed' ? 'restart.badgeMissed' : 'restart.badgeNoPlan')}</div>
+          <div style={{ fontSize: 17, fontWeight: 750, marginTop: 3 }}>{t(reason.kind === 'missed' ? 'restart.titleMissed' : 'restart.titleNoPlan')}</div>
+        </div>
+      </div>
+      <div style={{ fontSize: 12.5, color: '#b9b9c8', marginTop: 10, lineHeight: 1.45 }}>
+        {missedLine}{t('restart.left', { left })}. {t(reason.kind === 'missed' ? 'restart.canReplan' : 'restart.canPlan')}
+      </div>
+      <div style={{ display: 'flex', gap: 10, marginTop: 14, alignItems: 'center' }}>
+        <div onClick={restart} style={{ flex: 1, height: 48, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>{t('restart.button')}</div>
+        {notNow}
       </div>
     </div>
   );
@@ -571,7 +605,7 @@ function EnergyHistory({ energyLog }) {
 
 export default function Home({ planner, studentName, profilePhoto, energyLog = [], energyCheckins = 0, logEnergy = () => {}, studyHistory = {}, recurringActivities = [] }) {
   const { t } = useLang();
-  const { state, ts, openEnergySheet } = planner;
+  const { state, openEnergySheet } = planner;
   const [viewDay, setViewDay] = useState(NUM_TODAY);
   const info = dayInfo(viewDay);
   const isRealDay = viewDay === NUM_TODAY;
@@ -606,27 +640,18 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
   const upcoming = upcomingExams(state).filter((e) => e.daysUntil >= 0);
   const nearestExam = upcoming[0] || null;
 
-  // A planned session whose scheduled end has already passed the real
-  // current time — a prompt to nudge into the rescue-day flow, re-checked
-  // periodically so it can appear without the student having to reload.
-  const [dismissedMissedSession, setDismissedMissedSession] = useDismissedMissedSession();
+  // Whether the day needs a restart (a missed session, or no plan yet by the
+  // afternoon), re-checked periodically so the card can appear without a
+  // reload. "Not now" remembers the reason it was shown for.
+  const [dismissedRestart, setDismissedRestart] = useDismissedMissedSession();
   const [, forceRecheck] = useState(0);
   useEffect(() => {
     const id = setInterval(() => forceRecheck((n) => n + 1), 30000);
     return () => clearInterval(id);
   }, []);
-  const missedSession = (() => {
-    if (!isRealDay) return null;
-    const now = new Date();
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    const sched = planFor(state, NUM_TODAY) || {};
-    const missedId = Object.keys(sched)
-      .filter((id) => planner.def(id) && ts(id, NUM_TODAY).status === 'planned' && nowMinutes > sched[id].start + sched[id].dur)
-      .sort((a, b) => sched[a].start - sched[b].start)[0];
-    if (!missedId || missedId === dismissedMissedSession) return null;
-    const d = planner.def(missedId);
-    return { id: missedId, title: t(TASK_TEXT_KEY[d.id]?.title) || d.title };
-  })();
+  const nowForRestart = new Date();
+  const restartReason = isRealDay ? offTrackReason(state, nowForRestart.getHours() * 60 + nowForRestart.getMinutes()) : null;
+  const showRestart = !!restartReason && restartReason.key !== dismissedRestart;
   return (
     <>
       <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px', position: 'relative', zIndex: 1 }}>
@@ -675,6 +700,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
         : viewDay < NUM_TODAY
           ? <PastDayCard info={info} summary={state.daySummaries?.[localDateKey(realDateForNum(viewDay))]} />
           : <DayPlanPlaceholder info={info} day={viewDay} planner={planner} />}
+      {showRestart && <RestartCard reason={restartReason} planner={planner} onDismiss={() => setDismissedRestart(restartReason.key)} />}
 
       <div id="today-tasks" style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
         <TodayChecklist
@@ -724,23 +750,21 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
           (right:16 + 54px wide, see ChatWidget.jsx) — this is the last card
           in the scroll area, so nothing below it can push it clear the way
           it would if more content followed. */}
-      <div onClick={() => planner.go('rescue')} style={{ marginTop: 12, marginRight: 60, padding: 15, borderRadius: 18, background: 'rgba(53,208,127,.06)', border: '1px solid rgba(53,208,127,.28)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-        <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(53,208,127,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.2 8a5.2 5.2 0 01-8.9 3.7M2.8 8a5.2 5.2 0 018.9-3.7" stroke="#35d07f" strokeWidth="1.4" strokeLinecap="round" /><path d="M11.4 2.4v2.4H9M4.6 13.6v-2.4H7" stroke="#35d07f" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14.5, fontWeight: 700 }}>{t('home.rescueDay')}</div>
-          <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 2 }}>{t('home.rescueDaySub')}</div>
+      {!showRestart && (
+        <div onClick={() => planner.go('rescue')} style={{ marginTop: 12, marginRight: 60, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
+          <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(124,92,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{RESTART_ICON('#a58cff')}</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14.5, fontWeight: 700 }}>{t('home.rescueDay')}</div>
+            <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 2 }}>{t('home.rescueDaySub')}</div>
+          </div>
+          <span style={{ fontSize: 15, color: '#6b6b7a' }}>›</span>
         </div>
-        <span style={{ fontSize: 15, color: '#6b6b7a' }}>›</span>
-      </div>
+      )}
 
       <EnergySheet planner={planner} logEnergy={logEnergy} />
       <TaskEditSheet planner={planner} />
       <AchievementModal achievement={pendingAchievement} onClose={() => setSeenAchievements(seenAchievements.concat(pendingAchievement.id))} />
-      <MissedSessionModal
-        session={!pendingAchievement ? missedSession : null}
-        onRescue={() => { setDismissedMissedSession(missedSession.id); planner.go('rescue'); }}
-        onDismiss={() => setDismissedMissedSession(missedSession.id)}
-      />
+
       </div>
     </>
   );

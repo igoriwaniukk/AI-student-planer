@@ -1,16 +1,18 @@
 import { NUM_TODAY, realDateForNum } from './plannerData';
-import { computeStreak, studiedToday, statusOn, sessionClock, upcomingExams, wrapUpMinutes, fmt, pluralForm, planFor } from './plannerLogic';
+import { computeStreak, studiedToday, statusOn, sessionClock, upcomingExams, wrapUpMinutes, fmt, pluralForm, planFor, dayOpenTasks, localDateKey, NO_PLAN_NUDGE_MINUTES } from './plannerLogic';
 import { VALUE_KEY } from './i18n';
 
 // The reminders the iPhone app schedules on the phone itself (local
 // notifications), worked out here from the planner so the app never needs a
 // copy of the planning logic. Recomputed whenever the plan, tasks or streak
 // change; the app replaces everything it had with this list. Each item is
-// { id, at (ms since epoch), title, body }, only ever in the future.
+// { id, at (ms since epoch), title, body, open? }, only ever in the future;
+// `open: 'rescue'` makes tapping it open the Restart-your-day screen.
 const SESSION_LEAD_MIN = 10;
 const STREAK_LEAD_MIN = 120;
 const EXAM_EVE_MINUTES = 19 * 60;
 const EXAM_LOOKAHEAD_DAYS = 30;
+const MISSED_DELAY_MIN = 15;
 // iOS keeps at most 64 pending notifications per app.
 const MAX_REMINDERS = 60;
 
@@ -50,6 +52,31 @@ export function buildAppReminders({ state, studyHistory, bedtime, unfinishedTitl
       });
     });
   });
+
+  // Restart your day (the same off-track rule as Home's card, see
+  // offTrackReason): 15 minutes after a session in today's plan should have
+  // ended without being started — only the next such moment, and none once
+  // one has already passed, so at most one a day — or at 14:00 when today
+  // has no plan but tasks are still due.
+  if (!(state.daySummaries || {})[localDateKey(now)]) {
+    const todayPlan = planFor(state, NUM_TODAY) || {};
+    const sessions = Object.keys(todayPlan).filter((id) => (state.taskDefs || []).some((d) => d.id === id));
+    if (sessions.length) {
+      const checks = sessions
+        .filter((id) => id !== state.activeTask && statusOn(state, id, NUM_TODAY) === 'planned')
+        .map((id) => ({ id, at: atMinutes(today, todayPlan[id].start + todayPlan[id].dur + MISSED_DELAY_MIN) }))
+        .sort((a, b) => a.at - b.at);
+      const next = checks.find((c) => c.at > nowMs);
+      if (next && !checks.some((c) => c.at <= nowMs)) {
+        add({ id: 'restart:' + NUM_TODAY, at: next.at, title: t('appRem.missedTitle', { name: name(next.id), time: fmt(todayPlan[next.id].start) }), body: t('appRem.missedBody'), open: 'rescue' });
+      }
+    } else {
+      const open = dayOpenTasks(state, NUM_TODAY);
+      if (open.length) {
+        add({ id: 'noplan:' + NUM_TODAY, at: atMinutes(today, NO_PLAN_NUDGE_MINUTES), title: t('appRem.noPlanTitle'), body: t('appRem.noPlanBody', { left: open.length + ' ' + t('appRem.tasks.' + pluralForm(open.length)) }), open: 'rescue' });
+      }
+    }
+  }
 
   // The running session's time is up (the phone may be locked by then).
   if (state.activeTask && state.sessionStart) {

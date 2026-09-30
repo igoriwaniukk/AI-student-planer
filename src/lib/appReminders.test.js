@@ -16,9 +16,11 @@ function history(daysBack) {
   return h;
 }
 
+// Due later in the week, so "no plan for today" doesn't kick in unless a
+// test wants it.
 const taskDefs = [
-  { id: 'math', subject: 'Matematyka', title: 'Funkcje', dur: 45 },
-  { id: 'bio', subject: 'Biologia', title: 'Genetyka', dur: 30 },
+  { id: 'math', subject: 'Matematyka', title: 'Funkcje', dur: 45, day: NUM_TODAY + 5 },
+  { id: 'bio', subject: 'Biologia', title: 'Genetyka', dur: 30, day: NUM_TODAY + 5 },
 ];
 const baseState = { taskDefs, tasks: {}, taskState: {}, plans: {}, drafts: {}, customExams: [] };
 const titleOf = (id) => taskDefs.find((d) => d.id === id)?.title;
@@ -153,5 +155,33 @@ describe('buildAppReminders', () => {
     expect(list[0].at).toBe(at(16, 37).getTime());
     const paused = { ...running, sessionStart: null, sessionElapsedMs: 10 * 60000 };
     expect(build({ state: paused })).toEqual([]);
+  });
+
+  it('reminds to restart 15 minutes after a missed session, only the next one', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(at(15, 0));
+    const state = { ...baseState, plans: { [NUM_TODAY]: { math: { start: 16 * 60, dur: 45 }, bio: { start: 18 * 60, dur: 30 } } } };
+    const r = build({ state }, 'en').filter((x) => x.id.startsWith('restart'));
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({ at: at(17, 0).getTime(), title: '🔄 Missed Funkcje at 16:00?', open: 'rescue' });
+    // Started: the check moves on to the next session.
+    const started = { ...state, taskState: { math: { status: 'in_progress' } }, activeTask: 'math' };
+    expect(build({ state: started }).filter((x) => x.id.startsWith('restart'))[0].at).toBe(at(18, 45).getTime());
+    // Once one was missed, no second reminder that day.
+    vi.setSystemTime(at(17, 30));
+    expect(build({ state }).filter((x) => x.id.startsWith('restart'))).toEqual([]);
+  });
+
+  it('reminds at 14:00 when today has no plan but tasks are due', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(at(9, 0));
+    const due = { ...baseState, taskDefs: [{ ...taskDefs[0], day: NUM_TODAY }, { id: 'r', category: 'personal', title: 'Read', day: NUM_TODAY }] };
+    const r = build({ state: due }).filter((x) => x.id.startsWith('noplan'));
+    expect(r).toHaveLength(1);
+    expect(r[0]).toMatchObject({ at: at(14, 0).getTime(), title: '🔄 Nie masz jeszcze planu na dziś', open: 'rescue' });
+    expect(r[0].body).toContain('2 zadania');
+    expect(build({ state: baseState }).filter((x) => x.id.startsWith('noplan'))).toEqual([]);
+    vi.setSystemTime(at(15, 0));
+    expect(build({ state: due }).filter((x) => x.id.startsWith('noplan'))).toEqual([]);
   });
 });
