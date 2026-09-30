@@ -68,8 +68,12 @@ the push-notification cron schedule).
    - `ANTHROPIC_API_KEY` (and optionally `ANTHROPIC_MODEL`) — same as
      `server/.env`.
    - `SUPABASE_SERVICE_ROLE_KEY` — from Supabase's Project Settings → API →
-     "service_role" secret key (needed for push notifications only; see
+     "service_role" secret key (needed for deleting an account — which the
+     App Store requires — and for push notifications; see
      `server/.env.example`).
+   - After adding or changing variables, redeploy (Deployments → ⋯ →
+     Redeploy). Open `/api/chat` on the live site to check: it shows
+     `{"ai": true, "accounts": true}` when the AI key and Supabase are set.
    - `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_CONTACT` — same as
      `server/.env`, if you want push notifications.
    - `CRON_SECRET` — any random string, if you set up push notifications

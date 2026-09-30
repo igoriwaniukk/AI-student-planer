@@ -1,4 +1,4 @@
-import { anthropic, ANTHROPIC_MODEL, anthropicErrorResponse } from './anthropic.js';
+import { anthropic, ANTHROPIC_MODEL, anthropicErrorResponse, NO_KEY_RESPONSE } from './anthropic.js';
 import { contextLines, taskExtras } from './context.js';
 
 export const RESCUE_TOOL = {
@@ -93,7 +93,7 @@ export function buildRescueUserMessage(tasks, energy, availableMinutes, reasons,
 
 export async function handlePlanRescue({ tasks, energy, availableMinutes, reasons, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints, context, lang }) {
   if (!anthropic) {
-    return { status: 500, body: { error: 'Brak klucza ANTHROPIC_API_KEY na serwerze. Ustaw go w środowisku i uruchom serwer ponownie.' } };
+    return NO_KEY_RESPONSE;
   }
   if (!Array.isArray(tasks) || tasks.length === 0) {
     return { status: 400, body: { error: 'Brak zadań do rozdysponowania.' } };
@@ -118,7 +118,7 @@ export async function handlePlanRescue({ tasks, energy, availableMinutes, reason
     }
     return { status: 200, body: { blocks: toolUse.input.blocks || [], moved: toolUse.input.moved || [], rationale: toolUse.input.rationale || '' } };
   } catch (err) {
-    const { status, error } = anthropicErrorResponse(err);
-    return { status, body: { error } };
+    const { status, error, code } = anthropicErrorResponse(err);
+    return { status, body: { error, code } };
   }
 }

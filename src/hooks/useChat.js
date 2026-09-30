@@ -28,8 +28,11 @@ export function useChat() {
       try {
         data = await res.json();
       } catch {
-        throw new Error(t('chat.serverBadResponse'));
+        // Not JSON: the server timed out or crashed before it could answer.
+        throw new Error(t(res.status === 504 ? 'chat.timeout' : 'chat.serverBadResponse'));
       }
+      if (data.code === 'no_key') throw new Error(t('chat.noKey'));
+      if (data.code === 'bad_key') throw new Error(t('chat.badKey'));
       if (!res.ok) throw new Error(data.error || t('chat.serverError'));
       if (data.reply) setMessages(next.concat({ role: 'assistant', content: data.reply }));
       if (data.action) setAction(data.action);

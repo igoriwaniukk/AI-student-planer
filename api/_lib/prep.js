@@ -1,4 +1,4 @@
-import { anthropic, ANTHROPIC_MODEL, anthropicErrorResponse } from './anthropic.js';
+import { anthropic, ANTHROPIC_MODEL, anthropicErrorResponse, NO_KEY_RESPONSE } from './anthropic.js';
 import { examLines, fmt } from './context.js';
 
 // Plans the study sessions for a newly added exam across the days before it,
@@ -75,7 +75,7 @@ export function buildPrepUserMessage(exam, days, context) {
 
 export async function handlePlanPrep({ exam, days, context, lang }) {
   if (!anthropic) {
-    return { status: 500, body: { error: 'Brak klucza ANTHROPIC_API_KEY na serwerze. Ustaw go w środowisku i uruchom serwer ponownie.' } };
+    return NO_KEY_RESPONSE;
   }
   if (!exam || !Array.isArray(days) || days.length === 0) {
     return { status: 400, body: { error: 'Brak danych sprawdzianu albo dni do zaplanowania.' } };
@@ -93,7 +93,7 @@ export async function handlePlanPrep({ exam, days, context, lang }) {
     if (!toolUse) return { status: 502, body: { error: 'Claude nie zwrócił planu nauki.' } };
     return { status: 200, body: { sessions: toolUse.input.sessions || [], rationale: toolUse.input.rationale || '' } };
   } catch (err) {
-    const { status, error } = anthropicErrorResponse(err);
-    return { status, body: { error } };
+    const { status, error, code } = anthropicErrorResponse(err);
+    return { status, body: { error, code } };
   }
 }

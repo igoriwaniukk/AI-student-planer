@@ -1,4 +1,4 @@
-import { anthropic, ANTHROPIC_MODEL, anthropicErrorResponse } from './anthropic.js';
+import { anthropic, ANTHROPIC_MODEL, anthropicErrorResponse, NO_KEY_RESPONSE } from './anthropic.js';
 import { contextLines, taskExtras, fmt } from './context.js';
 
 // Fixed daily constraints the schedule must respect — kept in sync with the
@@ -102,7 +102,7 @@ export function buildPlanUserMessage(tasks, energy, pref, activitiesNote, activi
 
 export async function handlePlanGenerate({ tasks, energy, pref, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints, context, lang }) {
   if (!anthropic) {
-    return { status: 500, body: { error: 'Brak klucza ANTHROPIC_API_KEY na serwerze. Ustaw go w środowisku i uruchom serwer ponownie.' } };
+    return NO_KEY_RESPONSE;
   }
   if (!Array.isArray(tasks) || tasks.length === 0) {
     return { status: 400, body: { error: 'Brak zadań do zaplanowania.' } };
@@ -124,7 +124,7 @@ export async function handlePlanGenerate({ tasks, energy, pref, activitiesNote, 
     }
     return { status: 200, body: { blocks: toolUse.input.blocks || [], extraSessions: toolUse.input.extraSessions || [], rationale: toolUse.input.rationale || '' } };
   } catch (err) {
-    const { status, error } = anthropicErrorResponse(err);
-    return { status, body: { error } };
+    const { status, error, code } = anthropicErrorResponse(err);
+    return { status, body: { error, code } };
   }
 }

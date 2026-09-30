@@ -53,6 +53,13 @@ Open **https://ai-student-planer-igor-4a92.vercel.app** on your phone. This is V
 2. **Supabase → Authentication → Sign In / Providers → Apple → Client IDs:** add `com.igoriwaniuk.pulgo` after your existing Services ID, separated by a comma. This enables the native Face ID sheet; without it the app still works through the browser sheet.
 3. Google needs no extra step.
 
+### Step 2b: Vercel settings for the AI and account deletion (5 min)
+1. **Vercel → your project → Settings → Environment Variables**, for Production (and Preview):
+   - `ANTHROPIC_API_KEY`: the same value as in `server/.env` on your computer. Without it, the AI assistant, AI plans and exam study plans don't work on the live site.
+   - `SUPABASE_SERVICE_ROLE_KEY`: Supabase → Project Settings → API → `service_role` key. Without it, **Delete account** fails, and Apple requires that to work.
+2. **Deployments → ⋯ on the latest one → Redeploy**, so the new values are used.
+3. Open `https://<your address>/api/chat`. It should show `{"ai":true,"accounts":true}`.
+
 ### Step 3: Contact email (2 min)
 Create the Pulgo email address. Put it in `public/legal.js` (`PULGO_CONTACT_EMAIL = 'you@…'`) or send it to me.
 

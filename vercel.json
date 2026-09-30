@@ -4,5 +4,13 @@
       "path": "/api/push/cron",
       "schedule": "0 9 * * *"
     }
-  ]
+  ],
+  "functions": {
+    "api/chat.js": {
+      "maxDuration": 60
+    },
+    "api/plan/*.js": {
+      "maxDuration": 60
+    }
+  }
 }

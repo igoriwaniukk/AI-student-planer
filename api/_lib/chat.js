@@ -1,5 +1,5 @@
 import { GOALS, IMPORTANCE_OPTIONS, ENERGY_OPTIONS, RECUR_DAYS } from '../../src/lib/plannerData.js';
-import { anthropic, ANTHROPIC_MODEL, anthropicErrorResponse } from './anthropic.js';
+import { anthropic, ANTHROPIC_MODEL, anthropicErrorResponse, NO_KEY_RESPONSE } from './anthropic.js';
 
 export const CHAT_TOOLS = [
   {
@@ -132,7 +132,7 @@ function buildChatSystemPrompt(context) {
 // (api/chat.js) can call the exact same logic instead of duplicating it.
 export async function handleChat({ messages, context }) {
   if (!anthropic) {
-    return { status: 500, body: { error: 'Brak klucza ANTHROPIC_API_KEY na serwerze. Ustaw go w środowisku i uruchom serwer ponownie.' } };
+    return NO_KEY_RESPONSE;
   }
   if (!Array.isArray(messages) || messages.length === 0) {
     return { status: 400, body: { error: 'Brak wiadomości do wysłania.' } };
@@ -154,7 +154,7 @@ export async function handleChat({ messages, context }) {
     const action = toolUse ? { name: toolUse.name, args: toolUse.input } : null;
     return { status: 200, body: { reply, action } };
   } catch (err) {
-    const { status, error } = anthropicErrorResponse(err);
-    return { status, body: { error } };
+    const { status, error, code } = anthropicErrorResponse(err);
+    return { status, body: { error, code } };
   }
 }
