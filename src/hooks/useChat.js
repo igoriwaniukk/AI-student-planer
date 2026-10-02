@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useLang } from '../lib/useLang';
 import { authedFetch } from '../lib/authFetch';
+import { getCurrentLang } from '../lib/i18n';
 
 export function useChat() {
   const { t } = useLang();
@@ -22,7 +23,7 @@ export function useChat() {
       const res = await authedFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next, context }),
+        body: JSON.stringify({ messages: next, context, lang: getCurrentLang() }),
       });
       let data;
       try {

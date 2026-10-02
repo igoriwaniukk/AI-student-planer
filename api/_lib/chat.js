@@ -88,11 +88,16 @@ export const CHAT_TOOLS = [
   },
 ];
 
-function buildChatSystemPrompt(context) {
+// The student may write in Polish or English whatever the app is set to:
+// answer in the language of their latest message, the app's language when
+// that's unclear (a single emoji, a name).
+export function buildChatSystemPrompt(context, lang) {
+  const appLang = lang === 'en' ? 'English' : 'Polish';
   const lines = [
-    'Jesteś asystentem AI w polskiej aplikacji Student Planner. Pomagasz uczniowi planować naukę, ' +
+    'Jesteś asystentem AI w aplikacji Pulgo (planer nauki dla uczniów). Pomagasz uczniowi planować naukę, ' +
       'przygotowywać się do sprawdzianów i radzić sobie z napiętymi dniami.',
-    'Odpowiadaj zawsze po polsku, konkretnie i zwięźle. Gdy to pomocne, odnoś się do danych ucznia podanych niżej.',
+    `LANGUAGE: Always reply in the same language as the student's latest message (English or Polish), even though these instructions are in Polish. If the language of the message is unclear, reply in ${appLang} (the app's language).`,
+    'Odpowiadaj konkretnie i zwięźle. Gdy to pomocne, odnoś się do danych ucznia podanych niżej.',
     'Gdy uczeń prosi o dodanie/zmianę sprawdzianu, oznaczenie sesji jako wykonanej, przełożenie sesji na inną ' +
       'godzinę, zapisanie poziomu energii albo dodanie cotygodniowego zajęcia — użyj odpowiedniej funkcji zamiast ' +
       'tylko opisywać to słowami. Aplikacja zawsze poprosi ucznia o potwierdzenie przed zapisaniem zmiany, więc ' +
@@ -130,7 +135,7 @@ function buildChatSystemPrompt(context) {
 // Framework-agnostic: takes the parsed request body, returns {status, body}
 // so both the Express route (server/index.js) and the Vercel function
 // (api/chat.js) can call the exact same logic instead of duplicating it.
-export async function handleChat({ messages, context }) {
+export async function handleChat({ messages, context, lang }) {
   if (!anthropic) {
     return NO_KEY_RESPONSE;
   }
@@ -142,7 +147,7 @@ export async function handleChat({ messages, context }) {
     const response = await anthropic.messages.create({
       model: ANTHROPIC_MODEL,
       max_tokens: 1024,
-      system: buildChatSystemPrompt(context),
+      system: buildChatSystemPrompt(context, lang),
       tools: CHAT_TOOLS,
       // Frontend already speaks the same {role: 'user'|'assistant', content: string}
       // shape the API expects, so no mapping is needed here.

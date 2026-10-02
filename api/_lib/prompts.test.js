@@ -42,3 +42,14 @@ describe('prompts include everything the student added', () => {
     }
   });
 });
+
+describe('chat language', () => {
+  it('answers in the language the student writes in, the app language as fallback', async () => {
+    const { buildChatSystemPrompt } = await import('./chat.js');
+    const en = buildChatSystemPrompt(null, 'en');
+    expect(en).toContain("same language as the student's latest message");
+    expect(en).toContain('reply in English');
+    expect(en).not.toMatch(/zawsze po polsku/);
+    expect(buildChatSystemPrompt(null, 'pl')).toContain('reply in Polish');
+  });
+});
