@@ -1,4 +1,4 @@
-import { KEYS } from './store';
+import { KEYS } from './store.js';
 
 export const STATUS_LABEL = {
   planned: 'Zaplanowane', in_progress: 'W trakcie', paused: 'Wstrzymane',
