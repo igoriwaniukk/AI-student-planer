@@ -43,10 +43,8 @@ The list is rebuilt every time something changes in Pulgo (a finished task clear
 
 ## 2. Your steps, in order 👤
 
-### Step 1: Check the website address (2 min)
-Open **https://ai-student-planer-igor-4a92.vercel.app** on your phone. This is Vercel's standard production address for your project, but I couldn't open it from my sandbox.
-- If Pulgo opens, you're done.
-- If it doesn't, copy your real address from Vercel → your project → **Domains**, and replace `appUrl` in `mobile/app.json` (or tell me and I'll do it).
+### Step 1: Website address ✅
+The live site is **https://ai-student-planer.vercel.app** (Vercel's production domain), and the app is set to it (`appUrl` in `mobile/app.json`). If you ever add your own domain, change `appUrl` to it.
 
 ### Step 2: Supabase settings for sign-in (5 min)
 1. **Supabase → Authentication → URL Configuration → Redirect URLs → Add URL:** `pulgo://auth-callback`. Without this, Google and Apple sign-in inside the app will fail.
