@@ -110,11 +110,15 @@ const ACTIVITY_ICON_ENTRIES = [
   ['🗣️', ['language', 'język', 'spanish', 'hiszpań', 'german', 'niemieck', 'french', 'francusk']],
   ['📚', ['tutor', 'korepet', 'extra class', 'dodatkow']],
   ['💻', ['coding', 'program', 'robot', 'informaty']],
+  // Last, so "lekcja gitary" or "school football" still get their own icon.
+  ['🏫', ['school', 'szkoł', 'szkol', 'lekcj', 'liceum', 'technikum', '=class', '=classes']],
 ];
 
+// null when nothing matches — the Plans screen then draws its own weekly
+// icon (🔁 renders as a flat blue box on iPhone).
 export function iconForActivity(name) {
   const hit = ACTIVITY_ICON_ENTRIES.find(([, keywords]) => hasKeyword(name, keywords));
-  return hit ? hit[0] : '🔁';
+  return hit ? hit[0] : null;
 }
 
 export function iconForTask(d) {
