@@ -419,7 +419,9 @@ describe('task keyword detection', () => {
     expect(detectTaskMeta('Praca domowa z polskiego').category).toBe('school');
     expect(iconForTask({ category: 'personal', title: 'Read book' })).toBe('📚');
     expect(iconForTask({ category: 'personal', title: 'Buy bread' })).toBe('📝');
-    expect(iconForActivity('Birthday party')).toBe('🔁');
+    expect(iconForActivity('Birthday party')).toBe(null);
+    expect(iconForActivity('School')).toBe('🏫');
+    expect(iconForActivity('Lekcja gitary')).toBe('🎸');
     expect(iconForActivity('Trening piłki nożnej')).toBe('⚽');
   });
 });

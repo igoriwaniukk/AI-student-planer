@@ -19,9 +19,9 @@ export function dayInfo(num) {
 // logical day index, via Intl so Polish gets the correct genitive month
 // form (e.g. "22 września") instead of a month name hardcoded for whatever
 // fixed demo month the app used to assume.
-export function formatMonthDay(num, { year = false } = {}) {
+export function formatMonthDay(num, { year = false, short = false } = {}) {
   const lang = getCurrentLang();
-  const opts = { day: 'numeric', month: 'long', ...(year ? { year: 'numeric' } : {}) };
+  const opts = { day: 'numeric', month: short ? 'short' : 'long', ...(year ? { year: 'numeric' } : {}) };
   return new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'pl-PL', opts).format(realDateForNum(num));
 }
 
