@@ -931,4 +931,8 @@ export default {
   "taskEdit.timedToggle": "A una hora fija",
   "taskEdit.timedHint": "Bloquea este tiempo en tu plan del día: el estudio se organiza a su alrededor.",
   "tl.todo": "Pendiente",
+  "streakCard.days.one": "día seguido",
+  "streakCard.days.few": "días seguidos",
+  "streakCard.days.many": "días seguidos",
+  "streakCard.best": "Récord: {n}",
 };

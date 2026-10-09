@@ -931,4 +931,8 @@ export default {
   "taskEdit.timedToggle": "固定时间",
   "taskEdit.timedHint": "在当天的计划中预留这段时间——学习会围绕它来安排。",
   "tl.todo": "待办",
+  "streakCard.days.one": "天连续学习",
+  "streakCard.days.few": "天连续学习",
+  "streakCard.days.many": "天连续学习",
+  "streakCard.best": "最佳：{n} 天",
 };

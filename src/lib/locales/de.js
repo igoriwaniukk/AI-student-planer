@@ -931,4 +931,8 @@ export default {
   "taskEdit.timedToggle": "Zu einer festen Uhrzeit",
   "taskEdit.timedHint": "Blockiert diese Zeit in deinem Tagesplan — das Lernen wird drumherum geplant.",
   "tl.todo": "To-do",
+  "streakCard.days.one": "Tag in Folge",
+  "streakCard.days.few": "Tage in Folge",
+  "streakCard.days.many": "Tage in Folge",
+  "streakCard.best": "Rekord: {n}",
 };

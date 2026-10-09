@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
-import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, planFor, draftFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn, offTrackReason, fmt, todoTimeLabel } from '../lib/plannerLogic';
+import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, planFor, draftFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, bestStreak, studiedToday, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn, offTrackReason, fmt, todoTimeLabel } from '../lib/plannerLogic';
 import { iconForTask, iconForSubject } from '../lib/taskAuto';
 import { useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY, getCurrentLang, localeOf } from '../lib/i18n';
@@ -91,7 +91,7 @@ function StreakNotice({ notice, onDismiss }) {
 // Combines the streak count with the week strip so the days that make up
 // the streak are visible right where the count is, instead of a plain
 // number with the calendar buried further down the page.
-function StreakCard({ streak, doneToday, selectedDay, onSelectDay, eventDays }) {
+function StreakCard({ streak, best, doneToday, selectedDay, onSelectDay, eventDays }) {
   const { t } = useLang();
   // Bumps the flame with a bigger, one-shot bounce right when the streak
   // ticks up, on top of its constant gentle pulse — a small reward beat
@@ -110,19 +110,35 @@ function StreakCard({ streak, doneToday, selectedDay, onSelectDay, eventDays }) 
     return undefined;
   }, [streak]);
 
+  const lit = streak > 0;
+  const sub = doneToday ? '✓ ' + t('home.streakSecured') : best > 0 ? t('streakCard.best', { n: best }) : t('home.streakStart');
   return (
-    <div style={{ marginTop: 14, padding: '13px 15px 10px', borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.streak')}</span>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '4px 10px', borderRadius: 999, background: 'rgba(124,92,255,.18)', border: '1px solid rgba(139,109,255,.45)', color: '#e6dfff' }}>
-          <span style={{ fontSize: 12.5, animation: bumping ? 'streakBump .7s ease' : (streak > 0 ? 'pulseGlow 1.8s ease-in-out infinite' : 'none') }}>🔥</span>
-          <span style={{ fontSize: 13, fontWeight: 750, fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={streak} /></span>
+    <div style={{
+      marginTop: 14, padding: '16px 14px 10px', borderRadius: 22, border: '1px solid rgba(255,255,255,.07)',
+      background: `radial-gradient(120% 90% at 0% 0%,rgba(245,165,36,${lit ? 0.16 : 0.07}),transparent 55%),#121019`,
+    }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 2px' }}>
+        <div
+          style={{
+            width: 46, height: 46, borderRadius: 14, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
+            background: lit ? 'linear-gradient(150deg,#ffb547,#ff6a3d)' : 'rgba(245,165,36,.12)',
+            border: lit ? 'none' : '1px solid rgba(245,165,36,.3)',
+            boxShadow: lit ? '0 8px 22px rgba(255,120,60,.4)' : 'none',
+            animation: bumping ? 'streakBump .7s ease' : 'none',
+          }}
+        >
+          <span style={{ opacity: lit ? 1 : 0.7 }}>🔥</span>
+        </div>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, lineHeight: 1 }}>
+            <span style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={streak} /></span>
+            <span style={{ fontSize: 15, fontWeight: 700, color: '#c9c9d6' }}>{t('streakCard.days.' + pluralForm(streak))}</span>
+          </div>
+          <div style={{ fontSize: 12, color: doneToday ? '#8ff0de' : '#8a8a99', marginTop: 5 }}>{sub}</div>
         </div>
       </div>
-      <WeekStrip selectedDay={selectedDay} onSelect={onSelectDay} streakCount={streak} streakIncludesToday={doneToday} eventDays={eventDays} topMargin={12} pageable />
-      <div style={{ marginTop: 10, paddingTop: 9, borderTop: '1px solid rgba(255,255,255,.06)', fontSize: 11.5, lineHeight: 1.4, textAlign: 'center', color: doneToday ? '#8ff0de' : '#f7c46c' }}>
-        {doneToday ? '✓ ' + t('home.streakSecured') : streak > 0 ? t('home.streakAtRisk', { n: streak }) : t('home.streakStart')}
-      </div>
+      <WeekStrip selectedDay={selectedDay} onSelect={onSelectDay} streakCount={streak} streakIncludesToday={doneToday} eventDays={eventDays} topMargin={14} pageable bubbles />
     </div>
   );
 }
@@ -627,7 +643,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
           </div>
           <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 6 }}>{t('home.subtitle')}</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4, paddingRight: 46 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4 }}>
           <div
             onClick={() => planner.go('profile')}
             style={{
@@ -641,7 +657,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
         </div>
       </div>
 
-      <StreakCard streak={streak} doneToday={studiedToday(studyHistory)} selectedDay={viewDay} onSelectDay={setViewDay} eventDays={new Set(upcoming.map((e) => e.day))} />
+      <StreakCard streak={streak} best={Math.max(streak, bestStreak(studyHistory))} doneToday={studiedToday(studyHistory)} selectedDay={viewDay} onSelectDay={setViewDay} eventDays={new Set(upcoming.map((e) => e.day))} />
       <StreakNotice notice={streakNotice} onDismiss={() => setLastSeenStreak(streak)} />
 
       {state.rescueApplied && (() => {

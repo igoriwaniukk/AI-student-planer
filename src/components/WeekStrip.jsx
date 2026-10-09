@@ -19,9 +19,11 @@ const DRAG_THRESHOLD = 8;
 // weekOffset/onOffsetChange let a parent (e.g. Calendar) keep its own
 // exam/activity lookups in sync with which week is showing, instead of
 // this component silently owning that state.
+// bubbles (Home's streak card): round day bubbles under the weekday, the
+// streak days filled orange, the chosen day purple and today ringed.
 export default function WeekStrip({
   selectedDay, onSelect, eventDays, examDay, streakCount, streakIncludesToday = false, topMargin = 22,
-  pageable = false, weekOffset: controlledOffset, onOffsetChange,
+  pageable = false, weekOffset: controlledOffset, onOffsetChange, bubbles = false,
 }) {
   const { t } = useLang();
   const [internalOffset, setInternalOffset] = useState(0);
@@ -91,6 +93,33 @@ export default function WeekStrip({
             const isCountdown = countdownSet ? countdownSet.has(num) : false;
             const isStreak = streakSet ? streakSet.has(num) : false;
             const shortLabel = t(DAY_KEY[label] + '.short') || short;
+            if (bubbles) {
+              const isToday = num === NUM_TODAY;
+              return (
+                <div
+                  key={num}
+                  onClick={onSelect ? () => onSelect(num) : undefined}
+                  style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: onSelect ? 'pointer' : 'default' }}
+                >
+                  <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.04em', color: on || isToday ? '#c9baff' : '#6a6a7a' }}>{shortLabel}</span>
+                  <div
+                    style={{
+                      width: 38, height: 38, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 15, fontWeight: 750, fontVariantNumeric: 'tabular-nums',
+                      background: on ? 'linear-gradient(160deg,#8b6dff,#6d4dff)' : isStreak ? 'linear-gradient(150deg,#ffb547,#ff6a3d)' : 'rgba(255,255,255,.05)',
+                      color: on ? '#fff' : isStreak ? '#2a1300' : '#c9c9d6',
+                      boxShadow: on
+                        ? '0 0 0 3px rgba(139,109,255,.28), 0 6px 16px rgba(109,77,255,.35)'
+                        : isStreak ? '0 4px 12px rgba(255,120,60,.3)' : isToday ? 'inset 0 0 0 1.5px rgba(139,109,255,.7)' : 'none',
+                      transition: 'background .2s ease, box-shadow .2s ease',
+                    }}
+                  >
+                    {realDateForNum(num).getDate()}
+                  </div>
+                  <span style={{ width: 4, height: 4, borderRadius: '50%', background: hasEvent ? '#2ee6c5' : 'transparent' }} />
+                </div>
+              );
+            }
             return (
               <div
                 key={num}

@@ -931,4 +931,8 @@ export default {
   "taskEdit.timedToggle": "À une heure précise",
   "taskEdit.timedHint": "Bloque ce créneau dans ton plan du jour — les révisions sont prévues autour.",
   "tl.todo": "À faire",
+  "streakCard.days.one": "jour d’affilée",
+  "streakCard.days.few": "jours d’affilée",
+  "streakCard.days.many": "jours d’affilée",
+  "streakCard.best": "Record : {n}",
 };
