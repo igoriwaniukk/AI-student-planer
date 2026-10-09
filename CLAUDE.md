@@ -14,3 +14,6 @@ Subject emojis live in `SUBJECT_ICON` (`src/lib/taskAuto.js`); English is 💬. 
 
 ## iPhone app
 `mobile/` (Expo) is a thin shell that shows the live website in a web view — build every feature in the website, never a second copy in `mobile/`. The website talks to the app through `src/lib/nativeBridge.js` (sign-in sheet, reminders from `src/lib/appReminders.js`, haptics); the site URL is `mobile/app.json` → `expo.extra.appUrl`. Steps for the App Store are in `APP_STORE_READINESS.md`.
+
+## Premium
+Pulgo Premium ($9.99/month, $59.99/year with 7 days free) is off until `PREMIUM_ENABLED=true` in Vercel. Free limits (10 chats/day, 1 AI plan/day, 1 rescue/day, 1 exam prep/week) are enforced on the server in `api/_lib/premium.js` through `guardAiRequest(req, res, feature)`; Premium status comes from RevenueCat into Supabase `entitlements`, served by `api/premium.js`. The website side is `src/lib/premium.js` + `src/components/Paywall.jsx`; buying happens only in the iPhone app (`mobile/src/purchases.js`). Igor's setup steps: `PREMIUM_SETUP.md`.

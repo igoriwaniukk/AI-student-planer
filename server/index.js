@@ -7,6 +7,7 @@ import { handlePlanPrep } from '../api/_lib/prep.js';
 import { pushEnabled, handleVapidPublicKey, handleSubscribe, handlePushState, handleUnsubscribe, sendScheduledPushes } from '../api/_lib/push.js';
 import { guardAiRequest } from '../api/_lib/auth.js';
 import { handleAccountDelete } from '../api/_lib/account.js';
+import { handlePremium } from '../api/premium.js';
 
 const PORT = process.env.PORT || 8787;
 const PUSH_INTERVAL_MINUTES = Number(process.env.PUSH_INTERVAL_MINUTES) || 60;
@@ -28,26 +29,41 @@ async function respond(res, handler, body) {
 // can't be hit anonymously to run up the Anthropic bill. It's a no-op
 // locally whenever Supabase isn't configured.
 app.post('/api/chat', async (req, res) => {
-  if (!(await guardAiRequest(req, res))) return;
-  respond(res, handleChat, req.body || {});
+  const gate = await guardAiRequest(req, res, 'chat');
+  if (!gate) return;
+  const { status, body } = await handleChat(req.body || {});
+  if (status >= 400) await gate.release();
+  res.status(status).json(body);
 });
 app.post('/api/plan/generate', async (req, res) => {
-  if (!(await guardAiRequest(req, res))) return;
-  respond(res, handlePlanGenerate, req.body || {});
+  const gate = await guardAiRequest(req, res, 'plan');
+  if (!gate) return;
+  const { status, body } = await handlePlanGenerate(req.body || {});
+  if (status >= 400) await gate.release();
+  res.status(status).json(body);
 });
 app.post('/api/plan/rescue', async (req, res) => {
-  if (!(await guardAiRequest(req, res))) return;
-  respond(res, handlePlanRescue, req.body || {});
+  const gate = await guardAiRequest(req, res, 'rescue');
+  if (!gate) return;
+  const { status, body } = await handlePlanRescue(req.body || {});
+  if (status >= 400) await gate.release();
+  res.status(status).json(body);
 });
 app.post('/api/plan/prep', async (req, res) => {
-  if (!(await guardAiRequest(req, res))) return;
-  respond(res, handlePlanPrep, req.body || {});
+  const gate = await guardAiRequest(req, res, 'prep');
+  if (!gate) return;
+  const { status, body } = await handlePlanPrep(req.body || {});
+  if (status >= 400) await gate.release();
+  res.status(status).json(body);
 });
 
 app.post('/api/account/delete', async (req, res) => {
   const { status, body } = await handleAccountDelete(req.headers.authorization);
   res.status(status).json(body);
 });
+
+app.get('/api/premium', handlePremium);
+app.post('/api/premium', handlePremium);
 
 app.get('/api/push/vapid-public-key', (req, res) => respond(res, handleVapidPublicKey, undefined));
 app.post('/api/push/subscribe', (req, res) => respond(res, handleSubscribe, req.body || {}));

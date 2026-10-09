@@ -7,6 +7,7 @@ import { VALUE_KEY, DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { BottomSheet, Chip } from './ui';
 import { PugImg, PugLive } from './PugMascot';
+import { openPaywall } from '../lib/premium';
 
 // Claude's replies use light Markdown (bold, line breaks) — render that
 // instead of showing literal "**...**" and losing paragraph breaks.
@@ -329,6 +330,14 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
                   }}
                 >
                   {m.role === 'assistant' ? renderMarkdownLite(m.content) : m.content}
+                  {m.limit && (
+                    <div
+                      onClick={() => openPaywall('limit-chat')}
+                      style={{ marginTop: 11, height: 42, borderRadius: 13, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 14, fontWeight: 750, color: '#fff', cursor: 'pointer', boxShadow: '0 8px 20px rgba(109,77,255,.35)' }}
+                    >
+                      👑 {t('premium.get')}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

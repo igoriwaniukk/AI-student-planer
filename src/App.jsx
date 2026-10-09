@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import TabBar from './components/TabBar';
 import StreakCelebration from './components/StreakCelebration';
+import Paywall from './components/Paywall';
 import ChatWidget from './components/ChatWidget';
 import QuickAddSheet from './components/QuickAddSheet';
 import Plans from './screens/Plans';
@@ -37,6 +38,7 @@ import { useStreakPushSync } from './hooks/usePushNotifications';
 import { useAppReminders } from './hooks/useAppReminders';
 import { postToApp, isNativeApp, askApp, onAppMessage } from './lib/nativeBridge';
 import { useAuth } from './lib/useAuth';
+import { usePremium, refreshPremium, maybeAutoShow, PAYWALL_EVENT, AI_LIMIT_EVENT, WIN_EVENT } from './lib/premium';
 import { isSupabaseConfigured } from './lib/supabaseClient';
 import { pullFromCloud, pushToCloud, cloudChangedSinceSync } from './lib/cloudSync';
 
@@ -210,6 +212,48 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
     prevTodayDone.current = todayDone;
   }, [todayDone]);
 
+  // Pulgo Premium (switched on from the server, see api/_lib/premium.js):
+  // the payment screen opens from Settings, the chat's limit message, a used-
+  // up AI allowance, and — at most once a day, see maybeAutoShow — on opening
+  // the app or after finishing a session / the day.
+  const premium = usePremium();
+  const [paywall, setPaywall] = useState(null);
+  const pendingWin = useRef(false);
+  const openTried = useRef(false);
+  useEffect(() => {
+    refreshPremium();
+    const onOpen = (e) => setPaywall(e.detail?.reason || 'manual');
+    const onLimit = (e) => { if (e.detail?.feature !== 'chat') maybeAutoShow('limit', 'limit-' + e.detail?.feature); };
+    const onWin = () => { pendingWin.current = true; };
+    const onVisible = () => { if (document.visibilityState === 'visible') refreshPremium(); };
+    window.addEventListener(PAYWALL_EVENT, onOpen);
+    window.addEventListener(AI_LIMIT_EVENT, onLimit);
+    window.addEventListener(WIN_EVENT, onWin);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.removeEventListener(PAYWALL_EVENT, onOpen);
+      window.removeEventListener(AI_LIMIT_EVENT, onLimit);
+      window.removeEventListener(WIN_EVENT, onWin);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
+  }, []);
+  // Only on a quiet Home: no celebration, finish sheet or plan being made.
+  const quietHome = screen === 'home' && !celebrating && !state.finishTask && !state.generating && !paywall && !quickAddOpen;
+  useEffect(() => {
+    if (!premium.enabled || premium.premium || !quietHome) return undefined;
+    if (pendingWin.current) {
+      pendingWin.current = false;
+      const id = setTimeout(() => maybeAutoShow('win'), 900);
+      return () => clearTimeout(id);
+    }
+    if (!openTried.current) {
+      openTried.current = true;
+      const id = setTimeout(() => maybeAutoShow('open'), 1800);
+      return () => clearTimeout(id);
+    }
+    return undefined;
+  }, [premium.enabled, premium.premium, quietHome]);
+
   const planIsToday = !!planFor(state, NUM_TODAY);
   const titleOf = (id) => {
     const d = planner.def(id);
@@ -361,6 +405,8 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
 
       {/* Waits for the focus screen's finish animation before celebrating. */}
       {celebrating && screen !== 'focus' && <StreakCelebration streak={streak} onClose={() => setCelebrating(false)} />}
+
+      {paywall && <Paywall reason={paywall} onClose={() => setPaywall(null)} />}
     </div>
   );
 }

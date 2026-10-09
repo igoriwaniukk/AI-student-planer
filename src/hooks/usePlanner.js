@@ -10,6 +10,7 @@ import { planningContextForAI, taskForAI, examsForAI, busyOnDay, weeklyActivitie
 import { aboutMeForAI } from '../lib/aboutMe';
 import { requestAIPrep, toPrepCards } from '../lib/aiPrep';
 import { requestAIRescue } from '../lib/aiRescue';
+import { WIN_EVENT } from '../lib/premium';
 
 // The only slice of usePlanner's state that survives a reload / syncs across
 // devices (via KEYS.plannerData in store.js) — everything else here is
@@ -653,6 +654,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     // that merge keeps `completed` sticky once true — Finish day can't un-set
     // it either, even on a day where not everything planned got finished.
     recordStudyDay?.({ completed: true });
+    window.dispatchEvent(new Event(WIN_EVENT));
   }
 
   // A session finished outside the focus screen (e.g. from the chat): the
@@ -1134,6 +1136,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   // schedule); a repeating task's occurrence can't change day, so a one-off
   // copy is added for tomorrow instead.
   function finishDay(stats) {
+    window.dispatchEvent(new Event(WIN_EVENT));
     update((s) => {
       const choices = s.unfinishedChoices || {};
       let taskDefs = s.taskDefs;

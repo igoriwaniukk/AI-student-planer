@@ -7,6 +7,7 @@ import { useLang } from '../lib/useLang';
 import { resizeImageToDataURL } from '../lib/image';
 import { Chip, EnergyPicker, BottomSheet } from '../components/ui';
 import { PugImg } from '../components/PugMascot';
+import { usePremium } from '../lib/premium';
 import NotificationBell from '../components/NotificationBell';
 import WheelTimePicker from '../components/WheelTimePicker';
 
@@ -64,6 +65,7 @@ function AvatarPicker({ photo, setPhoto, initials }) {
 }
 
 function NameField({ studentName, setStudentName }) {
+  const premium = usePremium();
   const { t } = useLang();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(studentName || '');
@@ -90,6 +92,9 @@ function NameField({ studentName, setStudentName }) {
   return (
     <div onClick={() => { setDraft(studentName || ''); setEditing(true); }} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
       <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-.02em' }}>{studentName || t('profile.you')}</div>
+      {premium.enabled && premium.premium && (
+        <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '.08em', padding: '4px 8px', borderRadius: 99, background: 'linear-gradient(90deg,#fff,#e6dfff)', color: '#3a2a8a' }}>{t('premium.badge')}</span>
+      )}
       <span style={{ fontSize: 13, color: '#cfc4ff' }}>✎</span>
     </div>
   );

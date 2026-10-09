@@ -6,7 +6,9 @@ export default async function handler(req, res) {
     res.status(405).json({ error: 'Method not allowed' });
     return;
   }
-  if (!(await guardAiRequest(req, res))) return;
+  const gate = await guardAiRequest(req, res, 'prep');
+  if (!gate) return;
   const { status, body } = await handlePlanPrep(req.body || {});
+  if (status >= 400) await gate.release();
   res.status(status).json(body);
 }
