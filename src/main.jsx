@@ -2,9 +2,6 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
-import { isNativeApp } from './lib/nativeBridge'
-
-if (isNativeApp()) document.documentElement.classList.add('native-app')
 
 // /privacy/ and /support/ are static pages (public/*/index.html). A server
 // that answers "/privacy" with this app instead gets sent there.

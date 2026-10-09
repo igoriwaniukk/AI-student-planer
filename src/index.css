@@ -15,10 +15,13 @@ a { color: #8b6dff; }
   justify-content: center;
 }
 
-:root { --tabbar-h: 88px; }
-/* Inside the iPhone app the shell already keeps clear of the home bar, so
-   the tab bar drops the empty strip it keeps for browsers. */
-.native-app { --tabbar-h: 64px; }
+:root {
+  /* The phone's status bar and home bar: the iPhone app draws the site edge
+     to edge, so the site leaves this room itself (0 elsewhere). */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --tabbar-h: calc(64px + var(--safe-bottom));
+}
 
 .app-shell {
   width: 100%;
@@ -27,6 +30,15 @@ a { color: #8b6dff; }
   position: relative;
   background: #08080c;
   overflow: hidden;
+}
+
+/* Every screen starts below the status bar and can scroll clear of the home
+   bar; a dark strip keeps the clock readable over scrolled content. */
+.app-shell > .sc { padding-top: calc(var(--safe-top) + 16px) !important; }
+.app-shell > .sc::after { content: ''; display: block; flex: none; height: var(--safe-bottom); }
+.app-shell::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: var(--safe-top);
+  background: #08080c; z-index: 70; pointer-events: none;
 }
 
 .sc { scrollbar-width: none; }
