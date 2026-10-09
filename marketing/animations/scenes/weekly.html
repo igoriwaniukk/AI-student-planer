@@ -1,0 +1,69 @@
+﻿<!doctype html>
+<html><head><meta charset="utf-8"><title>Weekly activity</title>
+<link rel="stylesheet" href="../kit/kit.css">
+<style>
+.slotw { overflow: visible; }
+.t2 { position: relative; display: inline-block; }
+.t2 .b { position: absolute; left: 0; top: 0; white-space: nowrap; color: #f4f4f7; font-weight: 700; }
+.wl { font-size: 11.5px; font-weight: 750; letter-spacing: .08em; color: #2ee6c5; display: block; margin-top: 6px; }
+</style></head>
+<body>
+<div class="stage">
+  <div class="floats back"></div>
+  <div class="world"><div class="scene"><div class="rig">
+    <div class="card" id="plan">
+      <div class="big">Thursday's plan</div>
+      <div class="tl tl-study"><div class="when">4:00–4:45 PM <span class="pill p-purple">45 min</span></div><span class="subj" style="color:#c9baff"><span class="emo">📐</span> Math</span><div class="tt">Quadratic equations</div></div>
+      <div class="slotw" id="slot"><div class="tl tl-week" id="week">
+        <div class="when" style="color:#8ff0de">5:00–6:30 PM <span class="pill p-teal">Every Thu</span></div>
+        <span class="wl">WEEKLY ACTIVITY</span><div class="tt"><span class="emo">⚽</span> Soccer training</div></div></div>
+      <div class="tl tl-study" id="bio"><div class="when"><span class="t2"><span class="a">5:00–5:40 PM</span><span class="b">6:45–7:25 PM</span></span> <span class="pill p-purple">40 min</span></div><span class="subj" style="color:#7ee8a8"><span class="emo">🧬</span> Biology</span><div class="tt">Cell structure review</div></div>
+      <div class="tl tl-study" id="eng"><div class="when"><span class="t2"><span class="a">6:00–6:35 PM</span><span class="b">7:35–8:10 PM</span></span> <span class="pill p-purple">35 min</span></div><span class="subj" style="color:#8fbaff"><span class="emo">💬</span> English</span><div class="tt">Essay draft</div></div>
+    </div>
+    <div class="floor"></div>
+  </div></div></div>
+  <div class="floats front"></div>
+  <div class="vig"></div>
+</div>
+<script type="module">
+import { $, seg, lerp, easeInOut, easeOut, spring, makeFloats, camera, scene } from '../kit/kit.js';
+
+const floats = makeFloats([
+  ['⚽', 440, 110, 70, -14, 1.2], ['🎹', 30, 150, 48, 12, 0.8], ['🏀', 420, 830, 80, -10, 1.3],
+  ['📐', 30, 850, 54, 10, 0.7], ['🎨', 262, 54, 34, 0, 0.5],
+]);
+const rig = $('.rig'), slot = $('#slot'), week = $('#week');
+let full = 0;
+const times = [...document.querySelectorAll('.t2')];
+
+scene(3.4, (t) => {
+  if (!full) full = week.offsetHeight + 9;
+  const enter = spring(seg(t, 0, 0.7), 0.3);
+  const push = easeInOut(seg(t, 0.7, 1.4)) - easeInOut(seg(t, 2.1, 2.8));
+  const z = lerp(1.04, 1.24, push) + seg(t, 2.8, 3.4) * 0.03;
+  camera(t, z, lerp(0, 30, push), lerp(0, 30, push), floats);
+  rig.style.transform = `translateZ(${(1 - enter) * -700}px) rotateX(${16 + (1 - enter) * 35}deg) rotateY(${lerp(-22, -12, push) + Math.sin(t * 1.1) * 2}deg) rotateZ(3deg) scale(1.2)`;
+  rig.style.opacity = Math.min(1, 0.35 + seg(t, 0, 0.2));
+
+  // Space opens, the teal block flies in from in front of the card and lands
+  const open = easeInOut(seg(t, 0.8, 1.3));
+  slot.style.height = `${open * full}px`;
+  const land = spring(seg(t, 0.95, 1.6), 0.6);
+  week.style.transform = `translate3d(${(1 - land) * -160}px,${(1 - land) * -60}px,${(1 - land) * 380}px) rotateZ(${(1 - land) * -10}deg)`;
+  week.style.opacity = Math.min(1, seg(t, 0.95, 1.1));
+  week.style.boxShadow = `0 0 ${26 + (1 - seg(t, 1.5, 2.3)) * 30}px rgba(46,230,197,${0.25 + (1 - seg(t, 1.5, 2.3)) * 0.35})`;
+
+  // Study blocks get new times after the activity
+  times.forEach((el, i) => {
+    const p = easeOut(seg(t, 1.6 + i * 0.15, 1.95 + i * 0.15));
+    for (const [cls, o, y] of [['.a', 1 - p, -p * 10], ['.b', p, (1 - p) * 10]]) {
+      const s = el.querySelector(cls).style;
+      s.display = 'inline-block';
+      s.opacity = o;
+      s.transform = `translateY(${y}px)`;
+    }
+    el.closest('.tl').style.borderColor = `rgba(${p > 0 && p < 1 ? '165,140,255,.9' : '124,92,255,.42'})`;
+  });
+});
+</script>
+</body></html>

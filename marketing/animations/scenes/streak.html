@@ -1,0 +1,114 @@
+﻿<!doctype html>
+<html><head><meta charset="utf-8"><title>Streak</title>
+<link rel="stylesheet" href="../kit/kit.css">
+<style>
+/* StreakCelebration.jsx */
+#sc { width: 360px; padding: 34px 24px 24px; border-radius: 26px; text-align: center;
+  background: linear-gradient(170deg,#1c130c,#101018 60%); border: 1px solid rgba(245,165,36,.35);
+  box-shadow: 0 0 60px rgba(245,120,36,.25), 0 40px 80px rgba(0,0,0,.55); }
+.fire { font-size: 84px; line-height: 1; display: inline-block; filter: drop-shadow(0 0 22px rgba(245,120,36,.7)); }
+.slbl { font-size: 12px; font-weight: 750; letter-spacing: .12em; color: #f5a524; margin-top: 16px; }
+.num { height: 56px; overflow: hidden; position: relative; margin-top: 2px; }
+.num div { position: absolute; left: 0; right: 0; font-size: 50px; font-weight: 800; color: #ffb547; font-variant-numeric: tabular-nums; line-height: 56px; }
+.stitle { font-size: 23px; font-weight: 750; margin-top: 4px; }
+.mile { margin-top: 14px; padding: 9px 12px; border-radius: 12px; background: rgba(245,165,36,.12); border: 1px solid rgba(245,165,36,.35); font-size: 14px; font-weight: 650; color: #f7c46c; }
+.days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 18px; }
+.days i { font-style: normal; font-size: 10.5px; font-weight: 650; color: #7a7a8a; display: block; }
+.dot { width: 34px; height: 34px; border-radius: 50%; margin: 5px auto 0; display: flex; align-items: center; justify-content: center; font-size: 16px;
+  background: rgba(255,255,255,.04); border: 1px solid rgba(255,255,255,.08); position: relative; }
+.dot .lit { position: absolute; inset: -1px; border-radius: 50%; background: rgba(245,101,36,.18); border: 1px solid rgba(245,101,36,.5); display: flex; align-items: center; justify-content: center; }
+.rule { font-size: 13.5px; color: #c9c9d6; margin-top: 16px; line-height: 1.45; }
+.sbtn { margin-top: 18px; height: 54px; border-radius: 16px; background: linear-gradient(160deg,#ff9f43,#f5652a); display: flex; align-items: center; justify-content: center; font-size: 16.5px; font-weight: 750; color: #fff; }
+.pugpeek { position: absolute; left: -26px; top: -30px; width: 78px; height: 78px; border-radius: 50%; box-shadow: 0 0 0 3px #8b6dff, 0 12px 30px rgba(0,0,0,.5); object-fit: cover; }
+.conf { position: absolute; left: 50%; top: 74px; font-size: 22px; }
+</style></head>
+<body>
+<div class="stage">
+  <div class="floats back"></div>
+  <div class="world"><div class="scene"><div class="rig">
+    <div class="card" id="sc">
+      <div id="confetti"></div>
+      <span class="fire emo" id="fire">🔥</span>
+      <div class="slbl">DAY STREAK</div>
+      <div class="num"><div id="n6">6</div><div id="n7">7</div></div>
+      <div class="stitle" id="stitle">7-day streak!</div>
+      <div class="mile" id="mile"><span class="emo">🎉</span> Milestone: 7 days without a break!</div>
+      <div class="days" id="days"></div>
+      <div class="rule">Finish at least one study session every day to keep your streak.</div>
+      <div class="sbtn">Keep it up!</div>
+      <img class="pugpeek" id="pug" src="../assets/pug-avatar.webp">
+    </div>
+    <div class="floor"></div>
+  </div></div></div>
+  <div class="floats front"></div>
+  <div class="vig"></div>
+</div>
+<script type="module">
+import { $, seg, lerp, easeInOut, easeOut, spring, makeFloats, camera, scene } from '../kit/kit.js';
+
+const floats = makeFloats([
+  ['⭐', 455, 470, 58, -14, 1.25], ['🏆', 446, 160, 54, 12, 0.8], ['✨', 425, 820, 70, -10, 1.3],
+  ['📚', 30, 840, 54, 10, 0.7], ['💜', 262, 54, 34, 0, 0.5],
+]);
+const days = $('#days');
+const labels = ['F', 'S', 'S', 'M', 'T', 'W', 'T'];
+const lits = labels.map((d, i) => {
+  const c = document.createElement('div');
+  c.innerHTML = `<i style="${i === 6 ? 'color:#f5a524' : ''}">${d}</i><div class="dot"><div class="lit emo">🔥</div></div>`;
+  days.appendChild(c);
+  return c.querySelector('.lit');
+});
+const conf = ['🎉', '⭐', '🔥', '✨', '🏆', '💜', '🎉', '⭐', '✨', '💜', '🔥', '🏆', '⭐', '✨'].map((e, i) => {
+  const d = document.createElement('div');
+  d.className = 'conf emo';
+  d.textContent = e;
+  $('#confetti').appendChild(d);
+  const a = (i / 14) * Math.PI * 2 + 0.3;
+  return { el: d, dx: Math.cos(a) * (120 + (i % 3) * 40), dy: Math.sin(a) * (90 + (i % 4) * 30) - 30 };
+});
+const rig = $('.rig');
+
+scene(3.4, (t) => {
+  const enter = spring(seg(t, 0, 0.6), 1);
+  // Push in on the number as it ticks over, then ease back to the whole card
+  const push = easeInOut(seg(t, 0.6, 1.3)) - easeInOut(seg(t, 1.9, 2.7));
+  const z = lerp(1.0, 1.35, push) + seg(t, 2.7, 3.4) * 0.03;
+  camera(t, z, 0, lerp(0, 150, push), floats);
+  rig.style.transform = `rotateX(${10 + (1 - enter) * 20}deg) rotateY(${lerp(-18, -8, push) + Math.sin(t * 1.1) * 2}deg) rotateZ(2deg) scale(${1.12 * (0.7 + enter * 0.3)})`;
+  rig.style.opacity = Math.min(1, 0.35 + seg(t, 0, 0.2));
+
+  // streakBump on the flame
+  const bp = seg(t, 0.35, 1.25);
+  const bs = bp < 0.35 ? lerp(1, 1.45, bp / 0.35) : bp < 0.6 ? lerp(1.45, 1.15, (bp - 0.35) / 0.25) : lerp(1.15, 1, (bp - 0.6) / 0.4);
+  const br = bp < 0.35 ? lerp(0, -8, bp / 0.35) : bp < 0.6 ? lerp(-8, 6, (bp - 0.35) / 0.25) : lerp(6, 0, (bp - 0.6) / 0.4);
+  $('#fire').style.transform = `scale(${bs * (1 + Math.sin(t * 3.5) * 0.03 * seg(t, 1.3, 1.6))}) rotate(${br}deg)`;
+
+  // 6 rolls up to 7
+  const roll = easeOut(seg(t, 1.05, 1.4));
+  $('#n6').style.transform = `translateY(${-roll * 56}px)`;
+  $('#n7').style.transform = `translateY(${(1 - roll) * 56}px) scale(${1 + spring(seg(t, 1.05, 1.6)) * 0.08 - seg(t, 1.6, 1.9) * 0.08})`;
+
+  conf.forEach((c, i) => {
+    const p = seg(t, 1.1 + (i % 4) * 0.03, 2.0);
+    c.el.style.opacity = p > 0 ? 1 - p : 0;
+    c.el.style.transform = `translate(${-11 + c.dx * easeOut(p)}px,${c.dy * easeOut(p) + p * p * 60}px) scale(${1 - p * 0.6})`;
+  });
+
+  const st = spring(seg(t, 1.2, 1.6), 1);
+  $('#stitle').style.opacity = Math.min(1, st * 1.5);
+  $('#stitle').style.transform = `translateY(${(1 - st) * 10}px)`;
+  const m = spring(seg(t, 1.45, 1.9), 1);
+  $('#mile').style.transform = `scale(${0.85 + m * 0.15})`;
+  $('#mile').style.opacity = Math.min(1, m * 1.5);
+  lits.forEach((el, i) => {
+    const p = spring(seg(t, 0.5 + i * 0.1 + (i === 6 ? 0.55 : 0), 0.85 + i * 0.1 + (i === 6 ? 0.55 : 0)), 1);
+    el.style.transform = `scale(${p})`;
+    el.style.opacity = p > 0 ? 1 : 0;
+  });
+
+  // pugHello: a little hop
+  const h = seg(t, 1.2, 1.9);
+  $('#pug').style.transform = `translateY(${-Math.sin(h * Math.PI * 2) * 10 * (1 - h)}px) rotate(${Math.sin(h * Math.PI * 4) * 8 * (1 - h)}deg) scale(${spring(seg(t, 0.4, 0.9), 1)})`;
+});
+</script>
+</body></html>

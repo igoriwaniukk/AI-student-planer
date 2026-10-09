@@ -1,0 +1,71 @@
+/* Pulgo ad animations: shared look. Values copied from the app (src/index.css, Home.jsx, RescueResult.jsx). */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Color+Emoji&display=block');
+
+* { box-sizing: border-box; margin: 0; }
+html, body { width: 540px; height: 960px; overflow: hidden; background: #08080c; }
+body { font-family: Inter, -apple-system, 'Segoe UI', sans-serif; color: #f4f4f7; -webkit-font-smoothing: antialiased; }
+.emo { font-family: 'Noto Color Emoji', sans-serif; }
+
+/* Backdrop: deep purple fading to black, no warm tones */
+.stage { position: absolute; inset: 0; overflow: hidden;
+  background: radial-gradient(110% 75% at 35% 25%, #2a1a5e 0%, #160f33 45%, #08080c 100%); }
+.vig { position: absolute; inset: 0; pointer-events: none;
+  background: radial-gradient(90% 70% at 50% 45%, transparent 55%, rgba(0,0,0,.55) 100%); }
+.floats { position: absolute; inset: 0; }
+.float { position: absolute; will-change: transform; }
+
+/* Camera: .world is zoomed/panned, .scene gives perspective, .rig holds the 3D pose */
+.world { position: absolute; inset: 0; transform-origin: 50% 50%; }
+.scene { position: absolute; inset: 0; perspective: 1400px; display: flex; align-items: center; justify-content: center; }
+.rig { transform-style: preserve-3d; position: relative; }
+.floor { position: absolute; left: 8%; right: 8%; top: 100%; height: 40px; margin-top: 40px; border-radius: 50%;
+  background: radial-gradient(closest-side, rgba(0,0,0,.6), transparent); filter: blur(8px); }
+
+/* Floating app card: the app's dark surface on top of its purple card tint */
+.card { width: 380px; padding: 20px; border-radius: 24px; position: relative; backface-visibility: hidden;
+  background: linear-gradient(165deg, rgba(124,92,255,.22), rgba(124,92,255,.05)), #0d0b17;
+  border: 1.5px solid rgba(139,109,255,.75);
+  box-shadow: 0 0 34px rgba(124,92,255,.45), 0 40px 80px rgba(0,0,0,.55), 0 12px 24px rgba(0,0,0,.4); }
+.row { display: flex; align-items: center; gap: 12px; }
+.ico { width: 48px; height: 48px; border-radius: 15px; background: linear-gradient(160deg,#8b6dff,#6d4dff);
+  display: flex; align-items: center; justify-content: center; flex: none; }
+.badge { font-size: 11.5px; font-weight: 750; letter-spacing: .1em; color: #c9baff; }
+.title { font-size: 21px; font-weight: 750; margin-top: 3px; letter-spacing: -.01em; }
+.body { font-size: 14.5px; color: #b9b9c8; margin-top: 13px; line-height: 1.45; }
+.btns { display: flex; gap: 12px; margin-top: 17px; align-items: center; }
+.btn { flex: 1; height: 56px; border-radius: 17px; background: linear-gradient(160deg,#8b6dff,#6d4dff);
+  display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; position: relative;
+  box-shadow: 0 10px 24px rgba(109,77,255,.4); }
+.link { padding: 0 8px; font-size: 15px; font-weight: 650; color: #a58cff; }
+.pill { display: inline-block; font-size: 12px; font-weight: 650; padding: 4px 9px; border-radius: 8px; }
+.hpill { display: inline-block; font-size: 12px; font-weight: 650; color: #c9baff; padding: 7px 13px; border-radius: 999px;
+  background: rgba(124,92,255,.14); border: 1px solid rgba(124,92,255,.45); }
+
+/* Home "next session" box (Home.jsx) */
+.home { border: 1.5px solid rgba(124,92,255,.55); }
+.hbadge { display: inline-block; font-size: 11px; font-weight: 750; letter-spacing: .1em; color: #c9baff; padding: 7px 12px; border-radius: 999px;
+  background: rgba(124,92,255,.22); border: 1px solid rgba(124,92,255,.4); }
+.big { font-size: 25px; font-weight: 750; line-height: 1.22; letter-spacing: -.02em; }
+.sub { font-size: 14.5px; color: #8a8a99; margin-top: 7px; line-height: 1.45; }
+.subj { font-size: 12px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+
+/* Day timeline items (DayTimeline.jsx) */
+.tl { padding: 12px 14px; border-radius: 16px; margin-top: 9px; position: relative; }
+.tl-study { background: rgba(124,92,255,.07); border: 1.5px solid rgba(124,92,255,.42); }
+.tl-gap { background: rgba(255,255,255,.025); border: 1px solid rgba(255,255,255,.06); }
+.tl-week { background: rgba(46,230,197,.08); border: 1.5px solid rgba(46,230,197,.5); box-shadow: 0 0 26px rgba(46,230,197,.25); }
+.tl .when { font-size: 12.5px; color: #8a8a99; display: flex; gap: 8px; align-items: center; }
+.tl .tt { font-size: 16px; font-weight: 700; margin-top: 4px; }
+.tl .subj { margin-top: 6px; display: block; }
+.p-purple { color: #c9baff; background: rgba(124,92,255,.2); }
+.p-gray { color: #c9c9d6; background: rgba(255,255,255,.07); }
+.p-teal { color: #2ee6c5; background: rgba(46,230,197,.13); }
+.p-green { color: #35d07f; background: rgba(53,208,127,.14); }
+.p-amber { color: #f5a524; background: rgba(245,165,36,.13); }
+
+/* Tap: finger dot plus ripple, positioned inside the tapped element */
+.tap { position: absolute; width: 0; height: 0; pointer-events: none; }
+.tap .ripple { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,.55) 0%, rgba(255,255,255,.18) 45%, transparent 70%); }
+.tap .finger { position: absolute; width: 46px; height: 46px; margin: -23px 0 0 -23px; border-radius: 50%;
+  background: rgba(255,255,255,.3); border: 2px solid rgba(255,255,255,.8); box-shadow: 0 0 18px rgba(255,255,255,.35); }

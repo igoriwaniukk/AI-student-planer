@@ -1,0 +1,97 @@
+﻿<!doctype html>
+<html><head><meta charset="utf-8"><title>Study session</title>
+<link rel="stylesheet" href="../kit/kit.css">
+<style>
+#focus { position: absolute; left: 0; top: 50%; text-align: center; }
+.mode { display: inline-block; font-size: 13px; font-weight: 650; color: #d9cfff; padding: 7px 14px; border-radius: 999px;
+  background: rgba(124,92,255,.18); border: 1px solid rgba(139,109,255,.4); }
+.ringwrap { position: relative; width: 220px; height: 220px; margin: 18px auto 0; }
+.ringwrap > svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.clock { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.clock b { font-size: 54px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+.clock span { font-size: 13px; color: #8a8a99; margin-top: 2px; }
+.check { position: absolute; left: 50%; top: 50%; width: 104px; height: 104px; margin: -52px 0 0 -52px; border-radius: 50%;
+  background: #35d07f; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 50px rgba(53,208,127,.6); }
+.fbtn { margin-top: 20px; height: 56px; border-radius: 17px; position: relative; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 750; }
+.fbtn .a, .fbtn .b { position: absolute; inset: 0; border-radius: 17px; display: flex; align-items: center; justify-content: center; }
+.fbtn .a { background: linear-gradient(160deg,#8b6dff,#6d4dff); box-shadow: 0 10px 26px rgba(109,77,255,.35); }
+.fbtn .b { background: rgba(53,208,127,.14); border: 1.5px solid rgba(53,208,127,.55); color: #35d07f; }
+</style></head>
+<body>
+<div class="stage">
+  <div class="floats back"></div>
+  <div class="world"><div class="scene"><div class="rig">
+    <div class="card home" id="next">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span class="hbadge">NEXT SESSION</span><span style="font-size:13px;font-weight:650;color:#8a8a99">5:00–5:40 PM</span></div>
+      <div style="font-size:14.5px;font-weight:650;color:#7ee8a8;margin-top:15px"><span class="emo">🧬</span> Biology</div>
+      <div class="big" style="margin-top:7px">Cell structure review</div>
+      <div style="margin-top:12px"><span class="pill p-teal">40 min</span></div>
+      <div class="btns"><div class="btn" id="start">Start session<div class="tap" id="tap1" style="left:76%;top:50%"><div class="ripple"></div><div class="finger"></div></div></div></div>
+    </div>
+    <div class="card" id="focus">
+      <span class="mode"><span class="emo">🎧</span> Focus mode</span>
+      <div class="ringwrap">
+        <svg width="220" height="220" viewBox="0 0 220 220"><circle cx="110" cy="110" r="96" fill="none" stroke="rgba(255,255,255,.1)" stroke-width="12"/>
+          <circle id="arc" cx="110" cy="110" r="96" fill="none" stroke="#8b6dff" stroke-width="12" stroke-linecap="round" stroke-dasharray="603.2" stroke-dashoffset="0"/></svg>
+        <div class="clock" id="clock"><b id="time">40:00</b><span>left of 40 min</span></div>
+        <div class="check" id="check"><svg width="54" height="54" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path id="tick" d="M5 12.5l4.5 4.5L19 7.5" stroke-dasharray="24" stroke-dashoffset="24"/></svg></div>
+      </div>
+      <div class="fbtn" id="fbtn"><div class="a" id="fa">Finish session</div><div class="b" id="fb">Session done — nice work!</div>
+        <div class="tap" id="tap2" style="left:72%;top:50%"><div class="ripple"></div><div class="finger"></div></div></div>
+    </div>
+    <div class="floor"></div>
+  </div></div></div>
+  <div class="floats front"></div>
+  <div class="vig"></div>
+</div>
+<script type="module">
+import { $, seg, lerp, easeInOut, easeOut, spring, makeFloats, camera, tap, scene } from '../kit/kit.js';
+
+const floats = makeFloats([
+  ['🧬', 26, 100, 72, -14, 1.25], ['🎧', 445, 160, 50, 14, 0.8], ['🧪', 420, 820, 82, -10, 1.3],
+  ['📘', 30, 840, 54, 10, 0.7], ['⭐', 265, 60, 32, 0, 0.5],
+]);
+const rig = $('.rig'), start = $('#start'), focus = $('#focus');
+const glow = document.createElement('div');
+glow.style.cssText = 'position:absolute;inset:0;pointer-events:none;background:radial-gradient(60% 40% at 50% 50%,rgba(53,208,127,.35),transparent 70%);opacity:0';
+$('.stage').insertBefore(glow, $('.world'));
+
+scene(3.6, (t) => {
+  const enter = spring(seg(t, 0, 0.7), 0.3);
+  const push = easeInOut(seg(t, 0.4, 1.0)) - easeInOut(seg(t, 1.2, 1.8));
+  const z = lerp(1.04, 1.32, push) + easeInOut(seg(t, 1.8, 2.5)) * 0.08 + seg(t, 2.6, 3.6) * 0.04;
+  camera(t, z, lerp(0, -22, push), lerp(0, -90, push), floats);
+
+  const flip = easeInOut(seg(t, 1.2, 1.65));
+  rig.style.transform = `translateZ(${(1 - enter) * -700}px) rotateX(${16 + (1 - enter) * 35 - flip * 6}deg) rotateY(${lerp(-22, -12, push) + flip * 180 + Math.sin(t * 1.1) * 2}deg) rotateZ(${3 - flip * 4}deg) scale(1.2)`;
+  rig.style.opacity = Math.min(1, 0.35 + seg(t, 0, 0.2));
+
+  const p1 = tap($('#tap1'), t, 0.7, 1.0);
+  start.style.transform = `scale(${1 - p1 * 0.05})`;
+  start.style.filter = `brightness(${1 + p1 * 0.25})`;
+
+  focus.style.transform = 'translateY(-50%) rotateY(180deg)';
+  // Timer fast-forwards 40:00 -> 0:00
+  const run = easeInOut(seg(t, 1.6, 2.5));
+  const secs = Math.round((1 - run) * 2400);
+  $('#time').textContent = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+  $('#arc').style.strokeDashoffset = 603.2 * run;
+
+  const p2 = tap($('#tap2'), t, 2.35, 2.6);
+  $('#fbtn').style.transform = `scale(${1 - p2 * 0.05})`;
+
+  // Done: ring turns green, tick draws, button turns into the done message
+  const done = seg(t, 2.65, 2.9);
+  $('#arc').style.stroke = done > 0 ? '#35d07f' : '#8b6dff';
+  $('#arc').style.strokeDashoffset = done > 0 ? 603.2 * (1 - easeOut(done)) : 603.2 * run;
+  $('#clock').style.opacity = 1 - done;
+  const pop = spring(seg(t, 2.7, 3.2), 1);
+  $('#check').style.transform = `scale(${pop})`;
+  $('#check').style.opacity = pop > 0 ? 1 : 0;
+  $('#tick').style.strokeDashoffset = 24 * (1 - easeOut(seg(t, 2.85, 3.15)));
+  $('#fa').style.opacity = 1 - done;
+  $('#fb').style.opacity = done;
+  glow.style.opacity = seg(t, 2.7, 3.0) * (1 - seg(t, 3.1, 3.6) * 0.5);
+});
+</script>
+</body></html>

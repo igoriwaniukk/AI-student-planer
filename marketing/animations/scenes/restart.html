@@ -1,0 +1,94 @@
+﻿<!doctype html>
+<html><head><meta charset="utf-8"><title>Restart my day</title>
+<link rel="stylesheet" href="../kit/kit.css">
+<style>
+.newplan { position: absolute; left: 0; top: 50%; width: 380px; }
+.chg { padding: 12px 14px; border-radius: 16px; border: 1.5px solid; margin-top: 10px; }
+.chg .top { display: flex; justify-content: space-between; align-items: center; }
+.subj { font-size: 11.5px; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+.dbadge { font-size: 11px; font-weight: 750; padding: 4px 9px; border-radius: 8px; }
+.ct { font-size: 16.5px; font-weight: 700; margin-top: 5px; }
+.times { font-size: 13px; margin-top: 5px; display: flex; gap: 7px; align-items: center; }
+.old { color: #7a7a8a; position: relative; }
+.old i { position: absolute; left: 0; top: 52%; height: 1.5px; background: #9a9aab; width: 100%; transform-origin: left; }
+.new { font-weight: 700; color: #f4f4f7; }
+.moved  { color: #c9baff; background: rgba(124,92,255,.22); }
+.stays  { color: #8fbaff; background: rgba(91,156,255,.16); }
+.c-moved { border-color: rgba(124,92,255,.4);  background: rgba(124,92,255,.06); }
+.c-stays { border-color: rgba(91,156,255,.35); background: rgba(91,156,255,.06); }
+</style></head>
+<body>
+<div class="stage">
+  <div class="floats back"></div>
+  <div class="world"><div class="scene"><div class="rig">
+    <div class="card" id="slipped">
+      <div class="row">
+        <div class="ico"><svg width="22" height="22" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M13.2 8a5.2 5.2 0 01-8.9 3.7M2.8 8a5.2 5.2 0 018.9-3.7"/><path d="M11.4 2.4v2.4H9M4.6 13.6v-2.4H7"/></svg></div>
+        <div><div class="badge">PLAN SLIPPED</div><div class="title">Your day slipped a bit</div></div>
+      </div>
+      <div class="body">Math (4:00–4:40 PM) was missed · 3 tasks left for today. Pulgo can re-plan the rest of your day.</div>
+      <div class="btns">
+        <div class="btn" id="btn">Restart my day<div class="tap" id="tap" style="left:90%;top:50%"><div class="ripple"></div><div class="finger"></div></div></div>
+        <div class="link">Not now</div>
+      </div>
+    </div>
+    <div class="card newplan" id="newplan">
+      <span class="hpill">Ready to review</span>
+      <div class="title" style="font-size:25px;margin-top:12px">Today's new plan</div>
+      <div class="chg c-moved"><div class="top"><span class="subj" style="color:#c9baff"><span class="emo">📐</span> Math</span><span class="dbadge moved">Moved</span></div>
+        <div class="ct">Quadratic equations</div>
+        <div class="times"><span class="old">4:00–4:40 PM<i></i></span><span style="color:#7a7a8a">→</span><span class="new">5:15–5:55 PM</span></div></div>
+      <div class="chg c-stays"><div class="top"><span class="subj" style="color:#7ee8a8"><span class="emo">🧬</span> Biology</span><span class="dbadge stays">Stays</span></div>
+        <div class="ct">Cell structure review</div>
+        <div class="times"><span class="new">6:10–6:50 PM</span></div></div>
+      <div class="chg c-moved"><div class="top"><span class="subj" style="color:#8fbaff"><span class="emo">🏛️</span> History</span><span class="dbadge moved">Moved</span></div>
+        <div class="ct">Essay outline</div>
+        <div class="times"><span class="old">7:00–7:30 PM<i></i></span><span style="color:#7a7a8a">→</span><span class="new">Another day</span></div></div>
+    </div>
+    <div class="floor" id="floor"></div>
+  </div></div></div>
+  <div class="floats front"></div>
+  <div class="vig"></div>
+</div>
+<script type="module">
+import { $, seg, lerp, easeInOut, easeOut, spring, makeFloats, camera, tap, scene } from '../kit/kit.js';
+
+const floats = makeFloats([
+  ['📐', 30, 110, 76, -18, 1.25], ['🧬', 440, 190, 52, 14, 0.8], ['🧪', 420, 800, 84, -10, 1.3],
+  ['🏛️', 30, 830, 58, 12, 0.7], ['💬', 250, 70, 36, 0, 0.5],
+]);
+const rig = $('.rig'), slipped = $('#slipped'), plan = $('#newplan'), btn = $('#btn');
+const rows = [...plan.querySelectorAll('.chg')], strikes = [...plan.querySelectorAll('.old i')];
+const head = [plan.querySelector('.hpill'), plan.querySelector('.title')];
+
+scene(3.4, (t) => {
+  // 0.0–0.6 card flies in from depth
+  const enter = spring(seg(t, 0, 0.75), 0.3);
+  // 0.5–1.3 push in on the button, 1.55–2.4 pull back for the new plan
+  const push = easeInOut(seg(t, 0.5, 1.3)) - easeInOut(seg(t, 1.55, 2.4));
+  const z = lerp(1.04, 1.4, push) + easeInOut(seg(t, 1.9, 3.2)) * 0.12 + seg(t, 3.2, 4) * 0.03;
+  camera(t, z, lerp(0, 0, push), lerp(0, -95, push) + easeInOut(seg(t, 1.9, 3.2)) * -10, floats);
+
+  // 1.6–2.1 flip to the new plan
+  const flip = easeInOut(seg(t, 1.6, 2.15));
+  const ry = lerp(-22, -10, push) + flip * 180 + Math.sin(t * 1.1) * 2;
+  const rx = 18 + (1 - enter) * 35 - flip * 4;
+  rig.style.transform = `translateZ(${(1 - enter) * -700}px) rotateX(${rx}deg) rotateY(${ry}deg) rotateZ(${3 - flip * 2}deg) scale(1.26)`;
+  rig.style.opacity = Math.min(1, 0.35 + seg(t, 0, 0.2));
+
+  const press = tap($('#tap'), t, 1.0, 1.35);
+  btn.style.transform = `scale(${1 - press * 0.05})`;
+  btn.style.filter = `brightness(${1 + press * 0.25})`;
+
+  // New plan sits on the back face of the card
+  plan.style.transform = `translateY(-50%) rotateY(180deg)`;
+  head.forEach((el, i) => { const p = spring(seg(t, 1.95 + i * 0.08, 2.5 + i * 0.08)); el.style.opacity = Math.min(1, p * 1.5); el.style.transform = `translateY(${(1 - p) * 14}px)`; });
+  rows.forEach((el, i) => {
+    const p = spring(seg(t, 2.1 + i * 0.2, 2.75 + i * 0.2), 0.8);
+    el.style.opacity = Math.min(1, p * 1.4);
+    el.style.transform = `translateY(${(1 - p) * 26}px) scale(${0.94 + p * 0.06})`;
+  });
+  strikes.forEach((el, i) => { el.style.transform = `scaleX(${easeOut(seg(t, 2.5 + i * 0.4, 2.8 + i * 0.4))})`; });
+});
+</script>
+</body></html>
