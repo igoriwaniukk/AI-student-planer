@@ -928,4 +928,7 @@ export default {
   "home.sessionsCompletedMany": "sessioni completate",
   "day.one": "giorno",
   "day.many": "giorni",
+  "taskEdit.timedToggle": "A un orario fisso",
+  "taskEdit.timedHint": "Blocca questo tempo nel piano della giornata: lo studio viene organizzato intorno.",
+  "tl.todo": "Da fare",
 };

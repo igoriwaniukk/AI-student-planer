@@ -170,7 +170,25 @@ export function timeStrToMinutes(t) {
 // tennis schedule: wake/bedtime come from onboarding, and blocked windows
 // come from whichever of the student's own recurring activities (see
 // QuickAddSheet.jsx — each has a day/start/dur) land on that weekday.
-export function dayConstraints({ wake, bedtime, recurringActivities, dayNum = REFERENCE_DAY } = {}) {
+// A to-do given a set time (e.g. the gym 18:00–19:30, see the "At a set
+// time" switch in TaskEditSheet) takes that time out of its day just like a
+// weekly activity. Only one with its own day or weekdays — an undated to-do
+// would otherwise block every day.
+export function timedTodoBlocks(taskDefs, dayNum) {
+  return (taskDefs || [])
+    .filter((d) => d.category === 'personal' && d.at && d.dur && (d.day != null || (d.repeatDays && d.repeatDays.length)) && taskDueOnDay(d, dayNum))
+    .map((d) => {
+      const start = timeStrToMinutes(d.at);
+      return { start, end: start + d.dur, label: d.title, kind: 'todo', taskId: d.id };
+    });
+}
+
+// "18:00–19:30" for a to-do with a set time, otherwise null.
+export function todoTimeLabel(d) {
+  return d && d.category === 'personal' && d.at && d.dur ? d.at + '–' + fmt(timeStrToMinutes(d.at) + d.dur) : null;
+}
+
+export function dayConstraints({ wake, bedtime, recurringActivities, dayNum = REFERENCE_DAY, extraBlocks = [] } = {}) {
   // dayInfo(...).label (not weekdayName(...)) since it's the same
   // language-independent Polish weekday name recurringActivities' own `day`
   // field is stored in (see QuickAddSheet.jsx's RECUR_DAYS) — weekdayName
@@ -184,6 +202,7 @@ export function dayConstraints({ wake, bedtime, recurringActivities, dayNum = RE
       const start = timeStrToMinutes(a.start);
       return { start, end: start + a.dur, label: a.name };
     })
+    .concat(extraBlocks)
     .sort((a, b) => a.start - b.start);
   const wakeMinutes = timeStrToMinutes(wake || '06:30');
   let bedtimeMinutes = timeStrToMinutes(bedtime || '22:30');
@@ -296,7 +315,7 @@ export function timeline(schedule, constraints) {
   const sched = schedule || {};
   const lang = getCurrentLang();
   const tx = (key, vars) => translate(lang, 'tl.' + key, vars);
-  const items = (c.blocks || []).map((b) => ({ k: 'fixed', kind: 'activity', start: b.start, end: b.end, title: b.label, sub: tx('fixedEvent') }));
+  const items = (c.blocks || []).map((b) => ({ k: 'fixed', kind: 'activity', start: b.start, end: b.end, title: b.label, sub: tx(b.kind === 'todo' ? 'todo' : 'fixedEvent') }));
   Object.keys(sched).forEach((id) => items.push({ k: 'study', id, start: sched[id].start, end: sched[id].start + sched[id].dur }));
   items.push({ k: 'sleep', kind: 'sleep', start: c.bedtimeMinutes, end: c.bedtimeMinutes, title: tx('sleep'), sub: tx('fixedTime') });
   items.sort((a, b) => a.start - b.start);

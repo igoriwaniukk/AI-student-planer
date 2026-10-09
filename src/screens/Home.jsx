@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
-import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, planFor, draftFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn, offTrackReason, fmt } from '../lib/plannerLogic';
+import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, planFor, draftFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn, offTrackReason, fmt, todoTimeLabel } from '../lib/plannerLogic';
 import { iconForTask, iconForSubject } from '../lib/taskAuto';
 import { useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY, getCurrentLang, localeOf } from '../lib/i18n';
@@ -421,7 +421,7 @@ function TodayChecklist({ planner, day, heading }) {
     if (done) doneCount++;
     rows.push(
       <TaskRow
-        key={d.id} emoji={iconForTask(d)} title={d.title} done={done}
+        key={d.id} emoji={iconForTask(d)} title={d.title} done={done} sub={todoTimeLabel(d)}
         onClick={past ? undefined : () => toggleTask(d.id, day)} onEdit={past ? undefined : () => openTaskEdit(d.id)}
         right={<TickCircle on={done} />}
       />

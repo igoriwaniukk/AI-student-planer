@@ -51,7 +51,7 @@ describe('what the planning AI is told', () => {
   it('gives the full picture for planning tomorrow', () => {
     const c = planningContextForAI(state, { dayNum: T + 1, recurringActivities: [{ name: 'Tennis', day: 'Wtorek', start: '18:00', dur: 60 }], note: '  tired after training  ' });
     expect(c.note).toBe('tired after training');
-    expect(c.todos).toEqual([{ title: 'Read book', note: 'chapter 3' }]);
+    expect(c.todos).toEqual([{ title: 'Read book', note: 'chapter 3', at: null, durationMinutes: null }]);
     expect(c.otherDayPlan).toEqual({ date: dateOf(T), sessions: [{ title: 'Inny — Homework', start: 960, durationMinutes: 30 }] });
     expect(c.upcomingTasks).toEqual([{ title: 'Fizyka — Lab report', date: dateOf(T + 3), durationMinutes: 45 }]);
     expect(c.weeklyActivities).toEqual([{ name: 'Tennis', day: 'Wtorek', start: '18:00', durationMinutes: 60 }]);

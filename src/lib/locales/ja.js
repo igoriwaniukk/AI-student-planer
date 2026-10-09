@@ -928,4 +928,7 @@ export default {
   "home.sessionsCompletedMany": "回のセッション完了",
   "day.one": "日",
   "day.many": "日",
+  "taskEdit.timedToggle": "時間を決める",
+  "taskEdit.timedHint": "この時間を1日のプランで確保し、勉強はその前後に組みます。",
+  "tl.todo": "やること",
 };
