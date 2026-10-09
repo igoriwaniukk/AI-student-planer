@@ -50,7 +50,7 @@ export default function TabBar({ screen, onNavigate, onFabClick, fabActive = fal
       {activeIndex >= 0 && (
         <div
           style={{
-            position: 'absolute', bottom: 6, width: 22, height: 3, borderRadius: 99,
+            position: 'absolute', bottom: 'calc(6px + var(--safe-bottom))', width: 22, height: 3, borderRadius: 99,
             background: 'linear-gradient(90deg,#8b6dff,#6d4dff)',
             left: `calc(${activeIndex} * 20% + 10% - 11px)`,
             transition: 'left .25s ease',

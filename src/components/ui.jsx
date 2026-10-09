@@ -191,7 +191,7 @@ export function PrimaryButton({ children, onClick, style }) {
 export function StickyFooter({ children }) {
   return (
     <AppShellPortal>
-      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 44, padding: '12px 20px 24px', background: 'linear-gradient(to top,#08080c 66%,rgba(8,8,12,0))' }}>
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, zIndex: 44, padding: '12px 20px calc(24px + var(--safe-bottom))', background: 'linear-gradient(to top,#08080c 66%,rgba(8,8,12,0))' }}>
         {children}
       </div>
     </AppShellPortal>
@@ -275,7 +275,7 @@ export function BottomSheet({ children, maxHeight = '86%' }) {
   return (
     <AppShellPortal>
       <div style={{ position: 'absolute', inset: 0, zIndex: 76, background: 'rgba(6,6,10,.75)', backdropFilter: 'blur(3px)', display: 'flex', alignItems: 'flex-end' }}>
-        <div className="sc" style={{ width: '100%', maxHeight, overflowY: 'auto', padding: 20, borderRadius: '24px 24px 0 0', background: '#101018', borderTop: '1px solid rgba(255,255,255,.12)', animation: 'fadeUp .3s ease both' }}>
+        <div className="sc" style={{ width: '100%', maxHeight, overflowY: 'auto', padding: '20px 20px calc(20px + var(--safe-bottom))', borderRadius: '24px 24px 0 0', background: '#101018', borderTop: '1px solid rgba(255,255,255,.12)', animation: 'fadeUp .3s ease both' }}>
           {children}
         </div>
       </div>

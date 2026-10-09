@@ -190,7 +190,10 @@ function Shell() {
   }, []);
 
   return (
-    <SafeAreaView style={styles.shell} edges={['top', 'bottom']}>
+    // On iPhone the site is drawn edge to edge (under the status bar and the
+    // home bar) and keeps clear of them itself with CSS safe-area insets;
+    // Android and the offline screen keep the system margins.
+    <SafeAreaView style={styles.shell} edges={failure || Platform.OS !== 'ios' ? ['top', 'bottom'] : []}>
       <StatusBar style="light" />
       {failure ? (
         <OfflineScreen lang={lang} kind={failure} retrying={retrying} onRetry={retry} />
@@ -228,6 +231,8 @@ function Shell() {
           }}
           onContentProcessDidTerminate={() => webRef.current?.reload()}
           onRenderProcessGone={() => setWebKey((k) => k + 1)}
+          contentInsetAdjustmentBehavior="never"
+          automaticallyAdjustContentInsets={false}
           bounces={false}
           overScrollMode="never"
           allowsBackForwardNavigationGestures={false}

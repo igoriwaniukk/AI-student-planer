@@ -155,7 +155,7 @@ export default function Focus({ planner }) {
 
     {!done && <div
         onClick={() => openFinish(id, c.totalMin)}
-        style={{ position: 'absolute', zIndex: 2, left: 20, right: 20, bottom: 26, height: 52, borderRadius: 16, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 750, cursor: 'pointer', boxShadow: '0 10px 26px rgba(109,77,255,.35)' }}
+        style={{ position: 'absolute', zIndex: 2, left: 20, right: 20, bottom: 'calc(26px + var(--safe-bottom))', height: 52, borderRadius: 16, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 750, cursor: 'pointer', boxShadow: '0 10px 26px rgba(109,77,255,.35)' }}
       >
         {t('focus.finish')}
       </div>}
