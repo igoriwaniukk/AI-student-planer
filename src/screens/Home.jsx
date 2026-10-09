@@ -1,39 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
-import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, planFor, draftFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, computeTotalPoints, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn, offTrackReason, fmt } from '../lib/plannerLogic';
+import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, planFor, draftFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn, offTrackReason, fmt } from '../lib/plannerLogic';
 import { iconForTask, iconForSubject } from '../lib/taskAuto';
-import { computeUnlockedAchievements } from '../lib/achievements';
-import { useSeenAchievements, useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
+import { useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY, getCurrentLang } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import WeekStrip from '../components/WeekStrip';
 import { useNow } from '../hooks/useNow';
 import TaskEditSheet from '../components/TaskEditSheet';
-import { Pill, BottomSheet, EnergyPicker, AnimatedNumber, Confetti, StatusPill, AchievementMedal } from '../components/ui';
-
-function AchievementModal({ achievement, onClose }) {
-  const { t } = useLang();
-  if (!achievement) return null;
-  return (
-    <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: 'rgba(6,6,10,.8)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-      <div style={{ width: '100%', maxWidth: 340, padding: 28, borderRadius: 24, background: '#101018', border: '1px solid rgba(255,255,255,.1)', textAlign: 'center', animation: 'stepIconPop .4s cubic-bezier(.34,1.56,.64,1) both' }}>
-        <div style={{ position: 'relative', marginBottom: 14 }}>
-          <AchievementMedal icon={achievement.icon} unlocked size={72} />
-          <Confetti top={20} />
-        </div>
-        <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.1em', color: '#f5a524' }}>{t('home.newAchievement')}</div>
-        <div style={{ fontSize: 19, fontWeight: 750, marginTop: 8 }}>{t(achievement.titleKey)}</div>
-        <div style={{ fontSize: 13, color: '#a3a3b3', marginTop: 8, lineHeight: 1.5 }}>{t(achievement.descKey)}</div>
-        <div
-          onClick={onClose}
-          style={{ marginTop: 20, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, cursor: 'pointer' }}
-        >
-          {t('home.great')}
-        </div>
-      </div>
-    </div>
-  );
-}
+import { Pill, BottomSheet, EnergyPicker, AnimatedNumber, StatusPill } from '../components/ui';
 
 const RESTART_ICON = (color) => (
   <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M13.2 8a5.2 5.2 0 01-8.9 3.7M2.8 8a5.2 5.2 0 018.9-3.7" stroke={color} strokeWidth="1.5" strokeLinecap="round" /><path d="M11.4 2.4v2.4H9M4.6 13.6v-2.4H7" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -603,7 +578,7 @@ function EnergyHistory({ energyLog }) {
   );
 }
 
-export default function Home({ planner, studentName, profilePhoto, energyLog = [], energyCheckins = 0, logEnergy = () => {}, studyHistory = {}, recurringActivities = [] }) {
+export default function Home({ planner, studentName, profilePhoto, energyLog = [], logEnergy = () => {}, studyHistory = {} }) {
   const { t } = useLang();
   const { state, openEnergySheet } = planner;
   const [viewDay, setViewDay] = useState(NUM_TODAY);
@@ -614,19 +589,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
   const initials = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 
   const streak = computeStreak(studyHistory);
-  const points = computeTotalPoints(studyHistory, energyLog, energyCheckins);
-  const [seenAchievements, setSeenAchievements] = useSeenAchievements();
   const [lastSeenStreak, setLastSeenStreak] = useLastSeenStreak();
-  const stats = {
-    streak,
-    points,
-    completedDays: Object.values(studyHistory).filter((e) => e.completed).length,
-    energyCheckins: energyLog.length,
-    recurringCount: recurringActivities.length,
-  };
-  const unlockedAchievements = computeUnlockedAchievements(stats);
-  const newlyUnlocked = unlockedAchievements.filter((a) => !seenAchievements.includes(a.id));
-  const pendingAchievement = newlyUnlocked[0] || null;
   // Increases are celebrated app-wide by StreakCelebration, so they're just
   // recorded here — keeping lastSeenStreak current is what lets a later
   // drop be recognized as a broken streak.
@@ -763,7 +726,6 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
 
       <EnergySheet planner={planner} logEnergy={logEnergy} />
       <TaskEditSheet planner={planner} />
-      <AchievementModal achievement={pendingAchievement} onClose={() => setSeenAchievements(seenAchievements.concat(pendingAchievement.id))} />
 
       </div>
     </>

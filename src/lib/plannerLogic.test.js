@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
   fmt, span, toMinutes, hm, activeIds, lightenForEnergy, buildSchedule, buildRescueSchedule,
-  checkBlockConflict, computeStreak, computeTotalPoints, weeklyReview, examAtRisk,
+  checkBlockConflict, computeStreak, weeklyReview, examAtRisk,
   daySessionBreakdown, weekStats, currentWeekNums, examPrepProgress, sessionClock, dayOpenTasks, wrapUpMinutes, taskShortLabel, studiedToday, localDateKey, buildPrepDayNums, upcomingExams, dayConstraints,
 } from './plannerLogic';
 import { NUM_TODAY } from './plannerData';
@@ -181,7 +181,7 @@ describe('buildRescueSchedule', () => {
   });
 });
 
-describe('computeStreak / computeTotalPoints / weeklyReview', () => {
+describe('computeStreak / weeklyReview', () => {
   function isoDaysAgo(n) {
     const d = new Date();
     d.setDate(d.getDate() - n);
@@ -195,11 +195,6 @@ describe('computeStreak / computeTotalPoints / weeklyReview', () => {
 
   it('returns 0 for an empty history', () => {
     expect(computeStreak({})).toBe(0);
-  });
-
-  it('scores 20 per completed day and 2 per energy check-in', () => {
-    const history = { [isoDaysAgo(0)]: { completed: true }, [isoDaysAgo(1)]: { completed: false } };
-    expect(computeTotalPoints(history, [1, 2, 3])).toBe(20 + 6);
   });
 
   it('sums planned/actual minutes and computes a completion rate over the last 7 days', () => {

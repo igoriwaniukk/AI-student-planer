@@ -42,7 +42,7 @@ export default function TabBar({ screen, onNavigate, onFabClick, fabActive = fal
   const activeIndex = TABS.findIndex((tab) => !tab.fab && tab.screens.includes(screen));
   return (
     <div style={{
-      position: 'absolute', left: 0, right: 0, bottom: 0, height: 88, padding: '10px 12px 0',
+      position: 'absolute', left: 0, right: 0, bottom: 0, height: 'var(--tabbar-h)', padding: '10px 12px 0',
       background: 'rgba(12,12,18,.92)', backdropFilter: 'blur(18px)', borderTop: '1px solid rgba(255,255,255,.07)',
       display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', zIndex: 40,
     }}

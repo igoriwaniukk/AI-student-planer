@@ -2,16 +2,35 @@ import { useState } from 'react';
 import { version as APP_VERSION } from '../../package.json';
 import { upcomingExams, computeStreak, planFor } from '../lib/plannerLogic';
 import { NUM_TODAY } from '../lib/plannerData';
+import { LANGS } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { useCustomReminders, resetAppData } from '../lib/store';
 import { usePushNotifications } from '../hooks/usePushNotifications';
-import { BackButton, Chip, BottomSheet } from '../components/ui';
+import { BackButton, BottomSheet, Toggle } from '../components/ui';
 
-function SectionCard({ title, children }) {
+// Each language named in itself, as phone settings do.
+const LANG_NAME = { pl: 'Polski', en: 'English' };
+
+function Label({ children }) {
+  return <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.06em', color: '#7a7a8a', margin: '24px 6px 8px', textTransform: 'uppercase' }}>{children}</div>;
+}
+
+function Group({ children }) {
+  return <div style={{ borderRadius: 18, background: '#131119', border: '1px solid rgba(255,255,255,.06)', overflow: 'hidden' }}>{children}</div>;
+}
+
+// One settings row: a title, an optional value or control on the right, and
+// › when it opens something. `danger` rows are red text, nothing louder.
+function Row({ title, sub, value, right, onClick, nav, danger, first }) {
   return (
-    <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
-      <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', marginBottom: 12 }}>{title}</div>
-      {children}
+    <div onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', minHeight: 52, cursor: onClick ? 'pointer' : 'default', borderTop: first ? 'none' : '1px solid rgba(255,255,255,.06)' }}>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: danger ? '#ff6b70' : '#f4f4f7' }}>{title}</div>
+        {sub && <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 3, lineHeight: 1.4 }}>{sub}</div>}
+      </div>
+      {value != null && <div style={{ fontSize: 14, color: '#8a8a99' }}>{value}</div>}
+      {right}
+      {nav && <span style={{ color: '#55556a', fontSize: 17 }}>›</span>}
     </div>
   );
 }
@@ -29,11 +48,46 @@ function InfoSheet({ title, text, onClose }) {
   );
 }
 
-export default function Settings({ planner, studyHistory, onSignOut, onDeleteAccount, syncError }) {
+// "Are you sure?" for the destructive account actions.
+function ConfirmSheet({ title, text, confirmLabel, busy, error, onConfirm, onCancel }) {
+  const { t } = useLang();
+  return (
+    <BottomSheet>
+      <div style={{ fontSize: 17, fontWeight: 750 }}>{title}</div>
+      <div style={{ fontSize: 13.5, color: '#a3a3b3', marginTop: 8, lineHeight: 1.5 }}>{text}</div>
+      {error && <div style={{ fontSize: 12.5, color: '#ff9a9a', marginTop: 10 }}>{error}</div>}
+      <div onClick={busy ? undefined : onConfirm} style={{ marginTop: 18, height: 50, borderRadius: 15, background: '#e5484d', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 700, color: '#fff', cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1 }}>{confirmLabel}</div>
+      <div onClick={busy ? undefined : onCancel} style={{ marginTop: 10, height: 48, borderRadius: 15, background: 'rgba(255,255,255,.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14.5, fontWeight: 650, color: '#c9c9d6', cursor: 'pointer' }}>{t('home.cancel')}</div>
+    </BottomSheet>
+  );
+}
+
+function LanguagePage({ onBack }) {
   const { t, lang, setLang } = useLang();
+  return (
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '16px 18px 130px', position: 'relative', zIndex: 1 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <BackButton onClick={onBack} />
+        <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-.02em' }}>{t('settings.language')}</div>
+      </div>
+      <Label>{t('settings.appLanguage')}</Label>
+      <Group>
+        {LANGS.map((code, i) => (
+          <Row
+            key={code} first={i === 0} title={LANG_NAME[code] || code} onClick={() => setLang(code)}
+            right={lang === code ? <span style={{ color: '#a58cff', fontSize: 18, fontWeight: 800 }}>✓</span> : null}
+          />
+        ))}
+      </Group>
+    </div>
+  );
+}
+
+export default function Settings({ planner, studentName, profilePhoto, email, studyHistory, onSignOut, onDeleteAccount, syncError }) {
+  const { t, lang } = useLang();
   const [reminders] = useCustomReminders();
-  const [confirmingReset, setConfirmingReset] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [page, setPage] = useState(null);
+  const [confirming, setConfirming] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [infoSheet, setInfoSheet] = useState(null);
@@ -41,6 +95,7 @@ export default function Settings({ planner, studyHistory, onSignOut, onDeleteAcc
   const hasUpcomingExam = upcomingExams(planner.state).some((e) => e.daysUntil >= 0 && e.daysUntil <= 14);
   const noPlanToday = !planFor(planner.state, NUM_TODAY);
   const { pushStatus, togglePush, native } = usePushNotifications({ streak, hasUpcomingExam, reminders: reminders.map((r) => r.text), lang, noPlanToday });
+  const initials = (studentName || t('profile.you')).trim().split(/\s+/).map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 
   const pushNote = {
     unsupported: t('notif.pushUnsupported'),
@@ -60,97 +115,65 @@ export default function Settings({ planner, studyHistory, onSignOut, onDeleteAcc
     }
   }
 
+  if (page === 'language') return <LanguagePage onBack={() => setPage(null)} />;
+
   return (
     <>
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 40px', position: 'relative', zIndex: 1 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <BackButton onClick={() => planner.go('profile')} />
-        <div style={{ fontSize: 22, fontWeight: 750, letterSpacing: '-.01em' }}>{t('settings.title')}</div>
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '16px 18px 130px', position: 'relative', zIndex: 1 }}>
+      <BackButton onClick={() => planner.go('profile')} />
+      <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-.03em', marginTop: 16 }}>{t('settings.title')}</div>
+
+      <div style={{ marginTop: 16, borderRadius: 20, padding: 14, display: 'flex', alignItems: 'center', gap: 12, background: 'linear-gradient(160deg,rgba(139,109,255,.18),rgba(139,109,255,.04))', border: '1px solid rgba(139,109,255,.3)' }}>
+        <div style={{ width: 48, height: 48, borderRadius: '50%', flex: 'none', background: profilePhoto ? `center/cover no-repeat url(${profilePhoto})` : 'linear-gradient(150deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, fontWeight: 800 }}>{!profilePhoto && initials}</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 16, fontWeight: 750 }}>{studentName || t('profile.you')}</div>
+          <div style={{ fontSize: 12.5, color: '#a3a3b3', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{email || t('settings.localAccount')}</div>
+        </div>
       </div>
 
-      <SectionCard title={t('profile.settings')}>
-        <div
-          onClick={pushStatus === 'unsupported' ? undefined : togglePush}
-          style={{ padding: '12px 14px', borderRadius: 15, background: 'rgba(124,92,255,.08)', border: '1px solid rgba(124,92,255,.25)', cursor: pushStatus === 'unsupported' ? 'default' : 'pointer' }}
-        >
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#c9baff' }}>
-            🔔 {pushStatus === 'subscribed' ? t('notif.disablePush') : t('notif.enablePush')}
-          </div>
-          <div style={{ fontSize: 11, color: '#8a8a99', marginTop: 4, lineHeight: 1.4 }}>{pushNote}</div>
+      <Label>{t('settings.preferences')}</Label>
+      <Group>
+        <Row
+          first title={t('settings.reminders')} sub={pushNote}
+          right={pushStatus === 'unsupported' ? null : <Toggle on={pushStatus === 'subscribed'} onClick={togglePush} />}
+        />
+        <Row title={t('settings.language')} value={LANG_NAME[lang] || lang} nav onClick={() => setPage('language')} />
+      </Group>
+
+      <Label>{t('settings.about')}</Label>
+      <Group>
+        <Row first title={t('settings.privacyPolicy')} nav onClick={() => setInfoSheet('privacy')} />
+        <Row title={t('settings.termsOfService')} nav onClick={() => setInfoSheet('terms')} />
+        <Row title={t('settings.versionLabel')} value={APP_VERSION} />
+      </Group>
+
+      <Label>{t('settings.account')}</Label>
+      {syncError && (
+        <div style={{ marginBottom: 10, padding: '12px 14px', borderRadius: 16, background: 'rgba(245,165,36,.08)', border: '1px solid rgba(245,165,36,.3)' }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: '#f7c46c' }}>⚠️ {t('profile.syncErrorTitle')}</div>
+          <div style={{ fontSize: 11.5, color: '#a3a3b3', marginTop: 4, lineHeight: 1.4 }}>{t('profile.syncErrorDesc')}</div>
         </div>
-
-        <div style={{ marginTop: 12, padding: '12px 14px', borderRadius: 15, background: 'rgba(255,90,90,.06)', border: '1px solid rgba(255,90,90,.25)' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#ff9a9a' }}>🗑 {t('profile.resetData')}</div>
-          <div style={{ fontSize: 11, color: '#8a8a99', marginTop: 4, lineHeight: 1.4 }}>{t('profile.resetDataDesc')}</div>
-          {confirmingReset ? (
-            <div style={{ marginTop: 11 }}>
-              <div style={{ fontSize: 11.5, color: '#ff9a9a', marginBottom: 9 }}>{t('profile.resetConfirm')}</div>
-              <div style={{ display: 'flex', gap: 9 }}>
-                <div onClick={() => setConfirmingReset(false)} style={{ flex: 1, height: 40, borderRadius: 12, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 650, cursor: 'pointer' }}>{t('home.cancel')}</div>
-                <div onClick={resetAppData} style={{ flex: 1.3, height: 40, borderRadius: 12, background: '#ff5a5a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>{t('profile.resetConfirmBtn')}</div>
-              </div>
-            </div>
-          ) : (
-            <div onClick={() => setConfirmingReset(true)} style={{ marginTop: 11, height: 38, borderRadius: 12, background: 'rgba(255,90,90,.14)', border: '1px solid rgba(255,90,90,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 650, color: '#ff9a9a', cursor: 'pointer' }}>{t('profile.resetData')}</div>
-          )}
-        </div>
-
-        {onDeleteAccount && (
-          <div style={{ marginTop: 12, padding: '12px 14px', borderRadius: 15, background: 'rgba(255,90,90,.06)', border: '1px solid rgba(255,90,90,.25)' }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#ff9a9a' }}>⚠️ {t('profile.deleteAccount')}</div>
-            <div style={{ fontSize: 11, color: '#8a8a99', marginTop: 4, lineHeight: 1.4 }}>{t('profile.deleteAccountDesc')}</div>
-            {deleteError && <div style={{ fontSize: 11.5, color: '#ff9a9a', marginTop: 9 }}>{deleteError}</div>}
-            {confirmingDelete ? (
-              <div style={{ marginTop: 11 }}>
-                <div style={{ fontSize: 11.5, color: '#ff9a9a', marginBottom: 9 }}>{t('profile.deleteAccountConfirm')}</div>
-                <div style={{ display: 'flex', gap: 9 }}>
-                  <div onClick={() => { setConfirmingDelete(false); setDeleteError(''); }} style={{ flex: 1, height: 40, borderRadius: 12, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 650, cursor: deleting ? 'default' : 'pointer', opacity: deleting ? 0.5 : 1 }}>{t('home.cancel')}</div>
-                  <div onClick={deleting ? undefined : confirmDelete} style={{ flex: 1.3, height: 40, borderRadius: 12, background: '#ff5a5a', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 700, color: '#fff', cursor: deleting ? 'default' : 'pointer', opacity: deleting ? 0.6 : 1 }}>
-                    {deleting ? t('profile.deleteAccountDeleting') : t('profile.deleteAccountConfirmBtn')}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div onClick={() => setConfirmingDelete(true)} style={{ marginTop: 11, height: 38, borderRadius: 12, background: 'rgba(255,90,90,.14)', border: '1px solid rgba(255,90,90,.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 650, color: '#ff9a9a', cursor: 'pointer' }}>{t('profile.deleteAccount')}</div>
-            )}
-          </div>
-        )}
-
-        {syncError && (
-          <div style={{ marginTop: 12, padding: '12px 14px', borderRadius: 15, background: 'rgba(245,165,36,.08)', border: '1px solid rgba(245,165,36,.3)' }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: '#f7c46c' }}>⚠️ {t('profile.syncErrorTitle')}</div>
-            <div style={{ fontSize: 11, color: '#8a8a99', marginTop: 4, lineHeight: 1.4 }}>{t('profile.syncErrorDesc')}</div>
-          </div>
-        )}
-
-        {onSignOut && (
-          <div onClick={onSignOut} style={{ marginTop: 12, height: 44, borderRadius: 15, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, color: '#c9c9d6', cursor: 'pointer' }}>{t('auth.signOut')}</div>
-        )}
-      </SectionCard>
-
-      <SectionCard title={t('profile.language')}>
-        <div style={{ display: 'flex', gap: 9 }}>
-          <Chip label={t('profile.polish')} active={lang === 'pl'} onClick={() => setLang('pl')} style={{ flex: 1, textAlign: 'center' }} />
-          <Chip label={t('profile.english')} active={lang === 'en'} onClick={() => setLang('en')} style={{ flex: 1, textAlign: 'center' }} />
-        </div>
-      </SectionCard>
-
-      <SectionCard title={t('settings.about')}>
-        <div style={{ fontSize: 13.5, fontWeight: 700 }}>{t('profile.appName')}</div>
-        <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 6, lineHeight: 1.5 }}>{t('profile.appDesc')}</div>
-        <div style={{ fontSize: 11.5, color: '#6b6b7a', marginTop: 10 }}>{t('settings.version', { v: APP_VERSION })}</div>
-        <div style={{ height: 1, background: 'rgba(255,255,255,.07)', margin: '14px 0' }} />
-        <div onClick={() => setInfoSheet('privacy')} style={{ padding: '11px 0', fontSize: 13, fontWeight: 650, color: '#c9c9d6', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          {t('settings.privacyPolicy')} <span style={{ color: '#6b6b7a' }}>›</span>
-        </div>
-        <div onClick={() => setInfoSheet('terms')} style={{ padding: '11px 0', fontSize: 13, fontWeight: 650, color: '#c9c9d6', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          {t('settings.termsOfService')} <span style={{ color: '#6b6b7a' }}>›</span>
-        </div>
-      </SectionCard>
-
-      <InfoSheet title={t('settings.privacyPolicy')} text={infoSheet === 'privacy' ? t('settings.privacyPolicyText') : null} onClose={() => setInfoSheet(null)} />
-      <InfoSheet title={t('settings.termsOfService')} text={infoSheet === 'terms' ? t('settings.termsText') : null} onClose={() => setInfoSheet(null)} />
+      )}
+      <Group>
+        {onSignOut && <Row first title={t('auth.signOut')} nav onClick={onSignOut} />}
+        <Row first={!onSignOut} title={t('profile.resetData')} danger onClick={() => setConfirming('reset')} />
+        {onDeleteAccount && <Row title={t('profile.deleteAccount')} danger onClick={() => { setDeleteError(''); setConfirming('delete'); }} />}
+      </Group>
+      <div style={{ textAlign: 'center', fontSize: 12, color: '#55556a', marginTop: 22 }}>🐾 {t('profile.appName')} · {t('settings.version', { v: APP_VERSION })}</div>
     </div>
+
+    <InfoSheet title={t('settings.privacyPolicy')} text={infoSheet === 'privacy' ? t('settings.privacyPolicyText') : null} onClose={() => setInfoSheet(null)} />
+    <InfoSheet title={t('settings.termsOfService')} text={infoSheet === 'terms' ? t('settings.termsText') : null} onClose={() => setInfoSheet(null)} />
+    {confirming === 'reset' && (
+      <ConfirmSheet title={t('profile.resetData')} text={t('profile.resetDataDesc') + ' ' + t('profile.resetConfirm')} confirmLabel={t('profile.resetConfirmBtn')} onConfirm={resetAppData} onCancel={() => setConfirming(null)} />
+    )}
+    {confirming === 'delete' && (
+      <ConfirmSheet
+        title={t('profile.deleteAccount')} text={t('profile.deleteAccountDesc') + ' ' + t('profile.deleteAccountConfirm')}
+        confirmLabel={deleting ? t('profile.deleteAccountDeleting') : t('profile.deleteAccountConfirmBtn')} busy={deleting} error={deleteError}
+        onConfirm={confirmDelete} onCancel={() => setConfirming(null)}
+      />
+    )}
     </>
   );
 }

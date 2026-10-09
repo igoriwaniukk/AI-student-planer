@@ -23,8 +23,8 @@ import Settings from './screens/Settings';
 import Onboarding from './screens/Onboarding';
 import Auth, { NewPasswordScreen } from './screens/Auth';
 import {
-  useStudentName, useProfilePhoto, useSchoolPlan, useActivities, useProfileDefaults,
-  useWeeklyCapacity, useEnergyLog, useStudyHistory, useRecurringActivities, useLanguage, usePlannerData, useEnergyCheckinCount,
+  useStudentName, useProfilePhoto, useActivities, useProfileDefaults,
+  useWeeklyCapacity, useEnergyLog, useStudyHistory, useRecurringActivities, useLanguage, usePlannerData,
   KEYS, STORAGE_CHANGED_EVENT,
 } from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
@@ -188,7 +188,7 @@ const LOADED_DAY = localDateKey();
 // Mounted only once onboarding is done, so usePlanner's initial state (a lazy
 // useState initializer, which only ever runs on first mount) picks up the
 // profile defaults onboarding just saved instead of whatever was there before.
-function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, activities, profileDefaults, setProfileDefaults, weeklyCapacity, energyLog, energyCheckins, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities, onSignOut, onDeleteAccount, syncError }) {
+function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, setActivities, profileDefaults, setProfileDefaults, weeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities, email, onSignOut, onDeleteAccount, syncError }) {
   const [plannerData, setPlannerData] = usePlannerData();
   const planner = usePlanner(profileDefaults, activities, recurringActivities, plannerData, setPlannerData, recordStudyDay);
   const { state } = planner;
@@ -288,10 +288,8 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
           studentName={name}
           profilePhoto={profilePhoto}
           energyLog={energyLog}
-          energyCheckins={energyCheckins}
           logEnergy={logEnergy}
           studyHistory={studyHistory}
-          recurringActivities={recurringActivities}
         />
       )}
       {screen === 'calendar' && <Calendar planner={planner} activities={activities} recurringActivities={recurringActivities} />}
@@ -318,21 +316,18 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, schoolPlan, act
           setStudentName={setName}
           profilePhoto={profilePhoto}
           setProfilePhoto={setProfilePhoto}
-          schoolPlan={schoolPlan}
           activities={activities}
+          setActivities={setActivities}
           planner={planner}
           profileDefaults={profileDefaults}
           setProfileDefaults={setProfileDefaults}
           studyHistory={studyHistory}
-          energyLog={energyLog}
-          energyCheckins={energyCheckins}
           recurringActivities={recurringActivities}
-          state={state}
           streak={streak}
         />
       )}
       {screen === 'settings' && (
-        <Settings planner={planner} studyHistory={studyHistory} onSignOut={onSignOut} onDeleteAccount={onDeleteAccount} syncError={syncError} />
+        <Settings planner={planner} studentName={name} profilePhoto={profilePhoto} email={email} studyHistory={studyHistory} onSignOut={onSignOut} onDeleteAccount={onDeleteAccount} syncError={syncError} />
       )}
 
       {state.generating && <GeneratingOverlay labels={state.genLabels} step={state.genStep} />}
@@ -387,19 +382,16 @@ export default function App() {
 
   const [name, setName] = useStudentName();
   const [profilePhoto, setProfilePhoto] = useProfilePhoto();
-  const [schoolPlan] = useSchoolPlan();
   const [activities, setActivities] = useActivities();
   const [profileDefaults, setProfileDefaults] = useProfileDefaults();
   const [weeklyCapacity] = useWeeklyCapacity();
   const [energyLog, setEnergyLog] = useEnergyLog();
-  const [energyCheckins, setEnergyCheckins] = useEnergyCheckinCount();
   const [studyHistory, setStudyHistory] = useStudyHistory();
   const [recurringActivities, setRecurringActivities] = useRecurringActivities();
   const [lang, setLang] = useLanguage();
 
   function logEnergy(level) {
     setEnergyLog((log) => log.concat({ at: new Date().toISOString(), level }).slice(-30));
-    setEnergyCheckins((n) => Math.max(n || 0, energyLog.length) + 1);
   }
 
   // Merges onto today's existing entry instead of overwriting it — a real
@@ -492,18 +484,18 @@ export default function App() {
         setName={setName}
         profilePhoto={profilePhoto}
         setProfilePhoto={setProfilePhoto}
-        schoolPlan={schoolPlan}
         activities={activities}
+        setActivities={setActivities}
         profileDefaults={profileDefaults}
         setProfileDefaults={setProfileDefaults}
         weeklyCapacity={weeklyCapacity}
         energyLog={energyLog}
-          energyCheckins={energyCheckins}
         logEnergy={logEnergy}
         studyHistory={studyHistory}
         recordStudyDay={recordStudyDay}
         recurringActivities={recurringActivities}
         setRecurringActivities={setRecurringActivities}
+        email={session?.user?.email || ''}
         onSignOut={isSupabaseConfigured ? handleSignOut : undefined}
         onDeleteAccount={isSupabaseConfigured ? handleDeleteAccount : undefined}
         syncError={isSupabaseConfigured ? syncError : false}
