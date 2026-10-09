@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { consumeAi } from './premium.js';
 
 // Validates the caller's Supabase session before an AI endpoint (chat,
 // plan/generate, plan/rescue) is allowed to spend Anthropic API budget on
@@ -40,9 +41,21 @@ export async function isAuthorized(authorizationHeader) {
 
 // Express's and Vercel's (req, res) shapes are compatible enough (headers,
 // status().json()) that one guard works for both runtimes — writes the 401
-// itself and returns false so the caller can just `if (!(await guard)) return;`.
-export async function guardAiRequest(req, res) {
-  if (await isAuthorized(req.headers.authorization)) return true;
-  res.status(401).json({ error: 'Musisz być zalogowany, aby korzystać z tej funkcji.' });
-  return false;
+// (not signed in) or 429 (free allowance used up, see premium.js) itself and
+// returns false, so the caller can just `if (!gate) return;`. Otherwise it
+// returns { release } — call it when the AI call then fails, so a failed
+// request doesn't use up any of the free allowance.
+export async function guardAiRequest(req, res, feature) {
+  if (!authGateEnabled) return { release: async () => {} };
+  const user = await getVerifiedUser(req.headers.authorization);
+  if (!user) {
+    res.status(401).json({ error: 'Musisz być zalogowany, aby korzystać z tej funkcji.' });
+    return false;
+  }
+  const gate = await consumeAi(user, feature, req.headers['x-timezone']);
+  if (!gate.allowed) {
+    res.status(429).json({ code: 'limit_reached', feature, limit: gate.limit, per: gate.per, error: 'Free AI limit reached.' });
+    return false;
+  }
+  return { release: gate.release };
 }

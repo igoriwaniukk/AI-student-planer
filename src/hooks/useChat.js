@@ -20,10 +20,12 @@ export function useChat() {
     setError('');
 
     try {
+      // Messages around a used-up free allowance never reach the AI.
+      const history = next.filter((m) => !m.skip).map(({ role, content }) => ({ role, content }));
       const res = await authedFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: next, context, lang: getCurrentLang() }),
+        body: JSON.stringify({ messages: history, context, lang: getCurrentLang() }),
       });
       let data;
       try {
@@ -31,6 +33,11 @@ export function useChat() {
       } catch {
         // Not JSON: the server timed out or crashed before it could answer.
         throw new Error(t(res.status === 504 ? 'chat.timeout' : 'chat.serverBadResponse'));
+      }
+      // Free answers used up for today: the pug says so, with a Premium button.
+      if (data.code === 'limit_reached') {
+        setMessages(next.map((m, i) => (i === next.length - 1 ? { ...m, skip: true } : m)).concat({ role: 'assistant', content: t('premium.limit.chat'), limit: true, skip: true }));
+        return;
       }
       if (data.code === 'no_key') throw new Error(t('chat.noKey'));
       if (data.code === 'bad_key') throw new Error(t('chat.badKey'));

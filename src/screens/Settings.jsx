@@ -7,6 +7,7 @@ import { useLang } from '../lib/useLang';
 import { useCustomReminders, resetAppData } from '../lib/store';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { BackButton, BottomSheet, Toggle } from '../components/ui';
+import { usePremium, openPaywall, restorePremium, canBuyHere, MANAGE_SUBSCRIPTION_URL } from '../lib/premium';
 
 function Label({ children }) {
   return <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.06em', color: '#7a7a8a', margin: '24px 6px 8px', textTransform: 'uppercase' }}>{children}</div>;
@@ -88,6 +89,16 @@ export default function Settings({ planner, studentName, profilePhoto, email, st
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [infoSheet, setInfoSheet] = useState(null);
+  const premium = usePremium();
+  const [restoring, setRestoring] = useState(false);
+  const [restoreNote, setRestoreNote] = useState('');
+  async function restore() {
+    setRestoring(true);
+    setRestoreNote(t('premium.busy'));
+    const r = await restorePremium();
+    setRestoring(false);
+    setRestoreNote(t({ restored: 'premium.restored', none: 'premium.nothingToRestore', update: 'premium.updateApp' }[r] || 'premium.error'));
+  }
   const streak = computeStreak(studyHistory || {});
   const hasUpcomingExam = upcomingExams(planner.state).some((e) => e.daysUntil >= 0 && e.daysUntil <= 14);
   const noPlanToday = !planFor(planner.state, NUM_TODAY);
@@ -127,6 +138,30 @@ export default function Settings({ planner, studentName, profilePhoto, email, st
           <div style={{ fontSize: 12.5, color: '#a3a3b3', marginTop: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{email || t('settings.localAccount')}</div>
         </div>
       </div>
+
+      {premium.enabled && (
+        <>
+          <div
+            onClick={premium.premium ? undefined : () => openPaywall('settings')}
+            style={{ marginTop: 14, borderRadius: 20, padding: 14, display: 'flex', alignItems: 'center', gap: 12, cursor: premium.premium ? 'default' : 'pointer', background: 'linear-gradient(160deg,rgba(139,109,255,.22),rgba(139,109,255,.05))', border: '1px solid rgba(139,109,255,.45)' }}
+          >
+            <span style={{ fontSize: 26 }}>👑</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 750 }}>{t('premium.settingsTitle')}</div>
+              <div style={{ fontSize: 12, color: premium.premium ? '#8ff0de' : '#a3a3b3', marginTop: 2 }}>{t(premium.premium ? 'premium.settingsActive' : 'premium.settingsSub')}</div>
+            </div>
+            {!premium.premium && <span style={{ color: '#a58cff', fontSize: 18 }}>›</span>}
+          </div>
+          {(premium.premium || canBuyHere()) && (
+            <div style={{ marginTop: 10 }}>
+              <Group>
+                {premium.premium && <Row first title={t('premium.manage')} nav onClick={() => { window.location.href = MANAGE_SUBSCRIPTION_URL; }} />}
+                {canBuyHere() && <Row first={!premium.premium} title={t('premium.restorePurchases')} sub={restoreNote} onClick={restoring ? undefined : restore} />}
+              </Group>
+            </div>
+          )}
+        </>
+      )}
 
       <Label>{t('settings.preferences')}</Label>
       <Group>
