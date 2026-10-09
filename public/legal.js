@@ -1,7 +1,6 @@
 // Shared by /privacy and /support: the PL/EN switch and the contact email.
-// Put the Pulgo contact address here once it exists; until then the pages
-// say it's coming soon instead of showing an address that doesn't work.
-var PULGO_CONTACT_EMAIL = '';
+// Pulgo's public support address (shown as a mailto link on both pages).
+var PULGO_CONTACT_EMAIL = 'pulgo.support@gmail.com';
 
 (function () {
   var saved = null;
