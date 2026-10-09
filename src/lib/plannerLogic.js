@@ -472,6 +472,21 @@ export function computeStreak(studyHistory) {
   return streak;
 }
 
+// Longest run of consecutive completed days anywhere in the history —
+// the "Best" next to the current streak on Home.
+export function bestStreak(studyHistory) {
+  const days = Object.keys(studyHistory || {}).filter((k) => studyHistory[k]?.completed).sort();
+  let best = 0, run = 0, prev = null;
+  for (const key of days) {
+    const [y, m, d] = key.split('-').map(Number);
+    const t = Date.UTC(y, m - 1, d);
+    run = prev != null && t - prev === 86400000 ? run + 1 : 1;
+    best = Math.max(best, run);
+    prev = t;
+  }
+  return best;
+}
+
 // Approved plans are kept per day (state.plans[dayNum]), so today's and
 // tomorrow's live side by side; a plan built but not approved yet waits in
 // state.drafts[dayNum] and doesn't count until it is.

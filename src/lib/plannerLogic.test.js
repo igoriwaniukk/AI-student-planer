@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import {
   fmt, span, toMinutes, hm, activeIds, lightenForEnergy, buildSchedule, buildRescueSchedule,
-  checkBlockConflict, computeStreak, weeklyReview, examAtRisk,
+  checkBlockConflict, computeStreak, bestStreak, weeklyReview, examAtRisk,
   daySessionBreakdown, weekStats, currentWeekNums, examPrepProgress, sessionClock, dayOpenTasks, wrapUpMinutes, taskShortLabel, studiedToday, localDateKey, buildPrepDayNums, upcomingExams, dayConstraints,
 } from './plannerLogic';
 import { NUM_TODAY } from './plannerData';
@@ -195,6 +195,15 @@ describe('computeStreak / weeklyReview', () => {
 
   it('returns 0 for an empty history', () => {
     expect(computeStreak({})).toBe(0);
+  });
+
+  it('finds the longest run of completed days, across months and with gaps', () => {
+    const history = {
+      '2026-01-30': { completed: true }, '2026-01-31': { completed: true }, '2026-02-01': { completed: true },
+      '2026-02-03': { completed: true }, '2026-02-04': { completed: false }, '2026-02-05': { completed: true },
+    };
+    expect(bestStreak(history)).toBe(3);
+    expect(bestStreak({})).toBe(0);
   });
 
   it('sums planned/actual minutes and computes a completion rate over the last 7 days', () => {

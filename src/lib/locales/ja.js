@@ -931,4 +931,8 @@ export default {
   "taskEdit.timedToggle": "時間を決める",
   "taskEdit.timedHint": "この時間を1日のプランで確保し、勉強はその前後に組みます。",
   "tl.todo": "やること",
+  "streakCard.days.one": "日連続",
+  "streakCard.days.few": "日連続",
+  "streakCard.days.many": "日連続",
+  "streakCard.best": "最高：{n}日",
 };
