@@ -928,4 +928,7 @@ export default {
   "home.sessionsCompletedMany": "Einheiten abgeschlossen",
   "day.one": "Tag",
   "day.many": "Tage",
+  "taskEdit.timedToggle": "Zu einer festen Uhrzeit",
+  "taskEdit.timedHint": "Blockiert diese Zeit in deinem Tagesplan — das Lernen wird drumherum geplant.",
+  "tl.todo": "To-do",
 };

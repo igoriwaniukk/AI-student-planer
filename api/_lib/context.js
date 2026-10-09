@@ -58,7 +58,7 @@ export function contextLines(context) {
   const todos = list(context.todos, 15);
   if (todos.length) {
     lines.push('Rzeczy do zrobienia tego dnia bez sesji nauki (zostaw na nie trochę czasu):');
-    todos.forEach((t) => lines.push(`- ${str(t.title, 120)}${t.note ? ` (notatka: ${str(t.note, 200)})` : ''}`));
+    todos.forEach((t) => lines.push(`- ${str(t.title, 120)}${t.at ? ` — o stałej godzinie ${str(t.at, 5)}${num(t.durationMinutes) != null ? ` (${t.durationMinutes} min), ten czas jest zajęty` : ''}` : ''}${t.note ? ` (notatka: ${str(t.note, 200)})` : ''}`));
   }
   const other = context.otherDayPlan;
   if (other && list(other.sessions, 20).length) {

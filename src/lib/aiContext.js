@@ -119,7 +119,7 @@ export function planningContextForAI(state, { dayNum, recurringActivities, note,
     exams: examsForAI(state, dayNum),
     todos: defs
       .filter((d) => d.category === 'personal' && taskDueOnDay(d, dayNum) && !isTaskOn(state.tasks || {}, d, dayNum))
-      .map((d) => ({ title: d.title, note: d.note || null })),
+      .map((d) => ({ title: d.title, note: d.note || null, at: d.at || null, durationMinutes: d.at ? d.dur : null })),
     otherDayPlan: {
       date: dateOf(otherDay),
       sessions: Object.keys(other).map((id) => {

@@ -928,4 +928,7 @@ export default {
   "home.sessionsCompletedMany": "séances terminées",
   "day.one": "jour",
   "day.many": "jours",
+  "taskEdit.timedToggle": "À une heure précise",
+  "taskEdit.timedHint": "Bloque ce créneau dans ton plan du jour — les révisions sont prévues autour.",
+  "tl.todo": "À faire",
 };

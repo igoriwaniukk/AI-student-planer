@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { planFor, draftFor, workingPlan, plannedElsewhere, daySessionBreakdown, dayOpenTasks, offTrackReason, localDateKey } from './plannerLogic';
+import { planFor, draftFor, workingPlan, plannedElsewhere, daySessionBreakdown, dayOpenTasks, offTrackReason, localDateKey, timedTodoBlocks, todoTimeLabel, dayConstraints, checkBlockConflict } from './plannerLogic';
 import { NUM_TODAY } from './plannerData';
 import { initialState } from '../hooks/usePlanner';
 
@@ -93,5 +93,24 @@ describe('when the day needs a restart', () => {
     expect(offTrackReason(noPlan, 13 * 60 + 59)).toBeNull();
     expect(offTrackReason(noPlan, 14 * 60)).toMatchObject({ kind: 'noPlan', left: 3, key: 'noplan:' + TODAY });
     expect(offTrackReason({ ...noPlan, taskDefs: [] }, 16 * 60)).toBeNull();
+  });
+});
+
+describe('a to-do at a set time', () => {
+  const gym = { id: 'gym', category: 'personal', title: 'Gym', day: TODAY, at: '18:00', dur: 90 };
+  const plain = { id: 'milk', category: 'personal', title: 'Buy milk', day: TODAY };
+  const undated = { id: 'x', category: 'personal', title: 'Undated', at: '10:00', dur: 30 };
+
+  it('blocks its time on its own day only', () => {
+    expect(timedTodoBlocks([gym, plain, undated], TODAY)).toEqual([{ start: 1080, end: 1170, label: 'Gym', kind: 'todo', taskId: 'gym' }]);
+    expect(timedTodoBlocks([gym], TOMORROW)).toEqual([]);
+    expect(todoTimeLabel(gym)).toBe('18:00–19:30');
+    expect(todoTimeLabel(plain)).toBeNull();
+  });
+
+  it('keeps study sessions out of that time', () => {
+    const c = dayConstraints({ wake: '06:30', bedtime: '22:30', recurringActivities: [], dayNum: TODAY, extraBlocks: timedTodoBlocks([gym], TODAY) });
+    expect(checkBlockConflict('hw', 18 * 60 + 30, 30, {}, () => hw, c)).not.toBeNull();
+    expect(checkBlockConflict('hw', 16 * 60, 30, {}, () => hw, c)).toBeNull();
   });
 });

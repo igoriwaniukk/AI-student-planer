@@ -1,6 +1,7 @@
 import { PRIO_STYLE } from '../lib/plannerData';
 import { durOf, hm, weekdayDateLabel, fmt, span, freeWindows, taskDueOnDay, isTaskOn, plannedElsewhere } from '../lib/plannerLogic';
-import { iconForTask } from '../lib/taskAuto';
+import { iconForTask, iconForActivity } from '../lib/taskAuto';
+import { WeeklyIcon } from '../components/planIcons';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import WheelTimePicker from '../components/WheelTimePicker';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
@@ -60,8 +61,10 @@ export default function Planner({ planner }) {
         {constraints.blocks.length > 0 && <div style={{ height: 1, background: 'rgba(255,255,255,.07)', margin: '13px -14px 0' }} />}
         {constraints.blocks.map((b) => (
           <div key={b.label + b.start} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '13px 0 0' }}>
-            <div style={{ width: 34, height: 34, borderRadius: 11, background: 'rgba(255,255,255,.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>🔁</div>
-            <div style={{ flex: 1 }}><div style={{ fontSize: 13.5, fontWeight: 700 }}>{b.label}</div><div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 1 }}>{t('planner.fixedActivity')}</div></div>
+            <div style={{ width: 34, height: 34, borderRadius: 11, background: 'rgba(255,255,255,.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>
+              {b.kind === 'todo' ? iconForTask({ category: 'personal', title: b.label }) : iconForActivity(b.label) || <WeeklyIcon size={18} />}
+            </div>
+            <div style={{ flex: 1 }}><div style={{ fontSize: 13.5, fontWeight: 700 }}>{b.label}</div><div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 1 }}>{b.kind === 'todo' ? t('tl.todo') : t('planner.fixedActivity')}</div></div>
             <span style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6' }}>{fmt(b.start)}–{fmt(b.end)}</span>
           </div>
         ))}

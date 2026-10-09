@@ -4,7 +4,7 @@ import { TASK_TEXT_KEY, VALUE_KEY } from '../lib/i18n';
 import {
   PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, NUM_TODAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES, realDateForNum, LEVELS,
 } from '../lib/plannerData';
-import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, dayInfo, prepDayLabel, isTaskOn, taskDueOnDay, daySessionBreakdown, localDateKey, sessionDur, sessionClock, dayOpenTasks, timeStrToMinutes, roundedNowMinutes, planFor, draftFor, workingPlan, plannedElsewhere } from '../lib/plannerLogic';
+import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, dayInfo, prepDayLabel, isTaskOn, taskDueOnDay, daySessionBreakdown, localDateKey, sessionDur, sessionClock, dayOpenTasks, timeStrToMinutes, roundedNowMinutes, planFor, draftFor, workingPlan, plannedElsewhere, timedTodoBlocks } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
 import { planningContextForAI, taskForAI, examsForAI, busyOnDay, weeklyActivitiesForAI, dateOf } from '../lib/aiContext';
 import { aboutMeForAI } from '../lib/aboutMe';
@@ -278,15 +278,16 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   // free-time window for this plan only, without touching the student's
   // saved Profile defaults — not persisted, so they reset next visit like
   // energy/pref already do.
+  // Weekly activities and to-dos with a set time are both fixed blocks.
   const constraints = dayConstraints({
     wake: state.wakeOverride || defaults?.wake, bedtime: state.bedtimeOverride || defaults?.bedtime,
-    recurringActivities, dayNum: planDayNum,
+    recurringActivities, dayNum: planDayNum, extraBlocks: timedTodoBlocks(state.taskDefs, planDayNum),
   });
   // The same limits for any given day (a task's own day, today's rescue).
   function constraintsFor(dayNum) {
     return dayConstraints({
       wake: state.wakeOverride || defaults?.wake, bedtime: state.bedtimeOverride || defaults?.bedtime,
-      recurringActivities, dayNum,
+      recurringActivities, dayNum, extraBlocks: timedTodoBlocks(state.taskDefs, dayNum),
     });
   }
   // Today's limits from right now: sessions planned or rescued for today
@@ -322,7 +323,8 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   // constraints — a recurring activity added from the quick-add sheet or the
   // chat, bedtime/wake changed in Profile — now puts one of its sessions on
   // top of something. Approved plans are never moved by themselves.
-  const recurringKey = JSON.stringify([recurringActivities, defaults?.wake, defaults?.bedtime, state.wakeOverride, state.bedtimeOverride]);
+  const timedTodos = state.taskDefs.filter((d) => d.category === 'personal' && d.at).map((d) => [d.id, d.at, d.dur, d.day, d.repeatDays]);
+  const recurringKey = JSON.stringify([recurringActivities, timedTodos, defaults?.wake, defaults?.bedtime, state.wakeOverride, state.bedtimeOverride]);
   const prevRecurringKeyRef = useRef(recurringKey);
   useEffect(() => {
     if (recurringKey === prevRecurringKeyRef.current) return;
@@ -741,9 +743,12 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       const dayFields = d.repeatDays && d.repeatDays.length
         ? { dayChoice: 'repeat', dayDate: '', repeatDays: d.repeatDays }
         : { ...dayChoiceForNum(d.day), repeatDays: [] };
+      // A to-do keeps its own set time (d.at), or none.
+      const personal = d.category === 'personal';
       return {
         taskEdit: {
-          id, name: translate(TASK_TEXT_KEY[id]?.title) || d.title, subject: d.subject, dur, start: fmtLocal(start),
+          id, name: translate(TASK_TEXT_KEY[id]?.title) || d.title, subject: d.subject,
+          dur: personal ? d.dur || 60 : dur, start: personal ? d.at || '18:00' : fmtLocal(start), timed: personal && !!d.at,
           priority: d.priority, note: d.note || '', category: d.category || 'school', autoCategory: true, ...dayFields,
         },
         editErrors: {}, teToast: false,
@@ -762,7 +767,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     update({
       taskEdit: {
         id: null, name: '', subject: SUBJECTS[0], dur: 30, start: '19:00', priority: PRIORITIES[1], note: '',
-        category: 'school', autoCategory: true, repeatDays: [],
+        category: 'school', autoCategory: true, repeatDays: [], timed: false,
         ...(dayNum != null ? dayChoiceForNum(dayNum) : { dayChoice: 'today', dayDate: '' }),
       },
       editErrors: {}, teToast: false,
@@ -791,10 +796,11 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       if (!fm.name || !fm.name.trim()) errs.name = translate('taskEdit.nameRequired');
       if (isRepeat && (!fm.repeatDays || !fm.repeatDays.length)) errs.repeatDays = translate('taskEdit.repeatDaysRequired');
       // A personal task (errand, chore — see the category toggle) has no
-      // subject and never gets a scheduled time block, so its duration and
-      // start-time fields don't exist on the sheet and skip validation here.
+      // subject; it only has a duration and start time when the student
+      // gave it a set time ("At a set time"), which then blocks that time.
+      const timedTodo = isPersonal && !!fm.timed;
       let startMin = null;
-      if (!isPersonal) {
+      if (!isPersonal || timedTodo) {
         if (!(fm.dur >= 5 && fm.dur <= 240)) errs.dur = translate('taskEdit.durRequired');
         const m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec((fm.start || '').trim());
         if (!m) errs.start = translate('taskEdit.startRequired');
@@ -813,15 +819,16 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       // on top of a fixed activity or another session in the first place —
       // previously only a drag-edit of an already-placed block was
       // validated, so a brand new task (or a duration change) could freely
-      // land on a time a recurring activity already owns. Only school tasks
-      // occupy a time slot, so a personal task has nothing to conflict with.
-      if (!isPersonal) {
+      // land on a time a recurring activity already owns. School tasks and
+      // to-dos with a set time occupy a slot; a plain to-do doesn't.
+      if (!isPersonal || timedTodo) {
         // Checked against the task's own day — its fixed activities and, if
         // that day has a plan, its sessions — not whichever day the Planner
-        // happens to be on.
+        // happens to be on. A to-do's own old time doesn't count against it.
         const taskDay = isRepeat ? planDayNum : (day ?? planDayNum);
         const daySchedule = planFor(s, taskDay) || {};
-        const conflict = checkBlockConflict(id, startMin, fm.dur, daySchedule, (cid) => def(cid, s), constraintsFor(taskDay));
+        const c = constraintsFor(taskDay);
+        const conflict = checkBlockConflict(id, startMin, fm.dur, daySchedule, (cid) => def(cid, s), { ...c, blocks: c.blocks.filter((b) => b.taskId !== id) });
         if (conflict) {
           const vars = conflict.vars?.subject ? { ...conflict.vars, subject: translate(VALUE_KEY[conflict.vars.subject]) || conflict.vars.subject } : conflict.vars;
           return { editErrors: { start: translate(conflict.key, vars) } };
@@ -829,11 +836,11 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       }
       const defs = isNew
         ? s.taskDefs.concat(isPersonal
-          ? { id, category: 'personal', title: name, priority: fm.priority, note: fm.note, day, repeatDays, color: '#a58cff', short: name }
+          ? { id, category: 'personal', title: name, priority: fm.priority, note: fm.note, day, repeatDays, color: '#a58cff', short: name, at: timedTodo ? fm.start.trim() : null, dur: timedTodo ? fm.dur : undefined }
           : { id, category: 'school', subject: fm.subject, title: name, dur: fm.dur, priority: fm.priority, note: fm.note, day, repeatDays, color: '#a58cff', short: fm.subject + ' — ' + name })
         : s.taskDefs.map((t) => {
           if (t.id !== id) return t;
-          if (isPersonal) return { ...t, category: 'personal', title: name, priority: fm.priority, note: fm.note, day, repeatDays, short: name };
+          if (isPersonal) return { ...t, category: 'personal', title: name, priority: fm.priority, note: fm.note, day, repeatDays, short: name, at: timedTodo ? fm.start.trim() : null, dur: timedTodo ? fm.dur : undefined };
           const renamed = t.title !== name || t.subject !== fm.subject;
           return { ...t, category: 'school', title: name, subject: fm.subject, dur: fm.dur, priority: fm.priority, note: fm.note, day, repeatDays, short: renamed ? fm.subject + ' — ' + name : t.short };
         });

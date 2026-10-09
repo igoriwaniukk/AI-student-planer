@@ -928,4 +928,7 @@ export default {
   "home.sessionsCompletedMany": "次学习已完成",
   "day.one": "天",
   "day.many": "天",
+  "taskEdit.timedToggle": "固定时间",
+  "taskEdit.timedHint": "在当天的计划中预留这段时间——学习会围绕它来安排。",
+  "tl.todo": "待办",
 };

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { NUM_TODAY, RECUR_DAYS } from '../lib/plannerData';
-import { upcomingExams, examPrepProgress, formatMonthDay, dayInfo } from '../lib/plannerLogic';
+import { upcomingExams, examPrepProgress, formatMonthDay, dayInfo, todoTimeLabel } from '../lib/plannerLogic';
 import { iconForTask, iconForSubject, iconForActivity } from '../lib/taskAuto';
 import { groupActivities, saveActivityLine, removeActivities, upcomingTasks, groupPlanTasks, examStudySessions } from '../lib/plansView';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
@@ -298,7 +298,7 @@ export default function Plans({ planner, recurringActivities, setRecurringActivi
     const parts = [];
     if (group === 'repeating') parts.push(t('plans.every', { days: RECUR_DAYS.filter((x) => d.repeatDays.includes(x)).map(days.short).join(', ') }));
     if (group === 'later') parts.push(days.date(d.day));
-    if (d.category === 'personal') parts.push(t('plans.todo'));
+    if (d.category === 'personal') parts.push(todoTimeLabel(d) || t('plans.todo'));
     else {
       if (d.subject) parts.push(t(VALUE_KEY[d.subject]) || d.subject);
       if (d.dur) parts.push(d.dur + ' min');

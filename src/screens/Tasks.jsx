@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { PRIO_STYLE, NUM_TODAY } from '../lib/plannerData';
-import { durOf, taskDayLabel, taskDueOnDay, isTaskOn } from '../lib/plannerLogic';
+import { durOf, taskDayLabel, taskDueOnDay, isTaskOn, todoTimeLabel } from '../lib/plannerLogic';
 import { iconForTask } from '../lib/taskAuto';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
@@ -51,6 +51,7 @@ export default function Tasks({ planner }) {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', marginTop: 9 }}>
                     {d.deadline && <span style={{ fontSize: 10.5, fontWeight: 650, color: '#f5a524', padding: '4px 8px', borderRadius: 8, background: 'rgba(245,165,36,.13)', border: '1px solid rgba(245,165,36,.28)' }}>⚠ {t(TASK_TEXT_KEY[d.id]?.deadline) || d.deadline}</span>}
                     {!isPersonal && <span style={{ fontSize: 11.5, color: '#8a8a99' }}>🕐 {durOf(d.id, state.taskDefs, state.durOverride)} min</span>}
+                    {isPersonal && todoTimeLabel(d) && <span style={{ fontSize: 11.5, color: '#8a8a99' }}>🕐 {todoTimeLabel(d)}</span>}
                   </div>
                 </div>
                 <span onClick={(e) => { e.stopPropagation(); openTaskEdit(d.id); }} style={{ fontSize: 12, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('planner.edit')}</span>

@@ -6,6 +6,8 @@ import { NUM_TODAY, WEEK_DAYS } from '../lib/plannerData';
 import { DAY_KEY, VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import DayTimeline from '../components/DayTimeline';
+import { WeeklyIcon } from '../components/planIcons';
+import { iconForActivity } from '../lib/taskAuto';
 
 function Card({ children, style }) {
   return (
@@ -92,7 +94,7 @@ export default function Calendar({ planner, activities, recurringActivities = []
       <SectionTitle style={{ margin: '22px 0 12px' }}>{t('cal.extraActivities')}</SectionTitle>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
         {dayRecurring.map((a) => (
-          <Card key={a.id}><Row icon="🔁" title={a.name} sub={t('cal.recurringActivity')} right={a.start + ' · ' + a.dur + ' min'} /></Card>
+          <Card key={a.id}><Row icon={iconForActivity(a.name) || <WeeklyIcon size={18} />} title={a.name} sub={t('cal.recurringActivity')} right={a.start + ' · ' + a.dur + ' min'} /></Card>
         ))}
         {selectedActivities.length > 0 && (
           <Card>

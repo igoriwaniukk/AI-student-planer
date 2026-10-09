@@ -106,7 +106,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
                   </div>
                   <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3, marginTop: 7 }}>{titleOf(id)}</div>
                   {repeats(id) ? (
-                    <div style={{ fontSize: 12.5, color: '#8a8a99', marginTop: 8 }}>🔁 {t('sum.missedToday')}</div>
+                    <div style={{ fontSize: 12.5, color: '#8a8a99', marginTop: 8 }}>↻ {t('sum.missedToday')}</div>
                   ) : (
                     <div style={{ display: 'flex', gap: 9, marginTop: 12 }}>
                       <OptionRow label={t('sum.keep')} active={!drop} onClick={() => setUnfinishedChoice(id, 'keep')} />

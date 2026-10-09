@@ -3,7 +3,7 @@ import { localDateKey } from '../lib/plannerLogic';
 import { VALUE_KEY, DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { detectTaskMeta, iconForTask } from '../lib/taskAuto';
-import { BottomSheet, Chip } from './ui';
+import { BottomSheet, Chip, Toggle } from './ui';
 import WheelDatePicker from './WheelDatePicker';
 import WheelTimePicker from './WheelTimePicker';
 
@@ -34,6 +34,26 @@ export default function TaskEditSheet({ planner }) {
   function switchCategory() {
     patchTaskEdit({ category: isPersonal ? 'school' : 'personal', autoCategory: false });
   }
+
+  // Length and start time: always for a school task, and for a to-do
+  // given a set time (it then blocks that time in the day plan).
+  const timeFields = (
+    <>
+      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.duration')}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+        <div onClick={() => stepTaskDur(-5)} style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, cursor: 'pointer' }}>−</div>
+        <div style={{ flex: 1, textAlign: 'center', fontSize: 21, fontWeight: 750 }}>{fm.dur} min</div>
+        <div onClick={() => stepTaskDur(5)} style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, cursor: 'pointer' }}>+</div>
+      </div>
+      {errs.dur && <div style={{ fontSize: 11.5, color: '#f5a524', marginTop: 7 }}>{errs.dur}</div>}
+
+      <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.startTime')}</div>
+      <div style={{ width: 150 }}>
+        <WheelTimePicker value={fm.start} onChange={(v) => patchTaskEdit({ start: v })} />
+      </div>
+      {errs.start && <div style={{ fontSize: 11.5, color: '#f5a524', marginTop: 7 }}>{errs.start}</div>}
+    </>
+  );
 
   return (
     <BottomSheet maxHeight="92%">
@@ -106,19 +126,20 @@ export default function TaskEditSheet({ planner }) {
             ))}
           </div>
 
-          <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.duration')}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-            <div onClick={() => stepTaskDur(-5)} style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, cursor: 'pointer' }}>−</div>
-            <div style={{ flex: 1, textAlign: 'center', fontSize: 21, fontWeight: 750 }}>{fm.dur} min</div>
-            <div onClick={() => stepTaskDur(5)} style={{ width: 46, height: 46, borderRadius: 14, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, cursor: 'pointer' }}>+</div>
-          </div>
-          {errs.dur && <div style={{ fontSize: 11.5, color: '#f5a524', marginTop: 7 }}>{errs.dur}</div>}
+          {timeFields}
+        </>
+      )}
 
-          <div style={{ fontSize: 11, fontWeight: 750, letterSpacing: '.08em', color: '#7a7a8a', margin: '18px 0 9px' }}>{t('taskEdit.startTime')}</div>
-          <div style={{ width: 150 }}>
-            <WheelTimePicker value={fm.start} onChange={(v) => patchTaskEdit({ start: v })} />
+      {isPersonal && (
+        <>
+          <div onClick={() => patchTaskEdit({ timed: !fm.timed })} style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 18, padding: '12px 14px', borderRadius: 15, background: 'rgba(255,255,255,.035)', border: '1px solid ' + (fm.timed ? 'rgba(124,92,255,.45)' : 'rgba(255,255,255,.08)'), cursor: 'pointer' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 700 }}>{t('taskEdit.timedToggle')}</div>
+              <div style={{ fontSize: 11.5, color: '#8a8a99', marginTop: 3, lineHeight: 1.4 }}>{t('taskEdit.timedHint')}</div>
+            </div>
+            <Toggle on={!!fm.timed} />
           </div>
-          {errs.start && <div style={{ fontSize: 11.5, color: '#f5a524', marginTop: 7 }}>{errs.start}</div>}
+          {fm.timed && timeFields}
         </>
       )}
 
