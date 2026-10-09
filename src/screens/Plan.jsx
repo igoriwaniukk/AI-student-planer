@@ -31,7 +31,7 @@ export default function Plan({ planner }) {
 
   return (
     <>
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 120px', position: 'relative', zIndex: 1 }}>
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '16px 20px 120px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         {/* Reviewing a fresh draft, back returns to the Planner form (the
             draft is kept); viewing an approved plan (Home's "See full
