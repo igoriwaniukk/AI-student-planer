@@ -67,7 +67,8 @@
       ]
     ],
     "extra": {
-      "appUrl": "https://ai-student-planer.vercel.app"
+      "appUrl": "https://ai-student-planer.vercel.app",
+      "revenueCatIosKey": ""
     }
   }
 }

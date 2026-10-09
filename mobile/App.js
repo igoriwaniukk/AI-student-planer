@@ -13,10 +13,12 @@ import { APP_URL, APP_ORIGIN, APP_VERSION, COLORS } from './src/config';
 import { STRINGS, deviceLang } from './src/strings';
 import { scheduleReminders, cancelReminders, notificationStatus, requestNotifications, setupReminderChannel } from './src/reminders';
 import { openSignInSheet, signInWithApple } from './src/auth';
+import * as Premium from './src/purchases';
 
 // Pulgo on the iPhone: the real Pulgo website in a full-screen web view,
 // plus what a website can't do by itself — the system sign-in sheet,
-// reminders scheduled on the phone, haptics and an offline screen. The
+// reminders scheduled on the phone, haptics, the Premium purchase sheet
+// (src/purchases.js) and an offline screen. The
 // website finds out it's in here through window.PulgoNative and talks to
 // us with postMessage (see src/lib/nativeBridge.js in the web app).
 
@@ -147,6 +149,7 @@ function Shell() {
         break;
       case 'signed-out':
         cancelReminders();
+        Premium.signOut();
         break;
       case 'reminders':
         scheduleReminders(msg.reminders, (status) => send({ type: 'notif-status', status }));
@@ -165,6 +168,15 @@ function Shell() {
         break;
       case 'apple-signin':
         reply(await signInWithApple());
+        break;
+      case 'premium-offerings':
+        reply(await Premium.getOfferings());
+        break;
+      case 'premium-purchase':
+        reply(await Premium.purchase(msg.plan, msg.userId));
+        break;
+      case 'premium-restore':
+        reply(await Premium.restore(msg.userId));
         break;
       case 'pending-open':
         webReady.current = true;
