@@ -935,4 +935,7 @@ export default {
   "streakCard.days.few": "日連続",
   "streakCard.days.many": "日連続",
   "streakCard.best": "最高：{n}日",
+  "onb.pugHello": "ワン！勉強の計画を手伝うよ 🐾",
+  "onb.imPulgo": "こんにちは！Pulgoだよ",
+  "onb.callYou": "なんて呼べばいい？",
 };

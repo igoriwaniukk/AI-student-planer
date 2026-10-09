@@ -16,6 +16,9 @@ export const LANG_NAMES = {
   pl: 'Polski', en: 'English', es: 'Español', pt: 'Português', de: 'Deutsch',
   fr: 'Français', it: 'Italiano', zh: '中文', ja: '日本語',
 };
+export const LANG_FLAGS = {
+  pl: '🇵🇱', en: '🇬🇧', es: '🇪🇸', pt: '🇵🇹', de: '🇩🇪', fr: '🇫🇷', it: '🇮🇹', zh: '🇨🇳', ja: '🇯🇵',
+};
 // For dates, times and plural rules (Intl).
 const LOCALES = {
   pl: 'pl-PL', en: 'en-US', es: 'es-ES', pt: 'pt-PT', de: 'de-DE', fr: 'fr-FR', it: 'it-IT', zh: 'zh-CN', ja: 'ja-JP',
@@ -280,6 +283,9 @@ export const dict = {
     'onb.hey': 'Cześć! 👋',
     'onb.step0.q': 'Jak masz na imię?',
     'onb.namePlaceholder': 'Imię',
+    'onb.pugHello': "Hau! Pomogę ci zaplanować naukę 🐾",
+    'onb.imPulgo': "Cześć! Jestem Pulgo",
+    'onb.callYou': "Jak mam się do ciebie zwracać?",
     'onb.letsStart': 'Zaczynajmy',
     'onb.step1.title': 'Twój plan lekcji',
     'onb.step1.desc': 'W które dni masz szkołę i w jakich godzinach? Dzięki temu AI nie zaplanuje nauki w tym czasie.',
@@ -1226,6 +1232,9 @@ export const dict = {
     'onb.hey': 'Hi! 👋',
     'onb.step0.q': "What's your name?",
     'onb.namePlaceholder': 'Name',
+    'onb.pugHello': "Woof! I'll help you plan your studying 🐾",
+    'onb.imPulgo': "Hi! I'm Pulgo",
+    'onb.callYou': "What should I call you?",
     'onb.letsStart': "Let's get started",
     'onb.step1.title': 'Your class schedule',
     'onb.step1.desc': 'Which days do you have school, and what hours? This keeps AI from planning study time then.',

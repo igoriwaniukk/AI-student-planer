@@ -935,4 +935,7 @@ export default {
   "streakCard.days.few": "giorni di fila",
   "streakCard.days.many": "giorni di fila",
   "streakCard.best": "Record: {n}",
+  "onb.pugHello": "Bau! Ti aiuto a organizzare lo studio 🐾",
+  "onb.imPulgo": "Ciao! Sono Pulgo",
+  "onb.callYou": "Come ti chiamo?",
 };
