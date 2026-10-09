@@ -935,4 +935,7 @@ export default {
   "streakCard.days.few": "dias seguidos",
   "streakCard.days.many": "dias seguidos",
   "streakCard.best": "Recorde: {n}",
+  "onb.pugHello": "Ão ão! Vou ajudar-te a planear o teu estudo 🐾",
+  "onb.imPulgo": "Olá! Sou o Pulgo",
+  "onb.callYou": "Como te devo chamar?",
 };

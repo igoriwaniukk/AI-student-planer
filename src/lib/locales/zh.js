@@ -935,4 +935,7 @@ export default {
   "streakCard.days.few": "天连续学习",
   "streakCard.days.many": "天连续学习",
   "streakCard.best": "最佳：{n} 天",
+  "onb.pugHello": "汪！我来帮你规划学习 🐾",
+  "onb.imPulgo": "你好！我是 Pulgo",
+  "onb.callYou": "我该怎么称呼你？",
 };

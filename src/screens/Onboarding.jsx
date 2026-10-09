@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { ENERGY_OPTIONS, PREF_OPTIONS, STUDY_TIME_OPTIONS, PRIORITY_SUBJECT_OPTIONS, RECUR_DAYS, ACTIVITY_OPTIONS } from '../lib/plannerData';
-import { VALUE_KEY, DAY_KEY, LANGS, LANG_NAMES } from '../lib/i18n';
+import { VALUE_KEY, DAY_KEY, LANGS, LANG_NAMES, LANG_FLAGS } from '../lib/i18n';
 import { timeStrToMinutes } from '../lib/plannerLogic';
 import { useLang } from '../lib/useLang';
 import WheelTimePicker from '../components/WheelTimePicker';
+import { BottomSheet } from '../components/ui';
+import { PugLive } from '../components/PugMascot';
 
 
 const TOTAL_STEPS = 6;
@@ -21,12 +23,54 @@ function Chip({ label, active, onClick }) {
   );
 }
 
-function LanguagePicker() {
-  const { lang, setLang } = useLang();
+// One segment per step, filled up to the current one.
+function Progress({ step }) {
+  const { t } = useLang();
   return (
-    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end', marginBottom: 14 }}>
-      {LANGS.map((code) => <Chip key={code} label={LANG_NAMES[code]} active={lang === code} onClick={() => setLang(code)} />)}
+    <div role="progressbar" aria-label={t('onb.stepOf', { step: step + 1, total: TOTAL_STEPS })} style={{ flex: 1, display: 'flex', gap: 5 }}>
+      {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+        <div key={i} style={{ flex: 1, height: 4, borderRadius: 9, background: i <= step ? 'linear-gradient(90deg,#8b6dff,#a58cff)' : 'rgba(255,255,255,.08)', transition: 'background .3s ease' }} />
+      ))}
     </div>
+  );
+}
+
+// The language sits in a small pill on the first screen (the device
+// language is already picked); tapping it opens the full list.
+function LanguageButton() {
+  const { t, lang, setLang } = useLang();
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        style={{ flex: 'none', display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 999, background: '#16131f', border: '1px solid rgba(255,255,255,.1)', color: '#f4f4f7', fontSize: 13, fontWeight: 650, cursor: 'pointer' }}
+      >
+        <span>{LANG_FLAGS[lang]}</span>{LANG_NAMES[lang]}<span style={{ color: '#8a8a99', fontSize: 10 }}>▼</span>
+      </button>
+      {open && (
+        <BottomSheet>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 17, fontWeight: 750 }}>{t('settings.appLanguage')}</div>
+            <span onClick={() => setOpen(false)} style={{ fontSize: 15, color: '#8a8a99', cursor: 'pointer', padding: 4 }}>✕</span>
+          </div>
+          <div style={{ marginTop: 12 }}>
+            {LANGS.map((code, i) => (
+              <div
+                key={code}
+                onClick={() => { setLang(code); setOpen(false); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 4px', borderTop: i ? '1px solid rgba(255,255,255,.06)' : 'none', cursor: 'pointer' }}
+              >
+                <span style={{ fontSize: 20 }}>{LANG_FLAGS[code]}</span>
+                <span style={{ flex: 1, fontSize: 15, fontWeight: 600, color: lang === code ? '#c9baff' : '#f4f4f7' }}>{LANG_NAMES[code]}</span>
+                {lang === code && <span style={{ color: '#a58cff', fontSize: 18, fontWeight: 800 }}>✓</span>}
+              </div>
+            ))}
+          </div>
+        </BottomSheet>
+      )}
+    </>
   );
 }
 
@@ -82,25 +126,37 @@ export default function Onboarding({ onComplete }) {
   }
 
   return (
-    <div className="app-shell sc" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowY: 'auto', padding: '24px 20px' }}>
-      {step === 0 && <LanguagePicker />}
-      <div style={{ fontSize: 11.5, color: '#6f6f7d', fontWeight: 650, marginBottom: 10 }}>
-        {t('onb.stepOf', { step: step + 1, total: TOTAL_STEPS })}
+    <div className="app-shell sc" style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', padding: 'calc(var(--safe-top) + 16px) 20px calc(var(--safe-bottom) + 24px)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, minHeight: 34 }}>
+        <Progress step={step} />
+        {step === 0 && <LanguageButton />}
       </div>
+      {/* auto margins centre a short step and let a long one scroll from its top */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', marginTop: 20 }}>
+      <div style={step === 0 ? { flex: 1, display: 'flex', flexDirection: 'column' } : { margin: 'auto 0' }}>
 
       {step === 0 && (
         <>
-          <div style={{ fontSize: 24, fontWeight: 750 }}>{t('onb.hey')}</div>
-          <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 8 }}>{t('onb.step0.q')}</div>
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '12px 0 24px' }}>
+            <div style={{ position: 'relative', width: 150, height: 150 }}>
+              <div style={{ position: 'absolute', inset: -30, borderRadius: '50%', background: 'radial-gradient(circle,rgba(139,109,255,.45),transparent 65%)' }} />
+              <PugLive size={150} style={{ position: 'relative', boxShadow: '0 0 0 4px #8b6dff, 0 20px 50px rgba(109,77,255,.5)' }} />
+            </div>
+            <div style={{ marginTop: 22, padding: '10px 14px', borderRadius: '16px 16px 16px 4px', background: '#16131f', border: '1px solid rgba(255,255,255,.08)', fontSize: 13, color: '#c9c9d6', animation: 'fadeUp .4s ease .2s both' }}>
+              {t('onb.pugHello')}
+            </div>
+            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-.03em', marginTop: 20 }}>{t('onb.imPulgo')}</div>
+            <div style={{ fontSize: 15, color: '#8a8a99', marginTop: 6 }}>{t('onb.callYou')}</div>
+          </div>
           <form
-            style={{ marginTop: 16, display: 'flex', flexDirection: 'column', gap: 12 }}
+            style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
             onSubmit={(e) => {
               e.preventDefault();
               if (nameDraft.trim()) setStep(1);
             }}
           >
-            <input value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} placeholder={t('onb.namePlaceholder')} autoFocus />
-            <button type="submit" className="btn btn-primary">{t('onb.letsStart')}</button>
+            <input value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} placeholder={t('onb.namePlaceholder')} style={{ height: 54, borderRadius: 16, fontSize: 16 }} />
+            <button type="submit" className="btn btn-primary" style={{ height: 56, borderRadius: 17, fontSize: 16, opacity: nameDraft.trim() ? 1 : 0.55 }}>{t('onb.letsStart')} →</button>
           </form>
         </>
       )}
@@ -237,6 +293,8 @@ export default function Onboarding({ onComplete }) {
           </button>
         </>
       )}
+      </div>
+      </div>
     </div>
   );
 }
