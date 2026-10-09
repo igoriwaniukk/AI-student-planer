@@ -71,3 +71,20 @@ describe('what Pulgo knows about the student', () => {
     expect(aboutMeLines({ facts: [], note: null })).toEqual([]);
   });
 });
+
+describe('answers in the app language', () => {
+  it('names any app language for the AI, Polish when unknown', async () => {
+    const { buildPlanSystemPrompt } = await import('./plan.js');
+    expect(buildPlanSystemPrompt('ja')).toContain('Respond in Japanese');
+    expect(buildPlanSystemPrompt('pl')).toContain('Odpowiadaj po polsku');
+    expect(buildPlanSystemPrompt('xx')).toContain('Odpowiadaj po polsku');
+    expect(buildChatSystemPrompt(null, 'de')).toContain('reply in German');
+  });
+
+  it('writes push notifications in the app language', async () => {
+    const { composeRestartMessage, composeUnfinishedMessage } = await import('./pushMessages.js');
+    expect(composeRestartMessage('es').title).toBe('🔄 Reinicia tu día');
+    expect(composeUnfinishedMessage('pl', ['A', 'B', 'C', 'D', 'E']).title).toBe('📋 Zostało Ci 5 zadań na dziś');
+    expect(composeUnfinishedMessage('xx', ['A']).title).toBe('📋 Zostało Ci 1 zadanie na dziś');
+  });
+});

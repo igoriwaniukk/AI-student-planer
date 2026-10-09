@@ -1,4 +1,5 @@
 import { anthropic, ANTHROPIC_MODEL, anthropicErrorResponse, NO_KEY_RESPONSE } from './anthropic.js';
+import { langName, isKnownLang } from './lang.js';
 import { examLines, aboutMeLines, fmt } from './context.js';
 
 // Plans the study sessions for a newly added exam across the days before it,
@@ -37,7 +38,7 @@ export function buildPrepSystemPrompt(lang) {
   return [
     'Jesteś asystentem, który planuje uczniowi naukę do sprawdzianu. Na podstawie tematów, trudności, poziomu wiedzy ucznia, ' +
       'celu i dostępnych dni ułóż sesje nauki, wywołując narzędzie propose_prep_plan.',
-    lang === 'en' ? 'Write titles, types, explanations and the rationale in English.' : 'Tytuły, rodzaje, wyjaśnienia i uzasadnienie pisz po polsku.',
+    !isKnownLang(lang) || lang === 'pl' ? 'Tytuły, rodzaje, wyjaśnienia i uzasadnienie pisz po polsku.' : `Write titles, types, explanations and the rationale in ${langName(lang)}.`,
     'Twarde ograniczenia, których NIE WOLNO złamać:',
     '- Sesje tylko w podanych dniach (nigdy w dniu sprawdzianu), między pobudką a snem danego dnia.',
     '- Żadna sesja nie może nachodzić na stałe zajęcia ani na sesje już zaplanowane tego dnia (lista "zajęte").',

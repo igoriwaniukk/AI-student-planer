@@ -1,5 +1,5 @@
-import { EXAMS, PRIORITIES, REFERENCE_DAY, NUM_TODAY, WEEKDAY_META, realDateForNum } from './plannerData';
-import { getCurrentLang, VALUE_KEY, TASK_TEXT_KEY } from './i18n';
+import { EXAMS, PRIORITIES, REFERENCE_DAY, NUM_TODAY, WEEKDAY_META, RECUR_DAYS, realDateForNum } from './plannerData';
+import { getCurrentLang, VALUE_KEY, TASK_TEXT_KEY, DAY_KEY, translate, localeOf } from './i18n';
 
 // Looks the weekday up directly from num's real date (via realDateForNum)
 // rather than indexing into WEEK_DAYS by a fixed offset — WEEK_DAYS' own
@@ -22,7 +22,7 @@ export function dayInfo(num) {
 export function formatMonthDay(num, { year = false, short = false } = {}) {
   const lang = getCurrentLang();
   const opts = { day: 'numeric', month: short ? 'short' : 'long', ...(year ? { year: 'numeric' } : {}) };
-  return new Intl.DateTimeFormat(lang === 'en' ? 'en-US' : 'pl-PL', opts).format(realDateForNum(num));
+  return new Intl.DateTimeFormat(localeOf(lang), opts).format(realDateForNum(num));
 }
 
 export function fmt(totalMinutes) {
@@ -38,7 +38,7 @@ export function span(a, b) {
 export function hm(mins) {
   const h = Math.floor(mins / 60);
   const m = mins % 60;
-  const hUnit = getCurrentLang() === 'en' ? 'hr' : 'godz.';
+  const hUnit = translate(getCurrentLang(), 'unit.hr');
   if (h && m) return h + ' ' + hUnit + ' ' + m + ' min';
   if (h) return h + ' ' + hUnit;
   return m + ' min';
@@ -69,19 +69,16 @@ export function daysUntilFromISODate(isoDate) {
   return Math.round((target - today) / 86400000);
 }
 
-// Which plural form a count takes: Polish has 1 / 2–4 (but not 12–14, and
-// also 22–24, 32–34…) / everything else; English just one / many.
+// Which plural form a count takes, as the dictionary's ".one/.few/.many"
+// keys name them: the language's own rules (Polish 1 / 2–4 but not 12–14 /
+// the rest; French counts 0 as "one"; Chinese and Japanese don't change).
 export function pluralForm(n) {
-  const a = Math.abs(n);
-  if (a === 1) return 'one';
-  if (getCurrentLang() === 'en') return 'many';
-  const last = a % 10;
-  const lastTwo = a % 100;
-  return last >= 2 && last <= 4 && !(lastTwo >= 12 && lastTwo <= 14) ? 'few' : 'many';
+  const cat = new Intl.PluralRules(localeOf(getCurrentLang())).select(Math.abs(n));
+  return cat === 'one' || cat === 'few' ? cat : 'many';
 }
 
 export function zad(n) {
-  return n + ' ' + { one: 'zadanie', few: 'zadania', many: 'zadań' }[pluralForm(n)];
+  return translate(getCurrentLang(), 'count.tasks.' + pluralForm(n), { n });
 }
 
 // A task recurs on chosen weekdays (see the "Repeat" chip in TaskEditSheet)
@@ -292,43 +289,27 @@ export function buildRescueSchedule({ taskDefs, tasks, taskState, energy, durOve
   return { schedule, decisions };
 }
 
-const TIMELINE_TEXT = {
-  pl: {
-    fixedEvent: 'Zajęcia', sleep: 'Sen', fixedTime: 'Stała godzina',
-    gap: 'Przerwa', restMin: (n) => n + ' min odpoczynku',
-    bufferTitle: 'Bufor przed zajęciami', bufferSub: 'Przygotowanie i dotarcie na miejsce.',
-    afterActivityTitle: 'Po zajęciach', rest: 'Odpoczynek',
-    eveningTitle: 'Wolny wieczór', freeTime: 'Czas wolny',
-  },
-  en: {
-    fixedEvent: 'Activity', sleep: 'Sleep', fixedTime: 'Fixed time',
-    gap: 'Break', restMin: (n) => n + ' min rest',
-    bufferTitle: 'Buffer before activity', bufferSub: 'Getting ready and traveling there.',
-    afterActivityTitle: 'After activity', rest: 'Rest',
-    eveningTitle: 'Free evening', freeTime: 'Free time',
-  },
-};
-
 // Calendar events for the day: the student's own recurring activities (if
 // any land today) plus their real bedtime — no invented school/tennis block.
 export function timeline(schedule, constraints) {
   const c = constraints || dayConstraints();
   const sched = schedule || {};
-  const tx = TIMELINE_TEXT[getCurrentLang() === 'en' ? 'en' : 'pl'];
-  const items = (c.blocks || []).map((b) => ({ k: 'fixed', kind: 'activity', start: b.start, end: b.end, title: b.label, sub: tx.fixedEvent }));
+  const lang = getCurrentLang();
+  const tx = (key, vars) => translate(lang, 'tl.' + key, vars);
+  const items = (c.blocks || []).map((b) => ({ k: 'fixed', kind: 'activity', start: b.start, end: b.end, title: b.label, sub: tx('fixedEvent') }));
   Object.keys(sched).forEach((id) => items.push({ k: 'study', id, start: sched[id].start, end: sched[id].start + sched[id].dur }));
-  items.push({ k: 'sleep', kind: 'sleep', start: c.bedtimeMinutes, end: c.bedtimeMinutes, title: tx.sleep, sub: tx.fixedTime });
+  items.push({ k: 'sleep', kind: 'sleep', start: c.bedtimeMinutes, end: c.bedtimeMinutes, title: tx('sleep'), sub: tx('fixedTime') });
   items.sort((a, b) => a.start - b.start);
   const out = [];
   for (let i = 0; i < items.length; i++) {
     const prev = out.length ? out[out.length - 1] : null;
     const it = items[i];
     if (prev && it.start > prev.end) {
-      let title = tx.gap;
-      let sub = tx.restMin(it.start - prev.end);
-      if (it.k === 'fixed') { title = tx.bufferTitle; sub = tx.bufferSub; }
-      else if (prev.k === 'fixed') { title = tx.afterActivityTitle; sub = tx.rest; }
-      else if (it.k === 'sleep') { title = tx.eveningTitle; sub = tx.freeTime; }
+      let title = tx('gap');
+      let sub = tx('restMin', { n: it.start - prev.end });
+      if (it.k === 'fixed') { title = tx('bufferTitle'); sub = tx('bufferSub'); }
+      else if (prev.k === 'fixed') { title = tx('afterActivityTitle'); sub = tx('rest'); }
+      else if (it.k === 'sleep') { title = tx('eveningTitle'); sub = tx('freeTime'); }
       out.push({ k: 'gap', start: prev.end, end: it.start, title, sub });
     }
     out.push(it);
@@ -347,23 +328,26 @@ export function startOf(id, { schedule, startOverride }) {
 }
 
 const PREP_DIFFICULTY_DUR = { 'Łatwy': 25, 'Średni': 35, 'Trudny': 40 };
-const WEEKDAYS = { pl: ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'], en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] };
 
 // Just the weekday word for a logical day index — for copy that names a
 // weekday inline (e.g. "Plan na {weekday}") without a full date, so it
 // still tracks the real day instead of being stuck on a fixed weekday.
 export function weekdayName(num) {
-  const lang = getCurrentLang();
-  return WEEKDAYS[lang === 'en' ? 'en' : 'pl'][realDateForNum(num).getDay()];
+  const label = RECUR_DAYS[(realDateForNum(num).getDay() + 6) % 7];
+  return translate(getCurrentLang(), DAY_KEY[label]);
 }
 
-// Polish "na {środę/sobotę/niedzielę}" declines those three weekdays to the
-// accusative — unlike English, so this isn't just a lowercased weekdayName.
+// The weekday as it sits inside a sentence ("Plan na {środę}"): Polish
+// declines środa/sobota/niedziela to the accusative, and Spanish,
+// Portuguese, French and Italian write weekdays in lower case mid-sentence.
 const WEEKDAY_ACCUSATIVE_PL = ['niedzielę', 'poniedziałek', 'wtorek', 'środę', 'czwartek', 'piątek', 'sobotę'];
+const LOWERCASE_WEEKDAYS = ['es', 'pt', 'fr', 'it'];
 
 export function weekdayOn(num) {
-  if (getCurrentLang() === 'en') return weekdayName(num);
-  return WEEKDAY_ACCUSATIVE_PL[realDateForNum(num).getDay()];
+  const lang = getCurrentLang();
+  if (lang === 'pl') return WEEKDAY_ACCUSATIVE_PL[realDateForNum(num).getDay()];
+  const name = weekdayName(num);
+  return LOWERCASE_WEEKDAYS.includes(lang) ? name.toLowerCase() : name;
 }
 
 // Full "Weekday, day month[, year]" label for a logical day index — shared
@@ -375,57 +359,28 @@ export function weekdayDateLabel(num, { year = false } = {}) {
 }
 
 export function prepDayLabel(day) {
-  const lang = getCurrentLang();
-  const idx = realDateForNum(day).getDay();
-  return WEEKDAYS[lang === 'en' ? 'en' : 'pl'][idx] + ', ' + formatMonthDay(day);
+  return weekdayName(day) + ', ' + formatMonthDay(day);
 }
 
 // Turns whatever topics the student actually entered on the Deadline screen
 // into a concrete, ordered study plan — instead of a fixed, unrelated example.
 export function buildPrepSessions(topics, difficulty) {
   const baseDur = PREP_DIFFICULTY_DUR[difficulty] || 35;
-  const en = getCurrentLang() === 'en';
-  const list = topics && topics.length ? topics : [en ? 'Exam material' : 'Materiał do sprawdzianu'];
+  const t = (key, vars) => translate(getCurrentLang(), 'prepDef.' + key, vars);
+  const list = topics && topics.length ? topics : [t('material')];
   const sessions = list.map((topic, i) => {
-    if (i === 0) {
-      return {
-        title: topic + (en ? ' — basics' : ' — podstawy'), type: en ? 'First contact' : 'Pierwszy kontakt', dur: Math.max(20, baseDur - 5),
-        why: en
-          ? "First we'll sort out the basic concepts needed for the following topics."
-          : 'Najpierw uporządkujemy podstawowe pojęcia potrzebne do kolejnych tematów.',
-      };
-    }
+    if (i === 0) return { title: topic + t('basicsSuffix'), type: t('basicsType'), dur: Math.max(20, baseDur - 5), why: t('basicsWhy') };
     const last = i === list.length - 1;
     return {
-      title: topic + (last ? (en ? ' — exercises' : ' — ćwiczenia') : (en ? ' — introduction' : ' — wprowadzenie')),
-      type: last ? (en ? 'New material and exercises' : 'Nowy materiał i ćwiczenia') : (en ? 'Exercises' : 'Ćwiczenia'),
+      title: topic + (last ? t('exercisesSuffix') : t('introSuffix')),
+      type: last ? t('lastType') : t('exercisesType'),
       dur: baseDur,
-      why: last
-        ? (en ? 'We combine the last topic with practical examples.' : 'Łączymy ostatni temat z praktycznymi przykładami.')
-        : (en ? 'The first exercises come right after learning this topic.' : 'Pierwsze zadania pojawiają się po poznaniu tego tematu.'),
+      why: last ? t('lastWhy') : t('exercisesWhy'),
     };
   });
-  sessions.push({
-    title: en ? 'Mixed exercises from ' + list.length + (list.length === 1 ? ' topic' : ' topics') : 'Zadania mieszane z ' + zad(list.length),
-    type: en ? 'Reinforcement' : 'Utrwalenie', dur: baseDur,
-    why: en
-      ? 'Exercises covering every topic will show which parts need more work.'
-      : 'Ćwiczenia ze wszystkich tematów pokażą, które elementy wymagają poprawy.',
-  });
-  sessions.push({
-    title: en ? 'Review of harder areas' : 'Powtórka trudniejszych obszarów',
-    type: en ? 'Review' : 'Powtórka', dur: Math.max(20, baseDur - 5),
-    why: en
-      ? 'We go back to the topics that scored weakest in earlier exercises.'
-      : 'Wracamy do tematów ocenionych najsłabiej podczas wcześniejszych ćwiczeń.',
-  });
-  sessions.push({
-    title: en ? 'Short test before the exam' : 'Krótki test przed sprawdzianem',
-    type: en ? 'Self-check' : 'Samosprawdzenie', dur: Math.max(20, baseDur - 10),
-    why: en
-      ? "On the last day you'll check your readiness without overloading the evening."
-      : 'Ostatniego dnia sprawdzisz gotowość bez przeciążania wieczoru.',
-  });
+  sessions.push({ title: t('mixedTitle.' + pluralForm(list.length), { n: list.length }), type: t('mixedType'), dur: baseDur, why: t('mixedWhy') });
+  sessions.push({ title: t('reviewTitle'), type: t('reviewType'), dur: Math.max(20, baseDur - 5), why: t('reviewWhy') });
+  sessions.push({ title: t('testTitle'), type: t('testType'), dur: Math.max(20, baseDur - 10), why: t('testWhy') });
   return sessions.map((sx) => ({ ...sx, time: range('17:00', sx.dur), dur: sx.dur + ' min' }));
 }
 

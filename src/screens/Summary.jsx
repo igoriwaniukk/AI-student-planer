@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { HARD_OPTIONS, KNOW_OPTIONS, DAY_HARD_OPTIONS, NUM_TODAY } from '../lib/plannerData';
-import { hm, zad, weekdayDateLabel, daySessionBreakdown, statusOn, localDateKey, dayOpenTasks, planFor } from '../lib/plannerLogic';
+import { hm, pluralForm, weekdayDateLabel, daySessionBreakdown, statusOn, localDateKey, dayOpenTasks, planFor } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, PrimaryButton, EnergyPicker, OptionRow, ListRow, Chip, Confetti } from '../components/ui';
 import { useLang } from '../lib/useLang';
@@ -264,15 +264,13 @@ function PlanTomorrowModal({ open, onPlan, onDismiss }) {
 }
 
 function DaySaved({ planner, summary, justSaved }) {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const { state, goHomeSummarized, update } = planner;
   const planTomorrow = () => update({ daySaved: false, planToday: false, screen: 'planner' });
   const doneCount = summary.done || 0;
   const celebrate = justSaved && summary.total > 0 && doneCount === summary.total;
   const [planModalOpen, setPlanModalOpen] = useState(celebrate);
-  const doneShort = lang === 'en'
-    ? t('sum.doneOfTotal', { done: doneCount, total: summary.total || 0 })
-    : zad(doneCount) + (doneCount >= 1 && doneCount <= 4 ? ' wykonane' : ' wykonanych') + ' z ' + (summary.total || 0);
+  const doneShort = t('sum.doneShort.' + pluralForm(doneCount), { done: doneCount, total: summary.total || 0 });
   return (
     <div className="sc" style={{ position: 'absolute', inset: 0, zIndex: 80, background: '#08080c', overflowY: 'auto', padding: '80px 20px 40px' }}>
       {celebrate && <Confetti />}

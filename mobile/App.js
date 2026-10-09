@@ -80,7 +80,7 @@ function Shell() {
   }, []);
 
   useEffect(() => {
-    AsyncStorage.getItem(LANG_KEY).then((saved) => { if (saved === 'pl' || saved === 'en') setLang(saved); }).catch(() => {});
+    AsyncStorage.getItem(LANG_KEY).then((saved) => { if (STRINGS[saved]) setLang(saved); }).catch(() => {});
     // Never leave the splash up if the page hangs.
     const t = setTimeout(hideSplash, 10000);
     return () => clearTimeout(t);
@@ -139,7 +139,7 @@ function Shell() {
     const reply = (data) => { if (msg.requestId) send({ ...data, replyTo: msg.requestId }); };
     switch (msg.type) {
       case 'web-state':
-        if (msg.lang === 'pl' || msg.lang === 'en') {
+        if (STRINGS[msg.lang]) {
           setLang(msg.lang);
           AsyncStorage.setItem(LANG_KEY, msg.lang).catch(() => {});
         }

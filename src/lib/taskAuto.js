@@ -5,17 +5,19 @@
 // every keystroke with no latency, no network dependency and no per-call
 // cost, and TaskEditSheet always lets the student flip a wrong guess by
 // hand, so perfect accuracy isn't required — just a reasonable default.
-// Keywords cover both Polish and English since the app is bilingual and a
-// task's name isn't necessarily in the UI's current display language.
+// Keywords cover Polish and English plus the main school words in the
+// app's other languages, since a task's name isn't necessarily in the UI's
+// current display language. Chinese/Japanese keywords match anywhere in the
+// name (those scripts don't put spaces between words).
 const SUBJECT_KEYWORDS = {
-  Matematyka: ['math', 'matemat', 'algebra', 'geometr', 'calculus', 'equation', 'równani', 'liczb'],
-  Biologia: ['biolog', 'genetic', 'genetyk', 'cell', 'komórk', 'ecosystem', 'ekosystem', 'photosynth', 'fotosyntez'],
-  Angielski: ['english', 'angielsk', 'vocabulary', 'słówk', 'grammar', 'gramatyk'],
-  Polski: ['polish', 'język polski', 'literatur', 'lektur', 'essay', 'wypracowani', 'poem', 'wiersz'],
-  Historia: ['history', 'histori', 'ancient', 'starożytn', '=war', '=wars', 'wojn', '=king', '=kings', 'król'],
-  Geografia: ['geograph', 'geografi', 'map', 'mapa', 'climate', 'klimat', 'continent', 'kontynent'],
-  Fizyka: ['physics', 'fizyk', 'force', 'siła', 'motion', 'ruch', 'velocity', 'prędkoś'],
-  Chemia: ['chemistry', 'chemi', 'reaction', 'reakcj', 'molecule', 'cząsteczk', 'acid', 'kwas'],
+  Matematyka: ['math', 'matemat', 'matemát', 'mathémat', 'algebra', 'álgebra', 'algèbre', 'geometr', 'géométr', 'calculus', 'equation', 'ecuaci', 'equaç', 'équation', 'equazion', 'gleichung', 'równani', 'liczb', '数学'],
+  Biologia: ['biolog', 'genetic', 'genetyk', 'genétic', 'génétiq', 'genetik', 'cell', 'célul', 'zelle', 'komórk', 'ecosystem', 'ekosystem', 'ecosistem', 'photosynth', 'fotosynt', 'fotosínt', 'fotosint', '生物'],
+  Angielski: ['english', 'englisch', 'anglais', 'ingl', 'angielsk', 'vocabulary', 'vocabul', 'vokabel', 'słówk', 'grammar', 'gramatyk', 'gramátic', 'grammaire', 'grammatik', '英语', '英語'],
+  Polski: ['polish', 'język polski', 'literatur', 'littérat', 'lektur', 'essay', 'ensayo', 'aufsatz', 'redacci', 'wypracowani', 'poem', 'poema', 'poème', 'gedicht', 'wiersz'],
+  Historia: ['history', 'histori', 'história', 'histoire', 'geschicht', 'storia', 'ancient', 'starożytn', '=war', '=wars', 'wojn', 'guerra', 'guerre', '=krieg', '=king', '=kings', 'król', '历史', '歴史'],
+  Geografia: ['geograph', 'geografi', 'geografí', 'géograph', 'erdkunde', 'map', 'mapa', 'climate', 'clima', 'climat', 'klima', 'continent', 'kontynent', '地理'],
+  Fizyka: ['physics', 'physik', 'physique', 'físic', 'fisic', 'fizyk', 'force', 'fuerza', 'siła', 'motion', 'ruch', 'velocity', 'velocidad', 'prędkoś', '物理'],
+  Chemia: ['chemistry', 'chemi', 'chimi', 'químic', 'quimic', 'reaction', 'reacci', 'reação', 'réaction', 'reazion', 'reakcj', 'molecule', 'molécul', 'molekül', 'molecol', 'cząsteczk', 'acid', 'ácido', 'acide', 'säure', 'kwas', '化学'],
 };
 
 // Generic school words with no specific-subject match — still school (gets
@@ -25,6 +27,9 @@ const GENERAL_SCHOOL_KEYWORDS = [
   'project', 'projekt', 'presentation', 'prezentacj', 'study', 'nauka', 'naucz', 'lesson', 'lekcj',
   'class', 'klasów', 'chapter', 'rozdział', 'assignment', 'test', 'notes', 'notatk', 'revise', 'powtórk',
   'textbook', 'podręcznik', 'worksheet', 'ćwiczeni',
+  'deberes', 'examen', 'estudiar', 'prueba', 'hausaufgabe', 'prüfung', 'klausur', 'lernen', 'devoirs', 'contrôle', 'réviser',
+  'compiti', 'verifica', 'esame', 'studiare', 'trabalho de casa', 'estudar',
+  '作业', '考试', '复习', '学习', '宿題', '試験', 'テスト', '復習', '勉強',
 ];
 
 // Ordered so a more specific match (e.g. "walk the dog") wins over a vaguer
@@ -56,10 +61,14 @@ const SUBJECT_ICON = {
 // middle of one — "king" used to match "cooking"/"parking" and "war"
 // "warzywa"/"Warszawa", turning chores into History. "=word" must be the
 // whole word; a keyword with a space matches that phrase from a word start.
+const CJK = /[\u3040-\u30ff\u3400-\u9fff]/;
+
 function hasKeyword(text, keywords) {
-  const words = (text || '').toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+  const lower = (text || '').toLowerCase();
+  const words = lower.split(/[^\p{L}\p{N}]+/u).filter(Boolean);
   const phrase = ' ' + words.join(' ');
   return keywords.some((k) => {
+    if (CJK.test(k)) return lower.includes(k);
     if (k.startsWith('=')) return words.includes(k.slice(1));
     if (k.includes(' ')) return phrase.includes(' ' + k.trim());
     return words.some((w) => w.startsWith(k));

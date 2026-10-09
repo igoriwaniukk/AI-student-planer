@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { LANGS } from './i18n.js';
 
 export const KEYS = {
   name: 'sp_name',
@@ -115,8 +116,15 @@ export function useLastSeenStreak() {
 }
 
 // UI language, 'pl' or 'en'.
+// A first visit starts in the device's language when Pulgo has it, else
+// Polish (the app's home market).
+function deviceLanguage() {
+  const code = (typeof navigator !== 'undefined' && navigator.language || '').slice(0, 2).toLowerCase();
+  return LANGS.includes(code) ? code : 'pl';
+}
+
 export function useLanguage() {
-  return useLocalStorage(KEYS.language, 'pl');
+  return useLocalStorage(KEYS.language, deviceLanguage());
 }
 
 // A signature (ids of exam alerts + custom reminders) of the notifications

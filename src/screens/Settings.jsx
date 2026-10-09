@@ -2,14 +2,11 @@ import { useState } from 'react';
 import { version as APP_VERSION } from '../../package.json';
 import { upcomingExams, computeStreak, planFor } from '../lib/plannerLogic';
 import { NUM_TODAY } from '../lib/plannerData';
-import { LANGS } from '../lib/i18n';
+import { LANGS, LANG_NAMES } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { useCustomReminders, resetAppData } from '../lib/store';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { BackButton, BottomSheet, Toggle } from '../components/ui';
-
-// Each language named in itself, as phone settings do.
-const LANG_NAME = { pl: 'Polski', en: 'English' };
 
 function Label({ children }) {
   return <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '.06em', color: '#7a7a8a', margin: '24px 6px 8px', textTransform: 'uppercase' }}>{children}</div>;
@@ -74,7 +71,7 @@ function LanguagePage({ onBack }) {
       <Group>
         {LANGS.map((code, i) => (
           <Row
-            key={code} first={i === 0} title={LANG_NAME[code] || code} onClick={() => setLang(code)}
+            key={code} first={i === 0} title={LANG_NAMES[code]} onClick={() => setLang(code)}
             right={lang === code ? <span style={{ color: '#a58cff', fontSize: 18, fontWeight: 800 }}>✓</span> : null}
           />
         ))}
@@ -137,7 +134,7 @@ export default function Settings({ planner, studentName, profilePhoto, email, st
           first title={t('settings.reminders')} sub={pushNote}
           right={pushStatus === 'unsupported' ? null : <Toggle on={pushStatus === 'subscribed'} onClick={togglePush} />}
         />
-        <Row title={t('settings.language')} value={LANG_NAME[lang] || lang} nav onClick={() => setPage('language')} />
+        <Row title={t('settings.language')} value={LANG_NAMES[lang] || lang} nav onClick={() => setPage('language')} />
       </Group>
 
       <Label>{t('settings.about')}</Label>
