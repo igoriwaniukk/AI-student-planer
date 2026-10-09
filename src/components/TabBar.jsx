@@ -52,7 +52,8 @@ export default function TabBar({ screen, onNavigate, onFabClick, fabActive = fal
           style={{
             position: 'absolute', bottom: 'calc(6px + var(--safe-bottom))', width: 22, height: 3, borderRadius: 99,
             background: 'linear-gradient(90deg,#8b6dff,#6d4dff)',
-            left: `calc(${activeIndex} * 20% + 10% - 11px)`,
+            // centre of the active column: the grid sits inside 12px of side padding
+            left: `calc(12px + (100% - 24px) * ${(activeIndex * 2 + 1) / 10} - 11px)`,
             transition: 'left .25s ease',
           }}
         />

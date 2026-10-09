@@ -29,6 +29,8 @@ function initialsOf(name) {
 const HELLO_OFF_KEY = 'sp_pugHelloOffDate';
 const HELLO_EVERY_MS = 3 * 60 * 1000;
 const HELLO_SHOW_MS = 4500;
+// Screens with the tab bar (same set as TAB_SCREENS in App.jsx).
+const TAB_SCREENS = new Set(['home', 'calendar', 'tasks', 'profile']);
 
 function Avatar({ role, studentName }) {
   if (role !== 'user') {
@@ -215,6 +217,13 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
   // off-screen for this one screen rather than fight the layout with it.
   const fabHidden = planner.state.screen === 'rescue' && !open;
 
+  // Tab screens: just above the tab bar (higher while the running-task bar
+  // shows). Every other screen has no tab bar but often a big button at the
+  // bottom (sticky footers, Focus's Finish), so sit clear above that.
+  const fabBottom = !TAB_SCREENS.has(planner.state.screen)
+    ? 'calc(var(--safe-bottom) + 120px)'
+    : raised ? 'calc(var(--tabbar-h) + 74px)' : 'calc(var(--tabbar-h) + 12px)';
+
   // "Hi! Ask me anything" bubble: once shortly after the app opens, then
   // every few minutes while on Home — never over an open chat, and not
   // again today once the student has actually opened the chat.
@@ -264,7 +273,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
         className="fab-btn"
         aria-label={t('chat.title')}
         style={{
-          position: 'absolute', right: 16, bottom: raised ? 'calc(var(--tabbar-h) + 74px)' : 'calc(var(--tabbar-h) + 12px)', width: 54, height: 54, borderRadius: '50%', padding: 2.5, boxSizing: 'border-box',
+          position: 'absolute', right: 16, bottom: fabBottom, width: 54, height: 54, borderRadius: '50%', padding: 2.5, boxSizing: 'border-box',
           background: 'linear-gradient(155deg,#8b6dff,#6d4dff)', cursor: 'pointer',
           boxShadow: '0 10px 28px rgba(109,77,255,.45), 0 0 0 1px rgba(255,255,255,.08) inset', zIndex: 45,
         }}
