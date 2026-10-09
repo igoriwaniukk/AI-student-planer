@@ -7,6 +7,7 @@ import WheelTimePicker from '../components/WheelTimePicker';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import TaskEditSheet from '../components/TaskEditSheet';
+import { PugImg } from '../components/PugMascot';
 
 const PREFS = ['Wolny wieczór', 'Najpierw najtrudniejsze', 'Więcej krótkich przerw'];
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -37,7 +38,7 @@ export default function Planner({ planner }) {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BackButton onClick={() => go('home')} />
         <span style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.12em', color: '#c9baff', padding: '8px 14px', borderRadius: 999, background: 'rgba(124,92,255,.16)', border: '1px solid rgba(124,92,255,.45)' }}>{t('planner.badge')}</span>
-        <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(150deg,#8b6dff,#6d4dff)' }} />
+        <div style={{ width: 40, height: 40, borderRadius: '50%', flex: 'none', overflow: 'hidden', boxShadow: '0 0 0 2px #8b6dff' }}><PugImg size={40} /></div>
       </div>
 
       <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 22 }}>{t('planner.title', { day: dayWord })}</div>
