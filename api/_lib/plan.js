@@ -1,3 +1,4 @@
+import { langName, isKnownLang } from './lang.js';
 import { anthropic, ANTHROPIC_MODEL, anthropicErrorResponse, NO_KEY_RESPONSE } from './anthropic.js';
 import { contextLines, taskExtras, fmt } from './context.js';
 
@@ -44,9 +45,9 @@ export const PLAN_TOOL = {
 };
 
 export function buildPlanSystemPrompt(lang) {
-  const respondIn = lang === 'en'
-    ? 'Respond in English: write the rationale and every focus text in English, even though these instructions are in Polish.'
-    : 'Odpowiadaj po polsku (uzasadnienie i opisy powtórek po polsku).';
+  const respondIn = !isKnownLang(lang) || lang === 'pl'
+    ? 'Odpowiadaj po polsku (uzasadnienie i opisy powtórek po polsku).'
+    : `Respond in ${langName(lang)}: write the rationale and every focus text in ${langName(lang)}, even though these instructions are in Polish.`;
   return [
     'Jesteś asystentem planującym dzień nauki ucznia. Na podstawie listy zadań, poziomu energii, preferencji ' +
       'ucznia oraz podanych w wiadomości użytkownika ograniczeń czasowych, ułóż sensowną kolejność i godziny startu ' +

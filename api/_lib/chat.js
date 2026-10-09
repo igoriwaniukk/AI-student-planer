@@ -1,6 +1,7 @@
 import { GOALS, IMPORTANCE_OPTIONS, ENERGY_OPTIONS, RECUR_DAYS } from '../../src/lib/plannerData.js';
 import { anthropic, ANTHROPIC_MODEL, anthropicErrorResponse, NO_KEY_RESPONSE } from './anthropic.js';
 import { aboutMeLines } from './context.js';
+import { langName } from './lang.js';
 
 export const CHAT_TOOLS = [
   {
@@ -89,15 +90,15 @@ export const CHAT_TOOLS = [
   },
 ];
 
-// The student may write in Polish or English whatever the app is set to:
-// answer in the language of their latest message, the app's language when
-// that's unclear (a single emoji, a name).
+// The student may write in any language whatever the app is set to: answer
+// in the language of their latest message, the app's language when that's
+// unclear (a single emoji, a name).
 export function buildChatSystemPrompt(context, lang) {
-  const appLang = lang === 'en' ? 'English' : 'Polish';
+  const appLang = langName(lang);
   const lines = [
     'Jesteś asystentem AI w aplikacji Pulgo (planer nauki dla uczniów). Pomagasz uczniowi planować naukę, ' +
       'przygotowywać się do sprawdzianów i radzić sobie z napiętymi dniami.',
-    `LANGUAGE: Always reply in the same language as the student's latest message (English or Polish), even though these instructions are in Polish. If the language of the message is unclear, reply in ${appLang} (the app's language).`,
+    `LANGUAGE: Always reply in the same language as the student's latest message, even though these instructions are in Polish. If the language of the message is unclear, reply in ${appLang} (the app's language).`,
     'Odpowiadaj konkretnie i zwięźle. Gdy to pomocne, odnoś się do danych ucznia podanych niżej.',
     'Gdy uczeń prosi o dodanie/zmianę sprawdzianu, oznaczenie sesji jako wykonanej, przełożenie sesji na inną ' +
       'godzinę, zapisanie poziomu energii albo dodanie cotygodniowego zajęcia — użyj odpowiedniej funkcji zamiast ' +

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ENERGY_OPTIONS, PREF_OPTIONS, STUDY_TIME_OPTIONS, PRIORITY_SUBJECT_OPTIONS, RECUR_DAYS, ACTIVITY_OPTIONS } from '../lib/plannerData';
-import { VALUE_KEY, DAY_KEY } from '../lib/i18n';
+import { VALUE_KEY, DAY_KEY, LANGS, LANG_NAMES } from '../lib/i18n';
 import { timeStrToMinutes } from '../lib/plannerLogic';
 import { useLang } from '../lib/useLang';
 import WheelTimePicker from '../components/WheelTimePicker';
@@ -24,9 +24,8 @@ function Chip({ label, active, onClick }) {
 function LanguagePicker() {
   const { lang, setLang } = useLang();
   return (
-    <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginBottom: 14 }}>
-      <Chip label="Polski" active={lang === 'pl'} onClick={() => setLang('pl')} />
-      <Chip label="English" active={lang === 'en'} onClick={() => setLang('en')} />
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end', marginBottom: 14 }}>
+      {LANGS.map((code) => <Chip key={code} label={LANG_NAMES[code]} active={lang === code} onClick={() => setLang(code)} />)}
     </div>
   );
 }

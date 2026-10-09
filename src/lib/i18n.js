@@ -1,8 +1,28 @@
-// Lightweight custom i18n: a flat PL/EN string dictionary plus {var}
-// interpolation. A full library (react-i18next etc.) would be overkill for
-// a two-language, non-pluralization-heavy app, and would add a dependency
-// on top of everything else already in this project.
-export const LANGS = ['pl', 'en'];
+import es from './locales/es.js';
+import pt from './locales/pt.js';
+import de from './locales/de.js';
+import fr from './locales/fr.js';
+import it from './locales/it.js';
+import zh from './locales/zh.js';
+import ja from './locales/ja.js';
+
+// Lightweight custom i18n: a flat string dictionary per language plus {var}
+// interpolation. Polish and English live here; the other languages are in
+// ./locales/ (same keys). Counted words use ".one/.few/.many" keys picked
+// by pluralForm (plannerLogic.js).
+export const LANGS = ['pl', 'en', 'es', 'pt', 'de', 'fr', 'it', 'zh', 'ja'];
+// Each language named in itself, as phone settings list them.
+export const LANG_NAMES = {
+  pl: 'Polski', en: 'English', es: 'Español', pt: 'Português', de: 'Deutsch',
+  fr: 'Français', it: 'Italiano', zh: '中文', ja: '日本語',
+};
+// For dates, times and plural rules (Intl).
+const LOCALES = {
+  pl: 'pl-PL', en: 'en-US', es: 'es-ES', pt: 'pt-PT', de: 'de-DE', fr: 'fr-FR', it: 'it-IT', zh: 'zh-CN', ja: 'ja-JP',
+};
+export function localeOf(lang) {
+  return LOCALES[lang] || LOCALES.en;
+}
 
 // A module-level mirror of the current language, kept in sync by
 // LanguageProvider. Plain formatting helpers like hm() in plannerLogic.js
@@ -496,6 +516,49 @@ export const dict = {
     'settings.reminders': 'Przypomnienia na telefonie',
     'settings.versionLabel': 'Wersja',
     'settings.account': 'Konto',
+    'sum.doneOfTotal': '{done} z {total} zaplanowanych na dziś zadań wykonane',
+    'unit.hr': 'godz.',
+    'count.tasks.one': '{n} zadanie',
+    'count.tasks.few': '{n} zadania',
+    'count.tasks.many': '{n} zadań',
+    'count.sessions.one': '{n} sesja',
+    'count.sessions.few': '{n} sesje',
+    'count.sessions.many': '{n} sesji',
+    'sum.doneShort.one': '{done} zadanie wykonane z {total}',
+    'sum.doneShort.few': '{done} zadania wykonane z {total}',
+    'sum.doneShort.many': '{done} zadań wykonanych z {total}',
+    'tl.fixedEvent': 'Zajęcia',
+    'tl.sleep': 'Sen',
+    'tl.fixedTime': 'Stała godzina',
+    'tl.gap': 'Przerwa',
+    'tl.restMin': '{n} min odpoczynku',
+    'tl.bufferTitle': 'Bufor przed zajęciami',
+    'tl.bufferSub': 'Przygotowanie i dotarcie na miejsce.',
+    'tl.afterActivityTitle': 'Po zajęciach',
+    'tl.rest': 'Odpoczynek',
+    'tl.eveningTitle': 'Wolny wieczór',
+    'tl.freeTime': 'Czas wolny',
+    'prepDef.material': 'Materiał do sprawdzianu',
+    'prepDef.basicsSuffix': ' — podstawy',
+    'prepDef.basicsType': 'Pierwszy kontakt',
+    'prepDef.basicsWhy': 'Najpierw uporządkujemy podstawowe pojęcia potrzebne do kolejnych tematów.',
+    'prepDef.introSuffix': ' — wprowadzenie',
+    'prepDef.exercisesSuffix': ' — ćwiczenia',
+    'prepDef.exercisesType': 'Ćwiczenia',
+    'prepDef.exercisesWhy': 'Pierwsze zadania pojawiają się po poznaniu tego tematu.',
+    'prepDef.lastType': 'Nowy materiał i ćwiczenia',
+    'prepDef.lastWhy': 'Łączymy ostatni temat z praktycznymi przykładami.',
+    'prepDef.mixedTitle.one': 'Zadania mieszane z {n} tematu',
+    'prepDef.mixedTitle.few': 'Zadania mieszane z {n} tematów',
+    'prepDef.mixedTitle.many': 'Zadania mieszane z {n} tematów',
+    'prepDef.mixedType': 'Utrwalenie',
+    'prepDef.mixedWhy': 'Ćwiczenia ze wszystkich tematów pokażą, które elementy wymagają poprawy.',
+    'prepDef.reviewTitle': 'Powtórka trudniejszych obszarów',
+    'prepDef.reviewType': 'Powtórka',
+    'prepDef.reviewWhy': 'Wracamy do tematów ocenionych najsłabiej podczas wcześniejszych ćwiczeń.',
+    'prepDef.testTitle': 'Krótki test przed sprawdzianem',
+    'prepDef.testType': 'Samosprawdzenie',
+    'prepDef.testWhy': 'Ostatniego dnia sprawdzisz gotowość bez przeciążania wieczoru.',
     'settings.title': 'Ustawienia',
     'settings.about': 'O Pulgo',
     'settings.version': 'Wersja {v}',
@@ -758,7 +821,6 @@ export const dict = {
     'sum.date': '{date}',
     'sum.subtitle': 'Sprawdź, co udało się zrobić i pomóż lepiej planować kolejne dni.',
     'sum.todayPlan': 'Dzisiejszy plan',
-    'sum.doneOfTotal': '{done} z {total} zaplanowanych na dziś zadań wykonane',
     'sum.movedTasks': '{n} świadomie {word}',
     'sum.movedOne': 'przeniesione', 'sum.movedMany': 'przeniesionych',
     'sum.plannedTime': 'Planowany czas nauki',
@@ -1389,6 +1451,49 @@ export const dict = {
     'settings.reminders': 'Phone reminders',
     'settings.versionLabel': 'Version',
     'settings.account': 'Account',
+    'sum.doneOfTotal': '{done} of {total} tasks planned for today done',
+    'unit.hr': 'hr',
+    'count.tasks.one': '{n} task',
+    'count.tasks.few': '{n} tasks',
+    'count.tasks.many': '{n} tasks',
+    'count.sessions.one': '{n} session',
+    'count.sessions.few': '{n} sessions',
+    'count.sessions.many': '{n} sessions',
+    'sum.doneShort.one': '{done} of {total} tasks planned for today done',
+    'sum.doneShort.few': '{done} of {total} tasks planned for today done',
+    'sum.doneShort.many': '{done} of {total} tasks planned for today done',
+    'tl.fixedEvent': 'Activity',
+    'tl.sleep': 'Sleep',
+    'tl.fixedTime': 'Fixed time',
+    'tl.gap': 'Break',
+    'tl.restMin': '{n} min rest',
+    'tl.bufferTitle': 'Buffer before activity',
+    'tl.bufferSub': 'Getting ready and traveling there.',
+    'tl.afterActivityTitle': 'After activity',
+    'tl.rest': 'Rest',
+    'tl.eveningTitle': 'Free evening',
+    'tl.freeTime': 'Free time',
+    'prepDef.material': 'Exam material',
+    'prepDef.basicsSuffix': ' — basics',
+    'prepDef.basicsType': 'First contact',
+    'prepDef.basicsWhy': "First we'll sort out the basic concepts needed for the following topics.",
+    'prepDef.introSuffix': ' — introduction',
+    'prepDef.exercisesSuffix': ' — exercises',
+    'prepDef.exercisesType': 'Exercises',
+    'prepDef.exercisesWhy': 'The first exercises come right after learning this topic.',
+    'prepDef.lastType': 'New material and exercises',
+    'prepDef.lastWhy': 'We combine the last topic with practical examples.',
+    'prepDef.mixedTitle.one': 'Mixed exercises from {n} topic',
+    'prepDef.mixedTitle.few': 'Mixed exercises from {n} topics',
+    'prepDef.mixedTitle.many': 'Mixed exercises from {n} topics',
+    'prepDef.mixedType': 'Reinforcement',
+    'prepDef.mixedWhy': 'Exercises covering every topic will show which parts need more work.',
+    'prepDef.reviewTitle': 'Review of harder areas',
+    'prepDef.reviewType': 'Review',
+    'prepDef.reviewWhy': 'We go back to the topics that scored weakest in earlier exercises.',
+    'prepDef.testTitle': 'Short test before the exam',
+    'prepDef.testType': 'Self-check',
+    'prepDef.testWhy': "On the last day you'll check your readiness without overloading the evening.",
     'settings.title': 'Settings',
     'settings.about': 'About Pulgo',
     'settings.version': 'Version {v}',
@@ -1610,7 +1715,6 @@ export const dict = {
     'sum.date': '{date}',
     'sum.subtitle': "Check what you got done and help plan future days better.",
     'sum.todayPlan': "Today's plan",
-    'sum.doneOfTotal': '{done} of {total} tasks planned for today done',
     'sum.movedTasks': '{n} {word}',
     'sum.movedOne': 'task deliberately moved', 'sum.movedMany': 'tasks deliberately moved',
     'sum.plannedTime': 'Planned study time',
@@ -1799,6 +1903,7 @@ export const dict = {
     'day.one': 'day',
     'day.many': 'days',
   },
+  es, pt, de, fr, it, zh, ja,
 };
 
 // Recurring-activity days and WEEK_DAYS labels are stored/matched as
@@ -1847,7 +1952,7 @@ export const TASK_TEXT_KEY = {
 
 export function translate(lang, key, vars) {
   const table = dict[lang] || dict.pl;
-  let str = table[key] ?? dict.pl[key] ?? key;
+  let str = table[key] ?? dict.en[key] ?? dict.pl[key] ?? key;
   if (vars) {
     Object.keys(vars).forEach((k) => {
       str = str.replace(new RegExp('\\{' + k + '\\}', 'g'), vars[k]);

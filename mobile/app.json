@@ -18,7 +18,14 @@
         "CFBundleAllowMixedLocalizations": true,
         "CFBundleLocalizations": [
           "pl",
-          "en"
+          "en",
+          "es",
+          "pt",
+          "de",
+          "fr",
+          "it",
+          "zh-Hans",
+          "ja"
         ],
         "CFBundleDevelopmentRegion": "pl"
       }

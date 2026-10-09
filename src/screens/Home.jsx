@@ -3,7 +3,7 @@ import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
 import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, planFor, draftFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, studiedToday, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn, offTrackReason, fmt } from '../lib/plannerLogic';
 import { iconForTask, iconForSubject } from '../lib/taskAuto';
 import { useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
-import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY, getCurrentLang } from '../lib/i18n';
+import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY, getCurrentLang, localeOf } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import WeekStrip from '../components/WeekStrip';
 import { useNow } from '../hooks/useNow';
@@ -179,7 +179,7 @@ function PastDayCard({ info, summary }) {
 }
 
 function NextSessionCard({ planner }) {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const { state, def, ts, startSession, update } = planner;
   const summary = state.daySummaries?.[localDateKey()];
   if (summary) return <DaySummarizedCard summary={summary} planner={planner} />;
@@ -210,7 +210,7 @@ function NextSessionCard({ planner }) {
         <>
           <div style={{ fontSize: 18, fontWeight: 750, letterSpacing: '-.01em' }}>{t('home.sessionsDoneTitle')}</div>
           <div style={{ fontSize: 12.5, color: '#a3a3b3', marginTop: 8, lineHeight: 1.45 }}>
-            {t('home.tasksLeft', { count: lang === 'en' ? open.length + (open.length === 1 ? ' task' : ' tasks') : zad(open.length), names })}
+            {t('home.tasksLeft', { count: zad(open.length), names })}
           </div>
           <div
             onClick={() => document.getElementById('today-tasks')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}
@@ -476,7 +476,7 @@ function WeekCard({ planner, streak }) {
   const { t } = useLang();
   const { days, total, tasksDone, subjects } = weekStats(planner.state);
   const max = Math.max(60, ...days.map((d) => d.minutes));
-  const fmt = new Intl.DateTimeFormat(getCurrentLang() === 'en' ? 'en-US' : 'pl-PL', { day: 'numeric', month: 'short' });
+  const fmt = new Intl.DateTimeFormat(localeOf(getCurrentLang()), { day: 'numeric', month: 'short' });
   const range = fmt.format(realDateForNum(days[0].num)) + ' – ' + fmt.format(realDateForNum(days[6].num));
   const stat = (value, label) => (
     <div>
@@ -570,7 +570,7 @@ function EnergyHistory({ energyLog }) {
         {todays.map((e, i) => (
           <div key={i} style={{ flex: 'none', textAlign: 'center', padding: '9px 12px', borderRadius: 13, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)' }}>
             <div style={{ fontSize: 16 }}>{ENERGY_EMOJI[e.level]}</div>
-            <div style={{ fontSize: 10.5, color: '#8a8a99', marginTop: 4 }}>{new Date(e.at).toLocaleTimeString(lang === 'en' ? 'en-US' : 'pl-PL', { hour: '2-digit', minute: '2-digit' })}</div>
+            <div style={{ fontSize: 10.5, color: '#8a8a99', marginTop: 4 }}>{new Date(e.at).toLocaleTimeString(localeOf(lang), { hour: '2-digit', minute: '2-digit' })}</div>
           </div>
         ))}
       </div>

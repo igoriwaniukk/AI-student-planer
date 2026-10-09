@@ -2,19 +2,12 @@ import { BackButton, StickyFooter, PrimaryButton, BottomSheet, OptionRow, Confir
 import { VALUE_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { NUM_TODAY } from '../lib/plannerData';
-import { weekdayDateLabel, formatMonthDay, daysUntilFromISODate } from '../lib/plannerLogic';
-
-function sesji(n) {
-  return n + (n === 1 ? ' sesja' : (n >= 2 && n <= 4 ? ' sesje' : ' sesji'));
-}
-function sessionsWord(n) {
-  return n + (n === 1 ? ' session' : ' sessions');
-}
+import { weekdayDateLabel, formatMonthDay, daysUntilFromISODate, pluralForm } from '../lib/plannerLogic';
 
 const CANDIDATE_TIMES = ['16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30', '20:00'];
 
 export default function Prep({ planner }) {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const {
     state, openSession, pickSessionDate, pickSessionTime, pickSessionDur, cancelSession, saveSession,
     askOnlyDeadline, backToPrep, saveOnlyDeadline, confirmPrep, goHomeDeadline, go,
@@ -32,7 +25,7 @@ export default function Prep({ planner }) {
   // state.prepDates — no separately-invented alternative dates needed.
   const dateOpts = [...new Set(SESSION_DATES)];
   const totalMin = SESSIONS.reduce((a, s) => a + parseInt(s.dur, 10), 0);
-  const hUnit = lang === 'en' ? 'hr' : 'godz.';
+  const hUnit = t('unit.hr');
   const totalLabel = totalMin >= 60 ? Math.floor(totalMin / 60) + ' ' + hUnit + (totalMin % 60 ? ' ' + (totalMin % 60) + ' min' : '') : totalMin + ' min';
   const daysUntil = daysUntilFromISODate(state.examDate) ?? 11;
   const examDay = NUM_TODAY + daysUntil;
@@ -53,7 +46,7 @@ export default function Prep({ planner }) {
       <div style={{ marginTop: 18, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.14)' }}>
         <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>{t('prep.ready')}</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
-          <span style={{ fontSize: 12, fontWeight: 650, color: '#c9baff', padding: '7px 11px', borderRadius: 9, background: 'rgba(124,92,255,.2)' }}>{lang === 'en' ? sessionsWord(SESSIONS.length) : sesji(SESSIONS.length)}</span>
+          <span style={{ fontSize: 12, fontWeight: 650, color: '#c9baff', padding: '7px 11px', borderRadius: 9, background: 'rgba(124,92,255,.2)' }}>{t('count.sessions.' + pluralForm(SESSIONS.length), { n: SESSIONS.length })}</span>
           <span style={{ fontSize: 12, fontWeight: 650, color: '#e2e2ea', padding: '7px 11px', borderRadius: 9, background: 'rgba(255,255,255,.07)' }}>{t('prep.studyLabel', { time: totalLabel })}</span>
           <span style={{ fontSize: 12, fontWeight: 650, color: '#e2e2ea', padding: '7px 11px', borderRadius: 9, background: 'rgba(255,255,255,.07)' }}>{t('prep.daysToExam', { n: daysUntil })}</span>
           <span style={{ fontSize: 12, fontWeight: 650, color: '#8ff0de', padding: '7px 11px', borderRadius: 9, background: 'rgba(46,230,197,.13)' }}>{t('prep.lastReview')}</span>

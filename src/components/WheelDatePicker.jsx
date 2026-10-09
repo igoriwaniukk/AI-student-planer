@@ -1,10 +1,15 @@
 import { useLang } from '../lib/useLang';
+import { localeOf } from '../lib/i18n';
 import { WheelColumn, ITEM_H, PAD } from './WheelTimePicker';
 
-const MONTH_NAMES = {
-  pl: ['Sty', 'Lut', 'Mar', 'Kwi', 'Maj', 'Cze', 'Lip', 'Sie', 'Wrz', 'Paź', 'Lis', 'Gru'],
-  en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-};
+// Short month names in the app's language ("Jan", "Sty", "ene", "1月"…).
+function monthNamesFor(lang) {
+  const fmt = new Intl.DateTimeFormat(localeOf(lang), { month: 'short' });
+  return Array.from({ length: 12 }, (_, i) => {
+    const name = fmt.format(new Date(2026, i, 15)).replace('.', '');
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  });
+}
 
 function daysInMonth(year, monthIdx) {
   return new Date(year, monthIdx + 1, 0).getDate();
@@ -26,7 +31,7 @@ function toISO(year, monthIdx, day) {
 // "pick a future date" notice) instead of being fought here.
 export default function WheelDatePicker({ value, onChange, minDate }) {
   const { lang } = useLang();
-  const monthNames = MONTH_NAMES[lang] || MONTH_NAMES.en;
+  const monthNames = monthNamesFor(lang);
   const now = new Date();
   const todayIso = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0') + '-' + String(now.getDate()).padStart(2, '0');
   const base = value || minDate || todayIso;

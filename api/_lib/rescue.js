@@ -1,3 +1,4 @@
+import { langName, isKnownLang } from './lang.js';
 import { anthropic, ANTHROPIC_MODEL, anthropicErrorResponse, NO_KEY_RESPONSE } from './anthropic.js';
 import { contextLines, taskExtras } from './context.js';
 
@@ -40,7 +41,7 @@ function fmt(totalMinutes) {
 }
 
 function buildRescueSystemPrompt(lang) {
-  const respondIn = lang === 'en' ? 'Respond in English.' : 'Odpowiadaj po polsku.';
+  const respondIn = !isKnownLang(lang) || lang === 'pl' ? 'Odpowiadaj po polsku.' : `Respond in ${langName(lang)}.`;
   return [
     'Uczniowi zostało dziś mniej czasu na naukę niż planowano. Twoim zadaniem jest "uratować dzień": zdecydować, które ' +
       'zadania nauki zostają dzisiaj (w pełnym albo skróconym wymiarze) i które trzeba bezpiecznie przenieść na inny dzień, ' +
