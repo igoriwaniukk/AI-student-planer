@@ -43,7 +43,7 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
 
   return (
     <>
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '56px 20px 116px', position: 'relative', zIndex: 1 }}>
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '16px 20px 116px', position: 'relative', zIndex: 1 }}>
       <BackButton onClick={() => go('home')} />
       <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>{t('sum.title')}</div>
       <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('sum.date', { date: weekdayDateLabel(NUM_TODAY) })}</div>
@@ -272,7 +272,7 @@ function DaySaved({ planner, summary, justSaved }) {
   const [planModalOpen, setPlanModalOpen] = useState(celebrate);
   const doneShort = t('sum.doneShort.' + pluralForm(doneCount), { done: doneCount, total: summary.total || 0 });
   return (
-    <div className="sc" style={{ position: 'absolute', inset: 0, zIndex: 80, background: '#08080c', overflowY: 'auto', padding: '80px 20px 40px' }}>
+    <div className="sc" style={{ position: 'absolute', inset: 0, zIndex: 80, background: '#08080c', overflowY: 'auto', padding: '40px 20px 40px' }}>
       {celebrate && <Confetti />}
       <div style={{ width: 52, height: 52, borderRadius: 17, background: 'rgba(124,92,255,.16)', border: '1px solid rgba(124,92,255,.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="20" height="15" viewBox="0 0 13 11" fill="none"><path d="M1 5.6L4.6 9.4 12 1.6" stroke="#a58cff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg></div>
       <div style={{ fontSize: 28, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>{t('sum.daySummarized')}</div>
