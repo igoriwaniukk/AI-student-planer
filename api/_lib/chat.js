@@ -1,5 +1,6 @@
 import { GOALS, IMPORTANCE_OPTIONS, ENERGY_OPTIONS, RECUR_DAYS } from '../../src/lib/plannerData.js';
 import { anthropic, ANTHROPIC_MODEL, anthropicErrorResponse, NO_KEY_RESPONSE } from './anthropic.js';
+import { aboutMeLines } from './context.js';
 
 export const CHAT_TOOLS = [
   {
@@ -128,6 +129,7 @@ export function buildChatSystemPrompt(context, lang) {
     if (context.energy) lines.push(`Aktualny poziom energii: ${context.energy}.`);
     if (context.studyTime) lines.push(`Uczeń najlepiej uczy się: ${context.studyTime}.`);
     if (context.prioritySubjects?.length) lines.push('Priorytetowe przedmioty: ' + context.prioritySubjects.join(', ') + '.');
+    lines.push(...aboutMeLines(context.aboutMe));
   }
   return lines.join('\n');
 }

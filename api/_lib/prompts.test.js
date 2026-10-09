@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { buildPlanUserMessage } from './plan.js';
 import { buildRescueUserMessage } from './rescue.js';
 import { buildPrepUserMessage } from './prep.js';
+import { buildChatSystemPrompt } from './chat.js';
+import { aboutMeLines } from './context.js';
 
 const context = {
   planDate: '2026-09-29', planWeekday: 'Wtorek', today: '2026-09-28',
@@ -51,5 +53,21 @@ describe('chat language', () => {
     expect(en).toContain('reply in English');
     expect(en).not.toMatch(/zawsze po polsku/);
     expect(buildChatSystemPrompt(null, 'pl')).toContain('reply in Polish');
+  });
+});
+
+describe('what Pulgo knows about the student', () => {
+  const aboutMe = { facts: ['Best time to study: Evening', 'Every week: School Mon–Fri'], note: 'I get tired after 2 hours.' };
+  it('goes into the plan, prep and chat prompts', () => {
+    const plan = buildPlanUserMessage(tasks, 'Normalna', 'Wolny wieczór', '', [], [], '', constraints, { ...context, aboutMe });
+    expect(plan).toContain('Profil ucznia: Best time to study: Evening; Every week: School Mon–Fri.');
+    expect(plan).toContain('I get tired after 2 hours.');
+    const prep = buildPrepUserMessage({ subject: 'Biologia', title: 'Cells', date: '2026-10-01', daysUntil: 3, topics: [] }, [], { exams: [], aboutMe });
+    expect(prep).toContain('I get tired after 2 hours.');
+    expect(buildChatSystemPrompt({ aboutMe }, 'en')).toContain('Every week: School Mon–Fri');
+  });
+  it('adds nothing when there is nothing to say', () => {
+    expect(aboutMeLines(null)).toEqual([]);
+    expect(aboutMeLines({ facts: [], note: null })).toEqual([]);
   });
 });

@@ -53,17 +53,17 @@ export function toValidatedExtras(extras, exams, schedule, taskDefs, constraints
 // unreachable, or proposes something invalid — callers use that as the
 // signal to fall back to the deterministic scheduler.
 export async function requestAIPlan(state) {
-  const { taskDefs, tasks, taskState, energy, pref, durOverride, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints, dayNum, recurringActivities, planNote } = state;
+  const { taskDefs, tasks, taskState, energy, pref, durOverride, activitiesSelected, prioritySubjects, studyTime, constraints, dayNum, recurringActivities, planNote, aboutMe } = state;
   const ids = activeIds(taskDefs, tasks, taskState, dayNum);
   if (!ids.length) return null;
   const items = ids.map((id) => taskForAI(state, taskDefs.find((t) => t.id === id), durOf(id, taskDefs, durOverride)));
-  const context = planningContextForAI(state, { dayNum, recurringActivities, note: planNote });
+  const context = planningContextForAI(state, { dayNum, recurringActivities, note: planNote, aboutMe });
 
   try {
     const res = await authedFetch('/api/plan/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tasks: items, energy, pref, activitiesNote, activitiesSelected, prioritySubjects, studyTime, constraints, context, lang: getCurrentLang() }),
+      body: JSON.stringify({ tasks: items, energy, pref, activitiesSelected, prioritySubjects, studyTime, constraints, context, lang: getCurrentLang() }),
     });
     if (!res.ok) return null;
     const data = await res.json();

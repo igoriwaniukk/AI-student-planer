@@ -15,6 +15,11 @@ a { color: #8b6dff; }
   justify-content: center;
 }
 
+:root { --tabbar-h: 88px; }
+/* Inside the iPhone app the shell already keeps clear of the home bar, so
+   the tab bar drops the empty strip it keeps for browsers. */
+.native-app { --tabbar-h: 64px; }
+
 .app-shell {
   width: 100%;
   max-width: 460px;

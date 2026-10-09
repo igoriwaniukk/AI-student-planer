@@ -193,7 +193,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
   function handleSend(text) {
     const toSend = text ?? input;
     if (!toSend.trim() || sending) return;
-    const context = buildChatContext({ state: planner.state, weeklyCapacity, profileDefaults, studyHistory });
+    const context = buildChatContext({ state: planner.state, weeklyCapacity, profileDefaults, studyHistory, aboutMe: planner.aboutMe });
     send(toSend, context);
     setInput('');
   }
@@ -249,7 +249,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
         <div
           onClick={openChat}
           style={{
-            position: 'absolute', right: 18, bottom: raised ? 224 : 162, zIndex: 45, maxWidth: 200, padding: '9px 12px', borderRadius: '14px 14px 4px 14px',
+            position: 'absolute', right: 18, bottom: raised ? 'calc(var(--tabbar-h) + 136px)' : 'calc(var(--tabbar-h) + 74px)', zIndex: 45, maxWidth: 200, padding: '9px 12px', borderRadius: '14px 14px 4px 14px',
             background: '#15112b', border: '1px solid rgba(139,109,255,.5)', boxShadow: '0 8px 22px rgba(0,0,0,.45)',
             fontSize: 12.5, fontWeight: 650, lineHeight: 1.35, color: '#e6dfff', cursor: 'pointer',
             animation: 'pugBubbleIn .28s cubic-bezier(.34,1.56,.64,1) both',
@@ -264,7 +264,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
         className="fab-btn"
         aria-label={t('chat.title')}
         style={{
-          position: 'absolute', right: 16, bottom: raised ? 162 : 100, width: 54, height: 54, borderRadius: '50%', padding: 2.5, boxSizing: 'border-box',
+          position: 'absolute', right: 16, bottom: raised ? 'calc(var(--tabbar-h) + 74px)' : 'calc(var(--tabbar-h) + 12px)', width: 54, height: 54, borderRadius: '50%', padding: 2.5, boxSizing: 'border-box',
           background: 'linear-gradient(155deg,#8b6dff,#6d4dff)', cursor: 'pointer',
           boxShadow: '0 10px 28px rgba(109,77,255,.45), 0 0 0 1px rgba(255,255,255,.08) inset', zIndex: 45,
         }}

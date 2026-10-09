@@ -7,6 +7,7 @@ import {
 import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, dayInfo, prepDayLabel, isTaskOn, taskDueOnDay, daySessionBreakdown, localDateKey, sessionDur, sessionClock, dayOpenTasks, timeStrToMinutes, roundedNowMinutes, planFor, draftFor, workingPlan, plannedElsewhere } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
 import { planningContextForAI, taskForAI, examsForAI, busyOnDay, weeklyActivitiesForAI, dateOf } from '../lib/aiContext';
+import { aboutMeForAI } from '../lib/aboutMe';
 import { requestAIPrep, toPrepCards } from '../lib/aiPrep';
 import { requestAIRescue } from '../lib/aiRescue';
 
@@ -78,11 +79,9 @@ export function initialState(defaults, activities, persisted) {
     planNote: '',
     energy: defaults?.energy || 'Normalna',
     pref: defaults?.pref || 'Wolny wieczór',
-    // Free-form context from onboarding (extracurriculars + note) — passed
-    // along to the AI plan/rescue requests (see requestAIPlan/requestAIRescue
-    // calls below) so it actually informs the generated plan instead of only
-    // ever being displayed back on the Profile screen.
-    activitiesNote: (activities?.note || '').trim(),
+    // What the student does (onboarding / Profile "I am") — passed along to
+    // the AI plan/rescue requests. Their own note travels in context.aboutMe
+    // (see aboutMeForAI). Kept in sync with Profile by the effect below.
     activitiesSelected: activities?.selected || [],
     prioritySubjects: defaults?.prioritySubjects || [],
     // "When do you study best?" from onboarding — a preference for the AI
@@ -303,6 +302,20 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     return { ...c, wakeMinutes: Math.max(c.wakeMinutes, roundedNowMinutes(), busyUntil) };
   }
 
+  // Profile edits reach the next AI request right away, not only after a
+  // reload (these used to be read once, when the planner started).
+  const profileKey = JSON.stringify([defaults?.studyTime, defaults?.prioritySubjects, activities?.selected]);
+  useEffect(() => {
+    update({
+      studyTime: defaults?.studyTime || 'Wieczorem',
+      prioritySubjects: defaults?.prioritySubjects || [],
+      activitiesSelected: activities?.selected || [],
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profileKey]);
+  // "What Pulgo knows about you" (Profile), sent with every AI request.
+  const aboutMe = aboutMeForAI({ activities, defaults, energy: state.energy, recurringActivities });
+
   useEffect(() => () => clearInterval(timerRef.current), []);
 
   // A draft waiting for review is re-laid out if a change to the real
@@ -462,7 +475,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     const day = dayNumOf(state);
     const planConstraints = day === NUM_TODAY ? todayFromNow() : constraints;
     const tasks = plannableTasks(state, day);
-    const work = requestAIPlan({ ...state, tasks, constraints: planConstraints, dayNum: day, recurringActivities });
+    const work = requestAIPlan({ ...state, tasks, constraints: planConstraints, dayNum: day, recurringActivities, aboutMe });
     runGen(PLAN_LABELS, (result, cur) => {
       const stale = cur.taskDefs.filter((d) => d.pendingDraft && d.day === day).map((d) => d.id);
       const s = { ...cur, ...withoutTasks(cur, stale) };
@@ -522,7 +535,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       daysUntil: examDay - NUM_TODAY, topics: state.topics.map((x) => x.trim()).filter(Boolean),
       difficulty: state.difficulty, level: LEVELS[state.level - 1] || '', goal: state.goal,
     };
-    const context = { exams: examsForAI(state), weeklyActivities: weeklyActivitiesForAI(recurringActivities) };
+    const context = { exams: examsForAI(state), weeklyActivities: weeklyActivitiesForAI(recurringActivities), aboutMe };
     const work = requestAIPrep({ exam, days, context });
     update({ deadlineFailed: false, sessionEdits: {} });
     runGen(PREP_LABELS, (result, s) => {
@@ -554,9 +567,9 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     const work = requestAIRescue({
       taskDefs: state.taskDefs, tasks: state.tasks, taskState: state.taskState, durOverride: state.durOverride,
       energy: state.rescueEnergy, availableMinutes, reasons: state.reasons, constraints: rescueConstraints,
-      activitiesNote: state.activitiesNote, activitiesSelected: state.activitiesSelected, prioritySubjects: state.prioritySubjects,
+      activitiesSelected: state.activitiesSelected, prioritySubjects: state.prioritySubjects,
       studyTime: state.studyTime,
-      context: planningContextForAI(state, { dayNum: NUM_TODAY, recurringActivities }),
+      context: planningContextForAI(state, { dayNum: NUM_TODAY, recurringActivities, aboutMe }),
       taskView: (d, dur) => taskForAI(state, d, dur),
     });
     runGen(RESCUE_LABELS, (result, s) => {
@@ -1293,7 +1306,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   }
 
   return {
-    state, constraints, constraintsFor, planDayNum, plannableTasks, update, def, ts, go,
+    state, aboutMe, constraints, constraintsFor, planDayNum, plannableTasks, update, def, ts, go,
     toggleTask, generatePlan, deadlineGenerate, rescueGenerate,
     startSession, togglePause, dismissBreakReminder, openFinish, cancelFinish, confirmFinish,
     openBlockEdit, moveBlockEdit, cancelBlockEdit, saveBlockEdit, removeBlock,

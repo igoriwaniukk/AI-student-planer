@@ -21,7 +21,7 @@ export default function RunningSessionBar({ planner }) {
     <div
       onClick={() => go('focus')}
       style={{
-        position: 'absolute', left: 12, right: 12, bottom: 96, zIndex: 44, height: 58, padding: '0 8px 0 12px', borderRadius: 18, cursor: 'pointer',
+        position: 'absolute', left: 12, right: 12, bottom: 'calc(var(--tabbar-h) + 8px)', zIndex: 44, height: 58, padding: '0 8px 0 12px', borderRadius: 18, cursor: 'pointer',
         display: 'flex', alignItems: 'center', gap: 11, background: 'rgba(28,22,52,.96)', border: '1px solid rgba(139,109,255,.45)',
         boxShadow: '0 10px 28px rgba(0,0,0,.45)', backdropFilter: 'blur(8px)', animation: 'fadeUp .25s ease both',
       }}

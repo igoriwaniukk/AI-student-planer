@@ -95,12 +95,6 @@ export function useEnergyLog() {
   return useLocalStorage(KEYS.energyLog, []);
 }
 
-// Lifetime number of energy check-ins — the log itself keeps only the last
-// 30, so points can't be counted from its length.
-export function useEnergyCheckinCount() {
-  return useLocalStorage(KEYS.energyCheckinCount, 0);
-}
-
 // Real-world log of completed-study days, keyed by real ISO date, used for
 // streaks and the weekly review: { "2026-09-04": { plannedMin, actualMin, completed } }.
 export function useStudyHistory() {
@@ -112,12 +106,6 @@ export function useStudyHistory() {
 // weekday name against every week rather than a single calendar date.
 export function useRecurringActivities() {
   return useLocalStorage(KEYS.recurringActivities, []);
-}
-
-// Ids of achievements already shown as a celebratory popup — so an unlocked
-// achievement is announced once, not on every reload.
-export function useSeenAchievements() {
-  return useLocalStorage(KEYS.seenAchievements, []);
 }
 
 // The streak value last shown to the student — compared against the live

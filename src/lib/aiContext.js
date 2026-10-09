@@ -105,7 +105,7 @@ export function taskForAI(state, d, dur) {
 }
 
 // The whole picture for planning `dayNum` (today or tomorrow).
-export function planningContextForAI(state, { dayNum, recurringActivities, note }) {
+export function planningContextForAI(state, { dayNum, recurringActivities, note, aboutMe = null }) {
   const otherDay = dayNum === NUM_TODAY ? NUM_TODAY + 1 : NUM_TODAY;
   const defs = state.taskDefs || [];
   const label = (d) => (d.subject ? d.subject + ' — ' : '') + d.title;
@@ -115,6 +115,7 @@ export function planningContextForAI(state, { dayNum, recurringActivities, note 
     planWeekday: dayInfo(dayNum).label,
     today: dateOf(NUM_TODAY),
     note: note && String(note).trim() ? String(note).trim().slice(0, 600) : null,
+    aboutMe,
     exams: examsForAI(state, dayNum),
     todos: defs
       .filter((d) => d.category === 'personal' && taskDueOnDay(d, dayNum) && !isTaskOn(state.tasks || {}, d, dayNum))

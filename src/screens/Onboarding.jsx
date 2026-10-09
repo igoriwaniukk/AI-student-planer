@@ -1,18 +1,10 @@
 import { useState } from 'react';
-import { ENERGY_OPTIONS, PREF_OPTIONS, STUDY_TIME_OPTIONS, PRIORITY_SUBJECT_OPTIONS, RECUR_DAYS } from '../lib/plannerData';
+import { ENERGY_OPTIONS, PREF_OPTIONS, STUDY_TIME_OPTIONS, PRIORITY_SUBJECT_OPTIONS, RECUR_DAYS, ACTIVITY_OPTIONS } from '../lib/plannerData';
 import { VALUE_KEY, DAY_KEY } from '../lib/i18n';
 import { timeStrToMinutes } from '../lib/plannerLogic';
 import { useLang } from '../lib/useLang';
 import WheelTimePicker from '../components/WheelTimePicker';
 
-const ACTIVITY_OPTIONS = [
-  'Szkoła / liceum',
-  'Korepetycje',
-  'Kółko naukowe',
-  'Sport / treningi',
-  'Praca',
-  'Kurs językowy',
-];
 
 const TOTAL_STEPS = 6;
 

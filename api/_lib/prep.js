@@ -1,5 +1,5 @@
 import { anthropic, ANTHROPIC_MODEL, anthropicErrorResponse, NO_KEY_RESPONSE } from './anthropic.js';
-import { examLines, fmt } from './context.js';
+import { examLines, aboutMeLines, fmt } from './context.js';
 
 // Plans the study sessions for a newly added exam across the days before it,
 // around the student's real days (free time, fixed activities, sessions
@@ -69,6 +69,7 @@ export function buildPrepUserMessage(exam, days, context) {
   if (context) {
     lines.push(...examLines((context.exams || []), { planDayLabel: 'dzisiejszym' }).map((l) => l.replace('Nadchodzące sprawdziany ucznia', 'Inne sprawdziany ucznia')));
     if (context.note) lines.push(`Uwaga ucznia: ${str(context.note, 400)}`);
+    lines.push(...aboutMeLines(context.aboutMe));
   }
   return lines.join('\n');
 }

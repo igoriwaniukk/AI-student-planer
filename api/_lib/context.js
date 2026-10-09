@@ -37,10 +37,22 @@ export function examLines(exams, { planDayLabel = 'planowanego dnia' } = {}) {
   return lines;
 }
 
+// "What Pulgo knows about you" from Profile: facts built from the student's
+// settings (in the app's language) and their own note about themselves.
+export function aboutMeLines(aboutMe) {
+  if (!aboutMe || typeof aboutMe !== 'object') return [];
+  const lines = [];
+  const facts = list(aboutMe.facts, 12).map((f) => str(f, 160)).filter(Boolean);
+  if (facts.length) lines.push(`Profil ucznia: ${facts.join('; ')}.`);
+  if (aboutMe.note) lines.push(`Uczeń napisał o sobie (zawsze bierz to pod uwagę): ${str(aboutMe.note, 600)}`);
+  return lines;
+}
+
 export function contextLines(context) {
   if (!context || typeof context !== 'object') return [];
   const lines = [];
   if (context.planDate) lines.push(`Planowany dzień: ${str(context.planDate, 10)}${context.planWeekday ? ` (${str(context.planWeekday, 20)})` : ''}; dzisiaj jest ${str(context.today, 10)}.`);
+  lines.push(...aboutMeLines(context.aboutMe));
   if (context.note) lines.push(`Uwaga ucznia do tego planu (ważne — uwzględnij ją): ${str(context.note, 600)}`);
   lines.push(...examLines(context.exams, { planDayLabel: 'planowanego' }));
   const todos = list(context.todos, 15);

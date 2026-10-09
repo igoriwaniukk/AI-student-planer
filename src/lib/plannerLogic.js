@@ -629,17 +629,6 @@ export function localDateKey(d = new Date()) {
   return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
 }
 
-// A simple, transparent points score derived from real persisted history —
-// not a separately mutable counter — so it never drifts out of sync with
-// what actually happened: 20 pts per fully-completed study day, 2 pts per
-// energy check-in.
-export function computeTotalPoints(studyHistory, energyLog, checkinCount = 0) {
-  const completedDays = Object.values(studyHistory || {}).filter((e) => e.completed).length;
-  // The log is capped at 30 entries; the lifetime count keeps growing.
-  const checkins = Math.max(checkinCount || 0, (energyLog || []).length);
-  return completedDays * 20 + checkins * 2;
-}
-
 // Planned vs. actual study time over the last 7 real-world days.
 export function weeklyReview(studyHistory) {
   const entries = [];

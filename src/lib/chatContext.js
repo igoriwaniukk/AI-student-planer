@@ -4,7 +4,7 @@ import { NUM_TODAY } from './plannerData';
 // Compact snapshot of the student's plan/goals sent to the AI chat backend
 // with each message, instead of the full app state (keeps the request small
 // and avoids sending data the assistant has no use for).
-export function buildChatContext({ state, weeklyCapacity, profileDefaults, studyHistory }) {
+export function buildChatContext({ state, weeklyCapacity, profileDefaults, studyHistory, aboutMe = null }) {
   const exams = upcomingExams(state)
     .filter((e) => e.daysUntil >= 0)
     .slice(0, 5)
@@ -44,5 +44,6 @@ export function buildChatContext({ state, weeklyCapacity, profileDefaults, study
     streak: computeStreak(studyHistory || {}),
     studyTime: profileDefaults?.studyTime,
     prioritySubjects: profileDefaults?.prioritySubjects || [],
+    aboutMe,
   };
 }

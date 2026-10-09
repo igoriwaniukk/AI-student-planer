@@ -100,6 +100,8 @@ export const PRIORITY_SUBJECT_OPTIONS = SUBJECTS.filter((s) => s !== 'Inny');
 export const GOALS = ['Zaliczyć', 'Ocena co najmniej 3', 'Ocena co najmniej 4', 'Ocena co najmniej 5', 'Bez konkretnego celu'];
 export const IMPORTANCE_OPTIONS = ['Niski', 'Średni', 'Wysoki'];
 export const LEVELS = ['Nie znam', 'Znam podstawy', 'Średnio', 'Dobrze', 'Bardzo dobrze'];
+// "What do you do besides studying?" (onboarding, Profile "I am").
+export const ACTIVITY_OPTIONS = ['Szkoła / liceum', 'Korepetycje', 'Kółko naukowe', 'Sport / treningi', 'Praca', 'Kurs językowy'];
 export const KINDS = ['Sprawdzian', 'Kartkówka', 'Praca domowa', 'Projekt', 'Prezentacja', 'Egzamin próbny'];
 
 // Loading-step captions for GeneratingOverlay — i18n keys, not raw text,
