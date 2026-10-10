@@ -1,7 +1,8 @@
-// Renders scenes/*.html to 1080x1920 60 fps MP4s in out/.
+﻿// Renders scenes/*.html to 1080x1920 60 fps MP4s in out/.
 //   node render.mjs                 all scenes
 //   node render.mjs restart plan    only these
 //   node render.mjs restart --sheet  a contact sheet of frames instead of a video (quick check)
+//   node render.mjs week --still=2 --query=v=B   one 1080x1920 PNG at t=2 s, with a URL query for the scene
 // Needs ffmpeg on PATH (or FFMPEG=path) and Playwright's Chromium (npx playwright install chromium).
 import { chromium } from 'playwright';
 import { createServer } from 'node:http';
@@ -15,6 +16,8 @@ const FPS = 60, HOLD = 0.6;
 const FFMPEG = process.env.FFMPEG || 'ffmpeg';
 const args = process.argv.slice(2);
 const sheet = args.includes('--sheet');
+const still = args.find((a) => a.startsWith('--still='))?.slice(8); // --still=<seconds>
+const query = args.find((a) => a.startsWith('--query='))?.slice(8) || ''; // --query=v=B
 let names = args.filter((a) => !a.startsWith('--'));
 if (!names.length) names = (await readdir(join(root, 'scenes'))).filter((f) => f.endsWith('.html')).map((f) => f.slice(0, -5));
 
@@ -33,9 +36,17 @@ const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 540, height: 960 }, deviceScaleFactor: 2 });
 
 for (const name of names) {
-  await page.goto(`http://localhost:${port}/scenes/${name}.html`);
+  await page.goto(`http://localhost:${port}/scenes/${name}.html?${query}`);
   await page.evaluate(() => window.ready);
   const duration = await page.evaluate(() => window.DURATION);
+
+  if (still !== undefined) {
+    await page.evaluate((t) => window.seek(t), Number(still));
+    const file = `out/${name}${query ? '-' + query.replace(/\W/g, '') : ''}.png`;
+    await page.screenshot({ path: join(root, file) });
+    console.log(file);
+    continue;
+  }
 
   if (sheet) {
     const shots = [];
