@@ -29,11 +29,12 @@ const BEFORE_LOAD = `
   true;
 `;
 // No pinch zoom or zoom-on-focus, no long-press link previews/callouts.
+// viewport-fit=cover keeps the page's safe-area insets (status bar, home bar).
 const AFTER_LOAD = `
   (function () {
     var meta = document.querySelector('meta[name=viewport]');
     if (!meta) { meta = document.createElement('meta'); meta.name = 'viewport'; document.head.appendChild(meta); }
-    meta.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no';
+    meta.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
     var style = document.createElement('style');
     style.textContent = '*{-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}';
     document.head.appendChild(style);
