@@ -981,4 +981,10 @@ export default {
   "premium.settingsActive": "Premium 已开通 ✓",
   "premium.manage": "管理订阅",
   "premium.restorePurchases": "恢复购买",
+  "cal.dayView": "日",
+  "cal.weekView": "周",
+  "cal.planThisDay": "+ 规划这一天",
+  "cal.planLater": "可在前一天规划",
+  "cal.nothingPlanned": "暂无安排",
+  "cal.testLabel": "考试",
 };
