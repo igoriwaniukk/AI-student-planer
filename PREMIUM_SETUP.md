@@ -72,3 +72,14 @@ Install the new build from **TestFlight**, set `PREMIUM_ENABLED=true` in Vercel 
 4. Keep **`PREMIUM_ENABLED=true`** in Vercel (Redeploy) so the reviewer sees Premium. People still on 1.0 will see "Update Pulgo from the App Store to get Premium" if they hit a limit, for the day or two until 1.1 is out.
 
 To switch Premium off again at any time: set `PREMIUM_ENABLED` to `false` and Redeploy. Everyone is unlimited again straight away.
+
+---
+
+## Coming with 1.1 too: block social media during a session (Premium)
+Agreed: during a study session Premium students can block the apps they choose (Instagram, TikTok, YouTube…), using Apple's Screen Time (Family Controls). It needs native code in the iPhone app and a new build, so it ships with 1.1.
+
+**Do this now, because Apple's approval can take days to weeks:**
+1. Go to **developer.apple.com/contact/request/family-controls-distribution** (signed in with your developer account).
+2. App: **Pulgo**, bundle ID `com.igoriwaniuk.pulgo`.
+3. Describe the use in plain words, e.g.: "Pulgo is a study planner. During a study session the student can choose apps to block (with Apple's FamilyActivityPicker) so they can focus; the block ends when the session ends. The student is always in control and can stop it."
+4. Submit, and wait for Apple's email. Until it's approved, blocking only works in development builds, not in the App Store.
