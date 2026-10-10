@@ -87,12 +87,6 @@ export function detectTaskMeta(name) {
 
 // A topic-relevant emoji for a saved task — subject-based for school tasks,
 // keyword-based (falling back to a generic note icon) for personal ones.
-// Which animated focus-ring icon each subject gets (see SubjectArt.jsx).
-export const SUBJECT_ART = {
-  Matematyka: 'math', Biologia: 'dna', Angielski: 'speech', Polski: 'book', Historia: 'scroll',
-  Geografia: 'globe', Fizyka: 'atom', Chemia: 'tube', Inny: 'book',
-};
-
 export function iconForSubject(subject) {
   return SUBJECT_ICON[subject] || '📘';
 }
