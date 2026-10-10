@@ -7,14 +7,48 @@
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <script>
-      // The iPhone app rewrites this tag after load (to turn off pinch zoom);
-      // keep viewport-fit=cover in it, or the page loses the status-bar inset.
+      // The iPhone app rewrites the viewport tag after load (to turn off
+      // pinch zoom); keep viewport-fit=cover in it, so iOS keeps telling the
+      // page how tall the status bar is.
       (function () {
         var m = document.querySelector('meta[name=viewport]');
-        if (!m || !window.MutationObserver) return;
-        new MutationObserver(function () {
-          if (m.content.indexOf('viewport-fit=cover') < 0) m.content += ', viewport-fit=cover';
-        }).observe(m, { attributes: true, attributeFilter: ['content'] });
+        if (m) {
+          var fix = function (v) { v = String(v || ''); return v.indexOf('viewport-fit=cover') < 0 ? v + ', viewport-fit=cover' : v; };
+          try {
+            Object.defineProperty(m, 'content', {
+              configurable: true,
+              get: function () { return m.getAttribute('content') || ''; },
+              set: function (v) { m.setAttribute('content', fix(v)); },
+            });
+          } catch (e) { /* old browser */ }
+          if (window.MutationObserver) {
+            new MutationObserver(function () {
+              var c = m.getAttribute('content') || '';
+              if (c.indexOf('viewport-fit=cover') < 0) m.setAttribute('content', fix(c));
+            }).observe(m, { attributes: true, attributeFilter: ['content'] });
+          }
+        }
+        // Inside the iPhone app the page must start below the status bar.
+        // Newer app builds pass the exact height; otherwise, if iOS still
+        // reports 0, use the usual height for this iPhone size. Only the top
+        // is set: the bottom is fine as it is.
+        var app = window.PulgoNative;
+        if (!app || app.platform !== 'ios') return;
+        var root = document.documentElement;
+        function apply() {
+          if (app.safeArea && app.safeArea.top > 0) { root.style.setProperty('--safe-top', app.safeArea.top + 'px'); return; }
+          var probe = document.createElement('div');
+          probe.style.cssText = 'position:fixed;left:0;top:0;width:1px;visibility:hidden;height:env(safe-area-inset-top,0px)';
+          document.body.appendChild(probe);
+          var envTop = probe.getBoundingClientRect().height;
+          probe.remove();
+          if (envTop > 0) { root.style.removeProperty('--safe-top'); return; }
+          var h = Math.max(screen.width, screen.height);
+          var top = { 956: 62, 874: 62, 932: 59, 852: 59, 926: 47, 844: 47, 896: 48, 812: 47 }[h] || (h >= 812 ? 47 : 20);
+          root.style.setProperty('--safe-top', top + 'px');
+        }
+        if (document.body) apply(); else document.addEventListener('DOMContentLoaded', apply);
+        window.addEventListener('load', function () { setTimeout(apply, 300); });
       })();
     </script>
     <meta name="theme-color" content="#08080c" />
