@@ -111,7 +111,7 @@ export default function Paywall({ reason, onClose }) {
     <AppShellPortal>
       <div style={{ position: 'absolute', inset: 0, zIndex: 95, background: '#08080c', animation: 'fadeUp .3s ease both' }}>
         <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(80% 45% at 75% 30%,rgba(124,92,255,.42),transparent 70%),radial-gradient(60% 30% at 0% 0%,rgba(139,109,255,.22),transparent 70%)' }} />
-        <div className="sc" style={{ position: 'relative', height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: 'calc(var(--safe-top) + 14px) 20px calc(var(--safe-bottom) + 18px)', boxSizing: 'border-box' }}>
+        <div className="sc" style={{ position: 'relative', height: '100%', overflowY: 'auto', display: 'flex', flexDirection: 'column', padding: 'var(--top-pad) 20px calc(var(--safe-bottom) + 18px)', boxSizing: 'border-box' }}>
           <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
             <div onClick={onClose} aria-label="Close" style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#c9c9d6', fontSize: 15, cursor: 'pointer' }}>✕</div>
           </div>

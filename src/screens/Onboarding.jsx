@@ -126,7 +126,7 @@ export default function Onboarding({ onComplete }) {
   }
 
   return (
-    <div className="app-shell sc" style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', padding: 'calc(var(--safe-top) + 16px) 20px calc(var(--safe-bottom) + 24px)' }}>
+    <div className="app-shell sc" style={{ display: 'flex', flexDirection: 'column', overflowY: 'auto', padding: 'var(--top-pad) 20px calc(var(--safe-bottom) + 24px)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, minHeight: 34 }}>
         <Progress step={step} />
         {step === 0 && <LanguageButton />}
