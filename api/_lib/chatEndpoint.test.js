@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import handler from './chat.js';
-import { handleChat } from './_lib/chat.js';
-import { authGateEnabled } from './_lib/auth.js';
+import handler from '../chat.js';
+import { handleChat } from './chat.js';
+import { authGateEnabled } from './auth.js';
 
 function call(method, body) {
   const out = {};
