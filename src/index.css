@@ -19,6 +19,11 @@ a { color: #8b6dff; }
   /* The phone's status bar and home bar: the iPhone app draws the site edge
      to edge, so the site leaves this room itself (0 elsewhere). */
   --safe-top: env(safe-area-inset-top, 0px);
+  /* Where screens start: below the status bar plus a breathing gap. The
+     extra min(…) gap only exists when there is a status bar (iPhone app),
+     so the website in a browser keeps its plain 16px. */
+  --top-gap: min(var(--safe-top), 16px);
+  --top-pad: calc(var(--safe-top) + var(--top-gap) + 16px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --tabbar-h: calc(64px + var(--safe-bottom));
 }
@@ -34,11 +39,11 @@ a { color: #8b6dff; }
 
 /* Every screen starts below the status bar and can scroll clear of the home
    bar; a dark strip keeps the clock readable over scrolled content. */
-.app-shell > .sc { padding-top: calc(var(--safe-top) + 16px) !important; }
+.app-shell > .sc { padding-top: var(--top-pad) !important; }
 .app-shell > .sc::after { content: ''; display: block; flex: none; height: var(--safe-bottom); }
 .app-shell::before {
-  content: ''; position: absolute; left: 0; right: 0; top: 0; height: var(--safe-top);
-  background: #08080c; z-index: 70; pointer-events: none;
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: calc(var(--safe-top) + var(--top-gap));
+  background: linear-gradient(to bottom, #08080c calc(100% - var(--top-gap)), rgba(8, 8, 12, 0)); z-index: 70; pointer-events: none;
 }
 
 .sc { scrollbar-width: none; }
