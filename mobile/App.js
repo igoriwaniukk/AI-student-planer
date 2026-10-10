@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AppState, BackHandler, Linking, Platform, StyleSheet, View } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView, initialWindowMetrics } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { WebView } from 'react-native-webview';
 import * as SplashScreen from 'expo-splash-screen';
@@ -24,8 +24,15 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 const LANG_KEY = 'pulgo.lang';
 
+// safeArea: the status bar / home bar heights, so the page doesn't depend
+// on iOS reporting them through CSS (see index.html in the web app).
+const INSETS = initialWindowMetrics?.insets || {};
 const BEFORE_LOAD = `
-  window.PulgoNative = { platform: ${JSON.stringify(Platform.OS)}, version: ${JSON.stringify(APP_VERSION)} };
+  window.PulgoNative = {
+    platform: ${JSON.stringify(Platform.OS)},
+    version: ${JSON.stringify(APP_VERSION)},
+    safeArea: ${JSON.stringify({ top: Math.round(INSETS.top || 0), bottom: Math.round(INSETS.bottom || 0) })},
+  };
   true;
 `;
 // No pinch zoom or zoom-on-focus, no long-press link previews/callouts.
