@@ -37,6 +37,43 @@ function defaultExamDateISO() {
   return localDateKey(d);
 }
 
+// The add-exam form (Deadline → Prep screens) as it looks for a new exam.
+// Used when the app starts, when "Add exam" is opened, and after an exam is
+// saved, so the next one starts empty instead of showing the last one.
+// Empty topics rather than a demo list — buildPrepSessions falls back to a
+// generic placeholder topic on its own, and deadlineGenerate() replaces it
+// with the student's own topics anyway.
+export function freshExamForm() {
+  const prepSessions = buildPrepSessions([], 'Średni');
+  return {
+    kind: 'Sprawdzian',
+    subject: 'Matematyka',
+    subjectsOpen: false,
+    goal: 'Ocena co najmniej 4',
+    goalsOpen: false,
+    nameValue: '',
+    examDate: defaultExamDateISO(),
+    examTime: '09:00',
+    topics: [],
+    topicErr: false,
+    difficulty: 'Średni',
+    level: 2,
+    autoPlan: true,
+    deadlineFailed: false,
+    deadlineOnlySaved: false,
+    onlyDeadlineAsk: false,
+    prepSaved: false,
+    prepSessions,
+    prepDates: buildPrepDates(prepSessions.length),
+    prepDayNums: buildPrepDayNums(prepSessions.length),
+    prepRationale: null,
+    sessionOpen: false,
+    sessionIdx: 0,
+    sessionMessage: '',
+    sessionEdits: {},
+  };
+}
+
 // Removes task definitions and their on/off and status entries.
 function withoutTasks(s, ids) {
   const drop = new Set(ids);
@@ -47,11 +84,6 @@ function withoutTasks(s, ids) {
 }
 
 export function initialState(defaults, activities, persisted) {
-  // Empty rather than a fixed demo topic list — buildPrepSessions falls back
-  // to a generic placeholder topic on its own when given none, and this is
-  // overwritten for real once deadlineGenerate() runs off the student's own
-  // topics anyway (see the Deadline screen).
-  const initialPrepSessions = buildPrepSessions([], 'Średni');
   const base = {
     screen: 'home',
     generating: false,
@@ -135,31 +167,7 @@ export function initialState(defaults, activities, persisted) {
     energySheet: false,
     energyDraft: 'Normalna',
 
-    kind: 'Sprawdzian',
-    subject: 'Matematyka',
-    subjectsOpen: false,
-    goal: 'Ocena co najmniej 4',
-    goalsOpen: false,
-    nameValue: '',
-    examDate: defaultExamDateISO(),
-    examTime: '09:00',
-    topics: [],
-    topicErr: false,
-    difficulty: 'Średni',
-    level: 2,
-    autoPlan: true,
-    deadlineFailed: false,
-    deadlineOnlySaved: false,
-    onlyDeadlineAsk: false,
-    prepSaved: false,
-    prepSessions: initialPrepSessions,
-    prepDates: buildPrepDates(initialPrepSessions.length),
-    prepDayNums: buildPrepDayNums(initialPrepSessions.length),
-
-    sessionOpen: false,
-    sessionIdx: 0,
-    sessionMessage: '',
-    sessionEdits: {},
+    ...freshExamForm(),
 
     // Per-task end-of-session review data (actual minutes spent, how hard it
     // felt, how well it's now known) — keyed by task id so it covers however
@@ -1012,7 +1020,11 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     deadlineGenerate();
   }
   function goHomeDeadline() {
-    update({ deadlineOnlySaved: false, prepSaved: false, screen: 'home' });
+    update({ ...freshExamForm(), screen: 'home' });
+  }
+  // "Add exam" from anywhere: always a blank form, never the last exam.
+  function startNewExam() {
+    update({ ...freshExamForm(), screen: 'deadline' });
   }
 
   // ---- prep plan ----
@@ -1317,7 +1329,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
 
   return {
     state, aboutMe, constraints, constraintsFor, planDayNum, plannableTasks, update, def, ts, go,
-    toggleTask, generatePlan, deadlineGenerate, rescueGenerate,
+    toggleTask, generatePlan, deadlineGenerate, rescueGenerate, startNewExam,
     startSession, togglePause, dismissBreakReminder, openFinish, cancelFinish, confirmFinish,
     openBlockEdit, moveBlockEdit, cancelBlockEdit, saveBlockEdit, removeBlock,
     addSessionMinute, completeSession, openTaskEdit, openNewTaskEdit, patchTaskEdit, stepTaskDur, cancelTaskEdit, saveTaskEdit, removeTaskDef,
