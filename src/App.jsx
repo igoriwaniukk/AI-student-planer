@@ -396,7 +396,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
         open={quickAddOpen}
         initialMode={quickAddMode}
         onClose={() => { setQuickAddOpen(false); setQuickAddMode('menu'); }}
-        onAddExam={() => planner.go('deadline')}
+        onAddExam={planner.startNewExam}
         recurringActivities={recurringActivities}
         setRecurringActivities={setRecurringActivities}
       />

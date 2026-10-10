@@ -276,7 +276,7 @@ function ActivityEditor({ group, line, onSave, onDelete, onClose }) {
 export default function Plans({ planner, recurringActivities, setRecurringActivities, onAddActivity }) {
   const { t } = useLang();
   const days = useDayNames();
-  const { state, go, removeCustomExam, removeTaskDef, openTaskEdit, openNewTaskEdit } = planner;
+  const { state, go, removeCustomExam, removeTaskDef, openTaskEdit, openNewTaskEdit, startNewExam } = planner;
   const [openRow, setOpenRow] = useState(null);
   const [adding, setAdding] = useState(false);
   const [examOpen, setExamOpen] = useState(null);
@@ -324,7 +324,7 @@ export default function Plans({ planner, recurringActivities, setRecurringActivi
 
         <Panel kind="exam" title={t('plans.exams')} count={exams.length}>
           {exams.length === 0
-            ? <Empty kind="exam" text={t('plans.emptyExams')} button={t('plans.addExamBtn')} onClick={() => go('deadline')} />
+            ? <Empty kind="exam" text={t('plans.emptyExams')} button={t('plans.addExamBtn')} onClick={startNewExam} />
             : (
               <div className="sc" style={{ display: 'flex', gap: 12, overflowX: 'auto', scrollSnapType: 'x mandatory', margin: '0 -14px', padding: '0 14px', scrollPaddingLeft: 14 }}>
                 {exams.map((e) => <ExamCard key={e.id} e={e} state={state} wide={exams.length === 1} onClick={() => setExamOpen(e.id)} />)}
@@ -426,7 +426,7 @@ export default function Plans({ planner, recurringActivities, setRecurringActivi
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 16, paddingBottom: 6 }}>
             {[
-              { kind: 'exam', label: t('plans.addExam'), onClick: () => go('deadline') },
+              { kind: 'exam', label: t('plans.addExam'), onClick: startNewExam },
               { kind: 'act', label: t('plans.addActivity'), onClick: onAddActivity },
               { kind: 'task', label: t('plans.addTask'), onClick: () => openNewTaskEdit(NUM_TODAY) },
             ].map((o) => {
