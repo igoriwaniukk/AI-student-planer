@@ -10,9 +10,7 @@ describe('add-exam form', () => {
 
   it('is what the app starts with, so a reset gives the same form', () => {
     const s = initialState({}, null, null);
-    const { examDate, prepSessions, prepDates, prepDayNums, ...rest } = freshExamForm();
-    expect(s).toMatchObject(rest);
-    expect(s.examDate).toBe(examDate);
-    expect(s.prepSessions).toEqual(prepSessions);
+    const fresh = freshExamForm();
+    for (const [key, value] of Object.entries(fresh)) expect(s[key]).toEqual(value);
   });
 });
