@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react';
 import { sessionClock } from '../lib/plannerLogic';
-import { iconForTask, SUBJECT_ART } from '../lib/taskAuto';
-import SubjectArt from '../components/SubjectArt';
+import { iconForTask } from '../lib/taskAuto';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { useNow } from '../hooks/useNow';
 import { useOvertimeBuzz } from '../hooks/useOvertimeBuzz';
 
-const RING = 250;
-const STROKE = 27;
-const R = (RING - STROKE) / 2;
+const RING = 272;
+const STROKE = 18;
+const R = (RING - STROKE) / 2 - 4;
 const CIRC = 2 * Math.PI * R;
 
 const clock = (ms) => {
@@ -17,47 +16,38 @@ const clock = (ms) => {
   return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
 };
 
-// Time studied as a glowing line that grows clockwise from 12 o'clock, plus
-// a small spark that laps the ring once a minute and pulses gently, so the
-// ring still feels alive in a long session. Full and orange once over time.
-function FocusRing({ c, d, finishing }) {
+// A soft, wide ring around a dimly lit glass disc. Time studied grows
+// clockwise from 12 o'clock; the countdown, the subject icon and the note sit
+// inside. Only the glow behind it breathes, slowly. Orange once over time,
+// green with a ✓ when the session is finished, dimmed while paused.
+function FocusRing({ c, d, finishing, note }) {
   const progress = finishing || c.overtime ? 1 : 1 - c.remainingFrac;
-  // The spark starts where this session's clock puts it; CSS keeps it going
-  // (and the paused class freezes it) so it glides instead of ticking.
-  const [sparkDelay] = useState(() => -((c.elapsedMs / 1000) % 60) + 's');
-  const art = d.category !== 'personal' && SUBJECT_ART[d.subject];
   const mid = RING / 2;
+  const tone = finishing ? 'done' : c.overtime ? 'over' : 'run';
+  const arc = { run: 'url(#focusArc)', over: '#f5a524', done: '#35d07f' }[tone];
+  const track = { run: 'rgba(139,109,255,.12)', over: 'rgba(245,165,36,.14)', done: 'rgba(53,208,127,.14)' }[tone];
+  const glow = { run: 'rgba(124,92,255,.32)', over: 'rgba(245,165,36,.26)', done: 'rgba(53,208,127,.26)' }[tone];
+  const shadow = { run: 'rgba(160,130,255,.7)', over: 'rgba(245,165,36,.65)', done: 'rgba(53,208,127,.65)' }[tone];
+  const timeColor = finishing ? '#35d07f' : c.overtime ? '#f5a524' : c.paused ? '#8a8a99' : '#f4f4f7';
   return (
-    <div className={c.paused ? 'focus-paused' : ''} style={{ position: 'relative', width: RING, height: RING, marginTop: 26, opacity: c.paused ? 0.5 : 1, transition: 'opacity .3s ease' }}>
+    <div className={c.paused ? 'focus-paused' : ''} style={{ position: 'relative', width: RING, height: RING, marginTop: 26, opacity: c.paused ? 0.6 : 1, transition: 'opacity .3s ease' }}>
+      <div className="focus-glow" style={{ position: 'absolute', inset: '12%', borderRadius: '50%', background: `radial-gradient(circle, ${glow}, transparent 70%)`, animation: 'focusGlow 6s ease-in-out infinite' }} />
+      <div style={{ position: 'absolute', inset: STROKE + 16, borderRadius: '50%', background: 'linear-gradient(160deg,rgba(255,255,255,.06),rgba(255,255,255,.015))', border: '1px solid rgba(255,255,255,.07)', boxShadow: 'inset 0 10px 30px rgba(0,0,0,.35)' }} />
       <svg width={RING} height={RING} style={{ position: 'absolute', inset: 0, overflow: 'visible' }}>
         <defs>
-          <linearGradient id="focusArc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#c9baff" /><stop offset="1" stopColor="#8b6dff" /></linearGradient>
+          <linearGradient id="focusArc" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#d9cdff" /><stop offset="1" stopColor="#8b6dff" /></linearGradient>
         </defs>
-        <circle cx={mid} cy={mid} r={R} fill="none" stroke="rgba(255,255,255,.1)" strokeWidth={STROKE} />
+        <circle cx={mid} cy={mid} r={R} fill="none" stroke={track} strokeWidth={STROKE} style={{ transition: 'stroke .3s ease' }} />
         <circle
-          cx={mid} cy={mid} r={R} fill="none" stroke={c.overtime ? '#f5a524' : 'url(#focusArc)'} strokeWidth={STROKE} strokeLinecap="round"
+          cx={mid} cy={mid} r={R} fill="none" stroke={arc} strokeWidth={STROKE} strokeLinecap="round"
           strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - progress)} transform={`rotate(-90 ${mid} ${mid})`}
-          style={{ transition: finishing ? 'stroke-dashoffset .7s ease-out' : 'stroke-dashoffset 1s linear, stroke .3s ease', filter: 'drop-shadow(0 0 6px rgba(185,166,255,.55))' }}
+          style={{ transition: finishing ? 'stroke-dashoffset .7s ease-out, stroke .3s ease' : 'stroke-dashoffset 1s linear, stroke .3s ease', filter: `drop-shadow(0 0 14px ${shadow})` }}
         />
-        {!finishing && (
-          <g className="focus-spark" style={{ transformBox: 'view-box', transformOrigin: `${mid}px ${mid}px`, animation: 'focusOrbit 60s linear infinite', animationDelay: sparkDelay }}>
-            <circle
-              cx={mid} cy={mid} r={R} fill="none" stroke="#fff" strokeWidth="6" strokeLinecap="round" strokeDasharray={`22 ${CIRC}`}
-              transform={`rotate(-90 ${mid} ${mid})`} style={{ animation: 'focusSparkPulse 2s ease-in-out infinite' }}
-            />
-          </g>
-        )}
       </svg>
-      <div
-        style={{
-          position: 'absolute', inset: STROKE - 0.5, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: c.overtime ? 'radial-gradient(circle at 40% 35%,#ffd08a,#f5a524)' : 'radial-gradient(circle at 40% 35%,#b9a6ff,#8b6dff)',
-          boxShadow: 'inset 0 -10px 30px rgba(60,30,160,.35)',
-        }}
-      >
-        {art
-          ? <SubjectArt subject={d.subject} paused={c.paused} finishing={finishing} size={132} />
-          : <span className="focus-breathe" style={{ fontSize: 84, lineHeight: 1, animation: c.paused ? 'none' : 'focusBreathe 4s ease-in-out infinite' }}>{iconForTask(d)}</span>}
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+        <div style={{ fontSize: finishing ? 30 : 26, lineHeight: 1, height: 30, color: '#35d07f', fontWeight: 800 }}>{finishing ? '✓' : iconForTask(d)}</div>
+        <div style={{ fontSize: 56, fontWeight: 800, letterSpacing: '-.03em', lineHeight: 1.05, marginTop: 4, fontVariantNumeric: 'tabular-nums', color: timeColor, transition: 'color .3s ease' }}>{c.label}</div>
+        <div style={{ fontSize: 12.5, marginTop: 6, maxWidth: 150, lineHeight: 1.35, color: finishing ? '#8ff0c0' : c.overtime ? '#f7c46c' : '#8a8a99' }}>{note}</div>
       </div>
     </div>
   );
@@ -124,10 +114,7 @@ export default function Focus({ planner }) {
       <div style={{ fontSize: 25, fontWeight: 800, letterSpacing: '-.02em', lineHeight: 1.2, textAlign: 'center', marginTop: 6, maxWidth: 320 }}>{t(TASK_TEXT_KEY[d.id]?.title) || d.title}</div>
       <div style={{ fontSize: 13, color: '#8a8a99', marginTop: 6, fontVariantNumeric: 'tabular-nums' }}>{clock(c.beganAt)} → {clock(c.endsAt)}</div>
 
-      <FocusRing c={c} d={d} finishing={!!done} />
-
-      <div style={{ fontSize: 54, fontWeight: 800, letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums', marginTop: 24, color: done ? '#35d07f' : c.overtime ? '#f5a524' : c.paused ? '#8a8a99' : '#f4f4f7' }}>{c.label}</div>
-      <div style={{ fontSize: 12.5, color: done ? '#8ff0c0' : c.overtime ? '#f7c46c' : '#8a8a99', marginTop: 2 }}>{note}</div>
+      <FocusRing c={c} d={d} finishing={!!done} note={note} />
 
       {showBreak && (
         <div style={{ marginTop: 14, padding: '10px 12px', borderRadius: 14, background: 'rgba(46,230,197,.08)', border: '1px solid rgba(46,230,197,.25)', display: 'flex', alignItems: 'center', gap: 10, maxWidth: 340 }}>
@@ -138,7 +125,7 @@ export default function Focus({ planner }) {
         </div>
       )}
 
-      {!done && <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 18 }}>
+      {!done && <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 26 }}>
         <div onClick={addSessionMinute} style={{ height: 44, padding: '0 16px', borderRadius: 14, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', fontSize: 13.5, fontWeight: 700, cursor: 'pointer' }}>{t('focus.plusMinute')}</div>
         <div
           aria-label={c.paused ? t('home.resume') : t('home.pause')}
