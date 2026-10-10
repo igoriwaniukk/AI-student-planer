@@ -67,7 +67,10 @@ export function useAuth() {
     loading,
     passwordRecovery,
     clearPasswordRecovery: () => setPasswordRecovery(false),
-    signUp: (email, password) => supabase.auth.signUp({ email, password }),
+    // The confirmation email's link comes back to this site (Pulgo), not to
+    // whatever Site URL is set in Supabase. The address must be listed under
+    // Supabase → Authentication → URL Configuration → Redirect URLs.
+    signUp: (email, password) => supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } }),
     signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
     signInWithGoogle: () => (isNativeApp() ? signInThroughAppSheet('google') : supabase.auth.signInWithOAuth({ provider: 'google' })),
     signInWithApple: () => (isNativeApp() ? signInWithAppleInApp() : supabase.auth.signInWithOAuth({ provider: 'apple' })),
