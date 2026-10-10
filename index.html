@@ -6,6 +6,17 @@
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <script>
+      // The iPhone app rewrites this tag after load (to turn off pinch zoom);
+      // keep viewport-fit=cover in it, or the page loses the status-bar inset.
+      (function () {
+        var m = document.querySelector('meta[name=viewport]');
+        if (!m || !window.MutationObserver) return;
+        new MutationObserver(function () {
+          if (m.content.indexOf('viewport-fit=cover') < 0) m.content += ', viewport-fit=cover';
+        }).observe(m, { attributes: true, attributeFilter: ['content'] });
+      })();
+    </script>
     <meta name="theme-color" content="#08080c" />
     <meta name="description" content="Pulgo — A smart study planner with AI assistance, time tracking, and achievement system" />
     <title>Pulgo — Student Planner</title>
