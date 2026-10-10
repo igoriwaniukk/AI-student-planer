@@ -981,4 +981,10 @@ export default {
   "premium.settingsActive": "Premium está activo ✓",
   "premium.manage": "Gestionar suscripción",
   "premium.restorePurchases": "Restaurar compras",
+  "cal.dayView": "Día",
+  "cal.weekView": "Semana",
+  "cal.planThisDay": "+ Planificar este día",
+  "cal.planLater": "Podrás planificarlo el día anterior",
+  "cal.nothingPlanned": "Nada planificado",
+  "cal.testLabel": "Examen",
 };

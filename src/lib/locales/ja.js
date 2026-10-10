@@ -981,4 +981,10 @@ export default {
   "premium.settingsActive": "Premiumは有効です ✓",
   "premium.manage": "サブスクリプションを管理",
   "premium.restorePurchases": "購入を復元",
+  "cal.dayView": "日",
+  "cal.weekView": "週",
+  "cal.planThisDay": "+ この日を計画する",
+  "cal.planLater": "前日に計画できます",
+  "cal.nothingPlanned": "予定なし",
+  "cal.testLabel": "テスト",
 };
