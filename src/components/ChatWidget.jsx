@@ -207,7 +207,11 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
   const scrollRef = useRef(null);
   const deps = { logEnergy, recurringActivities, setRecurringActivities };
   const area = useVisibleArea(open);
-  const keyboardOpen = !!area?.keyboard;
+  // Typing in the message box means the keyboard is up. (Inside the iPhone
+  // app the page itself shrinks with the keyboard, so sizes alone can't
+  // tell.) Then the home-bar room below the box isn't needed.
+  const [typing, setTyping] = useState(false);
+  const keyboardOpen = typing || !!area?.keyboard;
 
   // Newest message in view: on open, on every new message, and when the
   // keyboard opens and the page gets shorter. Scrolls only the chat itself,
@@ -313,7 +317,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
             style={{
               position: 'absolute', left: 0, right: 0, zIndex: 80, display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
               top: area ? area.top : 0, height: area ? area.height : '100%',
-              padding: `var(--top-pad) 16px ${keyboardOpen ? '14px' : 'calc(var(--safe-bottom) + 16px)'}`,
+              padding: `var(--top-pad) 16px ${keyboardOpen ? '10px' : 'calc(var(--safe-bottom) + 16px)'}`,
               background: 'radial-gradient(70% 35% at 50% 0%,rgba(124,92,255,.22),transparent 70%),#08080c',
               animation: 'fadeUp .25s ease both',
             }}
@@ -386,12 +390,14 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
 
             </div>
 
-            {/* clear gap above the keyboard so nothing touches it */}
-            <div style={{ display: 'flex', gap: 9, alignItems: 'center', flex: 'none', marginTop: 12 }}>
+            {/* a small, clear gap above the keyboard so nothing touches it */}
+            <div style={{ display: 'flex', gap: 9, alignItems: 'center', flex: 'none', marginTop: 10 }}>
               <input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
+                onFocus={() => setTyping(true)}
+                onBlur={() => setTyping(false)}
                 placeholder={t('chat.inputPlaceholder')}
                 style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 24, background: '#16131f', border: '1.5px solid ' + (input ? '#8b6dff' : 'rgba(255,255,255,.1)'), padding: '0 18px', fontSize: 16, color: '#f4f4f7', fontFamily: 'inherit', outline: 'none' }}
               />
