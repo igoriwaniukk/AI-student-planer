@@ -987,4 +987,6 @@ export default {
   "cal.planLater": "Pianificabile il giorno prima",
   "cal.nothingPlanned": "Niente in programma",
   "cal.testLabel": "Verifica",
+  "chat.online": "online",
+  "chat.send": "Invia",
 };

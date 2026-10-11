@@ -5,7 +5,7 @@ import { upcomingExams, hm, toMinutes, checkBlockConflict, taskShortLabel, daysP
 import { NUM_TODAY, REFERENCE_DAY } from '../lib/plannerData';
 import { VALUE_KEY, DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
-import { BottomSheet, Chip } from './ui';
+import { AppShellPortal, BackButton, Chip } from './ui';
 import { PugImg, PugLive } from './PugMascot';
 import { openPaywall } from '../lib/premium';
 
@@ -181,17 +181,41 @@ function TypingBubble() {
   );
 }
 
+// The part of the screen the keyboard leaves free. On iPhones the page keeps
+// its full height and the keyboard slides over it, so the chat page sizes
+// itself to this instead and its message box stays above the keyboard.
+function useVisibleArea(active) {
+  const [area, setArea] = useState(null);
+  useEffect(() => {
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+    if (!active || !vv) return undefined;
+    const update = () => setArea({ top: vv.offsetTop, height: vv.height, keyboard: window.innerHeight - vv.height > 120 });
+    const first = requestAnimationFrame(update);
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => { cancelAnimationFrame(first); vv.removeEventListener('resize', update); vv.removeEventListener('scroll', update); };
+  }, [active]);
+  return active ? area : null;
+}
+
 export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, studyHistory, studentName, logEnergy, recurringActivities, setRecurringActivities, raised = false }) {
   const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
   const { messages, sending, error, send, action, clearAction, appendAssistantMessage } = useChat();
   const bottomRef = useRef(null);
+  const scrollRef = useRef(null);
   const deps = { logEnergy, recurringActivities, setRecurringActivities };
+  const area = useVisibleArea(open);
+  const keyboardOpen = !!area?.keyboard;
 
+  // Newest message in view: on open, on every new message, and when the
+  // keyboard opens and the page gets shorter. Scrolls only the chat itself,
+  // never the page behind it.
   useEffect(() => {
-    if (open) bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, sending, error, action, open]);
+    const el = scrollRef.current;
+    if (open && el) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [messages, sending, error, action, open, area?.height]);
 
   function handleSend(text) {
     const toSend = text ?? input;
@@ -284,97 +308,108 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
       )}
 
       {open && (
-        <BottomSheet maxHeight="85%">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-            <div style={{ width: 40, height: 40, flex: 'none', borderRadius: '50%', padding: 2, boxSizing: 'border-box', background: 'linear-gradient(155deg,#8b6dff,#6d4dff)', boxShadow: '0 6px 16px rgba(109,77,255,.4)' }}>
-              <PugLive size={36} />
+        <AppShellPortal>
+          <div
+            style={{
+              position: 'absolute', left: 0, right: 0, zIndex: 80, display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
+              top: area ? area.top : 0, height: area ? area.height : '100%',
+              padding: `var(--top-pad) 16px ${keyboardOpen ? '14px' : 'calc(var(--safe-bottom) + 16px)'}`,
+              background: 'radial-gradient(70% 35% at 50% 0%,rgba(124,92,255,.22),transparent 70%),#08080c',
+              animation: 'fadeUp .25s ease both',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 11, flex: 'none' }}>
+              <BackButton onClick={() => setOpen(false)} />
+              <div style={{ width: 40, height: 40, flex: 'none', borderRadius: '50%', padding: 2, boxSizing: 'border-box', background: 'linear-gradient(155deg,#8b6dff,#6d4dff)', boxShadow: '0 6px 16px rgba(109,77,255,.4)' }}>
+                <PugLive size={36} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>{t('chat.title')}</div>
+                <div style={{ fontSize: 11.5, color: '#35d07f', marginTop: 1 }}>● {t('chat.online')}</div>
+              </div>
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>{t('chat.title')}</div>
-              <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 1 }}>{t('chat.subtitle')}</div>
-            </div>
-            <div
-              onClick={() => setOpen(false)}
-              style={{ width: 32, height: 32, flex: 'none', borderRadius: 11, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14 }}
-            >
-              ✕
-            </div>
-          </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 18, minHeight: 140 }}>
-            {messages.length === 0 && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, alignSelf: 'flex-start', animation: 'fadeUp .3s ease both' }}>
-                  <Avatar role="assistant" />
-                  <div style={{ maxWidth: '85%', padding: '11px 14px', borderRadius: '4px 16px 16px 16px', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', fontSize: 13, lineHeight: 1.5, color: '#c9c9d6' }}>
-                    {t('chat.greeting')}
+            {/* the conversation fills the page and scrolls; it hugs the bottom */}
+            <div ref={scrollRef} className="sc" style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', margin: '10px -4px 0', padding: '0 4px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 'auto', paddingTop: 12 }}>
+              {messages.length === 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, alignSelf: 'flex-start', animation: 'fadeUp .3s ease both' }}>
+                    <Avatar role="assistant" />
+                    <div style={{ maxWidth: '85%', padding: '11px 14px', borderRadius: '4px 16px 16px 16px', background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', fontSize: 13, lineHeight: 1.5, color: '#c9c9d6' }}>
+                      {t('chat.greeting')}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 34 }}>
+                    {[t('chat.suggestion1'), t('chat.suggestion2'), t('chat.suggestion3')].map((s, i) => (
+                      <Chip key={s} label={s} onClick={() => handleSend(s)} style={{ textAlign: 'left', animation: `fadeUp .3s ease ${.12 + i * 0.08}s both` }} />
+                    ))}
                   </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, paddingLeft: 34 }}>
-                  {[t('chat.suggestion1'), t('chat.suggestion2'), t('chat.suggestion3')].map((s, i) => (
-                    <Chip key={s} label={s} onClick={() => handleSend(s)} style={{ textAlign: 'left', animation: `fadeUp .3s ease ${.12 + i * 0.08}s both` }} />
-                  ))}
+              )}
+
+              {messages.map((m, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'flex-end', gap: 8, flexDirection: m.role === 'user' ? 'row-reverse' : 'row', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', animation: 'fadeUp .25s ease both' }}>
+                  <Avatar role={m.role === 'user' ? 'user' : 'assistant'} studentName={studentName} />
+                  <div
+                    style={{
+                      maxWidth: '78%', padding: '11px 14px', fontSize: 13, lineHeight: 1.55,
+                      borderRadius: m.role === 'user' ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
+                      background: m.role === 'user' ? 'linear-gradient(155deg,rgba(139,109,255,.35),rgba(109,77,255,.28))' : 'rgba(255,255,255,.05)',
+                      border: '1px solid ' + (m.role === 'user' ? 'rgba(139,109,255,.45)' : 'rgba(255,255,255,.08)'),
+                    }}
+                  >
+                    {m.role === 'assistant' ? renderMarkdownLite(m.content) : m.content}
+                    {m.limit && (
+                      <div
+                        onClick={() => openPaywall('limit-chat')}
+                        style={{ marginTop: 11, height: 42, borderRadius: 13, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 14, fontWeight: 750, color: '#fff', cursor: 'pointer', boxShadow: '0 8px 20px rgba(109,77,255,.35)' }}
+                      >
+                        👑 {t('premium.get')}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              ))}
 
-            {messages.map((m, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'flex-end', gap: 8, flexDirection: m.role === 'user' ? 'row-reverse' : 'row', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', animation: 'fadeUp .25s ease both' }}>
-                <Avatar role={m.role === 'user' ? 'user' : 'assistant'} studentName={studentName} />
-                <div
-                  style={{
-                    maxWidth: '78%', padding: '11px 14px', fontSize: 13, lineHeight: 1.55,
-                    borderRadius: m.role === 'user' ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
-                    background: m.role === 'user' ? 'linear-gradient(155deg,rgba(139,109,255,.35),rgba(109,77,255,.28))' : 'rgba(255,255,255,.05)',
-                    border: '1px solid ' + (m.role === 'user' ? 'rgba(139,109,255,.45)' : 'rgba(255,255,255,.08)'),
-                  }}
-                >
-                  {m.role === 'assistant' ? renderMarkdownLite(m.content) : m.content}
-                  {m.limit && (
-                    <div
-                      onClick={() => openPaywall('limit-chat')}
-                      style={{ marginTop: 11, height: 42, borderRadius: 13, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: 14, fontWeight: 750, color: '#fff', cursor: 'pointer', boxShadow: '0 8px 20px rgba(109,77,255,.35)' }}
-                    >
-                      👑 {t('premium.get')}
-                    </div>
-                  )}
+              {sending && <TypingBubble />}
+
+              {action && <ActionConfirmCard action={action} planner={planner} deps={deps} onResolve={handleResolveAction} />}
+
+              {error && (
+                <div style={{ padding: 12, borderRadius: 14, background: 'rgba(245,165,36,.08)', border: '1px solid rgba(245,165,36,.3)', fontSize: 12, lineHeight: 1.45, color: '#f7c46c' }}>
+                  {error}
                 </div>
+              )}
+              <div ref={bottomRef} />
+            </div>
+
+            </div>
+
+            {/* clear gap above the keyboard so nothing touches it */}
+            <div style={{ display: 'flex', gap: 9, alignItems: 'center', flex: 'none', marginTop: 12 }}>
+              <input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
+                placeholder={t('chat.inputPlaceholder')}
+                style={{ flex: 1, minWidth: 0, height: 48, borderRadius: 24, background: '#16131f', border: '1.5px solid ' + (input ? '#8b6dff' : 'rgba(255,255,255,.1)'), padding: '0 18px', fontSize: 16, color: '#f4f4f7', fontFamily: 'inherit', outline: 'none' }}
+              />
+              <div
+                onClick={() => handleSend()}
+                aria-label={t('chat.send')}
+                style={{
+                  width: 48, height: 48, flex: 'none', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, color: '#fff',
+                  background: input.trim() ? 'linear-gradient(155deg,#8b6dff,#6d4dff)' : 'rgba(255,255,255,.06)',
+                  boxShadow: input.trim() ? '0 6px 16px rgba(109,77,255,.4)' : 'none',
+                  cursor: input.trim() ? 'pointer' : 'not-allowed',
+                }}
+              >
+                ➤
               </div>
-            ))}
-
-            {sending && <TypingBubble />}
-
-            {action && <ActionConfirmCard action={action} planner={planner} deps={deps} onResolve={handleResolveAction} />}
-
-            {error && (
-              <div style={{ padding: 12, borderRadius: 14, background: 'rgba(245,165,36,.08)', border: '1px solid rgba(245,165,36,.3)', fontSize: 12, lineHeight: 1.45, color: '#f7c46c' }}>
-                {error}
-              </div>
-            )}
-            <div ref={bottomRef} />
-          </div>
-
-          <div style={{ display: 'flex', gap: 9, marginTop: 16, paddingBottom: 8 }}>
-            <input
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleSend(); }}
-              placeholder={t('chat.inputPlaceholder')}
-              style={{ flex: 1, height: 48, borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', padding: '0 15px', fontSize: 13.5, color: '#f4f4f7', fontFamily: 'inherit' }}
-            />
-            <div
-              onClick={() => handleSend()}
-              style={{
-                width: 48, height: 48, flex: 'none', borderRadius: 15, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17,
-                background: input.trim() ? 'linear-gradient(155deg,#8b6dff,#6d4dff)' : 'rgba(255,255,255,.06)',
-                boxShadow: input.trim() ? '0 6px 16px rgba(109,77,255,.4)' : 'none',
-                cursor: input.trim() ? 'pointer' : 'not-allowed',
-              }}
-            >
-              ➤
             </div>
           </div>
-        </BottomSheet>
+        </AppShellPortal>
       )}
     </>
   );

@@ -240,6 +240,7 @@ function Shell() {
           onContentProcessDidTerminate={() => webRef.current?.reload()}
           onRenderProcessGone={() => setWebKey((k) => k + 1)}
           contentInsetAdjustmentBehavior="never"
+          hideKeyboardAccessoryView
           automaticallyAdjustContentInsets={false}
           bounces={false}
           overScrollMode="never"

@@ -987,4 +987,6 @@ export default {
   "cal.planLater": "Podrás planificarlo el día anterior",
   "cal.nothingPlanned": "Nada planificado",
   "cal.testLabel": "Examen",
+  "chat.online": "en línea",
+  "chat.send": "Enviar",
 };
