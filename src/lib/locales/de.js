@@ -124,7 +124,7 @@ export default {
   "taskEdit.notePlaceholder": "Z. B. Aufgaben 4–7 machen",
   "taskEdit.cancel": "Abbrechen",
   "taskEdit.saveChanges": "Änderungen speichern",
-  "chat.title": "KI-Assistent",
+  "chat.title": "AI Pulgo",
   "chat.pugHello0": "Hi! Frag mich alles 👋",
   "chat.pugHello1": "Soll ich dir beim Lernplan helfen? 🐾",
   "chat.pugHello2": "Hast du eine Frage? Ich bin da! 🎓",

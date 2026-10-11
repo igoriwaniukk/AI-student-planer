@@ -124,7 +124,7 @@ export default {
   "taskEdit.notePlaceholder": "例如：做第 4–7 题",
   "taskEdit.cancel": "取消",
   "taskEdit.saveChanges": "保存修改",
-  "chat.title": "AI 助手",
+  "chat.title": "AI Pulgo",
   "chat.pugHello0": "嗨！有什么都可以问我 👋",
   "chat.pugHello1": "想让我帮你规划学习吗？🐾",
   "chat.pugHello2": "有问题吗？我在这儿！🎓",
