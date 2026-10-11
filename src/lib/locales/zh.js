@@ -989,4 +989,5 @@ export default {
   "cal.testLabel": "考试",
   "chat.online": "在线",
   "chat.send": "发送",
+  "chat.newChat": "新对话",
 };

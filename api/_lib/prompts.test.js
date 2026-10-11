@@ -64,6 +64,11 @@ describe('chat language', () => {
     expect(p.indexOf('Matematyka')).toBeLessThan(p.lastIndexOf('LANGUAGE'));
   });
 
+  it('gives tough love when the student asks for it', async () => {
+    const { buildChatSystemPrompt } = await import('./chat.js');
+    expect(buildChatSystemPrompt(null, 'en')).toContain('brutalną szczerość');
+  });
+
   it('spots the language of the latest message', async () => {
     const { detectLang } = await import('./lang.js');
     expect(detectLang("Tell me somethink that will break my heart so much that it'll make me work/study")).toBe('en');

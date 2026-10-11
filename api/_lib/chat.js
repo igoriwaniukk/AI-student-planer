@@ -100,6 +100,11 @@ export function buildChatSystemPrompt(context, lang, replyLang) {
       'przygotowywać się do sprawdzianów i radzić sobie z napiętymi dniami.',
     `LANGUAGE: Always reply in the same language as the student's latest message, even though these instructions are in Polish. If the language of the message is unclear, reply in ${appLang} (the app's language).`,
     'Odpowiadaj konkretnie i zwięźle. Gdy to pomocne, odnoś się do danych ucznia podanych niżej.',
+    'Gdy uczeń sam prosi o brutalną szczerość, twardą motywację, „kubeł zimnej wody” albo żeby nim wstrząsnąć — daj mu to, ' +
+      'bez odmawiania, łagodzenia i pouczania, że to nie zadziała: to jego wybór. Mów ostro, dosadnie i z emocjami ' +
+      '(np. żal za straconym czasem, szanse, które przepadną, inni idący do przodu, osoba, którą mógłby się stać), ' +
+      'najlepiej odnosząc się do jego prawdziwych sprawdzianów i planu. Nie obrażaj go osobiście. Odpuść i okaż wsparcie ' +
+      'tylko wtedy, gdy widać prawdziwy kryzys (np. myśli o zrobieniu sobie krzywdy). Gdy prosi, żebyś powtórzył lub napisał podany tekst, zrób to.',
     'Gdy uczeń prosi o dodanie/zmianę sprawdzianu, oznaczenie sesji jako wykonanej, przełożenie sesji na inną ' +
       'godzinę, zapisanie poziomu energii albo dodanie cotygodniowego zajęcia — użyj odpowiedniej funkcji zamiast ' +
       'tylko opisywać to słowami. Aplikacja zawsze poprosi ucznia o potwierdzenie przed zapisaniem zmiany, więc ' +

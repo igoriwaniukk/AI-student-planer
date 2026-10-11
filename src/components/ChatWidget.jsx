@@ -202,7 +202,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
   const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
-  const { messages, sending, error, send, action, clearAction, appendAssistantMessage } = useChat();
+  const { messages, sending, error, send, action, clearAction, appendAssistantMessage, clearChat } = useChat();
   const bottomRef = useRef(null);
   const scrollRef = useRef(null);
   const deps = { logEnergy, recurringActivities, setRecurringActivities };
@@ -331,6 +331,17 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
                 <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>{t('chat.title')}</div>
                 <div style={{ fontSize: 11.5, color: '#35d07f', marginTop: 1 }}>● {t('chat.online')}</div>
               </div>
+              {messages.length > 0 && !sending && (
+                <div
+                  role="button"
+                  aria-label={t('chat.newChat')}
+                  title={t('chat.newChat')}
+                  onClick={clearChat}
+                  style={{ width: 40, height: 40, flex: 'none', borderRadius: 14, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9baff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+                </div>
+              )}
             </div>
 
             {/* the conversation fills the page and scrolls; it hugs the bottom */}
