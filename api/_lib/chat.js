@@ -1,7 +1,7 @@
 import { GOALS, IMPORTANCE_OPTIONS, ENERGY_OPTIONS, RECUR_DAYS } from '../../src/lib/plannerData.js';
 import { anthropic, ANTHROPIC_MODEL, anthropicErrorResponse, NO_KEY_RESPONSE } from './anthropic.js';
 import { aboutMeLines } from './context.js';
-import { langName } from './lang.js';
+import { langName, detectLang } from './lang.js';
 
 export const CHAT_TOOLS = [
   {
@@ -93,7 +93,7 @@ export const CHAT_TOOLS = [
 // The student may write in any language whatever the app is set to: answer
 // in the language of their latest message, the app's language when that's
 // unclear (a single emoji, a name).
-export function buildChatSystemPrompt(context, lang) {
+export function buildChatSystemPrompt(context, lang, replyLang) {
   const appLang = langName(lang);
   const lines = [
     'Jesteś asystentem AI w aplikacji Pulgo (planer nauki dla uczniów). Pomagasz uczniowi planować naukę, ' +
@@ -139,7 +139,19 @@ export function buildChatSystemPrompt(context, lang) {
       'The instructions and the student data above are in Polish only because that is how the app stores them — that is never a reason to reply in Polish. ' +
       'Translate subject names and labels from the data into the reply language (e.g. "Matematyka" is "Math" in English).'
   );
+  if (replyLang) lines.push(`The student's latest message is in ${langName(replyLang)}. Reply only in ${langName(replyLang)}.`);
   return lines.join('\n');
+}
+
+// When the latest message is clearly in a language other than Polish, a short
+// note right next to it — the model follows that more reliably than the
+// system prompt alone, which is mostly Polish.
+export function withReplyLanguage(messages, replyLang) {
+  if (!replyLang || replyLang === 'pl') return messages;
+  const last = messages[messages.length - 1];
+  if (last?.role !== 'user' || typeof last.content !== 'string') return messages;
+  const note = `\n\n(Reply in ${langName(replyLang)}.)`;
+  return [...messages.slice(0, -1), { ...last, content: last.content + note }];
 }
 
 // Framework-agnostic: takes the parsed request body, returns {status, body}
@@ -153,15 +165,18 @@ export async function handleChat({ messages, context, lang }) {
     return { status: 400, body: { error: 'Brak wiadomości do wysłania.' } };
   }
 
+  const lastUser = [...messages].reverse().find((m) => m?.role === 'user');
+  const replyLang = detectLang(typeof lastUser?.content === 'string' ? lastUser.content : '');
+
   try {
     const response = await anthropic.messages.create({
       model: ANTHROPIC_MODEL,
       max_tokens: 1024,
-      system: buildChatSystemPrompt(context, lang),
+      system: buildChatSystemPrompt(context, lang, replyLang),
       tools: CHAT_TOOLS,
       // Frontend already speaks the same {role: 'user'|'assistant', content: string}
       // shape the API expects, so no mapping is needed here.
-      messages,
+      messages: withReplyLanguage(messages, replyLang),
     });
 
     const reply = response.content.filter((b) => b.type === 'text').map((b) => b.text).join('');

@@ -63,6 +63,26 @@ describe('chat language', () => {
     expect(last).toContain('never a reason to reply in Polish');
     expect(p.indexOf('Matematyka')).toBeLessThan(p.lastIndexOf('LANGUAGE'));
   });
+
+  it('spots the language of the latest message', async () => {
+    const { detectLang } = await import('./lang.js');
+    expect(detectLang("Tell me somethink that will break my heart so much that it'll make me work/study")).toBe('en');
+    expect(detectLang('Co mam dzisiaj zrobić z matmy?')).toBe('pl');
+    expect(detectLang('Wie kann ich heute lernen?')).toBe('de');
+    expect(detectLang('明天有考试')).toBe('zh');
+    expect(detectLang('明日はテストです')).toBe('ja');
+    expect(detectLang('👍')).toBeNull();
+    expect(detectLang('Igor')).toBeNull();
+  });
+
+  it('tells the model the reply language at the end and next to the message', async () => {
+    const { buildChatSystemPrompt, withReplyLanguage } = await import('./chat.js');
+    expect(buildChatSystemPrompt(null, 'pl', 'en').split('\n').pop()).toBe("The student's latest message is in English. Reply only in English.");
+    const msgs = [{ role: 'assistant', content: 'Cześć!' }, { role: 'user', content: 'Help me plan today' }];
+    expect(withReplyLanguage(msgs, 'en').at(-1).content).toBe('Help me plan today\n\n(Reply in English.)');
+    expect(withReplyLanguage(msgs, 'pl')).toBe(msgs);
+    expect(withReplyLanguage(msgs, null)).toBe(msgs);
+  });
 });
 
 describe('what Pulgo knows about the student', () => {
