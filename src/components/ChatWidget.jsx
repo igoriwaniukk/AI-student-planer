@@ -313,6 +313,13 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
 
       {open && (
         <AppShellPortal>
+          {/* Dark behind the whole chat page, also under the see-through bar
+              iPhone shows above the keyboard, so the home screen never peeks
+              through below the message box. */}
+          <div
+            aria-hidden="true"
+            style={{ position: 'absolute', left: 0, right: 0, top: 0, zIndex: 79, background: '#08080c', height: area ? `max(100%, ${Math.ceil(area.top + area.height) + 400}px)` : '100%' }}
+          />
           <div
             style={{
               position: 'absolute', left: 0, right: 0, zIndex: 80, display: 'flex', flexDirection: 'column', boxSizing: 'border-box',
