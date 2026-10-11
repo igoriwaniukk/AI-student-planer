@@ -2,10 +2,26 @@ import { useState } from 'react';
 import { useLang } from '../lib/useLang';
 import { authedFetch } from '../lib/authFetch';
 import { getCurrentLang } from '../lib/i18n';
+import { useLocalStorage, KEYS } from '../lib/store';
+
+// The conversation is saved (and synced with the account like the plan), so
+// AI Pulgo still remembers it after the app reloads. Only the newest
+// messages are kept and sent, so it stays quick and cheap.
+const KEEP = 60;
+const SEND = 30;
+
+export function chatHistory(messages) {
+  const history = messages.filter((m) => !m.skip).map(({ role, content }) => ({ role, content })).slice(-SEND);
+  // The AI expects the conversation to start with the student.
+  while (history.length && history[0].role !== 'user') history.shift();
+  return history;
+}
 
 export function useChat() {
   const { t } = useLang();
-  const [messages, setMessages] = useState([]);
+  const [saved, setSaved] = useLocalStorage(KEYS.chatMessages, []);
+  const messages = Array.isArray(saved) ? saved : [];
+  const setMessages = (next) => setSaved((prev) => (typeof next === 'function' ? next(Array.isArray(prev) ? prev : []) : next).slice(-KEEP));
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
   const [action, setAction] = useState(null);
@@ -21,7 +37,7 @@ export function useChat() {
 
     try {
       // Messages around a used-up free allowance never reach the AI.
-      const history = next.filter((m) => !m.skip).map(({ role, content }) => ({ role, content }));
+      const history = chatHistory(next);
       const res = await authedFetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
