@@ -987,4 +987,6 @@ export default {
   "cal.planLater": "可在前一天规划",
   "cal.nothingPlanned": "暂无安排",
   "cal.testLabel": "考试",
+  "chat.online": "在线",
+  "chat.send": "发送",
 };

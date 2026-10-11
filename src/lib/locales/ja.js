@@ -987,4 +987,6 @@ export default {
   "cal.planLater": "前日に計画できます",
   "cal.nothingPlanned": "予定なし",
   "cal.testLabel": "テスト",
+  "chat.online": "オンライン",
+  "chat.send": "送信",
 };

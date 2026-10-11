@@ -987,4 +987,6 @@ export default {
   "cal.planLater": "Planifiable la veille",
   "cal.nothingPlanned": "Rien de prévu",
   "cal.testLabel": "Contrôle",
+  "chat.online": "en ligne",
+  "chat.send": "Envoyer",
 };

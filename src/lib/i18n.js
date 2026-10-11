@@ -169,6 +169,8 @@ export const dict = {
 
     // ChatWidget
     'chat.title': 'AI Pulgo',
+    'chat.online': "online",
+    'chat.send': "Wyślij",
     'chat.pugHello0': 'Hej! Zapytaj mnie o cokolwiek 👋',
     'chat.pugHello1': 'Pomóc Ci ułożyć plan nauki? 🐾',
     'chat.pugHello2': 'Masz pytanie? Jestem tutaj! 🎓',
@@ -1169,6 +1171,8 @@ export const dict = {
 
     // ChatWidget
     'chat.title': 'AI Pulgo',
+    'chat.online': "online",
+    'chat.send': "Send",
     'chat.pugHello0': 'Hi! Ask me anything 👋',
     'chat.pugHello1': 'Want help planning your study? 🐾',
     'chat.pugHello2': 'Got a question? I\'m here! 🎓',
