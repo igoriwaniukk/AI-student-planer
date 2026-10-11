@@ -168,7 +168,7 @@ export const dict = {
     'taskEdit.saveChanges': 'Zapisz zmiany',
 
     // ChatWidget
-    'chat.title': 'Asystent AI',
+    'chat.title': 'AI Pulgo',
     'chat.pugHello0': 'Hej! Zapytaj mnie o cokolwiek 👋',
     'chat.pugHello1': 'Pomóc Ci ułożyć plan nauki? 🐾',
     'chat.pugHello2': 'Masz pytanie? Jestem tutaj! 🎓',
@@ -1168,7 +1168,7 @@ export const dict = {
     'taskEdit.saveChanges': 'Save changes',
 
     // ChatWidget
-    'chat.title': 'AI Assistant',
+    'chat.title': 'AI Pulgo',
     'chat.pugHello0': 'Hi! Ask me anything 👋',
     'chat.pugHello1': 'Want help planning your study? 🐾',
     'chat.pugHello2': 'Got a question? I\'m here! 🎓',

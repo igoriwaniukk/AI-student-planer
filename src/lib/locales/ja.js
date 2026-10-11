@@ -124,7 +124,7 @@ export default {
   "taskEdit.notePlaceholder": "例：問題4〜7を解く",
   "taskEdit.cancel": "キャンセル",
   "taskEdit.saveChanges": "変更を保存",
-  "chat.title": "AIアシスタント",
+  "chat.title": "AI Pulgo",
   "chat.pugHello0": "やあ！なんでも聞いてね 👋",
   "chat.pugHello1": "勉強の計画、手伝おうか？ 🐾",
   "chat.pugHello2": "質問ある？まかせて！ 🎓",

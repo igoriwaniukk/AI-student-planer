@@ -124,7 +124,7 @@ export default {
   "taskEdit.notePlaceholder": "Ex.: fazer os exercícios 4–7",
   "taskEdit.cancel": "Cancelar",
   "taskEdit.saveChanges": "Guardar alterações",
-  "chat.title": "Assistente IA",
+  "chat.title": "AI Pulgo",
   "chat.pugHello0": "Olá! Pergunta-me o que quiseres 👋",
   "chat.pugHello1": "Queres ajuda a planear o teu estudo? 🐾",
   "chat.pugHello2": "Tens alguma dúvida? Estou aqui! 🎓",
