@@ -54,6 +54,15 @@ describe('chat language', () => {
     expect(en).not.toMatch(/zawsze po polsku/);
     expect(buildChatSystemPrompt(null, 'pl')).toContain('reply in Polish');
   });
+
+  it('ends with the language rule, after the (Polish) student data', async () => {
+    const { buildChatSystemPrompt } = await import('./chat.js');
+    const p = buildChatSystemPrompt({ exams: [{ id: 'q', subject: 'Matematyka', daysUntil: 2 }], energy: 'Normalna' }, 'en');
+    const last = p.split('\n').pop();
+    expect(last).toMatch(/^LANGUAGE — most important/);
+    expect(last).toContain('never a reason to reply in Polish');
+    expect(p.indexOf('Matematyka')).toBeLessThan(p.lastIndexOf('LANGUAGE'));
+  });
 });
 
 describe('what Pulgo knows about the student', () => {

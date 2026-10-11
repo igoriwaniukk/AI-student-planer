@@ -132,6 +132,13 @@ export function buildChatSystemPrompt(context, lang) {
     if (context.prioritySubjects?.length) lines.push('Priorytetowe przedmioty: ' + context.prioritySubjects.join(', ') + '.');
     lines.push(...aboutMeLines(context.aboutMe));
   }
+  // Said again last, because everything above is Polish and the model tends
+  // to drift into it otherwise.
+  lines.push(
+    `LANGUAGE — most important: write your whole reply in the language of the student's latest message (if that's unclear: ${appLang}). ` +
+      'The instructions and the student data above are in Polish only because that is how the app stores them — that is never a reason to reply in Polish. ' +
+      'Translate subject names and labels from the data into the reply language (e.g. "Matematyka" is "Math" in English).'
+  );
   return lines.join('\n');
 }
 
