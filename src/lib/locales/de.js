@@ -989,4 +989,5 @@ export default {
   "cal.testLabel": "Prüfung",
   "chat.online": "online",
   "chat.send": "Senden",
+  "chat.newChat": "Neuer Chat",
 };

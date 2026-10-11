@@ -71,9 +71,16 @@ export function useChat() {
     setAction(null);
   }
 
+  // "New chat": AI Pulgo forgets the conversation and starts fresh.
+  function clearChat() {
+    setMessages([]);
+    setError('');
+    setAction(null);
+  }
+
   function appendAssistantMessage(content) {
     setMessages((prev) => prev.concat({ role: 'assistant', content }));
   }
 
-  return { messages, sending, error, send, action, clearAction, appendAssistantMessage };
+  return { messages, sending, error, send, action, clearAction, appendAssistantMessage, clearChat };
 }
