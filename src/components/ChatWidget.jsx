@@ -344,9 +344,9 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
               )}
             </div>
 
-            {/* the conversation fills the page and scrolls; it hugs the bottom */}
+            {/* the conversation fills the page and scrolls; it starts at the top, like a messaging app */}
             <div ref={scrollRef} className="sc" style={{ flex: 1, minHeight: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', margin: '10px -4px 0', padding: '0 4px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 'auto', paddingTop: 12 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 12, paddingBottom: 4 }}>
               {messages.length === 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, alignSelf: 'flex-start', animation: 'fadeUp .3s ease both' }}>
