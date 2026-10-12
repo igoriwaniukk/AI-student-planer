@@ -28,7 +28,10 @@
           "ja"
         ],
         "CFBundleDevelopmentRegion": "pl"
-      }
+      },
+      "associatedDomains": [
+        "applinks:ai-student-planer.vercel.app"
+      ]
     },
     "android": {
       "package": "com.igoriwaniuk.pulgo",
