@@ -1001,7 +1001,7 @@ export default {
   "chat.reported": "Signalée — merci, nous allons l'examiner",
   "chat.reportFailed": "Impossible d'envoyer le signalement. Réessaie.",
   "auth.codeTitle": "Vérifie tes e-mails",
-  "auth.codeSubtitle": "Nous avons envoyé un code à {email}. Saisis-le ici pour confirmer ton compte.",
+  "auth.codeSubtitle": "Nous avons envoyé un e-mail à {email}. Saisis le code qu’il contient ou touche le lien, puis reviens ici.",
   "auth.codeConfirm": "Confirmer",
   "auth.codeResend": "Renvoyer le code",
   "auth.codeResent": "Nous avons envoyé un nouveau code.",

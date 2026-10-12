@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLang } from '../lib/useLang';
 
 function GoogleIcon() {
@@ -88,6 +88,23 @@ export default function Auth({ signUp, signIn, signInWithGoogle, signInWithApple
     if (err || cancelled) setBusy(false);
     if (err) setError(err.message);
   }
+
+  // While waiting for the code: if the student tapped the link in the email
+  // instead (it opens Safari), the account is confirmed — so coming back to
+  // the app signs them in with what they just typed.
+  useEffect(() => {
+    if (mode !== 'code' || !password) return undefined;
+    const tryAgain = () => {
+      if (document.visibilityState !== 'visible') return;
+      signIn(email, password).catch(() => {});
+    };
+    document.addEventListener('visibilitychange', tryAgain);
+    window.addEventListener('focus', tryAgain);
+    return () => {
+      document.removeEventListener('visibilitychange', tryAgain);
+      window.removeEventListener('focus', tryAgain);
+    };
+  }, [mode, email, password, signIn]);
 
   if (mode === 'code') {
     return (

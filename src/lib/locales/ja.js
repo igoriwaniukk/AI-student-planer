@@ -1001,7 +1001,7 @@ export default {
   "chat.reported": "報告しました。ご協力ありがとうございます",
   "chat.reportFailed": "報告を送信できませんでした。もう一度お試しください。",
   "auth.codeTitle": "メールを確認してください",
-  "auth.codeSubtitle": "{email} にコードを送りました。ここに入力してアカウントを確認してください。",
+  "auth.codeSubtitle": "{email} にメールを送りました。メールのコードを入力するか、リンクをタップしてここに戻ってください。",
   "auth.codeConfirm": "確認",
   "auth.codeResend": "コードを再送信",
   "auth.codeResent": "新しいコードを送りました。",
