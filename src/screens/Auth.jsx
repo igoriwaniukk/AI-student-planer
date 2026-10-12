@@ -18,7 +18,7 @@ function GoogleIcon() {
 // picks the resulting session up automatically (see useAuth.js), nothing
 // else to do here beyond starting that redirect and surfacing an error if
 // it couldn't even begin (e.g. the provider isn't enabled yet in Supabase).
-export default function Auth({ signUp, signIn, signInWithGoogle, signInWithApple, resetPassword }) {
+export default function Auth({ signUp, signIn, signInWithGoogle, signInWithApple, resetPassword, verifyEmailCode, resendEmailCode }) {
   const { t } = useLang();
   const [mode, setMode] = useState('signIn');
   const [email, setEmail] = useState('');
@@ -26,6 +26,7 @@ export default function Auth({ signUp, signIn, signInWithGoogle, signInWithApple
   const [error, setError] = useState('');
   const [info, setInfo] = useState('');
   const [busy, setBusy] = useState(false);
+  const [code, setCode] = useState('');
 
   function switchMode(next) {
     setMode(next);
@@ -45,13 +46,37 @@ export default function Auth({ signUp, signIn, signInWithGoogle, signInWithApple
       setInfo(t('auth.resetLinkSent'));
       return;
     }
-    const { error: err } = mode === 'signIn' ? await signIn(email, password) : await signUp(email, password);
+    if (mode === 'code') {
+      const { error: err } = await verifyEmailCode(email, code);
+      setBusy(false);
+      if (err) setError(t('auth.codeWrong'));
+      return;
+    }
+    const { data, error: err } = mode === 'signIn' ? await signIn(email, password) : await signUp(email, password);
     setBusy(false);
     if (err) {
+      // Signed up earlier but never confirmed: send a fresh code and ask for it.
+      if (mode === 'signIn' && /not confirmed/i.test(err.message) && verifyEmailCode) {
+        resendEmailCode(email);
+        setCode('');
+        setMode('code');
+        return;
+      }
       setError(err.message);
       return;
     }
-    if (mode === 'signUp') setInfo(t('auth.checkEmail'));
+    // A new account waits for the code from the email (no session yet).
+    if (mode === 'signUp' && !data?.session) {
+      if (verifyEmailCode) { setCode(''); setMode('code'); } else setInfo(t('auth.checkEmail'));
+    }
+  }
+
+  async function resend() {
+    setError('');
+    setInfo('');
+    const { error: err } = await resendEmailCode(email);
+    if (err) setError(err.message);
+    else setInfo(t('auth.codeResent'));
   }
 
   async function oauth(startOAuth) {
@@ -62,6 +87,28 @@ export default function Auth({ signUp, signIn, signInWithGoogle, signInWithApple
     // Closing the iPhone app's sign-in sheet just brings the buttons back.
     if (err || cancelled) setBusy(false);
     if (err) setError(err.message);
+  }
+
+  if (mode === 'code') {
+    return (
+      <div className="app-shell sc" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', overflowY: 'auto', padding: '24px 20px' }}>
+        <div style={{ fontSize: 40 }}>📬</div>
+        <div style={{ fontSize: 26, fontWeight: 750, marginTop: 10 }}>{t('auth.codeTitle')}</div>
+        <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 8, lineHeight: 1.45 }}>{t('auth.codeSubtitle', { email })}</div>
+        <form style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 20 }} onSubmit={submit}>
+          <input
+            value={code} onChange={(e) => setCode(e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+            placeholder="123456" inputMode="numeric" autoComplete="one-time-code" required autoFocus aria-label={t('auth.codeTitle')}
+            style={{ textAlign: 'center', fontSize: 26, fontWeight: 700, letterSpacing: '.35em' }}
+          />
+          {error && <div style={{ fontSize: 12.5, color: '#ff8a5c', lineHeight: 1.4 }}>{error}</div>}
+          {info && <div style={{ fontSize: 12.5, color: '#5fdd9b', lineHeight: 1.4 }}>{info}</div>}
+          <button type="submit" className="btn btn-primary" disabled={busy || code.length < 6}>{busy ? t('auth.working') : t('auth.codeConfirm')}</button>
+        </form>
+        <div onClick={resend} style={{ marginTop: 18, textAlign: 'center', fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('auth.codeResend')}</div>
+        <div onClick={() => switchMode('signIn')} style={{ marginTop: 12, textAlign: 'center', fontSize: 13, color: '#8a8a99', cursor: 'pointer' }}>{t('auth.backToSignIn')}</div>
+      </div>
+    );
   }
 
   return (

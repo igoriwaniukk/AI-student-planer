@@ -422,7 +422,7 @@ function Splash() {
 export default function App() {
   const {
     session, loading: authLoading, signUp, signIn, signInWithGoogle, signInWithApple, signOut,
-    passwordRecovery, clearPasswordRecovery, resetPassword, updatePassword, deleteAccount,
+    passwordRecovery, clearPasswordRecovery, resetPassword, updatePassword, deleteAccount, verifyEmailCode, resendEmailCode,
   } = useAuth();
   const { ready: syncReady, syncError } = useCloudSync(session);
 
@@ -499,7 +499,7 @@ export default function App() {
   if (isSupabaseConfigured && !session) {
     return (
       <LanguageProvider lang={lang} setLang={setLang}>
-        <Auth signUp={signUp} signIn={signIn} signInWithGoogle={signInWithGoogle} signInWithApple={signInWithApple} resetPassword={resetPassword} />
+        <Auth signUp={signUp} signIn={signIn} signInWithGoogle={signInWithGoogle} signInWithApple={signInWithApple} resetPassword={resetPassword} verifyEmailCode={verifyEmailCode} resendEmailCode={resendEmailCode} />
       </LanguageProvider>
     );
   }

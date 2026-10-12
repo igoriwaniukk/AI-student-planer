@@ -88,6 +88,15 @@ export function useAuth() {
     // whatever Site URL is set in Supabase. The address must be listed under
     // Supabase → Authentication → URL Configuration → Redirect URLs.
     signUp: (email, password) => supabase.auth.signUp({ email, password, options: { emailRedirectTo: window.location.origin } }),
+    // The 6-digit code from the confirmation email ({{ .Token }} in the
+    // Supabase template), typed in the app — works inside the iPhone app,
+    // where the email's link would open Safari instead.
+    verifyEmailCode: async (email, code) => {
+      const token = code.replace(/\s+/g, '');
+      const first = await supabase.auth.verifyOtp({ email, token, type: 'email' });
+      return first.error ? supabase.auth.verifyOtp({ email, token, type: 'signup' }) : first;
+    },
+    resendEmailCode: (email) => supabase.auth.resend({ type: 'signup', email }),
     signIn: (email, password) => supabase.auth.signInWithPassword({ email, password }),
     signInWithGoogle: () => (isNativeApp() ? signInThroughAppSheet('google') : supabase.auth.signInWithOAuth({ provider: 'google' })),
     signInWithApple: () => (isNativeApp() ? signInWithAppleInApp() : supabase.auth.signInWithOAuth({ provider: 'apple' })),
