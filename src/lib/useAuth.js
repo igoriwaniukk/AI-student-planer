@@ -36,6 +36,9 @@ async function signInWithAppleInApp() {
   return signInThroughAppSheet('apple');
 }
 
+// Link types Supabase's email templates can send to /auth/confirm.
+const EMAIL_LINK_TYPES = ['email', 'signup', 'magiclink', 'recovery', 'email_change', 'invite'];
+
 // No-op everywhere until real Supabase credentials are configured, so the
 // app's existing localStorage-only behavior is unaffected until then.
 export function useAuth() {
@@ -51,7 +54,21 @@ export function useAuth() {
 
   useEffect(() => {
     if (!isSupabaseConfigured) return undefined;
-    supabase.auth.getSession().then(({ data }) => {
+    // Opened from the confirmation email (/auth/confirm?token_hash=…, see
+    // public/auth/confirm): confirm the address and sign straight in.
+    const params = new URLSearchParams(window.location.search);
+    const tokenHash = params.get('token_hash');
+    const type = params.get('type');
+    let confirming = Promise.resolve();
+    if (tokenHash && EMAIL_LINK_TYPES.includes(type)) {
+      window.history.replaceState(null, '', window.location.pathname + window.location.hash);
+      confirming = supabase.auth.verifyOtp({ token_hash: tokenHash, type }).then(({ error }) => {
+        if (!error && type === 'recovery') setPasswordRecovery(true);
+      }, () => {});
+    }
+    // Stays on the loading screen until a confirmation link is done, so the
+    // sign-in screen doesn't flash first.
+    confirming.then(() => supabase.auth.getSession()).then(({ data }) => {
       setSession(data.session);
       setLoading(false);
     });
