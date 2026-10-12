@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pulgo</title>
+<style>html,body{margin:0;height:100%;background:#08080c}</style>
+<script>
+  // The link in Pulgo's confirmation email lands here. On an iPhone with the
+  // app installed, iOS opens it in the app instead (apple-app-site-association
+  // in /.well-known). Either way the app's start page finishes the sign-in
+  // (src/lib/useAuth.js reads token_hash from the address).
+  location.replace('/' + location.search + location.hash);
+</script>
+</head>
+<body></body>
+</html>
