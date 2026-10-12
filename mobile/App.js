@@ -76,10 +76,6 @@ function Shell() {
   const [failure, setFailure] = useState(null);
   const [retrying, setRetrying] = useState(false);
   const [webKey, setWebKey] = useState(0);
-  // Links to the Pulgo website (the confirmation email's /auth/confirm…)
-  // open the app through apple-app-site-association; the page they point
-  // to is then shown here, which finishes the sign-in.
-  const [pageUrl, setPageUrl] = useState(APP_URL);
   // A tapped reminder can ask for a screen (Restart your day). It's handed to
   // the website once the page says it's ready (its 'pending-open' request),
   // or straight away if it already is.
@@ -99,18 +95,6 @@ function Shell() {
     const t = setTimeout(hideSplash, 10000);
     return () => clearTimeout(t);
   }, [hideSplash]);
-
-  useEffect(() => {
-    const open = (url) => {
-      if (!url || !url.startsWith(APP_ORIGIN + '/')) return;
-      setFailure(null);
-      setPageUrl(url);
-      setWebKey((k) => k + 1);
-    };
-    Linking.getInitialURL().then(open).catch(() => {});
-    const sub = Linking.addEventListener('url', ({ url }) => open(url));
-    return () => sub.remove();
-  }, []);
 
   useEffect(() => { setupReminderChannel((STRINGS[lang] || STRINGS.en).remindersChannel).catch(() => {}); }, [lang]);
 
@@ -237,7 +221,7 @@ function Shell() {
         <WebView
           key={webKey}
           ref={webRef}
-          source={{ uri: pageUrl }}
+          source={{ uri: APP_URL }}
           style={styles.web}
           containerStyle={styles.web}
           originWhitelist={['*']}
