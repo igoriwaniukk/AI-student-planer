@@ -1001,7 +1001,7 @@ export default {
   "chat.reported": "已举报，谢谢，我们会审核",
   "chat.reportFailed": "举报发送失败，请重试。",
   "auth.codeTitle": "查看你的邮箱",
-  "auth.codeSubtitle": "我们已向 {email} 发送了验证码。在这里输入即可确认你的账户。",
+  "auth.codeSubtitle": "我们已向 {email} 发送了邮件。输入邮件中的验证码，或点击其中的链接后回到这里。",
   "auth.codeConfirm": "确认",
   "auth.codeResend": "重新发送验证码",
   "auth.codeResent": "已发送新的验证码。",

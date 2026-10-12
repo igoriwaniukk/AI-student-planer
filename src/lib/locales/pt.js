@@ -1001,7 +1001,7 @@ export default {
   "chat.reported": "Denunciada — obrigado, vamos analisá-la",
   "chat.reportFailed": "Não foi possível enviar a denúncia. Tenta outra vez.",
   "auth.codeTitle": "Verifica o teu e-mail",
-  "auth.codeSubtitle": "Enviámos um código para {email}. Escreve-o aqui para confirmar a tua conta.",
+  "auth.codeSubtitle": "Enviámos um e-mail para {email}. Escreve o código que vem nele ou toca no link e volta aqui.",
   "auth.codeConfirm": "Confirmar",
   "auth.codeResend": "Enviar o código outra vez",
   "auth.codeResent": "Enviámos um novo código.",
