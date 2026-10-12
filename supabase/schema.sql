@@ -106,3 +106,17 @@ $$;
 
 revoke all on function public.consume_ai_usage(uuid, text, text, integer) from public, anon, authenticated;
 revoke all on function public.release_ai_usage(uuid, text, text) from public, anon, authenticated;
+
+-- "Report this answer" in the AI chat (api/_lib/report.js). Written only by
+-- the server with the service-role key; read them in Table Editor. Removed
+-- together with the student's account.
+create table if not exists public.ai_reports (
+  id bigint generated always as identity primary key,
+  user_id uuid references auth.users (id) on delete cascade,
+  reason text not null check (reason in ('harmful', 'wrong', 'other')),
+  answer text not null,
+  question text,
+  lang text,
+  created_at timestamptz not null default now()
+);
+alter table public.ai_reports enable row level security;

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { useChat } from '../hooks/useChat';
 import { buildChatContext } from '../lib/chatContext';
 import { upcomingExams, hm, toMinutes, checkBlockConflict, taskShortLabel, daysPill, planFor } from '../lib/plannerLogic';
@@ -198,11 +198,117 @@ function useVisibleArea(active) {
   return active ? area : null;
 }
 
+// Copies text, also inside the iPhone app's web view where the clipboard
+// API can be missing.
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    try {
+      const el = document.createElement('textarea');
+      el.value = text;
+      el.setAttribute('readonly', '');
+      el.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+      document.body.appendChild(el);
+      el.select();
+      const ok = document.execCommand('copy');
+      el.remove();
+      return ok;
+    } catch {
+      return false;
+    }
+  }
+}
+
+const FLAG_ICON = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 21V4m0 0h12l-2 4 2 4H4" /></svg>;
+const COPY_ICON = <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15V5a2 2 0 0 1 2-2h10" /></svg>;
+
+function ActionPill({ icon, label, onClick }) {
+  return (
+    <div
+      role="button"
+      onClick={onClick}
+      style={{ height: 28, padding: '0 10px', borderRadius: 14, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.08)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5, color: '#a9a9b8', cursor: 'pointer' }}
+    >
+      {icon}{label}
+    </div>
+  );
+}
+
+// Under every AI answer: Copy, and Report (or "Reported" once it's sent).
+function MessageActions({ message, onReport }) {
+  const { t } = useLang();
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!copied) return undefined;
+    const id = setTimeout(() => setCopied(false), 1500);
+    return () => clearTimeout(id);
+  }, [copied]);
+  const canReport = !message.local && !message.limit;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, alignSelf: 'flex-start', marginTop: -6, paddingLeft: 34 }}>
+      {message.reported ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11.5, color: '#f5a524' }}>{FLAG_ICON}{t('chat.reported')}</div>
+      ) : (
+        <>
+          <ActionPill icon={COPY_ICON} label={copied ? t('chat.copied') : t('chat.copy')} onClick={async () => setCopied(await copyText(message.content))} />
+          {canReport && <ActionPill icon={FLAG_ICON} label={t('chat.report')} onClick={onReport} />}
+        </>
+      )}
+    </div>
+  );
+}
+
+const REPORT_OPTIONS = [
+  { reason: 'harmful', icon: '⚠️', key: 'chat.reportHarmful' },
+  { reason: 'wrong', icon: '❌', key: 'chat.reportWrong' },
+  { reason: 'other', icon: '💬', key: 'chat.reportOther' },
+];
+
+function ReportSheet({ onPick, onClose }) {
+  const { t } = useLang();
+  const [busy, setBusy] = useState(false);
+  const [failed, setFailed] = useState(false);
+  async function pick(reason) {
+    if (busy) return;
+    setBusy(true);
+    setFailed(false);
+    const ok = await onPick(reason);
+    setBusy(false);
+    if (ok) onClose();
+    else setFailed(true);
+  }
+  return (
+    <div style={{ position: 'absolute', inset: 0, zIndex: 90 }}>
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(4,4,8,.6)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' }} />
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, borderRadius: '28px 28px 0 0', background: '#14121c', borderTop: '1px solid rgba(255,255,255,.1)', padding: '12px 18px calc(var(--safe-bottom) + 18px)', animation: 'fadeUp .25s ease both' }}>
+        <div style={{ width: 38, height: 5, borderRadius: 3, background: 'rgba(255,255,255,.18)', margin: '0 auto 16px' }} />
+        <div style={{ fontSize: 18, fontWeight: 800 }}>{t('chat.reportTitle')}</div>
+        <div style={{ fontSize: 13, color: '#a9a9b8', marginTop: 5, lineHeight: 1.45 }}>{t('chat.reportDesc')}</div>
+        {REPORT_OPTIONS.map((o) => (
+          <div
+            key={o.reason}
+            role="button"
+            onClick={() => pick(o.reason)}
+            style={{ height: 54, borderRadius: 15, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.09)', display: 'flex', alignItems: 'center', gap: 12, padding: '0 16px', fontSize: 15, fontWeight: 600, marginTop: 9, cursor: 'pointer', opacity: busy ? 0.5 : 1 }}
+          >
+            <span>{o.icon}</span>{t(o.key)}
+          </div>
+        ))}
+        {failed && <div style={{ marginTop: 12, fontSize: 12.5, color: '#f7c46c', textAlign: 'center' }}>{t('chat.reportFailed')}</div>}
+        <div role="button" onClick={onClose} style={{ textAlign: 'center', fontSize: 14, color: '#a9a9b8', marginTop: 16, padding: 6, cursor: 'pointer' }}>{t('chat.cancel')}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, studyHistory, studentName, logEnergy, recurringActivities, setRecurringActivities, raised = false }) {
   const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
-  const { messages, sending, error, send, action, clearAction, appendAssistantMessage, clearChat } = useChat();
+  const { messages, sending, error, send, action, clearAction, appendAssistantMessage, clearChat, reportMessage } = useChat();
+  const [reporting, setReporting] = useState(null);
   const bottomRef = useRef(null);
   const scrollRef = useRef(null);
   const deps = { logEnergy, recurringActivities, setRecurringActivities };
@@ -371,7 +477,8 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
               )}
 
               {messages.map((m, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-end', gap: 8, flexDirection: m.role === 'user' ? 'row-reverse' : 'row', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', animation: 'fadeUp .25s ease both' }}>
+                <Fragment key={i}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, flexDirection: m.role === 'user' ? 'row-reverse' : 'row', alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start', animation: 'fadeUp .25s ease both' }}>
                   <Avatar role={m.role === 'user' ? 'user' : 'assistant'} studentName={studentName} />
                   <div
                     style={{
@@ -379,6 +486,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
                       borderRadius: m.role === 'user' ? '16px 4px 16px 16px' : '4px 16px 16px 16px',
                       background: m.role === 'user' ? 'linear-gradient(155deg,rgba(139,109,255,.35),rgba(109,77,255,.28))' : 'rgba(255,255,255,.05)',
                       border: '1px solid ' + (m.role === 'user' ? 'rgba(139,109,255,.45)' : 'rgba(255,255,255,.08)'),
+                      opacity: m.reported ? 0.45 : 1,
                     }}
                   >
                     {m.role === 'assistant' ? renderMarkdownLite(m.content) : m.content}
@@ -392,6 +500,8 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
                     )}
                   </div>
                 </div>
+                {m.role === 'assistant' && !m.limit && <MessageActions message={m} onReport={() => setReporting(i)} />}
+                </Fragment>
               ))}
 
               {sending && <TypingBubble />}
@@ -432,6 +542,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
                 ➤
               </div>
             </div>
+            {reporting != null && <ReportSheet onPick={(reason) => reportMessage(reporting, reason)} onClose={() => setReporting(null)} />}
           </div>
         </AppShellPortal>
       )}
