@@ -127,6 +127,51 @@ Create the Pulgo email address. Put it in `public/legal.js` (`PULGO_CONTACT_EMAI
   > Pulgo is a study planner for students. Sign in with the demo account above. The app schedules local reminders (10 minutes before each planned study session, streak at risk, unfinished tasks before bedtime, and the evening before an exam), offers Sign in with Apple, and supports deleting the account in Profile → Settings → Delete account. The AI assistant helps plan study sessions.
 - Then **Add for Review → Submit**. The first review usually takes 1–3 days.
 
+### Step 10: If Apple asks for more information (Guideline 2.1 – Information Needed)
+New developer accounts often get this instead of a decision. It isn't a rejection. Apple wants a video and some facts. Answer in App Store Connect → your app → **App Review** (the message) → **Reply**, attach the video, and paste the same text into **App Store** tab → the version → **App Review Information → Notes**.
+
+**Before recording**
+- Supabase → **SQL Editor** → paste the whole `supabase/schema.sql` → **Run** (adds the `ai_reports` table for "Report this answer"; safe to run again).
+- iPhone on the latest iOS (Settings → General → Software Update). App language: English.
+- Demo account: sign in, make sure it has a planned day, at least one exam with its prep plan, and a weekly activity.
+
+**Recording (2–4 minutes)**: Control Center → Screen Recording (add it in Settings → Control Center if missing). Start recording, then:
+1. Open Pulgo from the Home Screen (the video must start with the launch).
+2. Create account with `pulgo.support+review@gmail.com` and a password. Open Gmail, tap the confirmation link, come back signed in.
+3. Go through the short onboarding.
+4. **Profile → Settings → Delete account → confirm**. You land on the sign-in screen.
+5. Sign in with the demo account.
+6. Home: show today's plan, tap **Plan day** (or **Plan tomorrow**) and accept the plan.
+7. **+** → **Exam or deadline** → add one → show the prep plan.
+8. Start a session → the focus timer runs a few seconds → stop it.
+9. **Calendar** tab → switch to the week view.
+10. Pug button → AI Pulgo → ask "How should I study for my next exam?" → show **Copy** and **Report** under the answer → Report → pick a reason → "Reported".
+11. Profile → Settings → show language and reminders → **Sign out**. Stop recording.
+
+**Reply / Review Notes**
+> Hello App Review team,
+>
+> Thank you for reviewing Pulgo. Here is the information you asked for; a screen recording from a physical iPhone on the latest iOS is attached.
+>
+> 1. Screen recording: it starts with launching the app and shows creating an account with email and password (including the confirmation email), deleting that account in Profile → Settings → Delete account, signing in with the demo account, and the main features: an AI study plan for the day, adding an exam with its preparation plan, a focus session, the calendar, and the AI chat with its Report option. This version has no paid content or in-app purchases.
+>
+> 2. Purpose and audience: Pulgo is an AI study planner for anyone who studies — school and university students, and adults taking courses or preparing for exams. Many learners struggle to fit studying around school, work, activities and exam dates, and end up cramming at the last minute. Pulgo builds a realistic daily study plan around their fixed commitments, spreads exam preparation over the days before a test, reminds them before each session, tracks focus time and streaks, and offers an AI assistant ("AI Pulgo") for questions about planning and motivation.
+>
+> 3. How to use it: sign in with the demo account in Sign-In Information, or create an account with email, Sign in with Apple or Google. Home shows today's plan; "Plan day" builds a plan with AI, and tapping a session starts a focus timer. The "+" button adds an exam or deadline (Pulgo creates a preparation plan) or a weekly activity. The Calendar tab shows the day and the week. The pug button opens the AI chat; every AI answer has Copy and Report buttons, and reports are saved for our review. Profile → Settings has language, reminders, Sign out and Delete account, which permanently deletes the account and all its data. No setup or sample files are needed.
+>
+> 4. External services: Supabase (user accounts, including Sign in with Apple and Google, and storing each user's planner data); Anthropic Claude API (the AI features: study plans, exam preparation and the chat — called only from our server, no keys in the app); Vercel (hosts the app's content and server API); Apple (Sign in with Apple, notifications); Google (Sign in with Google). No payment processors, no ads, no tracking.
+>
+> 5. Regions: Pulgo works the same in all regions. The interface is available in 9 languages (English, Polish, Spanish, Portuguese, German, French, Italian, Chinese and Japanese); features and content don't differ by region.
+>
+> 6. Pulgo isn't in a regulated industry and doesn't include protected third-party material.
+>
+> Contact: pulgo.support@gmail.com
+>
+> Best regards,
+> Igor Iwaniuk
+
+For version 1.1 (Premium), add to point 1 and 4: the Premium subscription in Settings → Pulgo Premium, sold through Apple in-app purchase with RevenueCat.
+
 ## 3. Apple review rules
 
 | | Item | Notes |
