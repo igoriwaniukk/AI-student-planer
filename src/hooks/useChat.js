@@ -78,9 +78,32 @@ export function useChat() {
     setAction(null);
   }
 
+  // App-made notes (e.g. "Saved ✓" after a confirmed change) aren't AI
+  // answers, so they can't be reported.
   function appendAssistantMessage(content) {
-    setMessages((prev) => prev.concat({ role: 'assistant', content }));
+    setMessages((prev) => prev.concat({ role: 'assistant', content, local: true }));
   }
 
-  return { messages, sending, error, send, action, clearAction, appendAssistantMessage, clearChat };
+  // "Report this answer": saved on the server for review (see
+  // api/_lib/report.js). Resolves true once it's stored; the answer then
+  // stays marked as reported.
+  async function reportMessage(index, reason) {
+    const m = messages[index];
+    if (!m || m.role !== 'assistant') return false;
+    const question = messages.slice(0, index).reverse().find((x) => x.role === 'user')?.content || '';
+    try {
+      const res = await authedFetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ report: { reason, answer: m.content, question, lang: getCurrentLang() } }),
+      });
+      if (!res.ok) return false;
+    } catch {
+      return false;
+    }
+    setMessages((prev) => prev.map((x, i) => (i === index && x.content === m.content ? { ...x, reported: reason } : x)));
+    return true;
+  }
+
+  return { messages, sending, error, send, action, clearAction, appendAssistantMessage, clearChat, reportMessage };
 }

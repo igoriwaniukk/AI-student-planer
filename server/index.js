@@ -1,6 +1,7 @@
 import './loadEnv.js';
 import express from 'express';
 import { handleChat } from '../api/_lib/chat.js';
+import { handleReport } from '../api/_lib/report.js';
 import { handlePlanGenerate } from '../api/_lib/plan.js';
 import { handlePlanRescue } from '../api/_lib/rescue.js';
 import { handlePlanPrep } from '../api/_lib/prep.js';
@@ -29,6 +30,11 @@ async function respond(res, handler, body) {
 // can't be hit anonymously to run up the Anthropic bill. It's a no-op
 // locally whenever Supabase isn't configured.
 app.post('/api/chat', async (req, res) => {
+  if (req.body?.report) {
+    const { status, body } = await handleReport(req.headers.authorization, req.body.report);
+    res.status(status).json(body);
+    return;
+  }
   const gate = await guardAiRequest(req, res, 'chat');
   if (!gate) return;
   const { status, body } = await handleChat(req.body || {});
