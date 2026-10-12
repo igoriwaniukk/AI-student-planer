@@ -1000,4 +1000,10 @@ export default {
   "chat.reportOther": "Etwas anderes",
   "chat.reported": "Gemeldet — danke, wir prüfen das",
   "chat.reportFailed": "Die Meldung konnte nicht gesendet werden. Versuch es noch mal.",
+  "auth.codeTitle": "Schau in deine E-Mails",
+  "auth.codeSubtitle": "Wir haben einen Code an {email} geschickt. Gib ihn hier ein, um dein Konto zu bestätigen.",
+  "auth.codeConfirm": "Bestätigen",
+  "auth.codeResend": "Code erneut senden",
+  "auth.codeResent": "Wir haben einen neuen Code geschickt.",
+  "auth.codeWrong": "Der Code hat nicht funktioniert. Prüf ihn oder lass dir einen neuen schicken.",
 };

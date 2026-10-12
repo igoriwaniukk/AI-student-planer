@@ -1000,4 +1000,10 @@ export default {
   "chat.reportOther": "Autre chose",
   "chat.reported": "Signalée — merci, nous allons l'examiner",
   "chat.reportFailed": "Impossible d'envoyer le signalement. Réessaie.",
+  "auth.codeTitle": "Vérifie tes e-mails",
+  "auth.codeSubtitle": "Nous avons envoyé un code à {email}. Saisis-le ici pour confirmer ton compte.",
+  "auth.codeConfirm": "Confirmer",
+  "auth.codeResend": "Renvoyer le code",
+  "auth.codeResent": "Nous avons envoyé un nouveau code.",
+  "auth.codeWrong": "Ce code n'a pas marché. Vérifie-le ou demandes-en un nouveau.",
 };
