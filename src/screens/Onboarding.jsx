@@ -174,7 +174,7 @@ export default function Onboarding({ onComplete }) {
                 <div key={day} className="card" style={{ padding: 12, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                   <Chip label={t(DAY_KEY[day]) || day} active={on} onClick={() => toggleSchoolDay(day)} />
                   {on && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 220 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginLeft: 'auto' }}>
                       <WheelTimePicker value={schoolDays[day].start} onChange={(v) => setSchoolDayTime(day, 'start', v)} />
                       <span style={{ color: '#8a8a99' }}>–</span>
                       <WheelTimePicker value={schoolDays[day].end} onChange={(v) => setSchoolDayTime(day, 'end', v)} />
