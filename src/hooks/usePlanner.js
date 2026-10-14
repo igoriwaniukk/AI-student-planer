@@ -420,8 +420,10 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     return s.taskState[key] || { status: 'planned' };
   }
 
+  // plansBack: where the Plans screen's back button returns to (set when
+  // the planner opens it to edit a weekly activity); any other move clears it.
   function go(screen) {
-    update({ screen });
+    update({ screen, plansBack: null });
   }
 
   function toggleTask(id, dayNum) {
