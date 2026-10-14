@@ -310,7 +310,7 @@ export default function Plans({ planner, recurringActivities, setRecurringActivi
   return (
     <>
       <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 120px', position: 'relative', zIndex: 1 }}>
-        <BackButton onClick={() => go('home')} />
+        <BackButton onClick={() => go(state.plansBack || 'home')} />
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 18 }}>
           <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-.03em' }}>{t('plans.title')}</div>
           <div

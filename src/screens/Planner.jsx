@@ -31,6 +31,9 @@ export default function Planner({ planner }) {
   const freeMinutes = windows.reduce((a, w) => a + (w.end - w.start), 0);
   const freeRangesLabel = windows.length ? windows.map((w) => span(w.start, w.end)).join(', ') : t('planner.noFreeTime');
   const dayWord = t(state.planToday ? 'planner.dayToday' : 'planner.dayTomorrow');
+  // Weekly activities (school, gym…) are edited on the Plans screen; its
+  // back button brings the student back here.
+  const openWeekly = () => update({ screen: 'plans', plansBack: 'planner' });
 
   return (
     <>
@@ -56,17 +59,23 @@ export default function Planner({ planner }) {
             <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#8b6dff' }} />
             <span style={{ fontSize: 13.5, fontWeight: 700 }}>{t('planner.alreadyPlanned', { day: dayWord, Day: cap(dayWord) })}</span>
           </div>
-          <span style={{ fontSize: 12.5, fontWeight: 650, color: '#a58cff' }}>{t('planner.edit')}</span>
+          <span role="button" onClick={openWeekly} style={{ fontSize: 12.5, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('planner.edit')}</span>
         </div>
         <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 7 }}>{t('planner.aiWontChange')}</div>
         {constraints.blocks.length > 0 && <div style={{ height: 1, background: 'rgba(255,255,255,.07)', margin: '13px -14px 0' }} />}
         {constraints.blocks.map((b) => (
-          <div key={b.label + b.start} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '13px 0 0' }}>
+          <div
+            key={b.label + b.start}
+            role="button"
+            onClick={() => (b.kind === 'todo' && b.taskId ? openTaskEdit(b.taskId) : openWeekly())}
+            style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '13px 0 0', cursor: 'pointer' }}
+          >
             <div style={{ width: 34, height: 34, borderRadius: 11, background: 'rgba(255,255,255,.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>
               {b.kind === 'todo' ? iconForTask({ category: 'personal', title: b.label }) : iconForActivity(b.label) || <WeeklyIcon size={18} />}
             </div>
             <div style={{ flex: 1 }}><div style={{ fontSize: 13.5, fontWeight: 700 }}>{b.label}</div><div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 1 }}>{b.kind === 'todo' ? t('tl.todo') : t('planner.fixedActivity')}</div></div>
             <span style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6' }}>{fmt(b.start)}–{fmt(b.end)}</span>
+            <svg width="7" height="12" viewBox="0 0 7 12" fill="none" style={{ flex: 'none' }}><path d="M1 1l5 5-5 5" stroke="#5f5f70" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </div>
         ))}
       </div>
