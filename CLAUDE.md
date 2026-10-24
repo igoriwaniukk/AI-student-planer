@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 # Pulgo — notes for Claude
 
-Pulgo is an AI study planner for students: a React 19 + Vite website (plain JS, no TypeScript) deployed on Vercel from `main` (https://ai-student-planer.vercel.app), shown inside a thin Expo iPhone app (`mobile/`). Igor, the owner, isn't a developer: answer in short, plain English with numbered steps, and expect screenshots instead of descriptions.
+Pulgo is an iPhone app (App Store) for students that plans their studying with AI. Its screens are built with web technology (React 19 + Vite, plain JS, no TypeScript) and loaded from Vercel (`main`, https://ai-student-planer.vercel.app) into a thin Expo app (`mobile/`), so every feature is built in `src/` and reaches users without a new App Store build. Customers only ever see the app. Igor, the owner, isn't a developer: answer in short, plain English with numbered steps, expect screenshots, and reply in the language he writes in.
+
+**`pulgo-app.md` is Igor's own overview of Pulgo** (who he is and his goals, features, App Store status, 1.1 plans, marketing, how he works with Claude). Read it for context. When something about the app changes (a feature, the App Store status, a plan), update that file — always edit it, never create a second overview file.
 
 ## Commands
 - `npm run dev` — Vite only (no AI / push backend). `npm run dev:full` — Vite + the local Express backend (`server/index.js`, needs `server/.env`, see `server/.env.example`).
