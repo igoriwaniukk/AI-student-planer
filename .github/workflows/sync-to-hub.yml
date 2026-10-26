@@ -1,0 +1,29 @@
+# Copies Igor's overview and the Claude notes into his private hub (igor-hub)
+# whenever they change on main. Needs the HUB_TOKEN secret (write access to igor-hub only).
+name: Sync to igor-hub
+
+on:
+  push:
+    branches: [main]
+    paths: [pulgo-app.md, CLAUDE.md]
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: igoriwaniukk/igor-hub
+          token: ${{ secrets.HUB_TOKEN }}
+          path: hub
+      - name: Copy and save if changed
+        run: |
+          cp pulgo-app.md hub/pulgo/pulgo.md
+          cp CLAUDE.md hub/pulgo/pulgo-claude.md
+          cd hub
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pulgo/
+          git diff --cached --quiet || { git commit -m "Sync Pulgo files"; git push; }
