@@ -57,6 +57,11 @@ Pulgo is my iPhone app for everyone who studies (students, and adults taking cou
 - **Oct 12:** Apple asked for more information (Guideline 2.1, new developer account). I replied with a screen recording + text and resubmitted.
 - **Oct 19:** expedited review requested and approved.
 - **Oct 23:** still "Waiting for Review". I wrote to Apple through the contact form.
+- **Oct 18:** the updated Apple Developer Program License Agreement is signed (nothing blocking on my side).
+- **Oct 26:** still waiting. If there's no answer, call Apple Developer Support (developer.apple.com/contact → Membership and Account → Phone).
+- **TestFlight:**
+  - internal group "Team (Expo)" works now (add people via Users and Access, role Marketing)
+  - external group "Beta" with a public link created; build 1.0.0 (2) is "Waiting for Beta App Review", and the link starts working once it's approved
 - **Rules:**
   - Don't cancel and resubmit.
   - Don't create a second app.
