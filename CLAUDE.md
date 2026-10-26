@@ -12,7 +12,7 @@ Pulgo is an iPhone app (App Store) for students that plans their studying with A
 - `npm run dev` — Vite only (no AI / push backend). `npm run dev:full` — Vite + the local Express backend (`server/index.js`, needs `server/.env`, see `server/.env.example`).
 - `npm run lint` (oxlint) · `npm test` (vitest, all) · `npm run build`
 - One test file: `npx vitest run src/lib/plannerLogic.test.js` · one test by name: `npx vitest run -t "weekDayItems"`
-- CI (`.github/workflows/node.js.yml`) runs `npm ci`, build and test on Node 18/20/22 for `main`.
+- CI (`.github/workflows/node.js.yml`) runs `npm ci`, build and test on Node 20/22 for `main` (Vite 8 needs Node 20.19+).
 - Check a change in a browser: `npm run build && npx vite preview --port 4363`, then Playwright (`require('/opt/node22/lib/node_modules/playwright')`, `executablePath: '/opt/pw-browsers/chromium'`), seeding `localStorage` (`sp_name`, `sp_language`, `sp_activities`, `sp_dayAnchor`, `sp_plannerData`, `sp_profileDefaults`, `sp_recurringActivities`) in an init script and mocking `/api/*` with `page.route`. For the sign-in screens, build with fake `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` into a scratch `--outDir` and mock `https://<fake>/auth/v1/*`. Keep screenshots out of the repo.
 
 ## How changes ship
