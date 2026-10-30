@@ -59,6 +59,7 @@ Pulgo is my iPhone app for everyone who studies (students, and adults taking cou
 - **Oct 23:** still "Waiting for Review". I wrote to Apple through the contact form.
 - **Oct 18:** the updated Apple Developer Program License Agreement is signed (nothing blocking on my side).
 - **Oct 26:** still waiting. If there's no answer, call Apple Developer Support (developer.apple.com/contact → Membership and Account → Phone).
+- **Oct 29–30:** the contact form went to the App Review Board as an "appeal" (ticket APL619794). They closed it because the app is already resubmitted, and forwarded my message to an App Review team member, who will write in App Store Connect if needed. Next step if nothing happens: reply to Apple's latest message in App Store Connect → App Review.
 - **TestFlight:**
   - internal group "Team (Expo)" works now (add people via Users and Access, role Marketing)
   - external group "Beta" with a public link created; build 1.0.0 (2) is "Waiting for Beta App Review", and the link starts working once it's approved
