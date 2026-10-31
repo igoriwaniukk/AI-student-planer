@@ -60,13 +60,14 @@ Pulgo is my iPhone app for everyone who studies (students, and adults taking cou
 - **Oct 18:** the updated Apple Developer Program License Agreement is signed (nothing blocking on my side).
 - **Oct 26:** still waiting. If there's no answer, call Apple Developer Support (developer.apple.com/contact → Membership and Account → Phone).
 - **Oct 29–30:** the contact form went to the App Review Board as an "appeal" (ticket APL619794). They closed it because the app is already resubmitted, and forwarded my message to an App Review team member, who will write in App Store Connect if needed. Next step if nothing happens: reply to Apple's latest message in App Store Connect → App Review.
+- **Oct 31, 2026: APPROVED 🎉** — "In Review" and then "Ready for Distribution" on the same day. Pulgo 1.0 is in the App Store.
 - **TestFlight:**
   - internal group "Team (Expo)" works now (add people via Users and Access, role Marketing)
   - external group "Beta" with a public link created; build 1.0.0 (2) is "Waiting for Beta App Review", and the link starts working once it's approved
-- **Rules:**
-  - Don't cancel and resubmit.
-  - Don't create a second app.
-  - Don't change version 1.0 or the demo account while it's in review.
+- **Rules for future versions:**
+  - Never cancel and resubmit just because it's slow, and never create a second app.
+  - Don't change a version or the demo account while it's in review.
+  - Keep the demo account working, since Apple uses it for every update.
 - The review answer text and recording script are in `APP_STORE_READINESS.md` (step 10). Reuse them for future versions.
 
 ## Version 1.1 (next)
