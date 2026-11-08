@@ -76,7 +76,9 @@ Pulgo is my iPhone app for everyone who studies (students, and adults taking cou
   - Paid Apps agreement signed; bank account and US tax form (W-8BEN) submitted, waiting to become Active
   - Small Business Program applied for (15% instead of 30%)
   - Subscriptions created, not submitted yet: group "Pulgo Premium", `pulgo_premium_monthly` $9.99 and `pulgo_premium_yearly` $59.99 with a free week (no end date), names in 9 languages
-  - still to do: RevenueCat, Vercel keys, the 1.1 build, a review screenshot of the payment screen, sandbox test, then submit 1.1 with both subscriptions
+  - RevenueCat done: App Store app with the In-App Purchase key, products, entitlement `premium` (both products), offering `default` (Monthly + Annual), webhook to `/api/premium`
+  - Vercel: `REVENUECAT_SECRET_KEY` and `REVENUECAT_WEBHOOK_AUTH` added (Production); the public `appl_` key is in the 1.1 app config
+  - still to do: wait for the bank to be Active, redeploy Vercel, the 1.1 build, a review screenshot of the payment screen, sandbox test, then submit 1.1 with both subscriptions and set `PREMIUM_ENABLED=true`
 - **Pulgo Premium:** $9.99/month or $59.99/year with 7 days free.
   - Free limits: 10 chats/day, 1 AI plan/day, 1 rescue/day, 1 exam prep/week.
   - Bought only in the iPhone app (Apple in-app purchase via RevenueCat).
