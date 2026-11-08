@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useLang } from '../lib/useLang';
 import { TASK_TEXT_KEY, VALUE_KEY } from '../lib/i18n';
 import {
-  PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, NUM_TODAY, SUBJECTS, PRIORITIES, RESCUE_TIME_MINUTES, realDateForNum, LEVELS,
+  PLAN_LABELS, PREP_LABELS, RESCUE_LABELS, GOALS, REFERENCE_DAY, NUM_TODAY, PRIORITIES, RESCUE_TIME_MINUTES, realDateForNum, LEVELS,
 } from '../lib/plannerData';
 import { buildSchedule, buildRescueSchedule, activeIds as computeActiveIds, checkBlockConflict, upcomingExams, buildPrepSessions, buildPrepDates, buildPrepDayNums, weekdayDateLabel, dayConstraints, daysUntilFromISODate, durOf, taskKey, dayInfo, prepDayLabel, isTaskOn, taskDueOnDay, daySessionBreakdown, localDateKey, sessionDur, sessionClock, dayOpenTasks, timeStrToMinutes, roundedNowMinutes, planFor, draftFor, workingPlan, plannedElsewhere, timedTodoBlocks } from '../lib/plannerLogic';
 import { requestAIPlan } from '../lib/aiPlan';
@@ -778,7 +778,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   function openNewTaskEdit(dayNum) {
     update({
       taskEdit: {
-        id: null, name: '', subject: SUBJECTS[0], dur: 30, start: '19:00', priority: PRIORITIES[1], note: '',
+        id: null, name: '', subject: null, kind: null, customName: false, dur: 30, start: '19:00', priority: PRIORITIES[1], note: '',
         category: 'school', autoCategory: true, repeatDays: [], timed: false,
         ...(dayNum != null ? dayChoiceForNum(dayNum) : { dayChoice: 'today', dayDate: '' }),
       },
@@ -821,6 +821,9 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       if (Object.keys(errs).length) return { editErrors: errs };
       const name = fm.name.trim();
       const isNew = fm.id == null;
+      // The Add task page lets the subject stay empty ("Homework" on its own).
+      const subject = fm.subject || 'Inny';
+      const kind = fm.kind || undefined;
       const id = isNew ? 'custom-' + Date.now() : fm.id;
       // A repeating task has no single day-num — it matches whichever of its
       // chosen weekdays a given dayNum falls on (see taskDueOnDay in
@@ -848,13 +851,13 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       }
       const defs = isNew
         ? s.taskDefs.concat(isPersonal
-          ? { id, category: 'personal', title: name, priority: fm.priority, note: fm.note, day, repeatDays, color: '#a58cff', short: name, at: timedTodo ? fm.start.trim() : null, dur: timedTodo ? fm.dur : undefined }
-          : { id, category: 'school', subject: fm.subject, title: name, dur: fm.dur, priority: fm.priority, note: fm.note, day, repeatDays, color: '#a58cff', short: fm.subject + ' — ' + name })
+          ? { id, category: 'personal', kind, title: name, priority: fm.priority, note: fm.note, day, repeatDays, color: '#a58cff', short: name, at: timedTodo ? fm.start.trim() : null, dur: timedTodo ? fm.dur : undefined }
+          : { id, category: 'school', kind, subject, title: name, dur: fm.dur, priority: fm.priority, note: fm.note, day, repeatDays, color: '#a58cff', short: subject + ' — ' + name })
         : s.taskDefs.map((t) => {
           if (t.id !== id) return t;
           if (isPersonal) return { ...t, category: 'personal', title: name, priority: fm.priority, note: fm.note, day, repeatDays, short: name, at: timedTodo ? fm.start.trim() : null, dur: timedTodo ? fm.dur : undefined };
-          const renamed = t.title !== name || t.subject !== fm.subject;
-          return { ...t, category: 'school', title: name, subject: fm.subject, dur: fm.dur, priority: fm.priority, note: fm.note, day, repeatDays, short: renamed ? fm.subject + ' — ' + name : t.short };
+          const renamed = t.title !== name || t.subject !== subject;
+          return { ...t, category: 'school', title: name, subject, dur: fm.dur, priority: fm.priority, note: fm.note, day, repeatDays, short: renamed ? subject + ' — ' + name : t.short };
         });
       const durOverride = isPersonal ? s.durOverride : { ...s.durOverride, [id]: fm.dur };
       const startOverride = isPersonal ? s.startOverride : { ...s.startOverride, [id]: startMin };

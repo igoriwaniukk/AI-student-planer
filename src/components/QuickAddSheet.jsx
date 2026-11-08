@@ -5,7 +5,7 @@ import { PugLive } from './PugMascot';
 import { ExamIcon, WeeklyIcon } from './planIcons';
 import ActivityForm from './ActivityForm';
 
-function Tile({ icon, title, desc, examples, accent, rgb, onClick }) {
+function Tile({ icon, title, desc, examples, accent, rgb, arrowText = '#0b0b10', onClick }) {
   return (
     <div
       onClick={onClick}
@@ -15,12 +15,12 @@ function Tile({ icon, title, desc, examples, accent, rgb, onClick }) {
       }}
     >
       <div style={{ width: 54, height: 54, borderRadius: 17, background: `rgba(${rgb},.18)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{icon}</div>
-      <div style={{ position: 'absolute', right: 18, top: 20, width: 38, height: 38, borderRadius: '50%', background: accent, color: '#0b0b10', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, fontWeight: 800 }}>›</div>
+      <div style={{ position: 'absolute', right: 18, top: 20, width: 38, height: 38, borderRadius: '50%', background: accent, color: arrowText, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 19, fontWeight: 800 }}>›</div>
       <div style={{ fontSize: 21, fontWeight: 800, letterSpacing: '-.01em', marginTop: 14 }}>{title}</div>
       <div style={{ fontSize: 13.5, color: '#b9b9c6', marginTop: 6, lineHeight: 1.45 }}>{desc}</div>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 13 }}>
         {examples.map((ex) => (
-          <span key={ex} style={{ fontSize: 12, fontWeight: 650, padding: '5px 10px', borderRadius: 999, background: `rgba(${rgb},.14)`, color: accent }}>{ex}</span>
+          <span key={ex} style={{ fontSize: 12, fontWeight: 650, padding: '5px 10px', borderRadius: 999, background: `rgba(${rgb},.14)`, color: rgb === '139,109,255' ? '#c9baff' : accent }}>{ex}</span>
         ))}
       </div>
     </div>
@@ -31,7 +31,7 @@ function Tile({ icon, title, desc, examples, accent, rgb, onClick }) {
 // kind of thing that shows up in their week: an exam date (routes into the
 // existing Deadline flow) or a recurring weekly activity (added right here,
 // since it's just a few fields). Full screen rather than a bottom sheet.
-export default function QuickAddSheet({ open, onClose, onAddExam, recurringActivities, setRecurringActivities, initialMode = 'menu' }) {
+export default function QuickAddSheet({ open, onClose, onAddExam, onAddTask, recurringActivities, setRecurringActivities, initialMode = 'menu' }) {
   const { t } = useLang();
   const [mode, setMode] = useState(initialMode);
 
@@ -69,6 +69,11 @@ export default function QuickAddSheet({ open, onClose, onAddExam, recurringActiv
             <div style={{ fontSize: 14, color: '#8a8a99', marginTop: 6, lineHeight: 1.45 }}>{t('quickAdd.heroSub')}</div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14, marginTop: 24 }}>
+              <Tile
+                icon={<span style={{ fontSize: 26 }}>📝</span>} title={t('quickAdd.taskTitle')} desc={t('quickAdd.taskDesc')}
+                examples={t('quickAdd.taskExamples').split('|')} accent="#8b6dff" rgb="139,109,255" arrowText="#fff"
+                onClick={() => { close(); onAddTask(); }}
+              />
               <Tile
                 icon={<ExamIcon />} title={t('quickAdd.examTile')} desc={t('quickAdd.examDesc')}
                 examples={t('quickAdd.examExamples').split('|')} accent="#f5a524" rgb="245,165,36"

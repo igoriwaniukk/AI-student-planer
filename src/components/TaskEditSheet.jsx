@@ -13,7 +13,8 @@ export default function TaskEditSheet({ planner }) {
   const { t } = useLang();
   const { state, patchTaskEdit, stepTaskDur, cancelTaskEdit, saveTaskEdit, removeTaskDef } = planner;
   const fm = state.taskEdit;
-  if (!fm) return null;
+  // A new task is added on the full Add task page (AddTaskPage.jsx).
+  if (!fm || fm.id == null) return null;
   const errs = state.editErrors || {};
   const isNew = fm.id == null;
 
