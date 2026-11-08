@@ -72,6 +72,11 @@ Pulgo is my iPhone app for everyone who studies (students, and adults taking cou
 - The review answer text and recording script are in `APP_STORE_READINESS.md` (step 10). Reuse them for future versions.
 
 ## Version 1.1 (next)
+- **Setup progress (Nov 2026):**
+  - Paid Apps agreement signed; bank account and US tax form (W-8BEN) submitted, waiting to become Active
+  - Small Business Program applied for (15% instead of 30%)
+  - Subscriptions created, not submitted yet: group "Pulgo Premium", `pulgo_premium_monthly` $9.99 and `pulgo_premium_yearly` $59.99 with a free week (no end date), names in 9 languages
+  - still to do: RevenueCat, Vercel keys, the 1.1 build, a review screenshot of the payment screen, sandbox test, then submit 1.1 with both subscriptions
 - **Pulgo Premium:** $9.99/month or $59.99/year with 7 days free.
   - Free limits: 10 chats/day, 1 AI plan/day, 1 rescue/day, 1 exam prep/week.
   - Bought only in the iPhone app (Apple in-app purchase via RevenueCat).
