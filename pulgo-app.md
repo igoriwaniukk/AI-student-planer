@@ -28,6 +28,7 @@ Pulgo is my iPhone app for everyone who studies (students, and adults taking cou
 - **Onboarding:** name, school hours per day, weekly activities (school, gym, football…), study preferences, 9 languages.
 - **Home:** today's plan, the streak card (orange flame, round day bubbles), week strip, "Plan day" / "Plan tomorrow".
 - **AI day plan:** builds study sessions around fixed things. "Already planned" items can be edited.
+- **Adding a task** (+ menu → purple **Task** card, or any "+ Add task"): a full page with big tiles (Homework, Project, Presentation, Essay, Reading, Revision, To-do, Other) and optional subject chips. The name fills in by itself (e.g. "Biology Project") and the length by type, so almost no typing. Time, priority, repeat and note are under "More options".
 - **Exams:** add an exam or deadline, get an AI prep plan over the days before it.
 - **Rescue:** re-plans a busy or messed-up day.
 - **Focus timer:** a soft wide ring, with the session counting through reloads.

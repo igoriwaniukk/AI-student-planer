@@ -4,6 +4,7 @@ import StreakCelebration from './components/StreakCelebration';
 import Paywall from './components/Paywall';
 import ChatWidget from './components/ChatWidget';
 import QuickAddSheet from './components/QuickAddSheet';
+import AddTaskPage from './components/AddTaskPage';
 import Plans from './screens/Plans';
 import Focus from './screens/Focus';
 import FinishSheet from './components/FinishSheet';
@@ -397,9 +398,12 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
         initialMode={quickAddMode}
         onClose={() => { setQuickAddOpen(false); setQuickAddMode('menu'); }}
         onAddExam={planner.startNewExam}
+        onAddTask={() => planner.openNewTaskEdit()}
         recurringActivities={recurringActivities}
         setRecurringActivities={setRecurringActivities}
       />
+
+      <AddTaskPage key={state.taskEdit && state.taskEdit.id == null ? 'add-task' : 'closed'} planner={planner} />
 
       {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} onFabClick={() => setQuickAddOpen(true)} fabActive={quickAddOpen} />}
 
