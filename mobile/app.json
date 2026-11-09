@@ -68,7 +68,11 @@
     ],
     "extra": {
       "appUrl": "https://ai-student-planer.vercel.app",
-      "revenueCatIosKey": "appl_ExjSemxPjbpLDgPMAeNlggnhtws"
-    }
+      "revenueCatIosKey": "appl_ExjSemxPjbpLDgPMAeNlggnhtws",
+      "eas": {
+        "projectId": "5edf1d47-85b5-4a1f-a4d5-bf291471ea42"
+      }
+    },
+    "owner": "igorek477"
   }
 }
