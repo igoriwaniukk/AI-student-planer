@@ -4,6 +4,7 @@ import { DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { Chip } from './ui';
 import WheelTimePicker from './WheelTimePicker';
+import { SettingRow } from './ListRows';
 
 const inputStyle = { boxSizing: 'border-box', width: '100%', height: 50, borderRadius: 15, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)', padding: '0 15px', fontSize: 15, color: '#f4f4f7', fontFamily: 'inherit' };
 const label = { fontSize: 10.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' };
@@ -19,6 +20,8 @@ export default function ActivityForm({ initial, submitLabel, onSubmit, onDelete 
   const [start, setStart] = useState(initial?.start || '18:00');
   const [end, setEnd] = useState(initial?.end || '19:00');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [open, setOpen] = useState(null);
+  const toggleRow = (k) => setOpen((o) => (o === k ? null : k));
   const ready = !!name.trim() && days.length > 0;
   const toggle = (d) => setDays((list) => (list.includes(d) ? list.filter((x) => x !== d) : list.concat(d)));
   const weekdaysOnly = days.length === WEEKDAYS.length && WEEKDAYS.every((d) => days.includes(d));
@@ -43,15 +46,13 @@ export default function ActivityForm({ initial, submitLabel, onSubmit, onDelete 
         {RECUR_DAYS.map((d) => <Chip key={d} label={(t(DAY_KEY[d]) || d).slice(0, 3)} active={days.includes(d)} onClick={() => toggle(d)} />)}
       </div>
 
-      <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ ...label, marginBottom: 8, textAlign: 'center' }}>{t('quickAdd.start')}</div>
-          <WheelTimePicker value={start} onChange={setStart} />
-        </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ ...label, marginBottom: 8, textAlign: 'center' }}>{t('quickAdd.end')}</div>
-          <WheelTimePicker value={end} onChange={setEnd} />
-        </div>
+      <div style={{ marginTop: 14 }}>
+        <SettingRow icon="🕐" label={t('quickAdd.start')} value={start} open={open === 'start'} onClick={() => toggleRow('start')}>
+          <div style={{ width: 160 }}><WheelTimePicker value={start} onChange={setStart} /></div>
+        </SettingRow>
+        <SettingRow icon="🏁" label={t('quickAdd.end')} value={end} open={open === 'end'} onClick={() => toggleRow('end')}>
+          <div style={{ width: 160 }}><WheelTimePicker value={end} onChange={setEnd} /></div>
+        </SettingRow>
       </div>
 
       <div

@@ -92,11 +92,12 @@ export default function QuickAddSheet({ open, onClose, onAddExam, onAddTask, rec
               <div onClick={() => setMode('menu')} style={{ ...roundBtn, fontSize: 20, color: '#a58cff' }}>‹</div>
               <div onClick={close} style={roundBtn}>✕</div>
             </div>
-            <div style={{ width: 58, height: 58, borderRadius: 18, background: 'rgba(46,230,197,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 18 }}>
-              <WeeklyIcon size={32} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: 'rgba(46,230,197,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 'none' }}>
+                <WeeklyIcon size={24} />
+              </div>
+              <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-.02em' }}>{t('quickAdd.activityTitle')}</div>
             </div>
-            <div style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-.02em', marginTop: 14 }}>{t('quickAdd.activityTitle')}</div>
-            <div style={{ fontSize: 14, color: '#8a8a99', marginTop: 6, lineHeight: 1.45 }}>{t('quickAdd.activityDesc')}</div>
 
             <ActivityForm submitLabel={t('profile.addActivity')} onSubmit={addActivity} />
           </>

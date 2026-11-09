@@ -27,7 +27,7 @@ export default function RescueResult({ planner }) {
 
   return (
     <>
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '16px 20px 150px', position: 'relative', zIndex: 1 }}>
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '16px 20px 210px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BackButton onClick={() => go('rescue')} />
         <span role="button" onClick={() => go('rescue')} style={{ fontSize: 14, fontWeight: 700, color: '#a58cff', cursor: 'pointer', padding: '8px 2px' }}>{t('planner.edit')}</span>

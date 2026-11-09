@@ -35,7 +35,7 @@ export default function Rescue({ planner }) {
 
   return (
     <>
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '16px 20px 150px', position: 'relative', zIndex: 1 }}>
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '16px 20px 210px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BackButton onClick={() => go('home')} />
         <span style={{ fontSize: 13, fontWeight: 650, color: '#8a8a99' }}><NowClock /></span>

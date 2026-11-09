@@ -1076,4 +1076,7 @@ export default {
   "plan.newPlan": "重新生成",
   "planner.yourDay": "你的一天",
   "planner.buildPlanTime": "生成我的计划 · {time}",
+  "sum.headline": "完成 {done}/{total} · 学习 {time}",
+  "sum.sessionsLabel": "学习时段",
+  "sum.noteRow": "备注",
 };
