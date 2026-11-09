@@ -60,7 +60,7 @@ function seed({ allDone = false, premium = false } = {}) {
   };
 }
 
-async function shoot(browser, name, { time = '15:40', premium = false, allDone = false, act }) {
+async function shoot(browser, name, { time = '15:40', premium = false, allDone = false, paywall = false, act }) {
   const ctx = await browser.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 3, timezoneId: 'Europe/Warsaw', locale: 'en-US' });
   const page = await ctx.newPage();
   await page.clock.install({ time: new Date(`${DATE}T${time}:00+01:00`) });
@@ -78,7 +78,10 @@ async function shoot(browser, name, { time = '15:40', premium = false, allDone =
       document.head.appendChild(s);
     });
   }, data);
-  await page.route('**/api/premium', (r) => r.fulfill({ json: { enabled: premium, premium, expiresAt: premium ? '2027-11-10T10:00:00Z' : null, createdAt: '2026-11-01T00:00:00Z' } }));
+  // The purchase screen as it looks inside the iPhone app (buy button,
+  // Restore), not the website's "Get the iPhone app".
+  if (paywall) await page.addInitScript(() => { window.ReactNativeWebView = { postMessage() {} }; window.PulgoNative = { version: '1.1.0' }; });
+  await page.route('**/api/premium', (r) => r.fulfill({ json: { enabled: premium || paywall, premium, expiresAt: premium ? '2027-11-10T10:00:00Z' : null, createdAt: '2026-11-01T00:00:00Z' } }));
   await page.route('**/api/plan**', (r) => r.fulfill({ status: 503, json: {} }));
   await page.route('**/api/rescue**', (r) => r.fulfill({ status: 503, json: {} }));
   await page.route('**/api/push**', (r) => r.fulfill({ json: {} }));
@@ -99,6 +102,8 @@ async function shoot(browser, name, { time = '15:40', premium = false, allDone =
   const only = process.env.ONLY ? process.env.ONLY.split(',') : null;
   const scenes = {
     'home': {},
+    // The purchase screen, for each subscription's App Review screenshot.
+    'paywall': { paywall: true },
     'plan': { act: async (p) => { await p.getByText('See full plan').click(); await p.waitForTimeout(800); } },
     'chat': { act: async (p) => { await p.locator('.fab-btn[aria-label="AI Pulgo"]').click(); await p.waitForTimeout(1200); } },
     'planner': { act: async (p, { scrollMain }) => { await scrollMain(99999); await p.getByText('Plan tomorrow', { exact: true }).click(); await p.waitForTimeout(800); } },
