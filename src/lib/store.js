@@ -22,6 +22,7 @@ export const KEYS = {
   dayAnchor: 'sp_dayAnchor',
   chatMessages: 'sp_chatMessages',
   premiumSince: 'sp_premiumSince',
+  streakRewards: 'sp_streakRewards',
 };
 
 // Fired whenever any useLocalStorage value is written — cloudSync.js listens

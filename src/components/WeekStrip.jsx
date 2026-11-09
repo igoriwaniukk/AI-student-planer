@@ -22,7 +22,7 @@ const DRAG_THRESHOLD = 8;
 // bubbles (Home's streak card): round day bubbles under the weekday, the
 // streak days filled orange, the chosen day purple and today ringed.
 export default function WeekStrip({
-  selectedDay, onSelect, eventDays, examDay, streakCount, streakIncludesToday = false, topMargin = 22,
+  selectedDay, onSelect, eventDays, examDay, streakCount, streakIncludesToday = false, frozenDays = null, topMargin = 22,
   pageable = false, weekOffset: controlledOffset, onOffsetChange, bubbles = false,
 }) {
   const { t } = useLang();
@@ -40,8 +40,14 @@ export default function WeekStrip({
   // A streak ends today once today is studied, otherwise yesterday (see
   // computeStreak) — never REFERENCE_DAY, which is tomorrow.
   const streakEnd = streakIncludesToday ? NUM_TODAY : NUM_TODAY - 1;
+  // Days saved by a streak freeze (frozenDays) sit inside the run without
+  // counting towards it, so the run stretches one day further back per freeze.
+  let streakSpan = 0;
+  for (let counted = 0; counted < (streakCount || 0) && streakSpan < 400; streakSpan++) {
+    if (!frozenDays?.has(streakEnd - streakSpan)) counted++;
+  }
   const streakSet = streakCount > 0
-    ? new Set(baseWeek.filter((d) => d.num <= streakEnd && d.num > streakEnd - streakCount).map((d) => d.num))
+    ? new Set(baseWeek.filter((d) => d.num <= streakEnd && d.num > streakEnd - streakSpan).map((d) => d.num))
     : null;
   const daysUntilExam = examDay != null ? examDay - NUM_TODAY : null;
 
@@ -95,6 +101,7 @@ export default function WeekStrip({
             const shortLabel = t(DAY_KEY[label] + '.short') || short;
             if (bubbles) {
               const isToday = num === NUM_TODAY;
+              const frozen = isStreak && frozenDays?.has(num);
               return (
                 <div
                   key={num}
@@ -106,15 +113,15 @@ export default function WeekStrip({
                     style={{
                       width: 38, height: 38, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 15, fontWeight: 750, fontVariantNumeric: 'tabular-nums',
-                      background: on ? 'linear-gradient(160deg,#8b6dff,#6d4dff)' : isStreak ? 'linear-gradient(150deg,#ffb547,#ff6a3d)' : 'rgba(255,255,255,.05)',
-                      color: on ? '#fff' : isStreak ? '#2a1300' : '#c9c9d6',
+                      background: on ? 'linear-gradient(160deg,#8b6dff,#6d4dff)' : frozen ? 'linear-gradient(150deg,#bdefff,#5cb8ff)' : isStreak ? 'linear-gradient(150deg,#ffb547,#ff6a3d)' : 'rgba(255,255,255,.05)',
+                      color: on ? '#fff' : frozen ? '#0b2a44' : isStreak ? '#2a1300' : '#c9c9d6',
                       boxShadow: on
                         ? '0 0 0 3px rgba(139,109,255,.28), 0 6px 16px rgba(109,77,255,.35)'
-                        : isStreak ? '0 4px 12px rgba(255,120,60,.3)' : isToday ? 'inset 0 0 0 1.5px rgba(139,109,255,.7)' : 'none',
+                        : frozen ? '0 4px 12px rgba(92,184,255,.3)' : isStreak ? '0 4px 12px rgba(255,120,60,.3)' : isToday ? 'inset 0 0 0 1.5px rgba(139,109,255,.7)' : 'none',
                       transition: 'background .2s ease, box-shadow .2s ease',
                     }}
                   >
-                    {realDateForNum(num).getDate()}
+                    {frozen ? '🧊' : realDateForNum(num).getDate()}
                   </div>
                   <span style={{ width: 4, height: 4, borderRadius: '50%', background: hasEvent ? '#2ee6c5' : 'transparent' }} />
                 </div>

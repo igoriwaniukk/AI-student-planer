@@ -26,7 +26,11 @@ Pulgo is my iPhone app for everyone who studies (students, and adults taking cou
 
 ## What the app does (version 1.0)
 - **Onboarding:** name, school hours per day, weekly activities (school, gym, football…), study preferences, 9 languages.
-- **Home:** today's plan, the streak card (orange flame, round day bubbles), week strip, "Plan day" / "Plan tomorrow".
+- **Home:** today's plan, the streak card (orange flame, round day bubbles), "This week" (an empty week shows a pug line instead of empty bars; "All plans ›" stays), **Pug's tip of the day** (a glowing card with a tip picked from your own day: exam coming up, keep your streak, a study tip; button "Ask AI Pulgo"), the next deadline, "Plan tomorrow". The Energy card was removed from Home (energy is still set in the planner and Profile).
+- **Streak rewards:**
+  - **Badges for everyone** at 7, 10, 30, 50, 100, 200 and 365 days in a row (🌱 🥉 🥈 🥇 💎 🏆 👑): a celebration when you reach one, and a "Streak badges" card on Profile.
+  - **Streak freezes (Premium):** 1 freeze for every 3 finished sessions, plus 1 as a gift at each badge, max 3. A missed day is covered automatically and shows as 🧊 on the streak card.
+  - Premium streak card: gold edge, 👑 on the flame, a PREMIUM chip, 🧊 n/3 and the progress to the next freeze. Free users see a small locked "🔒 🧊 Freeze" chip that opens Premium.
 - **AI day plan:** builds study sessions around fixed things. "Already planned" items can be edited.
 - **Adding a task** (+ menu → purple **Task** card, or any "+ Add task"): a full page with big tiles (Homework, Project, Presentation, Essay, Reading, Revision, To-do, Other) and optional subject chips. The name fills in by itself (e.g. "Biology Project") and the length by type, so almost no typing. Time, priority, repeat and note are under "More options".
 - **Exams:** add an exam or deadline, get an AI prep plan over the days before it.

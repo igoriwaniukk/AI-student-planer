@@ -1,6 +1,6 @@
 import { Fragment, useEffect, useRef, useState } from 'react';
 import { useChat } from '../hooks/useChat';
-import { buildChatContext } from '../lib/chatContext';
+import { buildChatContext, OPEN_CHAT_EVENT } from '../lib/chatContext';
 import { upcomingExams, hm, toMinutes, checkBlockConflict, taskShortLabel, daysPill, planFor } from '../lib/plannerLogic';
 import { NUM_TODAY, REFERENCE_DAY } from '../lib/plannerData';
 import { VALUE_KEY, DAY_KEY } from '../lib/i18n';
@@ -385,6 +385,12 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
     setHello(false);
     setOpen(true);
   }
+  // Other screens open the chat by firing OPEN_CHAT_EVENT (Home's tip card).
+  useEffect(() => {
+    const onOpen = () => openChat();
+    window.addEventListener(OPEN_CHAT_EVENT, onOpen);
+    return () => window.removeEventListener(OPEN_CHAT_EVENT, onOpen);
+  });
   const helloText = t('chat.pugHello' + (helloIdx % 3));
 
   return (

@@ -457,6 +457,8 @@ export function upcomingExams(state) {
 // calendar date (localDateKey), stepping back one calendar day at a time,
 // so studying at 00:30 counts for the new day and clock changes can't skip
 // or repeat a day.
+// A day saved by a streak freeze (Premium, see lib/streakRewards.js) is
+// marked `frozen`: it keeps the run going without adding to it.
 export function computeStreak(studyHistory) {
   const d = new Date();
   if (!studyHistory[localDateKey(d)]?.completed) {
@@ -465,8 +467,8 @@ export function computeStreak(studyHistory) {
   let streak = 0;
   for (;;) {
     const entry = studyHistory[localDateKey(d)];
-    if (!entry || !entry.completed) break;
-    streak++;
+    if (entry?.completed) streak++;
+    else if (!entry?.frozen) break;
     d.setDate(d.getDate() - 1);
   }
   return streak;
@@ -475,12 +477,13 @@ export function computeStreak(studyHistory) {
 // Longest run of consecutive completed days anywhere in the history —
 // the "Best" next to the current streak on Home.
 export function bestStreak(studyHistory) {
-  const days = Object.keys(studyHistory || {}).filter((k) => studyHistory[k]?.completed).sort();
+  const days = Object.keys(studyHistory || {}).filter((k) => studyHistory[k]?.completed || studyHistory[k]?.frozen).sort();
   let best = 0, run = 0, prev = null;
   for (const key of days) {
     const [y, m, d] = key.split('-').map(Number);
     const t = Date.UTC(y, m - 1, d);
-    run = prev != null && t - prev === 86400000 ? run + 1 : 1;
+    const add = studyHistory[key].completed ? 1 : 0;
+    run = prev != null && t - prev === 86400000 ? run + add : add;
     best = Math.max(best, run);
     prev = t;
   }

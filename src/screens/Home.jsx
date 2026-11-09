@@ -1,6 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
 import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, planFor, draftFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, bestStreak, studiedToday, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn, offTrackReason, fmt, todoTimeLabel } from '../lib/plannerLogic';
+import { dailyTip } from '../lib/dailyTip';
+import { OPEN_CHAT_EVENT } from '../lib/chatContext';
+import { usePremium, openPaywall } from '../lib/premium';
+import { MAX_FREEZES, SESSIONS_PER_FREEZE } from '../lib/streakRewards';
+import { PugImg } from '../components/PugMascot';
 import { iconForTask, iconForSubject } from '../lib/taskAuto';
 import { useLastSeenStreak, useDismissedMissedSession } from '../lib/store';
 import { DAY_KEY, VALUE_KEY, TASK_TEXT_KEY, getCurrentLang, localeOf } from '../lib/i18n';
@@ -8,7 +13,7 @@ import { useLang } from '../lib/useLang';
 import WeekStrip from '../components/WeekStrip';
 import { useNow } from '../hooks/useNow';
 import TaskEditSheet from '../components/TaskEditSheet';
-import { Pill, BottomSheet, EnergyPicker, AnimatedNumber, StatusPill } from '../components/ui';
+import { Pill, AnimatedNumber, StatusPill } from '../components/ui';
 
 const RESTART_ICON = (color) => (
   <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M13.2 8a5.2 5.2 0 01-8.9 3.7M2.8 8a5.2 5.2 0 018.9-3.7" stroke={color} strokeWidth="1.5" strokeLinecap="round" /><path d="M11.4 2.4v2.4H9M4.6 13.6v-2.4H7" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -91,8 +96,15 @@ function StreakNotice({ notice, onDismiss }) {
 // Combines the streak count with the week strip so the days that make up
 // the streak are visible right where the count is, instead of a plain
 // number with the calendar buried further down the page.
-function StreakCard({ streak, best, doneToday, selectedDay, onSelectDay, eventDays }) {
+// Pulgo Premium adds a gold edge, a crown on the flame and the streak
+// freezes (🧊 n/3 and the way to the next one); free users get a small
+// locked "Freeze" chip that opens Premium. Nothing extra while Premium is
+// switched off.
+function StreakCard({ streak, best, doneToday, selectedDay, onSelectDay, eventDays, frozenDays, savedByFreeze, rewards }) {
   const { t } = useLang();
+  const premium = usePremium();
+  const isPremium = premium.enabled && premium.premium;
+  const showLock = premium.enabled && premium.loaded && !premium.premium;
   // Bumps the flame with a bigger, one-shot bounce right when the streak
   // ticks up, on top of its constant gentle pulse — a small reward beat
   // instead of the count just silently changing.
@@ -111,11 +123,17 @@ function StreakCard({ streak, best, doneToday, selectedDay, onSelectDay, eventDa
   }, [streak]);
 
   const lit = streak > 0;
-  const sub = doneToday ? '✓ ' + t('home.streakSecured') : best > 0 ? t('streakCard.best', { n: best }) : t('home.streakStart');
+  const sub = doneToday ? '✓ ' + t('home.streakSecured')
+    : savedByFreeze && isPremium ? t('streakCard.frozenSaved')
+      : best > 0 ? t('streakCard.best', { n: best }) : t('home.streakStart');
+  const freezes = rewards?.freezes || 0;
+  const progress = rewards?.progress || 0;
   return (
     <div style={{
-      marginTop: 14, padding: '16px 14px 10px', borderRadius: 22, border: '1px solid rgba(255,255,255,.07)',
-      background: `radial-gradient(120% 90% at 0% 0%,rgba(245,165,36,${lit ? 0.16 : 0.07}),transparent 55%),#121019`,
+      marginTop: 14, padding: '16px 14px 10px', borderRadius: 22,
+      border: isPremium ? '1px solid rgba(245,196,81,.55)' : '1px solid rgba(255,255,255,.07)',
+      boxShadow: isPremium ? '0 0 26px rgba(245,196,81,.16)' : 'none',
+      background: `radial-gradient(120% 90% at 0% 0%,rgba(245,165,36,${lit ? 0.16 : 0.07}),transparent 55%),${isPremium ? 'linear-gradient(160deg,#1a1510,#121019 60%)' : '#121019'}`,
     }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '0 2px' }}>
@@ -126,19 +144,49 @@ function StreakCard({ streak, best, doneToday, selectedDay, onSelectDay, eventDa
             border: lit ? 'none' : '1px solid rgba(245,165,36,.3)',
             boxShadow: lit ? '0 8px 22px rgba(255,120,60,.4)' : 'none',
             animation: bumping ? 'streakBump .7s ease' : 'none',
+            position: 'relative',
           }}
         >
           <span style={{ opacity: lit ? 1 : 0.7 }}>🔥</span>
+          {isPremium && <span style={{ position: 'absolute', top: -11, right: -7, fontSize: 16, transform: 'rotate(14deg)' }}>👑</span>}
         </div>
-        <div style={{ minWidth: 0 }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, lineHeight: 1 }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, lineHeight: 1, flexWrap: 'wrap' }}>
             <span style={{ fontSize: 26, fontWeight: 800, letterSpacing: '-.02em', fontVariantNumeric: 'tabular-nums' }}><AnimatedNumber value={streak} /></span>
             <span style={{ fontSize: 15, fontWeight: 700, color: '#c9c9d6' }}>{t('streakCard.days.' + pluralForm(streak))}</span>
+            {isPremium && <span style={{ alignSelf: 'center', fontSize: 9, fontWeight: 800, letterSpacing: '.08em', padding: '3px 7px', borderRadius: 99, background: 'linear-gradient(90deg,#f5a524,#ffd67a)', color: '#3a2300' }}>PREMIUM</span>}
           </div>
-          <div style={{ fontSize: 12, color: doneToday ? '#8ff0de' : '#8a8a99', marginTop: 5 }}>{sub}</div>
+          <div style={{ fontSize: 12, color: doneToday ? '#8ff0de' : savedByFreeze && isPremium ? '#9fdcff' : '#8a8a99', marginTop: 5 }}>{sub}</div>
         </div>
+        {isPremium && (
+          <div style={{ flex: 'none', textAlign: 'center' }}>
+            <div style={{ fontSize: 12, fontWeight: 750, padding: '5px 10px', borderRadius: 99, background: 'rgba(120,200,255,.14)', color: '#9fdcff', border: '1px solid rgba(120,200,255,.35)', fontVariantNumeric: 'tabular-nums' }}>🧊 {freezes}/{MAX_FREEZES}</div>
+            <div style={{ fontSize: 9.5, color: '#7a7a8a', marginTop: 4 }}>{t('streakCard.freezes')}</div>
+          </div>
+        )}
+        {showLock && (
+          <div
+            role="button"
+            onClick={() => openPaywall('streak-freeze')}
+            style={{ flex: 'none', fontSize: 11.5, fontWeight: 700, padding: '6px 10px', borderRadius: 99, background: 'rgba(255,255,255,.05)', color: '#a9a9b8', border: '1px solid rgba(255,255,255,.12)', cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >
+            🔒 🧊 {t('streakCard.freezeLocked')}
+          </div>
+        )}
       </div>
-      <WeekStrip selectedDay={selectedDay} onSelect={onSelectDay} streakCount={streak} streakIncludesToday={doneToday} eventDays={eventDays} topMargin={14} pageable bubbles />
+      <WeekStrip selectedDay={selectedDay} onSelect={onSelectDay} streakCount={streak} streakIncludesToday={doneToday} frozenDays={frozenDays} eventDays={eventDays} topMargin={14} pageable bubbles />
+      {isPremium && (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '4px 2px 4px', fontSize: 11.5, color: '#9fdcff' }}>
+          {freezes < MAX_FREEZES ? (
+            <>
+              <div style={{ flex: 1, height: 5, borderRadius: 9, background: 'rgba(255,255,255,.08)' }}>
+                <div style={{ width: (progress / SESSIONS_PER_FREEZE) * 100 + '%', height: '100%', borderRadius: 9, background: 'linear-gradient(90deg,#78c8ff,#b6e6ff)' }} />
+              </div>
+              <span style={{ flex: 'none' }}>{t('streakCard.freezeProgress', { n: progress, total: SESSIONS_PER_FREEZE })}</span>
+            </>
+          ) : <span>{t('streakCard.freezesFull')}</span>}
+        </div>
+      )}
     </div>
   );
 }
@@ -511,6 +559,12 @@ function WeekCard({ planner, streak }) {
         {stat(tasksDone, t('week.tasksDone'))}
         {stat('🔥 ' + streak, t('week.streak'))}
       </div>
+      {total === 0 ? (
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, padding: '10px 12px', borderRadius: 14, background: 'rgba(139,109,255,.08)', border: '1px dashed rgba(139,109,255,.35)' }}>
+          <PugImg size={34} style={{ flex: 'none' }} />
+          <div style={{ fontSize: 12.5, color: '#c9c9d6', lineHeight: 1.4 }}>{t('week.emptyPug')}</div>
+        </div>
+      ) : (
       <div style={{ display: 'flex', alignItems: 'flex-end', gap: 8, height: 104, marginTop: 14 }}>
         {days.map(({ num, minutes }) => {
           const today = num === NUM_TODAY;
@@ -527,7 +581,8 @@ function WeekCard({ planner, streak }) {
           );
         })}
       </div>
-      {subjects.length > 0 ? (
+      )}
+      {total > 0 && subjects.length > 0 && (
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 12 }}>
           {subjects.slice(0, 3).map((x) => (
             <span key={x.subject} style={{ fontSize: 11, fontWeight: 700, padding: '5px 9px', borderRadius: 8, color: x.color || '#c9c9d6', background: 'rgba(255,255,255,.06)' }}>
@@ -535,68 +590,42 @@ function WeekCard({ planner, streak }) {
             </span>
           ))}
         </div>
-      ) : (
-        <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 12, lineHeight: 1.45 }}>{t('week.empty')}</div>
       )}
       <div onClick={() => planner.go('plans')} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('week.allPlans')} <span style={{ fontSize: 11 }}>›</span></div>
     </div>
   );
 }
 
-function EnergySheet({ planner, logEnergy }) {
+// "Pug's tip of the day" (see lib/dailyTip.js): one line picked from the
+// student's own day, in the Premium cards' look, with a shortcut to the chat.
+function TipCard({ state, streak, doneToday }) {
   const { t } = useLang();
-  const { state, cancelEnergySheet, saveEnergySheet, update } = planner;
-  if (!state.energySheet) return null;
+  const tip = dailyTip(state, { streak, doneToday });
+  const title = tip.exam ? t(VALUE_KEY[tip.exam.title]) || tip.exam.title : '';
   return (
-    <BottomSheet>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-        <div>
-          <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em' }}>{t('home.energyPickerTitle')}</div>
-          <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 6 }}>{t('home.energyPickerSub')}</div>
+    <div style={{ position: 'relative', overflow: 'hidden', marginTop: 12, padding: 16, borderRadius: 24, background: '#120f1e', border: '1px solid rgba(139,109,255,.5)', boxShadow: '0 0 40px rgba(124,92,255,.22)' }}>
+      <div style={{ position: 'absolute', width: 220, height: 220, borderRadius: '50%', right: -60, top: -80, background: '#7f5cff', filter: 'blur(60px)', opacity: 0.35, pointerEvents: 'none' }} />
+      <div style={{ position: 'relative', display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.1em', color: '#c9baff' }}>🐾 {t('tip.eyebrow')}</div>
+          <div style={{ fontSize: 16, fontWeight: 800, marginTop: 7, lineHeight: 1.3, letterSpacing: '-.005em' }}>{t(tip.key, { ...tip.vars, title })}</div>
         </div>
-        <span onClick={cancelEnergySheet} style={{ fontSize: 15, color: '#8a8a99', cursor: 'pointer', padding: 4 }}>✕</span>
+        <PugImg size={58} style={{ flex: 'none', boxShadow: '0 0 0 2.5px #8b6dff, 0 0 22px rgba(139,109,255,.6)' }} />
       </div>
-      <div style={{ marginTop: 18 }}>
-        <EnergyPicker value={state.energyDraft} onChange={(v) => update({ energyDraft: v })} emoji />
-      </div>
-      <div style={{ display: 'flex', gap: 11, marginTop: 18, paddingBottom: 8 }}>
-        <div onClick={cancelEnergySheet} style={{ flex: 1, height: 50, borderRadius: 15, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 650, cursor: 'pointer' }}>{t('home.cancel')}</div>
-        <div
-          onClick={() => { logEnergy(state.energyDraft); saveEnergySheet(); }}
-          style={{ flex: 1.3, height: 50, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}
-        >
-          {t('home.save')}
-        </div>
-      </div>
-    </BottomSheet>
-  );
-}
-
-const ENERGY_EMOJI = { Niska: '🔋', Normalna: '⚡', Wysoka: '🔥' };
-
-function EnergyHistory({ energyLog }) {
-  const { t, lang } = useLang();
-  const today = localDateKey();
-  const todays = energyLog.filter((e) => localDateKey(new Date(e.at)) === today).slice(-5);
-  if (!todays.length) return null;
-  return (
-    <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
-      <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('home.energyCheckins')}</div>
-      <div style={{ display: 'flex', gap: 9, marginTop: 11, overflowX: 'auto' }}>
-        {todays.map((e, i) => (
-          <div key={i} style={{ flex: 'none', textAlign: 'center', padding: '9px 12px', borderRadius: 13, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.07)' }}>
-            <div style={{ fontSize: 16 }}>{ENERGY_EMOJI[e.level]}</div>
-            <div style={{ fontSize: 10.5, color: '#8a8a99', marginTop: 4 }}>{new Date(e.at).toLocaleTimeString(localeOf(lang), { hour: '2-digit', minute: '2-digit' })}</div>
-          </div>
-        ))}
+      <div
+        role="button"
+        onClick={() => window.dispatchEvent(new Event(OPEN_CHAT_EVENT))}
+        style={{ position: 'relative', marginTop: 13, height: 44, borderRadius: 14, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14.5, fontWeight: 800, boxShadow: '0 8px 20px rgba(109,77,255,.4)', cursor: 'pointer' }}
+      >
+        💬 {t('tip.ask')}
       </div>
     </div>
   );
 }
 
-export default function Home({ planner, studentName, profilePhoto, energyLog = [], logEnergy = () => {}, studyHistory = {} }) {
+export default function Home({ planner, studentName, profilePhoto, studyHistory = {}, streakRewards = null }) {
   const { t } = useLang();
-  const { state, openEnergySheet } = planner;
+  const { state } = planner;
   const [viewDay, setViewDay] = useState(NUM_TODAY);
   const info = dayInfo(viewDay);
   const isRealDay = viewDay === NUM_TODAY;
@@ -616,6 +645,15 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
     ? { type: 'broken', text: t('home.streakEndedTitle', { n: lastSeenStreak, word: t(lastSeenStreak === 1 ? 'day.one' : 'day.many') }) }
     : null;
 
+  const doneToday = studiedToday(studyHistory);
+  // Days covered by a streak freeze over the last few weeks, as day numbers
+  // for the week strip.
+  const frozenDays = new Set();
+  for (let n = NUM_TODAY - 1; n >= NUM_TODAY - 21; n--) {
+    if (studyHistory[localDateKey(realDateForNum(n))]?.frozen) frozenDays.add(n);
+  }
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
   const upcoming = upcomingExams(state).filter((e) => e.daysUntil >= 0);
   const nearestExam = upcoming[0] || null;
 
@@ -657,7 +695,10 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
         </div>
       </div>
 
-      <StreakCard streak={streak} best={Math.max(streak, bestStreak(studyHistory))} doneToday={studiedToday(studyHistory)} selectedDay={viewDay} onSelectDay={setViewDay} eventDays={new Set(upcoming.map((e) => e.day))} />
+      <StreakCard
+        streak={streak} best={Math.max(streak, bestStreak(studyHistory))} doneToday={doneToday} selectedDay={viewDay} onSelectDay={setViewDay} eventDays={new Set(upcoming.map((e) => e.day))}
+        frozenDays={frozenDays} savedByFreeze={!!studyHistory[localDateKey(yesterday)]?.frozen} rewards={streakRewards}
+      />
       <StreakNotice notice={streakNotice} onDismiss={() => setLastSeenStreak(streak)} />
 
       {state.rescueApplied && (() => {
@@ -691,16 +732,7 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
 
       <WeekCard planner={planner} streak={streak} />
 
-      <div onClick={openEnergySheet} style={{ marginTop: 12, padding: '12px 14px', borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-        <div style={{ width: 36, height: 36, borderRadius: 11, background: 'rgba(124,92,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="14" height="14" viewBox="0 0 14 14"><path d="M8 1L3 8h3.2L6 13l5-7.2H7.6L8 1z" fill="#a58cff" /></svg></div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 11.5, color: '#8a8a99' }}>{t('home.energyLevel')}</div>
-          <div style={{ fontSize: 14, fontWeight: 700, marginTop: 2 }}>{t('home.energyValue', { level: t(VALUE_KEY[state.energy]) || state.energy })}</div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px', borderRadius: 11, background: 'rgba(124,92,255,.18)', border: '1px solid rgba(124,92,255,.35)', fontSize: 12.5, fontWeight: 650, color: '#c9baff' }}>{t('home.change')} <span style={{ fontSize: 9 }}>▼</span></div>
-      </div>
-
-      <EnergyHistory energyLog={energyLog} />
+      <TipCard state={state} streak={streak} doneToday={doneToday} />
 
       {nearestExam && (
         <div
@@ -740,7 +772,6 @@ export default function Home({ planner, studentName, profilePhoto, energyLog = [
         </div>
       )}
 
-      <EnergySheet planner={planner} logEnergy={logEnergy} />
       <TaskEditSheet planner={planner} />
 
       </div>
