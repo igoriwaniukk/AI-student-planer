@@ -1039,4 +1039,7 @@ export default {
   "premium.tryFree": "Prova 7 giorni gratis",
   "premium.profileRenews": "IA illimitata · si rinnova il {date}",
   "premium.profileActiveSub": "IA illimitata",
+  "premium.memberSince": "Membro da {date}",
+  "premium.renewsLabel": "Si rinnova",
+  "premium.manageShort": "Gestisci",
 };

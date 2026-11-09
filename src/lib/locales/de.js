@@ -1039,4 +1039,7 @@ export default {
   "premium.tryFree": "7 Tage kostenlos testen",
   "premium.profileRenews": "Unbegrenzte KI · verlängert sich am {date}",
   "premium.profileActiveSub": "Unbegrenzte KI",
+  "premium.memberSince": "Mitglied seit {date}",
+  "premium.renewsLabel": "Verlängert sich",
+  "premium.manageShort": "Verwalten",
 };

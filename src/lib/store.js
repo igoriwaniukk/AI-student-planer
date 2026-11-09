@@ -21,6 +21,7 @@ export const KEYS = {
   plannerData: 'sp_plannerData',
   dayAnchor: 'sp_dayAnchor',
   chatMessages: 'sp_chatMessages',
+  premiumSince: 'sp_premiumSince',
 };
 
 // Fired whenever any useLocalStorage value is written — cloudSync.js listens
