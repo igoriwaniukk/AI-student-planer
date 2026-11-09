@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { REASON_OPTIONS, RESCUE_TIME_OPTIONS, PRIO_STYLE, NUM_TODAY } from '../lib/plannerData';
-import { durOf, startOf, span, weekdayDateLabel, fmt, rescueCandidates, planFor } from '../lib/plannerLogic';
+import { REASON_OPTIONS, RESCUE_TIME_OPTIONS } from '../lib/plannerData';
+import { durOf, hm, fmt, rescueCandidates } from '../lib/plannerLogic';
+import { iconForTask, iconForActivity } from '../lib/taskAuto';
+import { Eyebrow, SettingRow, ROW_LINE } from '../components/ListRows';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import { useLang } from '../lib/useLang';
@@ -22,7 +24,9 @@ function NowClock() {
 
 export default function Rescue({ planner }) {
   const { t } = useLang();
-  const { state, constraints, ts, toggleReason, setRescueTime, update, openTaskEdit, rescueGenerate, go } = planner;
+  const { state, constraints, toggleReason, setRescueTime, update, openTaskEdit, rescueGenerate, go } = planner;
+  const [open, setOpen] = useState(null);
+  const toggle = (k) => setOpen((o) => (o === k ? null : k));
   const notEnoughTime = state.rescueTime === '45 min' && !state.rescueMoved;
   const noSafeBlock = state.rescueTime === 'Własny czas';
   // Only what a restart can still rearrange: today's unfinished tasks.
@@ -31,139 +35,61 @@ export default function Rescue({ planner }) {
 
   return (
     <>
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '16px 20px 116px', position: 'relative', zIndex: 1 }}>
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '16px 20px 150px', position: 'relative', zIndex: 1 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BackButton onClick={() => go('home')} />
-        <span style={{ fontSize: 11, fontWeight: 650, color: '#c9c9d6', padding: '8px 13px', borderRadius: 999, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.1)' }}><NowClock /></span>
+        <span style={{ fontSize: 13, fontWeight: 650, color: '#8a8a99' }}><NowClock /></span>
       </div>
-      <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>{t('rescue.title')}</div>
-      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('rescue.date', { date: weekdayDateLabel(NUM_TODAY) })}</div>
+      <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-.02em', marginTop: 14 }}>{t('rescue.title')}</div>
+      <div style={{ fontSize: 14, color: '#a3a3b3', marginTop: 6 }}>{t('rescue.tasksLeft', { n: remainingCount })} · {t('rescue.sleep', { time: fmt(constraints.bedtimeMinutes) })}</div>
 
-      <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.09)' }}>
-        <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>{t('rescue.delayedTitle')}</div>
-        <div style={{ fontSize: 12.5, lineHeight: 1.5, color: '#a3a3b3', marginTop: 7 }}>{t('rescue.delayedDesc')}</div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 13 }}>
-          <span style={{ fontSize: 11.5, fontWeight: 650, color: '#e2e2ea', padding: '6px 10px', borderRadius: 9, background: 'rgba(255,255,255,.07)' }}>{t('rescue.tasksLeft', { n: remainingCount })}</span>
-          {constraints.blocks.map((b) => (
-            <span key={b.label + b.start} style={{ fontSize: 11.5, fontWeight: 650, color: '#8fbaff', padding: '6px 10px', borderRadius: 9, background: 'rgba(91,156,255,.13)' }}>{b.label}: {fmt(b.start)}–{fmt(b.end)}</span>
-          ))}
-          <span style={{ fontSize: 11.5, fontWeight: 650, color: '#8fbaff', padding: '6px 10px', borderRadius: 9, background: 'rgba(91,156,255,.13)' }}>{t('rescue.sleep', { time: fmt(constraints.bedtimeMinutes) })}</span>
-        </div>
-      </div>
-
-      <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('rescue.whatChanged')}</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
+      <Eyebrow text={t('rescue.whatChanged')} />
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9, marginTop: 11 }}>
         {REASON_OPTIONS.map((r) => (
           <Chip key={r} label={t(VALUE_KEY[r]) || r} active={state.reasons.includes(r)} onClick={() => toggleReason(r)} />
         ))}
       </div>
 
-      <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('rescue.remaining')}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
-        {state.taskDefs.filter((d) => remainingIds.includes(d.id)).map((d) => {
-          const ps = PRIO_STYLE[d.priority] || PRIO_STYLE['Normalny priorytet'];
-          const dur = durOf(d.id, state.taskDefs, state.durOverride);
-          const start = startOf(d.id, { schedule: planFor(state, NUM_TODAY), startOverride: state.startOverride });
-          const st = ts(d.id, NUM_TODAY);
-          return (
-            <div key={d.id} style={{ padding: 14, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: d.color, textTransform: 'uppercase' }}>{t(VALUE_KEY[d.subject]) || d.subject}</span>
-                    <span style={{ fontSize: 10, fontWeight: 650, padding: '3px 8px', borderRadius: 7, color: ps.color, background: ps.bg }}>{t(VALUE_KEY[d.priority]) || d.priority}</span>
-                  </div>
-                  <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3, marginTop: 6 }}>{t(TASK_TEXT_KEY[d.id]?.title) || d.title}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', marginTop: 9 }}>
-                    <span style={{ fontSize: 11.5, color: '#8a8a99' }}>{span(start, start + dur)} · {dur} min</span>
-                    {d.deadline && <span style={{ fontSize: 10.5, fontWeight: 650, color: '#f5a524', padding: '4px 8px', borderRadius: 7, background: 'rgba(245,165,36,.13)', border: '1px solid rgba(245,165,36,.28)' }}>{t(TASK_TEXT_KEY[d.id]?.deadline) || d.deadline}</span>}
-                  </div>
-                  <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 8 }}>{t('status.' + st.status)}</div>
-                </div>
-                <span onClick={() => openTaskEdit(d.id)} style={{ fontSize: 12.5, fontWeight: 650, color: '#a58cff', cursor: 'pointer', flex: 'none' }}>{t('rescue.edit')}</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {constraints.blocks.map((b) => (
-        <div key={b.label + b.start} style={{ marginTop: 14, padding: 14, borderRadius: 18, background: 'rgba(91,156,255,.06)', border: '1px solid rgba(91,156,255,.22)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-            <div style={{ width: 32, height: 32, flex: 'none', borderRadius: 10, background: 'rgba(91,156,255,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="11" height="13" viewBox="0 0 12 14" fill="none"><rect x="1.5" y="5.5" width="9" height="7.2" rx="1.8" stroke="#5b9cff" strokeWidth="1.2" /><path d="M3.8 5.5V4a2.2 2.2 0 014.4 0v1.5" stroke="#5b9cff" strokeWidth="1.2" /></svg></div>
-            <div style={{ flex: 1 }}><div style={{ fontSize: 14, fontWeight: 700 }}>{b.label}</div><div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 2 }}>{t('rescue.fixedEvent')}</div></div>
-            <span style={{ fontSize: 12.5, fontWeight: 650, color: '#8fbaff' }}>{fmt(b.start)}–{fmt(b.end)}</span>
-          </div>
-          <div style={{ fontSize: 11.5, color: '#a3a3b3', marginTop: 10 }}>{t('rescue.aiWontMove')}</div>
+      <Eyebrow text={t('rescue.remaining')} />
+      {state.taskDefs.filter((d) => remainingIds.includes(d.id)).map((d) => (
+        <div key={d.id} role="button" onClick={() => openTaskEdit(d.id)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: ROW_LINE, cursor: 'pointer' }}>
+          <span style={{ fontSize: 17, width: 22, textAlign: 'center', flex: 'none' }}>{iconForTask(d)}</span>
+          <div style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700 }}>{t(TASK_TEXT_KEY[d.id]?.title) || d.title}</div>
+          <span style={{ fontSize: 13, color: '#8a8a99', whiteSpace: 'nowrap' }}>{hm(durOf(d.id, state.taskDefs, state.durOverride))} <span style={{ color: '#5f5f70' }}>›</span></span>
         </div>
       ))}
 
-      <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('rescue.energyQ')}</div>
-      <EnergyPicker value={state.rescueEnergy} onChange={(v) => update({ rescueEnergy: v })} />
-      <div style={{ fontSize: 11.5, lineHeight: 1.45, color: '#7a7a8a', marginTop: 10 }}>{t('rescue.lowEnergyNote')}</div>
-
-      <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', lineHeight: 1.3, margin: '22px 0 12px' }}>{t('rescue.timeLeftQ')}</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
-        {RESCUE_TIME_OPTIONS.map((rt) => (
-          <Chip key={rt} label={t(VALUE_KEY[rt]) || rt} active={state.rescueTime === rt} onClick={() => setRescueTime(rt)} />
-        ))}
-      </div>
-
-      <div style={{ marginTop: 14, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-          <div style={{ fontSize: 13, fontWeight: 650, color: '#c9c9d6', lineHeight: 1.3 }}>{t('rescue.finishByQ')}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 13px', borderRadius: 13, background: 'rgba(255,255,255,.05)', border: '1px solid rgba(255,255,255,.09)' }}>
-            <span style={{ fontSize: 17, fontWeight: 750 }}>{fmt(constraints.bedtimeMinutes)}</span>
-            <svg width="15" height="15" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="7.2" stroke="#9a9aab" strokeWidth="1.3" /><path d="M9 5.2V9l2.6 1.8" stroke="#9a9aab" strokeWidth="1.3" strokeLinecap="round" /></svg>
-          </div>
+      <Eyebrow text={t('planner.yourDay')} />
+      <SettingRow icon="⏳" label={t('planner.studyTime')} value={t(VALUE_KEY[state.rescueTime]) || state.rescueTime} open={open === 'time'} onClick={() => toggle('time')}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
+          {RESCUE_TIME_OPTIONS.map((rt) => (
+            <Chip key={rt} label={t(VALUE_KEY[rt]) || rt} active={state.rescueTime === rt} onClick={() => setRescueTime(rt)} />
+          ))}
         </div>
-        <div style={{ fontSize: 11.5, color: '#8fbaff', marginTop: 11 }}>{t('rescue.sleepUnchanged', { time: fmt(constraints.bedtimeMinutes) })}</div>
-      </div>
+      </SettingRow>
+      <SettingRow icon="⚡" label={t('rescue.energy')} value={t(VALUE_KEY[state.rescueEnergy]) || state.rescueEnergy} open={open === 'energy'} onClick={() => toggle('energy')}>
+        <EnergyPicker value={state.rescueEnergy} onChange={(v) => update({ rescueEnergy: v })} />
+      </SettingRow>
+      {constraints.blocks.map((b) => (
+        <SettingRow key={b.label + b.start} icon={iconForActivity(b.label) || '📌'} label={b.label} value={'🔒 ' + fmt(b.start) + '–' + fmt(b.end)} color="#8fbaff" />
+      ))}
+      <SettingRow icon="🌙" label={t('rescue.sleepLabel')} value={'🔒 ' + fmt(constraints.bedtimeMinutes)} color="#8fbaff" />
 
       {notEnoughTime && (
-        <div style={{ marginTop: 14, padding: 15, borderRadius: 18, background: 'rgba(245,165,36,.07)', border: '1px solid rgba(245,165,36,.3)' }}>
-          <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.45 }}>{t('rescue.notEnoughTime')}</div>
-          <div style={{ display: 'flex', gap: 9, marginTop: 12 }}>
-            <div onClick={() => setRescueTime('1 godz. 30 min')} style={{ flex: 1, height: 44, borderRadius: 14, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 650, textAlign: 'center', cursor: 'pointer' }}>{t('rescue.increaseTime')}</div>
-            <div onClick={() => update({ rescueMoved: true })} style={{ flex: 1, height: 44, borderRadius: 14, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 650, textAlign: 'center', lineHeight: 1.25, cursor: 'pointer' }}>{t('rescue.moveLessImportant')}</div>
+        <div style={{ marginTop: 14, padding: 14, borderRadius: 16, background: 'rgba(245,165,36,.07)', border: '1px solid rgba(245,165,36,.3)' }}>
+          <div style={{ fontSize: 13, fontWeight: 650, lineHeight: 1.45, color: '#f7c46c' }}>⚠ {t('rescue.notEnoughTime')}</div>
+          <div style={{ display: 'flex', gap: 9, marginTop: 11 }}>
+            <div onClick={() => setRescueTime('1 godz. 30 min')} style={{ flex: 1, minHeight: 42, padding: '6px 8px', borderRadius: 13, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 650, textAlign: 'center', lineHeight: 1.25, cursor: 'pointer' }}>{t('rescue.increaseTime')}</div>
+            <div onClick={() => update({ rescueMoved: true })} style={{ flex: 1, minHeight: 42, padding: '6px 8px', borderRadius: 13, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.12)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 650, textAlign: 'center', lineHeight: 1.25, cursor: 'pointer' }}>{t('rescue.moveLessImportant')}</div>
           </div>
         </div>
       )}
-
-      {noSafeBlock && (
-        <div style={{ marginTop: 14, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)' }}>
-          <div style={{ fontSize: 13, fontWeight: 650, lineHeight: 1.45, color: '#c9c9d6' }}>{t('rescue.noSafeBlock')}</div>
-        </div>
-      )}
-
-      <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)' }}>
-        <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('rescue.summary')}</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 14 }}>
-          <Row label={t('rescue.remainingTasks')} value={t('rescue.tasksLeft', { n: remainingCount })} />
-          <Row label={t('rescue.availableStudy')} value={t(VALUE_KEY[state.rescueTime]) || state.rescueTime} />
-          <Row label={t('rescue.energy')} value={t('rescue.energyValue', { level: t(VALUE_KEY[state.rescueEnergy]) || state.rescueEnergy })} />
-          {constraints.blocks.map((b) => (
-            <Row key={b.label + b.start} label={b.label} value={t('rescue.tennisUnchanged')} color="#8fbaff" />
-          ))}
-          <Row label={t('rescue.sleepLabel')} value={t('rescue.sleepValue', { time: fmt(constraints.bedtimeMinutes) })} color="#8fbaff" />
-        </div>
-        <div style={{ height: 1, background: 'rgba(255,255,255,.07)', margin: '15px -16px' }} />
-        <div style={{ fontSize: 12.5, lineHeight: 1.5, color: '#a3a3b3' }}>{t('rescue.summaryNote')}</div>
-      </div>
+      {noSafeBlock && <div style={{ marginTop: 14, fontSize: 13, lineHeight: 1.45, color: '#a3a3b3' }}>{t('rescue.noSafeBlock')}</div>}
 
       <StickyFooter>
         <PrimaryButton onClick={rescueGenerate}>{t('rescue.rescueBtn')}</PrimaryButton>
       </StickyFooter>
     </div>
     </>
-  );
-}
-
-function Row({ label, value, color }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-      <span style={{ color: '#9a9aab' }}>{label}</span>
-      <span style={{ fontWeight: 700, color: color || undefined }}>{value}</span>
-    </div>
   );
 }

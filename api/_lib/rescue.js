@@ -28,7 +28,7 @@ export const RESCUE_TOOL = {
         description: 'Identyfikatory zadań (taskId), które nie mieszczą się dziś i zostają bezpiecznie przeniesione na inny dzień.',
         items: { type: 'string' },
       },
-      rationale: { type: 'string', description: 'Jedno zwięzłe zdanie wyjaśniające uczniowi logikę ratunku (co zostało, co skrócono, co przeniesiono i dlaczego).' },
+      rationale: { type: 'string', description: 'Jedno krótkie zdanie (najwyżej ok. 20 słów) skierowane wprost do ucznia, w drugiej osobie („ty”): co zostało, co skrócono, co przeniesiono i dlaczego. Bez mówienia o „uczniu” w trzeciej osobie i bez technicznych szczegółów.' },
     },
     required: ['blocks', 'moved'],
   },
