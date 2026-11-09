@@ -1,19 +1,18 @@
-import { PRIO_STYLE } from '../lib/plannerData';
-import { durOf, hm, weekdayDateLabel, fmt, span, freeWindows, taskDueOnDay, isTaskOn, plannedElsewhere } from '../lib/plannerLogic';
+import { useState } from 'react';
+import { durOf, hm, weekdayDateLabel, fmt, freeWindows, taskDueOnDay, isTaskOn, plannedElsewhere } from '../lib/plannerLogic';
 import { iconForTask, iconForActivity } from '../lib/taskAuto';
-import { WeeklyIcon } from '../components/planIcons';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
 import WheelTimePicker from '../components/WheelTimePicker';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import TaskEditSheet from '../components/TaskEditSheet';
-import { PugImg } from '../components/PugMascot';
 
 const PREFS = ['Wolny wieczór', 'Najpierw najtrudniejsze', 'Więcej krótkich przerw'];
-const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function Planner({ planner }) {
   const { t } = useLang();
+  const [open, setOpen] = useState(null);
+  const toggle = (k) => setOpen((o) => (o === k ? null : k));
   const { state, constraints, planDayNum, toggleTask, openTaskEdit, openNewTaskEdit, update, generatePlan, go } = planner;
   // Only school tasks due this day occupy a time slot (see the category
   // toggle in TaskEditSheet) — a task with no day set still applies to
@@ -24,12 +23,9 @@ export default function Planner({ planner }) {
   const schedulableTasks = state.taskDefs.filter((d) => d.category !== 'personal' && taskDueOnDay(d, planDayNum) && !plannedElsewhere(state, d, planDayNum));
   const personalTasks = state.taskDefs.filter((d) => d.category === 'personal' && taskDueOnDay(d, planDayNum));
   const enabledTasks = schedulableTasks.filter((d) => isTaskOn(state.tasks, d, planDayNum));
-  const nTasks = enabledTasks.length;
   const mins = enabledTasks.reduce((a, d) => a + durOf(d.id, state.taskDefs, state.durOverride), 0);
-  const sumTime = hm(mins);
   const windows = freeWindows(constraints);
   const freeMinutes = windows.reduce((a, w) => a + (w.end - w.start), 0);
-  const freeRangesLabel = windows.length ? windows.map((w) => span(w.start, w.end)).join(', ') : t('planner.noFreeTime');
   const dayWord = t(state.planToday ? 'planner.dayToday' : 'planner.dayTomorrow');
   // Weekly activities (school, gym…) are edited on the Plans screen; its
   // back button brings the student back here.
@@ -37,109 +33,53 @@ export default function Planner({ planner }) {
 
   return (
     <>
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '16px 20px 176px', position: 'relative', zIndex: 1 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <BackButton onClick={() => go('home')} />
-        <span style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.12em', color: '#c9baff', padding: '8px 14px', borderRadius: 999, background: 'rgba(124,92,255,.16)', border: '1px solid rgba(124,92,255,.45)' }}>{t('planner.badge')}</span>
-        <div style={{ width: 40, height: 40, borderRadius: '50%', flex: 'none', overflow: 'hidden', boxShadow: '0 0 0 2px #8b6dff' }}><PugImg size={40} /></div>
-      </div>
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '16px 20px 150px', position: 'relative', zIndex: 1 }}>
+      <BackButton onClick={() => go('home')} />
 
-      <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 22 }}>{t('planner.title', { day: dayWord })}</div>
-      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('planner.date', { date: weekdayDateLabel(planDayNum) })}</div>
-      <div style={{ fontSize: 13, color: '#8a8a99', lineHeight: 1.45, marginTop: 6 }}>{t('planner.subtitle')}</div>
+      <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-.02em', marginTop: 14 }}>{t('planner.title', { day: dayWord })}</div>
+      <div style={{ fontSize: 14, color: '#a3a3b3', marginTop: 5 }}>{t('planner.date', { date: weekdayDateLabel(planDayNum) })}</div>
 
-      <div style={{ display: 'flex', gap: 9, marginTop: 16 }}>
+      <div style={{ display: 'flex', gap: 9, marginTop: 14 }}>
         <Chip label={t('planner.pickToday')} active={!!state.planToday} onClick={() => update({ planToday: true })} />
         <Chip label={t('planner.pickTomorrow')} active={!state.planToday} onClick={() => update({ planToday: false })} />
       </div>
 
-      <div style={{ marginTop: 14, padding: 14, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#8b6dff' }} />
-            <span style={{ fontSize: 13.5, fontWeight: 700 }}>{t('planner.alreadyPlanned', { day: dayWord, Day: cap(dayWord) })}</span>
-          </div>
-          <span role="button" onClick={openWeekly} style={{ fontSize: 12.5, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('planner.edit')}</span>
-        </div>
-        <div style={{ fontSize: 12, color: '#7a7a8a', marginTop: 7 }}>{t('planner.aiWontChange')}</div>
-        {constraints.blocks.length > 0 && <div style={{ height: 1, background: 'rgba(255,255,255,.07)', margin: '13px -14px 0' }} />}
-        {constraints.blocks.map((b) => (
-          <div
-            key={b.label + b.start}
-            role="button"
-            onClick={() => (b.kind === 'todo' && b.taskId ? openTaskEdit(b.taskId) : openWeekly())}
-            style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '13px 0 0', cursor: 'pointer' }}
-          >
-            <div style={{ width: 34, height: 34, borderRadius: 11, background: 'rgba(255,255,255,.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15 }}>
-              {b.kind === 'todo' ? iconForTask({ category: 'personal', title: b.label }) : iconForActivity(b.label) || <WeeklyIcon size={18} />}
-            </div>
-            <div style={{ flex: 1 }}><div style={{ fontSize: 13.5, fontWeight: 700 }}>{b.label}</div><div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 1 }}>{b.kind === 'todo' ? t('tl.todo') : t('planner.fixedActivity')}</div></div>
-            <span style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6' }}>{fmt(b.start)}–{fmt(b.end)}</span>
-            <svg width="7" height="12" viewBox="0 0 7 12" fill="none" style={{ flex: 'none' }}><path d="M1 1l5 5-5 5" stroke="#5f5f70" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          </div>
-        ))}
-      </div>
-
-      <div style={{ fontSize: 17, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('planner.whatToDo')}</div>
-      {schedulableTasks.map((d, i) => {
+      <Eyebrow text={t('planner.tasks')} />
+      {schedulableTasks.map((d) => {
         const on = isTaskOn(state.tasks, d, planDayNum);
-        const ps = PRIO_STYLE[d.priority] || PRIO_STYLE['Normalny priorytet'];
         return (
-          <div
-            key={d.id}
-            onClick={() => toggleTask(d.id, planDayNum)}
-            style={{ marginTop: i ? 12 : 0, padding: 14, borderRadius: 18, cursor: 'pointer', background: on ? 'rgba(124,92,255,.07)' : 'rgba(255,255,255,.03)', border: '1.5px solid ' + (on ? 'rgba(124,92,255,.55)' : 'rgba(255,255,255,.07)') }}
-          >
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11 }}>
-              <div style={{ width: 24, height: 24, borderRadius: 8, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: on ? '#7c5cff' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (on ? '#7c5cff' : 'rgba(255,255,255,.18)') }}>
-                <svg width="12" height="10" viewBox="0 0 12 10" fill="none" style={{ opacity: on ? 1 : 0 }}><path d="M1 5l3.4 3.4L11 1.6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              </div>
-              <div style={{ width: 20, textAlign: 'center', fontSize: 14 }}>{iconForTask(d)}</div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: d.color, textTransform: 'uppercase' }}>{t(VALUE_KEY[d.subject]) || d.subject}</span>
-                  <span style={{ fontSize: 10, fontWeight: 650, padding: '3px 8px', borderRadius: 7, color: ps.color, background: ps.bg }}>{t(VALUE_KEY[d.priority]) || d.priority}</span>
-                </div>
-                <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3, marginTop: 6 }}>{t(TASK_TEXT_KEY[d.id]?.title) || d.title}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 9, flexWrap: 'wrap', marginTop: 9 }}>
-                  {d.deadline && <span style={{ fontSize: 10.5, fontWeight: 650, color: '#f5a524', padding: '4px 8px', borderRadius: 8, background: 'rgba(245,165,36,.13)', border: '1px solid rgba(245,165,36,.28)' }}>⚠ {t(TASK_TEXT_KEY[d.id]?.deadline) || d.deadline}</span>}
-                  <span style={{ fontSize: 11.5, color: '#8a8a99' }}>🕐 {durOf(d.id, state.taskDefs, state.durOverride)} min</span>
-                </div>
-              </div>
-              <span onClick={(e) => { e.stopPropagation(); openTaskEdit(d.id); }} style={{ fontSize: 12, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('planner.edit')}</span>
-            </div>
+          <div key={d.id} onClick={() => toggleTask(d.id, planDayNum)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: ROW_LINE, cursor: 'pointer' }}>
+            <Check on={on} />
+            <span style={{ fontSize: 17, width: 22, textAlign: 'center', flex: 'none' }}>{iconForTask(d)}</span>
+            <div style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, color: on ? '#f4f4f7' : '#8a8a99' }}>{t(TASK_TEXT_KEY[d.id]?.title) || d.title}</div>
+            <span onClick={(e) => { e.stopPropagation(); openTaskEdit(d.id); }} style={{ fontSize: 13, color: '#8a8a99', padding: '4px 0 4px 8px', cursor: 'pointer', whiteSpace: 'nowrap' }}>
+              {hm(durOf(d.id, state.taskDefs, state.durOverride))} <span style={{ color: '#5f5f70' }}>›</span>
+            </span>
           </div>
         );
       })}
-
-      <div onClick={() => openNewTaskEdit(planDayNum)} style={{ marginTop: 12, height: 50, borderRadius: 16, border: '1.5px dashed rgba(255,255,255,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13.5, fontWeight: 650, color: '#9a9aab', cursor: 'pointer' }}>{t('planner.addTask')}</div>
+      <div role="button" onClick={() => openNewTaskEdit(planDayNum)} style={{ padding: '13px 0', fontSize: 14, fontWeight: 700, color: '#a58cff', cursor: 'pointer' }}>{t('planner.addTask')}</div>
 
       {personalTasks.length > 0 && (
         <>
-          <div style={{ fontSize: 13, fontWeight: 700, color: '#9a9aab', margin: '18px 0 10px' }}>{t('planner.alsoPlanned', { day: dayWord })}</div>
+          <Eyebrow text={t('tl.todo')} />
           {personalTasks.map((d) => {
             const done = isTaskOn(state.tasks, d, planDayNum);
             return (
-              <div
-                key={d.id}
-                onClick={() => toggleTask(d.id, planDayNum)}
-                style={{ marginTop: 8, padding: '12px 14px', borderRadius: 16, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 11, background: done ? 'rgba(53,208,127,.06)' : 'rgba(255,255,255,.03)', border: '1px solid ' + (done ? 'rgba(53,208,127,.25)' : 'rgba(255,255,255,.07)') }}
-              >
-                <div style={{ width: 22, height: 22, borderRadius: 7, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: done ? '#35d07f' : 'rgba(255,255,255,.04)', border: '1.5px solid ' + (done ? '#35d07f' : 'rgba(255,255,255,.18)') }}>
-                  <svg width="11" height="9" viewBox="0 0 12 10" fill="none" style={{ opacity: done ? 1 : 0 }}><path d="M1 5l3.4 3.4L11 1.6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                </div>
-                <span style={{ fontSize: 14 }}>{iconForTask(d)}</span>
-                <div style={{ flex: 1, minWidth: 0, fontSize: 13.5, fontWeight: 650, textDecoration: done ? 'line-through' : 'none', color: done ? '#8a8a99' : '#f4f4f7' }}>{d.title}</div>
-                <span onClick={(e) => { e.stopPropagation(); openTaskEdit(d.id); }} style={{ fontSize: 12, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('planner.edit')}</span>
+              <div key={d.id} onClick={() => toggleTask(d.id, planDayNum)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: ROW_LINE, cursor: 'pointer' }}>
+                <Check on={done} color="#35d07f" />
+                <span style={{ fontSize: 17, width: 22, textAlign: 'center', flex: 'none' }}>{iconForTask(d)}</span>
+                <div style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 650, textDecoration: done ? 'line-through' : 'none', color: done ? '#8a8a99' : '#f4f4f7' }}>{d.title}</div>
+                <span onClick={(e) => { e.stopPropagation(); openTaskEdit(d.id); }} style={{ color: '#5f5f70', fontSize: 15, padding: '4px 0 4px 8px', cursor: 'pointer' }}>›</span>
               </div>
             );
           })}
         </>
       )}
 
-      <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
-        <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em' }}>{t('planner.whenFree')}</div>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginTop: 14 }}>
+      <Eyebrow text={t('planner.yourDay')} />
+      <SettingRow icon="🕐" label={t('tl.freeTime')} value={fmt(constraints.wakeMinutes) + '–' + fmt(constraints.bedtimeMinutes)} open={open === 'time'} onClick={() => toggle('time')}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', marginBottom: 7, textAlign: 'center' }}>{t('planner.from')}</div>
             <WheelTimePicker value={fmt(constraints.wakeMinutes)} onChange={(v) => update({ wakeOverride: v })} />
@@ -149,53 +89,37 @@ export default function Planner({ planner }) {
             <WheelTimePicker value={fmt(constraints.bedtimeMinutes)} onChange={(v) => update({ bedtimeOverride: v })} />
           </div>
         </div>
-        <div style={{ marginTop: 14, padding: 13, borderRadius: 15, background: 'rgba(53,208,127,.07)', border: '1px solid rgba(53,208,127,.22)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#35d07f' }} /><span style={{ fontSize: 13, fontWeight: 700, color: '#5fdd9b' }}>{t('planner.freeHours', { time: hm(freeMinutes) })}</span></div>
-          <div style={{ fontSize: 12, color: '#a3a3b3', marginTop: 6 }}>{freeRangesLabel}</div>
-          <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 4 }}>{t('planner.aiBreaks')}</div>
+        <div style={{ fontSize: 13, fontWeight: 650, color: freeMinutes ? '#7fe3ad' : '#f7c46c', marginTop: 10 }}>{freeMinutes ? t('planner.freeHours', { time: hm(freeMinutes) }) : t('planner.noFreeTime')}</div>
+      </SettingRow>
+      {constraints.blocks.map((b) => (
+        <SettingRow
+          key={b.label + b.start}
+          icon={b.kind === 'todo' ? iconForTask({ category: 'personal', title: b.label }) : iconForActivity(b.label) || '📌'}
+          label={b.label}
+          value={fmt(b.start) + '–' + fmt(b.end)}
+          onClick={() => (b.kind === 'todo' && b.taskId ? openTaskEdit(b.taskId) : openWeekly())}
+        />
+      ))}
+      <SettingRow icon="⚡" label={t('planner.energy')} value={t(VALUE_KEY[state.energy]) || state.energy} open={open === 'energy'} onClick={() => toggle('energy')}>
+        <EnergyPicker value={state.energy} onChange={(v) => update({ energy: v })} />
+      </SettingRow>
+      <SettingRow icon="⚙️" label={t('addTask.more')} value="" open={open === 'more'} onClick={() => toggle('more')}>
+        <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 10 }}>{t('planner.prefQ')}</div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
+          {PREFS.map((p) => (
+            <Chip key={p} label={t(VALUE_KEY[p]) || p} active={state.pref === p} onClick={() => update({ pref: p })} />
+          ))}
         </div>
-      </div>
-
-      <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('planner.energyQ')}</div>
-      <EnergyPicker value={state.energy} onChange={(v) => update({ energy: v })} />
-
-      <div style={{ fontSize: 14.5, fontWeight: 700, margin: '20px 0 11px' }}>{t('planner.prefQ')}</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
-        {PREFS.map((p) => (
-          <Chip key={p} label={t(VALUE_KEY[p]) || p} active={state.pref === p} onClick={() => update({ pref: p })} />
-        ))}
-      </div>
-
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: 7, margin: '20px 0 10px' }}>
-        <span style={{ fontSize: 14.5, fontWeight: 700 }}>{t('planner.noteLabel')}</span>
-        <span style={{ fontSize: 12, color: '#7a7a8a' }}>{t('planner.optional')}</span>
-      </div>
-      <textarea
-        value={state.planNote || ''}
-        onChange={(e) => update({ planNote: e.target.value })}
-        placeholder={t('planner.notePlaceholder')}
-        style={{ width: '100%', boxSizing: 'border-box', minHeight: 96, borderRadius: 16, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', padding: 14, fontSize: 13.5, lineHeight: 1.5, color: '#f4f4f7', fontFamily: 'inherit', resize: 'vertical' }}
-      />
-
-      <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
-        <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('planner.summary')}</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 14 }}>
-          <Row label={t('planner.tasks')} value={nTasks === 1 ? t('planner.oneTask') : t('planner.nTasks', { n: nTasks })} />
-          <Row label={t('planner.studyTime')} value={sumTime} />
-          <Row label={t('planner.availableTime')} value={hm(freeMinutes)} />
-          <Row label={t('planner.energy')} value={t(VALUE_KEY[state.energy]) || state.energy} />
-          <Row label={t('planner.preference')} value={t(VALUE_KEY[state.pref]) || state.pref} />
-        </div>
-        <div style={{ height: 1, background: 'rgba(255,255,255,.07)', margin: '15px -16px' }} />
-        <div style={{ display: 'flex', gap: 9 }}>
-          <span style={{ color: '#35d07f', fontSize: 12 }}>✓</span>
-          <span style={{ fontSize: 12.5, lineHeight: 1.45, color: '#a3a3b3' }}>{t('planner.willFit')}</span>
-        </div>
-      </div>
+        <textarea
+          value={state.planNote || ''}
+          onChange={(e) => update({ planNote: e.target.value })}
+          placeholder={t('planner.notePlaceholder')}
+          style={{ width: '100%', boxSizing: 'border-box', minHeight: 84, marginTop: 14, borderRadius: 14, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', padding: 13, fontSize: 13.5, lineHeight: 1.5, color: '#f4f4f7', fontFamily: 'inherit', resize: 'vertical' }}
+        />
+      </SettingRow>
 
       <StickyFooter>
-        <PrimaryButton onClick={generatePlan}>{t('planner.buildPlan')}</PrimaryButton>
-        <div style={{ textAlign: 'center', fontSize: 11.5, color: '#7a7a8a', marginTop: 11 }}>{t('planner.canChange')}</div>
+        <PrimaryButton onClick={generatePlan}>{mins > 0 ? t('planner.buildPlanTime', { time: hm(mins) }) : t('planner.buildPlan')}</PrimaryButton>
       </StickyFooter>
 
       <TaskEditSheet planner={planner} />
@@ -204,11 +128,33 @@ export default function Planner({ planner }) {
   );
 }
 
-function Row({ label, value }) {
+const ROW_LINE = '1px solid rgba(255,255,255,.06)';
+
+function Eyebrow({ text }) {
+  return <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', marginTop: 22, textTransform: 'uppercase' }}>{text}</div>;
+}
+
+function Check({ on, color = '#7c5cff' }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13 }}>
-      <span style={{ color: '#9a9aab' }}>{label}</span>
-      <span style={{ fontWeight: 700 }}>{value}</span>
+    <div style={{ width: 22, height: 22, borderRadius: 7, flex: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: on ? color : 'transparent', border: '1.5px solid ' + (on ? color : 'rgba(255,255,255,.2)') }}>
+      <svg width="11" height="9" viewBox="0 0 12 10" fill="none" style={{ opacity: on ? 1 : 0 }}><path d="M1 5l3.4 3.4L11 1.6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+    </div>
+  );
+}
+
+// One line of "Your day": tap to open its settings right under it
+// (children), or — without children — to go where it's edited.
+function SettingRow({ icon, label, value, open, onClick, children }) {
+  return (
+    <div style={{ borderBottom: ROW_LINE }}>
+      <div role="button" onClick={onClick} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0', cursor: 'pointer' }}>
+        <span style={{ fontSize: 16, width: 22, textAlign: 'center', flex: 'none' }}>{icon}</span>
+        <div style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 650, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</div>
+        <div style={{ fontSize: 14, fontWeight: 650, color: '#c9baff', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+          {value} <span style={{ display: 'inline-block', color: '#6b6b7a', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .15s ease' }}>›</span>
+        </div>
+      </div>
+      {open && children && <div style={{ padding: '2px 0 16px' }}>{children}</div>}
     </div>
   );
 }

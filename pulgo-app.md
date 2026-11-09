@@ -31,7 +31,9 @@ Pulgo is my iPhone app for everyone who studies (students, and adults taking cou
   - **Milestones** at 7, 10, 30, 50, 100, 200 and 365 days in a row: a celebration (no badges — removed at Igor's request).
   - **Streak freezes (Premium):** 1 freeze for every 3 finished sessions, plus 1 as a gift at each milestone, max 3. A missed day is covered automatically and shows as 🧊 on the streak card.
   - Premium streak card: gold edge, 👑 on the flame, a PREMIUM chip, 🧊 n/3 and the progress to the next freeze. Free users see a small locked "🔒 🧊 Freeze" chip that opens Premium; the Premium screen lists "🧊 Never lose your streak".
-- **AI day plan:** builds study sessions around fixed things. "Already planned" items can be edited.
+- **AI day plan:** builds study sessions around fixed things.
+  - "Plan today / Plan tomorrow" is a clean list: tasks with checkboxes, then "Your day" rows (free time, fixed activities, energy, "More options" for preference and note) that open when tapped. The button shows the total ("Build my plan · 1 hr 15 min").
+  - The finished plan is a timeline: times on the left, only study sessions are cards (tap one to move it or edit the task), breaks/gym/free time/sleep are one short line each. On top: "2 sessions · 1 hr 15 min · done by 17:25". The AI's reason is hidden behind "Why this plan?" and is one short sentence. "Edit" (top right) lets you remove or add sessions; "New plan" makes another one.
 - **Adding a task** (+ menu → purple **Task** card, or any "+ Add task"): a full page with big tiles (Homework, Project, Presentation, Essay, Reading, Revision, To-do, Other) and optional subject chips. The name fills in by itself (e.g. "Biology Project") and the length by type, so almost no typing. Time, priority, repeat and note are under "More options".
 - **Exams:** add an exam or deadline, get an AI prep plan over the days before it.
 - **Rescue:** re-plans a busy or messed-up day.
