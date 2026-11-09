@@ -1039,4 +1039,7 @@ export default {
   "premium.tryFree": "免费试用 7 天",
   "premium.profileRenews": "无限 AI · {date} 续订",
   "premium.profileActiveSub": "无限 AI",
+  "premium.memberSince": "{date} 起成为会员",
+  "premium.renewsLabel": "续订日期",
+  "premium.manageShort": "管理",
 };

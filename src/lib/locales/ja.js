@@ -1039,4 +1039,7 @@ export default {
   "premium.tryFree": "7日間無料で試す",
   "premium.profileRenews": "AI無制限 · {date}に更新",
   "premium.profileActiveSub": "AI無制限",
+  "premium.memberSince": "{date}からメンバー",
+  "premium.renewsLabel": "更新日",
+  "premium.manageShort": "管理",
 };

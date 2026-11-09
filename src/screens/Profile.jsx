@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { hm, weeklyReview } from '../lib/plannerLogic';
 import { STUDY_TIME_OPTIONS, PREF_OPTIONS, PRIORITY_SUBJECT_OPTIONS, ACTIVITY_OPTIONS } from '../lib/plannerData';
 import { aboutMeFacts, ABOUT_NOTE_MAX } from '../lib/aboutMe';
@@ -7,7 +7,8 @@ import { useLang } from '../lib/useLang';
 import { resizeImageToDataURL } from '../lib/image';
 import { Chip, EnergyPicker, BottomSheet } from '../components/ui';
 import { PugImg } from '../components/PugMascot';
-import { usePremium, openPaywall } from '../lib/premium';
+import { usePremium, openPaywall, MANAGE_SUBSCRIPTION_URL } from '../lib/premium';
+import { useLocalStorage, KEYS } from '../lib/store';
 import NotificationBell from '../components/NotificationBell';
 import WheelTimePicker from '../components/WheelTimePicker';
 
@@ -281,21 +282,33 @@ function RhythmList({ profileDefaults, setProfileDefaults, activities, setActivi
 
 // Pulgo Premium on the profile: a big card to try it, or — with Premium —
 // that it's active and when it renews. Hidden while Premium is switched off.
-function PremiumCard() {
+function PremiumCard({ studentName }) {
   const { t } = useLang();
   const premium = usePremium();
+  // When this student was first seen with Premium (synced with the account),
+  // for "Member since" on the membership card.
+  const [since, setSince] = useLocalStorage(KEYS.premiumSince, null);
+  useEffect(() => {
+    if (premium.enabled && premium.premium && !since) setSince(new Date().toISOString().slice(0, 10));
+  }, [premium.enabled, premium.premium, since, setSince]);
   if (!premium.enabled) return null;
   if (premium.premium) {
-    let renews = '';
-    if (premium.expiresAt) {
-      try { renews = new Intl.DateTimeFormat(localeOf(getCurrentLang()), { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(premium.expiresAt)); } catch { renews = ''; }
-    }
+    const locale = localeOf(getCurrentLang());
+    const fmt = (iso, opts) => { try { return new Intl.DateTimeFormat(locale, opts).format(new Date(iso)); } catch { return ''; } };
+    const renews = premium.expiresAt ? fmt(premium.expiresAt, { day: 'numeric', month: 'short', year: 'numeric' }) : '';
+    const member = since ? fmt(since + 'T12:00:00', { month: 'short', year: 'numeric' }) : '';
     return (
-      <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderRadius: 20, background: 'rgba(53,208,127,.08)', border: '1px solid rgba(53,208,127,.35)' }}>
-        <div style={{ fontSize: 22 }}>✅</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 800 }}>{t('premium.settingsActive')}</div>
-          <div style={{ fontSize: 12.5, color: '#b9b9c6', marginTop: 2 }}>{renews ? t('premium.profileRenews', { date: renews }) : t('premium.profileActiveSub')}</div>
+      <div style={{ position: 'relative', overflow: 'hidden', marginTop: 14, minHeight: 178, borderRadius: 24, padding: 18, background: 'linear-gradient(135deg,#2a1a5e 0%,#5b3df0 55%,#f5a524 140%)', boxShadow: '0 14px 34px rgba(91,61,240,.45)' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(115deg,transparent 40%,rgba(255,255,255,.16) 50%,transparent 60%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', right: -18, bottom: -22, opacity: 0.28, borderRadius: '50%', overflow: 'hidden', pointerEvents: 'none' }}><PugImg size={150} /></div>
+        <div style={{ position: 'relative', fontSize: 11, fontWeight: 800, letterSpacing: '.14em', color: '#ffe3a3' }}>👑 {t('premium.eyebrow')}</div>
+        <div style={{ position: 'relative', fontSize: 24, fontWeight: 800, marginTop: 24, letterSpacing: '-.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '70%' }}>{studentName || t('profile.you')}</div>
+        <div style={{ position: 'relative', fontSize: 12.5, color: '#ddd5ff', marginTop: 2 }}>{member ? t('premium.memberSince', { date: member }) : t('premium.profileActiveSub')}</div>
+        <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 20, gap: 10 }}>
+          <div style={{ fontSize: 11, color: '#ddd5ff', letterSpacing: '.06em', textTransform: 'uppercase' }}>
+            {renews ? <>{t('premium.renewsLabel')}<br /><b style={{ fontSize: 14, color: '#fff', letterSpacing: 0, textTransform: 'none' }}>{renews}</b></> : <b style={{ fontSize: 13, color: '#fff', letterSpacing: 0, textTransform: 'none' }}>{t('premium.settingsActive')}</b>}
+          </div>
+          <div role="button" onClick={() => { window.location.href = MANAGE_SUBSCRIPTION_URL; }} style={{ fontSize: 12, fontWeight: 800, padding: '7px 13px', borderRadius: 99, background: 'rgba(255,255,255,.18)', border: '1px solid rgba(255,255,255,.22)', cursor: 'pointer' }}>{t('premium.manageShort')}</div>
         </div>
       </div>
     );
@@ -330,7 +343,7 @@ export default function Profile({ studentName, setStudentName, profilePhoto, set
         studentName={studentName} setStudentName={setStudentName} profilePhoto={profilePhoto} setProfilePhoto={setProfilePhoto}
         activities={activities} studyHistory={studyHistory} planner={planner} streak={streak}
       />
-      <PremiumCard />
+      <PremiumCard studentName={studentName} />
       <KnowsBubble facts={facts} />
       <Label>{t('profile.tellMore')}</Label>
       <NoteCard activities={activities} setActivities={setActivities} />

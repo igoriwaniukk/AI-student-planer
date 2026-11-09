@@ -85,7 +85,7 @@ Pulgo is my iPhone app for everyone who studies (students, and adults taking cou
   - Switched on with `PREMIUM_ENABLED=true` in Vercel.
   - Setup steps: `PREMIUM_SETUP.md`.
   - The paywall appears once right after onboarding, from Settings and the Premium card on Profile, at a used-up limit, and at most once a day after finishing something.
-  - Profile shows a big Premium card ("Try 7 days free") for free users, and "Premium is active · renews …" with a PREMIUM badge for subscribers.
+  - Profile shows a big Premium card ("Try 7 days free") for free users; subscribers get a PREMIUM badge and a membership card (name, member since, renewal date, Manage).
 - **Hide the gray ^ ˅ ✓ bar** above the keyboard (needs the new build).
 - **Block social media during a study session** (Premium, Apple Screen Time). I applied to Apple for the Family Controls permission.
 - Later ideas: let the planner plan any day of the week, a Polish screenshot set, new App Store screenshots (chat, focus, calendar), an App Store header banner (A/B/C designs were shown, none picked yet).
