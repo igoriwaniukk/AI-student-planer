@@ -11,6 +11,7 @@ import { aboutMeForAI } from '../lib/aboutMe';
 import { requestAIPrep, toPrepCards } from '../lib/aiPrep';
 import { requestAIRescue } from '../lib/aiRescue';
 import { WIN_EVENT } from '../lib/premium';
+import { SESSION_DONE_EVENT } from '../lib/streakRewards';
 
 // The only slice of usePlanner's state that survives a reload / syncs across
 // devices (via KEYS.plannerData in store.js) — everything else here is
@@ -664,6 +665,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     // that merge keeps `completed` sticky once true — Finish day can't un-set
     // it either, even on a day where not everything planned got finished.
     recordStudyDay?.({ completed: true });
+    window.dispatchEvent(new Event(SESSION_DONE_EVENT));
     window.dispatchEvent(new Event(WIN_EVENT));
   }
 
@@ -683,6 +685,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       };
     });
     recordStudyDay?.({ completed: true });
+    window.dispatchEvent(new Event(SESSION_DONE_EVENT));
   }
 
   // ---- block edit (plan screen, manual mode) ----

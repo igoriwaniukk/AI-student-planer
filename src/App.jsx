@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import TabBar from './components/TabBar';
 import StreakCelebration from './components/StreakCelebration';
 import Paywall from './components/Paywall';
@@ -30,6 +30,7 @@ import {
   KEYS, STORAGE_CHANGED_EVENT,
 } from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
+import { useStreakRewards } from './hooks/useStreakRewards';
 import { LanguageProvider } from './lib/LanguageContext';
 import { computeStreak, studiedToday, localDateKey, daySessionBreakdown, statusOn, dayOpenTasks, wrapUpMinutes, planFor } from './lib/plannerLogic';
 import { NUM_TODAY } from './lib/plannerData';
@@ -192,7 +193,7 @@ const LOADED_DAY = localDateKey();
 // Mounted only once onboarding is done, so usePlanner's initial state (a lazy
 // useState initializer, which only ever runs on first mount) picks up the
 // profile defaults onboarding just saved instead of whatever was there before.
-function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, setActivities, profileDefaults, setProfileDefaults, weeklyCapacity, energyLog, logEnergy, studyHistory, recordStudyDay, recurringActivities, setRecurringActivities, email, onSignOut, onDeleteAccount, syncError }) {
+function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, setActivities, profileDefaults, setProfileDefaults, weeklyCapacity, logEnergy, studyHistory, recordStudyDay, freezeDays, recurringActivities, setRecurringActivities, email, onSignOut, onDeleteAccount, syncError }) {
   const [plannerData, setPlannerData] = usePlannerData();
   const planner = usePlanner(profileDefaults, activities, recurringActivities, plannerData, setPlannerData, recordStudyDay);
   const { state } = planner;
@@ -220,6 +221,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
   // the app or after finishing a session / the day.
   const premium = usePremium();
   const [paywall, setPaywall] = useState(null);
+  const streakRewards = useStreakRewards({ studyHistory, streak, isPremium: premium.enabled && premium.premium, freezeDays });
   const pendingWin = useRef(false);
   const openTried = useRef(false);
   useEffect(() => {
@@ -343,9 +345,8 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
           planner={planner}
           studentName={name}
           profilePhoto={profilePhoto}
-          energyLog={energyLog}
-          logEnergy={logEnergy}
           studyHistory={studyHistory}
+          streakRewards={streakRewards.rewards}
         />
       )}
       {screen === 'calendar' && <Calendar planner={planner} activities={activities} recurringActivities={recurringActivities} />}
@@ -380,6 +381,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
           studyHistory={studyHistory}
           recurringActivities={recurringActivities}
           streak={streak}
+          streakBadges={streakRewards.rewards.badges}
         />
       )}
       {screen === 'settings' && (
@@ -419,7 +421,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
       {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} onFabClick={() => setQuickAddOpen(true)} fabActive={quickAddOpen} />}
 
       {/* Waits for the focus screen's finish animation before celebrating. */}
-      {celebrating && screen !== 'focus' && <StreakCelebration streak={streak} onClose={() => setCelebrating(false)} />}
+      {celebrating && screen !== 'focus' && <StreakCelebration streak={streak} milestone={streakRewards.milestone} onClose={() => { setCelebrating(false); streakRewards.clearMilestone(); }} />}
 
       {paywall && <Paywall reason={paywall} onClose={() => setPaywall(null)} />}
     </div>
@@ -446,7 +448,7 @@ export default function App() {
   const [activities, setActivities] = useActivities();
   const [profileDefaults, setProfileDefaults] = useProfileDefaults();
   const [weeklyCapacity] = useWeeklyCapacity();
-  const [energyLog, setEnergyLog] = useEnergyLog();
+  const [, setEnergyLog] = useEnergyLog();
   const [studyHistory, setStudyHistory] = useStudyHistory();
   const [recurringActivities, setRecurringActivities] = useRecurringActivities();
   const [lang, setLang] = useLanguage();
@@ -470,6 +472,16 @@ export default function App() {
       return { ...h, [today]: { ...prev, ...entry, completed: !!(prev.completed || entry.completed) } };
     });
   }
+
+  // Streak freezes (Premium, see hooks/useStreakRewards.js): a missed day
+  // covered by a freeze keeps the run going without counting as studied.
+  const freezeDays = useCallback((keys) => {
+    setStudyHistory((h) => {
+      const next = { ...h };
+      keys.forEach((k) => { if (!next[k]?.completed) next[k] = { ...next[k], frozen: true }; });
+      return next;
+    });
+  }, [setStudyHistory]);
 
   // Tells the iPhone app (if this runs inside it) the language for its own
   // screens and whether anyone is signed in; signing out clears its reminders.
@@ -552,10 +564,10 @@ export default function App() {
         profileDefaults={profileDefaults}
         setProfileDefaults={setProfileDefaults}
         weeklyCapacity={weeklyCapacity}
-        energyLog={energyLog}
         logEnergy={logEnergy}
         studyHistory={studyHistory}
         recordStudyDay={recordStudyDay}
+        freezeDays={freezeDays}
         recurringActivities={recurringActivities}
         setRecurringActivities={setRecurringActivities}
         email={session?.user?.email || ''}

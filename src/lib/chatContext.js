@@ -1,6 +1,9 @@
 import { upcomingExams, computeStreak, fmt, planFor } from './plannerLogic';
 import { NUM_TODAY } from './plannerData';
 
+// Fired to open the AI Pulgo chat from anywhere (e.g. Home's tip card).
+export const OPEN_CHAT_EVENT = 'pulgo-open-chat';
+
 // Compact snapshot of the student's plan/goals sent to the AI chat backend
 // with each message, instead of the full app state (keeps the request small
 // and avoids sending data the assistant has no use for).
