@@ -147,6 +147,7 @@ export default function Paywall({ reason, onClose }) {
                 </div>
                 <FeatureCard icon="✨" label={t('premium.card1Label')} title={t('premium.card1')} color="#2ee6c5" align="flex-end" />
                 <FeatureCard icon="📚" label={t('premium.card2Label')} title={t('premium.card2')} color="#f5a524" align="flex-start" />
+                <FeatureCard icon="🧊" label={t('premium.card3Label')} title={t('premium.card3')} color="#78c8ff" align="flex-end" />
               </div>
 
               <div style={{ flex: 1, minHeight: 24 }} />

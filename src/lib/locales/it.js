@@ -952,6 +952,8 @@ export default {
   "premium.card1": "Nessun limite giornaliero",
   "premium.card2Label": "PRIMA DI OGNI VERIFICA",
   "premium.card2": "Piani di studio su richiesta",
+  "premium.card3Label": "CONGELA LA SERIE",
+  "premium.card3": "Non perdere mai la tua serie",
   "premium.yearly": "Annuale",
   "premium.yearlySub": "7 giorni gratis · solo {perMonth} / mese",
   "premium.monthly": "Mensile",
@@ -1061,9 +1063,5 @@ export default {
   "streakCard.freezeProgress": "Sessioni al prossimo 🧊: {n}/{total}",
   "streakCard.freezesFull": "Congelamenti al completo — sei protetto 🧊",
   "streakCard.frozenSaved": "Un congelamento ha salvato la tua serie 🧊",
-  "streak.milestoneLabel": "TRAGUARDO SBLOCCATO",
-  "streak.milestoneBadge": "Nuovo badge: {n} giorni di fila",
   "streak.freezeGift": "+1 congelamento (regalo Premium)",
-  "profile.badgesTitle": "BADGE DELLA SERIE",
-  "profile.badgeDays": "{n} giorni",
 };

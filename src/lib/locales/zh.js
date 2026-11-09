@@ -952,6 +952,8 @@ export default {
   "premium.card1": "没有每日限制",
   "premium.card2Label": "每次考试前",
   "premium.card2": "随时生成复习计划",
+  "premium.card3Label": "连续记录冻结",
+  "premium.card3": "再也不会中断连续记录",
   "premium.yearly": "按年",
   "premium.yearlySub": "免费 7 天 · 每月仅 {perMonth}",
   "premium.monthly": "按月",
@@ -1061,9 +1063,5 @@ export default {
   "streakCard.freezeProgress": "距离下一个 🧊 的学习次数：{n}/{total}",
   "streakCard.freezesFull": "冻结已满——你的连续记录受到保护 🧊",
   "streakCard.frozenSaved": "一次冻结保住了你的连续记录 🧊",
-  "streak.milestoneLabel": "达成里程碑",
-  "streak.milestoneBadge": "新徽章：连续 {n} 天",
   "streak.freezeGift": "+1 次冻结（Premium 礼物）",
-  "profile.badgesTitle": "连续学习徽章",
-  "profile.badgeDays": "{n} 天",
 };

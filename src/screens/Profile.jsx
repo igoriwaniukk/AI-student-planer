@@ -9,7 +9,6 @@ import { Chip, EnergyPicker, BottomSheet } from '../components/ui';
 import { PugImg } from '../components/PugMascot';
 import { usePremium, openPaywall, MANAGE_SUBSCRIPTION_URL } from '../lib/premium';
 import { useLocalStorage, KEYS } from '../lib/store';
-import { STREAK_MILESTONES, MILESTONE_BADGE } from '../lib/streakRewards';
 import NotificationBell from '../components/NotificationBell';
 import WheelTimePicker from '../components/WheelTimePicker';
 
@@ -150,32 +149,6 @@ function Hero({ studentName, setStudentName, profilePhoto, setProfilePhoto, acti
 }
 
 // "Here's what I know about you": the pug says what the AI is told.
-// Streak badges (see lib/streakRewards.js): earned ones in gold, the rest
-// locked with how many days in a row they need.
-function StreakBadges({ badges }) {
-  const { t } = useLang();
-  const earned = new Set(badges || []);
-  return (
-    <div style={{ marginTop: 14, padding: 15, borderRadius: 20, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.08)' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('profile.badgesTitle')}</div>
-        <div style={{ fontSize: 11.5, color: '#8a8a99' }}>{earned.size}/{STREAK_MILESTONES.length}</div>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 9, marginTop: 12 }}>
-        {STREAK_MILESTONES.map((m) => {
-          const on = earned.has(m);
-          return (
-            <div key={m} style={{ textAlign: 'center', padding: '10px 4px', borderRadius: 15, background: on ? 'rgba(245,196,81,.10)' : 'rgba(255,255,255,.03)', border: '1px solid ' + (on ? 'rgba(245,196,81,.4)' : 'rgba(255,255,255,.07)'), opacity: on ? 1 : 0.45 }}>
-              <div style={{ fontSize: 26, lineHeight: 1.1 }}>{on ? MILESTONE_BADGE[m] : '🔒'}</div>
-              <div style={{ fontSize: 11, fontWeight: 750, marginTop: 4, color: on ? '#f7e2bd' : '#a9a9b8' }}>{t('profile.badgeDays', { n: m })}</div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 function KnowsBubble({ facts }) {
   const { t } = useLang();
   return (
@@ -360,7 +333,7 @@ function PremiumCard({ studentName }) {
   );
 }
 
-export default function Profile({ studentName, setStudentName, profilePhoto, setProfilePhoto, activities, setActivities, planner, profileDefaults, setProfileDefaults, studyHistory, recurringActivities, streak, streakBadges = [] }) {
+export default function Profile({ studentName, setStudentName, profilePhoto, setProfilePhoto, activities, setActivities, planner, profileDefaults, setProfileDefaults, studyHistory, recurringActivities, streak }) {
   const { t } = useLang();
   const facts = aboutMeFacts({ activities, defaults: profileDefaults, energy: planner.state.energy, recurringActivities });
 
@@ -372,7 +345,6 @@ export default function Profile({ studentName, setStudentName, profilePhoto, set
       />
       <PremiumCard studentName={studentName} />
       <KnowsBubble facts={facts} />
-      <StreakBadges badges={streakBadges} />
       <Label>{t('profile.tellMore')}</Label>
       <NoteCard activities={activities} setActivities={setActivities} />
       <Label>{t('profile.yourRhythm')}</Label>

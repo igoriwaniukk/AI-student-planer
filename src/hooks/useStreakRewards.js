@@ -10,9 +10,9 @@ import {
 //  - Premium: every finished session counts towards the next freeze, and
 //    missed days right before today are covered by freezes automatically
 //    (freezeDays marks them `frozen` in studyHistory).
-//  - Everyone: a badge at each milestone. Reaching one live (the streak
-//    going up to it) is celebrated, with +1 freeze for Premium; badges for
-//    milestones already behind the student are just added quietly.
+//  - Milestones (STREAK_MILESTONES): reaching one live (the streak going up
+//    to it) is celebrated, with +1 freeze for Premium; milestones already
+//    behind the student are just recorded quietly.
 export function useStreakRewards({ studyHistory, streak, isPremium, freezeDays }) {
   const [stored, setStored] = useLocalStorage(KEYS.streakRewards, EMPTY_REWARDS);
   const rewards = normalizeRewards(stored);

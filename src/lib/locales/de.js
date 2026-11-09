@@ -952,6 +952,8 @@ export default {
   "premium.card1": "Keine Tageslimits",
   "premium.card2Label": "VOR JEDER PRÜFUNG",
   "premium.card2": "Lernpläne auf Abruf",
+  "premium.card3Label": "SERIEN-FREEZES",
+  "premium.card3": "Verlier nie deine Serie",
   "premium.yearly": "Jährlich",
   "premium.yearlySub": "7 Tage gratis · nur {perMonth} / Monat",
   "premium.monthly": "Monatlich",
@@ -1061,9 +1063,5 @@ export default {
   "streakCard.freezeProgress": "Einheiten bis zum nächsten 🧊: {n}/{total}",
   "streakCard.freezesFull": "Freezes voll — du bist geschützt 🧊",
   "streakCard.frozenSaved": "Ein Freeze hat deine Serie gerettet 🧊",
-  "streak.milestoneLabel": "MEILENSTEIN ERREICHT",
-  "streak.milestoneBadge": "Neues Abzeichen: {n} Tage am Stück",
   "streak.freezeGift": "+1 Freeze (Premium-Geschenk)",
-  "profile.badgesTitle": "SERIEN-ABZEICHEN",
-  "profile.badgeDays": "{n} Tage",
 };

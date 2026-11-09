@@ -952,6 +952,8 @@ export default {
   "premium.card1": "Sin límites diarios",
   "premium.card2Label": "ANTES DE CADA EXAMEN",
   "premium.card2": "Planes de estudio al momento",
+  "premium.card3Label": "CONGELAR RACHA",
+  "premium.card3": "No pierdas nunca tu racha",
   "premium.yearly": "Anual",
   "premium.yearlySub": "7 días gratis · solo {perMonth} / mes",
   "premium.monthly": "Mensual",
@@ -1061,9 +1063,5 @@ export default {
   "streakCard.freezeProgress": "Sesiones para el siguiente 🧊: {n}/{total}",
   "streakCard.freezesFull": "Congelaciones completas — estás protegido 🧊",
   "streakCard.frozenSaved": "Una congelación salvó tu racha 🧊",
-  "streak.milestoneLabel": "LOGRO DESBLOQUEADO",
-  "streak.milestoneBadge": "Nueva insignia: {n} días seguidos",
   "streak.freezeGift": "+1 congelación (regalo Premium)",
-  "profile.badgesTitle": "INSIGNIAS DE RACHA",
-  "profile.badgeDays": "{n} días",
 };
