@@ -1036,4 +1036,7 @@ export default {
   "addTask.idea.errands": "跑腿办事",
   "addTask.idea.call": "打电话",
   "addTask.idea.tidy": "整理",
+  "premium.tryFree": "免费试用 7 天",
+  "premium.profileRenews": "无限 AI · {date} 续订",
+  "premium.profileActiveSub": "无限 AI",
 };

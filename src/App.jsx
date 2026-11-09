@@ -185,6 +185,7 @@ function useCloudSync(session) {
 }
 
 const TAB_SCREENS = new Set(['home', 'calendar', 'tasks', 'profile']);
+const JUST_ONBOARDED_KEY = 'sp_justOnboarded';
 // The local date this page load's day numbers were computed for.
 const LOADED_DAY = localDateKey();
 
@@ -245,6 +246,16 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
     if (pendingWin.current) {
       pendingWin.current = false;
       const id = setTimeout(() => maybeAutoShow('win'), 900);
+      return () => clearTimeout(id);
+    }
+    let justOnboarded = false;
+    try { justOnboarded = sessionStorage.getItem(JUST_ONBOARDED_KEY) === '1'; } catch { /* storage blocked */ }
+    if (justOnboarded) {
+      openTried.current = true;
+      const id = setTimeout(() => {
+        try { sessionStorage.removeItem(JUST_ONBOARDED_KEY); } catch { /* storage blocked */ }
+        maybeAutoShow('onboarding');
+      }, 1800);
       return () => clearTimeout(id);
     }
     if (!openTried.current) {
@@ -520,6 +531,8 @@ export default function App() {
             }
             setActivities(acts);
             setProfileDefaults(profile);
+            // The payment screen shows once on the first quiet Home after this.
+            try { sessionStorage.setItem(JUST_ONBOARDED_KEY, '1'); } catch { /* storage blocked */ }
             setName(newName);
           }}
         />

@@ -53,15 +53,19 @@ export function openPaywall(reason = 'manual') {
 }
 
 // ── When the payment screen may open by itself ──────────────────────────
-// At most once a day; never in the first two days after signing up; when
-// the app opens, at most every three days; always when a limit is hit.
+// Once right after onboarding; otherwise at most once a day, never in the
+// first two days after signing up, on opening the app at most every three
+// days; always when a limit is hit.
 const LAST_SHOWN_KEY = 'sp_paywallLastShown';
 const LAST_OPEN_KEY = 'sp_paywallLastOpenShown';
 const FIRST_SEEN_KEY = 'sp_firstSeen';
+const ONBOARDING_KEY = 'sp_paywallOnboardingShown';
 const DAY = 86400000;
 
-export function shouldAutoShow(trigger, { now, createdAt, lastShown, lastOpenShown }) {
+export function shouldAutoShow(trigger, { now, createdAt, lastShown, lastOpenShown, onboardingShown }) {
   if (trigger === 'limit') return true;
+  // Once, right after the start questions — the first-days rule doesn't apply.
+  if (trigger === 'onboarding') return !onboardingShown;
   if (createdAt && now - createdAt < 2 * DAY) return false;
   if (lastShown && now - lastShown < DAY) return false;
   if (trigger === 'open' && lastOpenShown && now - lastOpenShown < 3 * DAY) return false;
@@ -84,8 +88,9 @@ function signedUpAt() {
 export function maybeAutoShow(trigger, reason = trigger) {
   if (!state.enabled || state.premium) return false;
   const now = Date.now();
-  if (!shouldAutoShow(trigger, { now, createdAt: signedUpAt(), lastShown: readNum(LAST_SHOWN_KEY), lastOpenShown: readNum(LAST_OPEN_KEY) })) return false;
+  if (!shouldAutoShow(trigger, { now, createdAt: signedUpAt(), lastShown: readNum(LAST_SHOWN_KEY), lastOpenShown: readNum(LAST_OPEN_KEY), onboardingShown: readNum(ONBOARDING_KEY) })) return false;
   writeNum(LAST_SHOWN_KEY, now);
+  if (trigger === 'onboarding') writeNum(ONBOARDING_KEY, now);
   if (trigger === 'open') writeNum(LAST_OPEN_KEY, now);
   openPaywall(reason);
   return true;

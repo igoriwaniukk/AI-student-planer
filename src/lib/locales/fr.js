@@ -1036,4 +1036,7 @@ export default {
   "addTask.idea.errands": "Courses",
   "addTask.idea.call": "Appel",
   "addTask.idea.tidy": "Ranger",
+  "premium.tryFree": "Essaie 7 jours gratuits",
+  "premium.profileRenews": "IA illimitée · renouvellement le {date}",
+  "premium.profileActiveSub": "IA illimitée",
 };

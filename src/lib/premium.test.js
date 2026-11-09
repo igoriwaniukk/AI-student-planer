@@ -6,6 +6,11 @@ const now = Date.UTC(2026, 9, 20, 12);
 const old = { now, createdAt: now - 10 * DAY, lastShown: null, lastOpenShown: null };
 
 describe('when the payment screen may open by itself', () => {
+  it('once right after onboarding, even on the first day', () => {
+    expect(shouldAutoShow('onboarding', { ...old, createdAt: now - 1000 })).toBe(true);
+    expect(shouldAutoShow('onboarding', { ...old, onboardingShown: now - 1000 })).toBe(false);
+  });
+
   it('always at a used-up limit, even for brand-new students', () => {
     expect(shouldAutoShow('limit', { ...old, createdAt: now - 1000, lastShown: now - 1000 })).toBe(true);
   });

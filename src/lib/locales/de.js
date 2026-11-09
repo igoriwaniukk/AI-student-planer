@@ -1036,4 +1036,7 @@ export default {
   "addTask.idea.errands": "Besorgungen",
   "addTask.idea.call": "Anruf",
   "addTask.idea.tidy": "Aufräumen",
+  "premium.tryFree": "7 Tage kostenlos testen",
+  "premium.profileRenews": "Unbegrenzte KI · verlängert sich am {date}",
+  "premium.profileActiveSub": "Unbegrenzte KI",
 };
