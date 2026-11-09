@@ -2,12 +2,15 @@ import { useState } from 'react';
 import { HARD_OPTIONS, KNOW_OPTIONS, DAY_HARD_OPTIONS, NUM_TODAY } from '../lib/plannerData';
 import { hm, pluralForm, weekdayDateLabel, daySessionBreakdown, statusOn, localDateKey, dayOpenTasks, planFor } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
-import { BackButton, StickyFooter, PrimaryButton, EnergyPicker, OptionRow, ListRow, Chip, Confetti } from '../components/ui';
+import { iconForTask } from '../lib/taskAuto';
+import { BackButton, StickyFooter, PrimaryButton, EnergyPicker, Chip, Confetti } from '../components/ui';
+import { Eyebrow, Check, SettingRow, ROW_LINE } from '../components/ListRows';
 import { useLang } from '../lib/useLang';
 
 export default function Summary({ planner, recordStudyDay = () => {} }) {
   const { t } = useLang();
   const { state, def, go, finishDay, setUnfinishedChoice, saveLater, adjustSessionMinutes, setSessionField, update } = planner;
+  const [open, setOpen] = useState(null);
   const saved = state.daySummaries?.[localDateKey()];
   if (saved) {
     return <DaySaved planner={planner} summary={saved} justSaved={!!state.daySaved} />;
@@ -21,8 +24,6 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
   const planOf = (id) => (sched[id] && sched[id].dur) || def(id).dur;
   const plannedMins = completedIds.reduce((a, id) => a + planOf(id), 0);
   const totalActualMinutes = completedIds.reduce((a, id) => a + (state.sessionReview[id]?.minutes || 0), 0);
-  const totalDiffVal = totalActualMinutes - plannedMins;
-  const sign = (n) => (n >= 0 ? '+' : '') + n;
   const choices = state.unfinishedChoices || {};
   // Everything left open today: unfinished sessions plus open to-dos and
   // unplanned tasks. One-offs stay on the list (or are let go) — nothing is
@@ -32,7 +33,6 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
   const choosable = leftover.filter((id) => !repeats(id));
   const droppedPick = choosable.filter((id) => choices[id] === 'drop').length;
   const keptPick = choosable.length - droppedPick;
-  const missedCount = leftover.length - choosable.length;
   // A math-specific follow-up observation ("math took longer than planned")
   // only makes sense when math was actually part of today's plan.
   const mathIncludedToday = completedIds.includes('math');
@@ -41,139 +41,108 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
   const hasObservation = mathIncludedToday && mathDelta !== 0;
   const titleOf = (id) => t(TASK_TEXT_KEY[id]?.title) || def(id).title;
 
+  const toggle = (k) => setOpen((o) => (o === k ? null : k));
+  const iconOf = (id) => iconForTask(def(id));
+
   return (
     <>
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '16px 20px 116px', position: 'relative', zIndex: 1 }}>
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '16px 20px 210px', position: 'relative', zIndex: 1 }}>
       <BackButton onClick={() => go('home')} />
-      <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>{t('sum.title')}</div>
-      <div style={{ fontSize: 13.5, fontWeight: 650, color: '#c9c9d6', marginTop: 8 }}>{t('sum.date', { date: weekdayDateLabel(NUM_TODAY) })}</div>
-      <div style={{ fontSize: 13, lineHeight: 1.5, color: '#8a8a99', marginTop: 6 }}>{t('sum.subtitle')}</div>
-
-      <div style={{ marginTop: 18, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)' }}>
-        <div style={{ fontSize: 16, fontWeight: 750, letterSpacing: '-.01em' }}>{t('sum.todayPlan')}</div>
-        {totalCount === 0 && <div style={{ fontSize: 12.5, color: '#8a8a99', marginTop: 10 }}>{t('sum.noSessions')}</div>}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 13 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><span style={{ color: '#35d07f', fontSize: 12 }}>✓</span><span style={{ fontSize: 13, fontWeight: 650, color: '#5fdd9b' }}>{t('sum.doneOfTotal', { done: doneCount, total: totalCount })}</span></div>
-          {unfinished.length > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}><span style={{ color: '#f5a524', fontSize: 12 }}>!</span><span style={{ fontSize: 13, color: '#f7c46c' }}>{t('sum.unfinishedCount', { n: unfinished.length })}</span></div>
-          )}
-        </div>
-        <div style={{ height: 1, background: 'rgba(255,255,255,.08)', margin: '14px -16px' }} />
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
-          <Row label={t('sum.plannedTime')} value={hm(plannedMins)} />
-          <Row label={t('sum.actualTime')} value={hm(totalActualMinutes)} />
-          <Row label={t('sum.diff')} value={sign(totalDiffVal) + ' min'} color="#8fbaff" />
-        </div>
+      <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-.02em', marginTop: 14 }}>{t('sum.title')}</div>
+      <div style={{ fontSize: 14, color: '#a3a3b3', marginTop: 6 }}>
+        {totalCount === 0 ? t('sum.noSessions') : t('sum.headline', { done: doneCount, total: totalCount, time: hm(totalActualMinutes) })}
       </div>
 
-      {completedIds.length > 0 && <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('sum.howSessions')}</div>}
-
-      {completedIds.map((id, i) => {
-        const d = def(id);
+      {completedIds.length > 0 && <Eyebrow text={t('sum.sessionsLabel')} />}
+      {completedIds.map((id) => {
         const review = state.sessionReview[id] || {};
         const plan = planOf(id);
-        const diffVal = (review.minutes || 0) - plan;
+        const key = 'session-' + id;
         return (
-          <div key={id}>
-            {i > 0 && <div style={{ height: 12 }} />}
-            <SessionReview
-              subject={(t(VALUE_KEY[d.subject]) || d.subject || '').toUpperCase()} subjectColor={d.color}
-              title={titleOf(id)} deadline={d.deadline ? (t(TASK_TEXT_KEY[id]?.deadline) || d.deadline) : null}
-              planned={t('sum.plan', { min: plan })} actual={(review.minutes || 0) + ' min'} diff={sign(diffVal) + ' min'}
-              onMinus={() => adjustSessionMinutes(id, -5)} onPlus={() => adjustSessionMinutes(id, 5)}
-              hard={review.hard} onHard={(x) => setSessionField(id, 'hard', x)}
-              know={review.know} onKnow={(x) => setSessionField(id, 'know', x)}
-              t={t}
-            />
+          <div key={id} style={{ borderBottom: ROW_LINE }}>
+            <div role="button" onClick={() => toggle(key)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', cursor: 'pointer' }}>
+              <Check on color="#35d07f" />
+              <span style={{ fontSize: 17, width: 22, textAlign: 'center', flex: 'none' }}>{iconOf(id)}</span>
+              <div style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700 }}>{titleOf(id)}</div>
+              <span style={{ fontSize: 13.5, fontWeight: 650, color: '#c9baff', whiteSpace: 'nowrap' }}>
+                {hm(review.minutes || 0)} <span style={{ display: 'inline-block', color: '#6b6b7a', transform: open === key ? 'rotate(90deg)' : 'none' }}>›</span>
+              </span>
+            </div>
+            {open === key && (
+              <div style={{ padding: '0 0 16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
+                  <span style={{ fontSize: 13, color: '#9a9aab', flex: 1 }}>{t('sum.actualTimeLabel')} <span style={{ color: '#6b6b7a' }}>· {t('sum.plan', { min: plan })}</span></span>
+                  <div role="button" onClick={() => adjustSessionMinutes(id, -5)} style={STEP}>−</div>
+                  <div style={{ minWidth: 60, textAlign: 'center', fontSize: 15, fontWeight: 750 }}>{review.minutes || 0} min</div>
+                  <div role="button" onClick={() => adjustSessionMinutes(id, 5)} style={STEP}>+</div>
+                </div>
+                <div style={SUBQ}>{t('sum.howHardSession')}</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {HARD_OPTIONS.map((x) => <Chip key={x} label={t(VALUE_KEY[x]) || x} active={review.hard === x} onClick={() => setSessionField(id, 'hard', x)} />)}
+                </div>
+                <div style={SUBQ}>{t('sum.howWellNow')}</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {KNOW_OPTIONS.map((x) => <Chip key={x} label={t(VALUE_KEY[x]) || x} active={review.know === x} onClick={() => setSessionField(id, 'know', x)} />)}
+                </div>
+              </div>
+            )}
           </div>
         );
       })}
 
       {leftover.length > 0 && (
         <>
-          <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 6px' }}>{t('sum.unfinishedTitle')}</div>
-          <div style={{ fontSize: 12.5, lineHeight: 1.45, color: '#8a8a99', marginBottom: 12 }}>{t('sum.unfinishedDesc')}</div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-            {leftover.map((id) => {
-              const d = def(id);
-              const drop = choices[id] === 'drop';
-              const label = d.category === 'personal' ? t('sum.todoLabel') : (t(VALUE_KEY[d.subject]) || d.subject || '').toUpperCase();
-              return (
-                <div key={id} style={{ padding: 14, borderRadius: 18, background: 'rgba(245,165,36,.05)', border: '1px solid rgba(245,165,36,.25)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-                    <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: d.color || '#a58cff' }}>{label}</span>
-                    <span style={{ fontSize: 10.5, fontWeight: 750, color: '#f7c46c', padding: '4px 9px', borderRadius: 8, background: 'rgba(245,165,36,.14)' }}>{t('sum.notDoneBadge')}</span>
-                  </div>
-                  <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3, marginTop: 7 }}>{titleOf(id)}</div>
-                  {repeats(id) ? (
-                    <div style={{ fontSize: 12.5, color: '#8a8a99', marginTop: 8 }}>↻ {t('sum.missedToday')}</div>
-                  ) : (
-                    <div style={{ display: 'flex', gap: 9, marginTop: 12 }}>
-                      <OptionRow label={t('sum.keep')} active={!drop} onClick={() => setUnfinishedChoice(id, 'keep')} />
-                      <OptionRow label={t('sum.drop')} active={drop} onClick={() => setUnfinishedChoice(id, 'drop')} />
-                    </div>
-                  )}
+          <Eyebrow text={t('sum.unfinishedTitle')} />
+          {leftover.map((id) => {
+            const drop = choices[id] === 'drop';
+            return (
+              <div key={id} style={{ padding: '12px 0', borderBottom: ROW_LINE }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <span style={{ fontSize: 17, width: 22, textAlign: 'center', flex: 'none', opacity: drop ? 0.5 : 1 }}>{iconOf(id)}</span>
+                  <div style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 700, color: drop ? '#8a8a99' : '#f4f4f7', textDecoration: drop ? 'line-through' : 'none' }}>{titleOf(id)}</div>
                 </div>
-              );
-            })}
-          </div>
+                {repeats(id) ? (
+                  <div style={{ fontSize: 12.5, color: '#8a8a99', margin: '6px 0 0 34px' }}>↻ {t('sum.missedToday')}</div>
+                ) : (
+                  <div style={{ display: 'flex', gap: 8, margin: '9px 0 0 34px' }}>
+                    <Chip label={t('sum.keep')} active={!drop} onClick={() => setUnfinishedChoice(id, 'keep')} />
+                    <Chip label={t('sum.drop')} active={drop} onClick={() => setUnfinishedChoice(id, 'drop')} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </>
       )}
 
-      <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('sum.howHardDay')}</div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
-        {DAY_HARD_OPTIONS.map((x) => <Chip key={x} label={t(VALUE_KEY[x]) || x} active={state.dayHard === x} onClick={() => update({ dayHard: x })} />)}
-      </div>
-
-      <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('sum.howMuchEnergy')}</div>
-      <EnergyPicker value={state.dayEnergy} onChange={(v) => update({ dayEnergy: v })} />
-
-      <div style={{ fontSize: 14.5, fontWeight: 700, margin: '22px 0 11px' }}>{t('sum.whatBothered')}</div>
-      <textarea
-        placeholder={t('sum.bothersPlaceholder')}
-        style={{ width: '100%', boxSizing: 'border-box', minHeight: 88, borderRadius: 16, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', padding: 14, fontSize: 13.5, lineHeight: 1.5, color: '#f4f4f7', fontFamily: 'inherit', resize: 'vertical' }}
-      />
+      <Eyebrow text={t('planner.yourDay')} />
+      <SettingRow icon="🌡️" label={t('sum.day')} value={t(VALUE_KEY[state.dayHard]) || state.dayHard} open={open === 'day'} onClick={() => toggle('day')}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
+          {DAY_HARD_OPTIONS.map((x) => <Chip key={x} label={t(VALUE_KEY[x]) || x} active={state.dayHard === x} onClick={() => update({ dayHard: x })} />)}
+        </div>
+      </SettingRow>
+      <SettingRow icon="⚡" label={t('sum.energy')} value={t(VALUE_KEY[state.dayEnergy]) || state.dayEnergy} open={open === 'energy'} onClick={() => toggle('energy')}>
+        <EnergyPicker value={state.dayEnergy} onChange={(v) => update({ dayEnergy: v })} />
+      </SettingRow>
+      <SettingRow icon="📝" label={t('sum.noteRow')} value="" open={open === 'note'} onClick={() => toggle('note')}>
+        <div style={{ fontSize: 13, color: '#9a9aab', marginBottom: 9 }}>{t('sum.whatBothered')}</div>
+        <textarea
+          placeholder={t('sum.bothersPlaceholder')}
+          style={{ width: '100%', boxSizing: 'border-box', minHeight: 84, borderRadius: 14, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', padding: 13, fontSize: 13.5, lineHeight: 1.5, color: '#f4f4f7', fontFamily: 'inherit', resize: 'vertical' }}
+        />
+      </SettingRow>
 
       {hasObservation && (
-        <>
-          <div style={{ fontSize: 16.5, fontWeight: 750, letterSpacing: '-.01em', margin: '22px 0 12px' }}>{t('sum.conclusion')}</div>
-          <div style={{ padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.08)' }}>
-            <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.4 }}>{t('sum.mathTookLonger', { min: Math.abs(mathDelta), word: mathDelta > 0 ? t('sum.longer') : t('sum.shorter') })}</div>
-            <div style={{ fontSize: 12.5, lineHeight: 1.5, color: '#a3a3b3', marginTop: 9 }}>{t('sum.reserveNote', { actual: state.sessionReview.math?.minutes || 0, planned: mathPlan })}</div>
-            <div style={{ display: 'flex', gap: 9, marginTop: 13 }}>
-              <div onClick={() => update({ adaptive: true })} style={{ flex: 1.4, minHeight: 44, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', lineHeight: 1.25, padding: 8, fontSize: 12.5, fontWeight: 650, cursor: 'pointer', background: state.adaptive ? 'rgba(124,92,255,.16)' : 'rgba(255,255,255,.05)', border: '1.5px solid ' + (state.adaptive ? 'rgba(124,92,255,.6)' : 'rgba(255,255,255,.1)'), color: state.adaptive ? '#e6dfff' : '#c9c9d6' }}>{t('sum.applyFuture')}</div>
-              <div onClick={() => update({ adaptive: false })} style={{ flex: 1, minHeight: 44, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12.5, fontWeight: 650, cursor: 'pointer', background: !state.adaptive ? 'rgba(124,92,255,.16)' : 'rgba(255,255,255,.05)', border: '1.5px solid ' + (!state.adaptive ? 'rgba(124,92,255,.6)' : 'rgba(255,255,255,.1)'), color: !state.adaptive ? '#e6dfff' : '#c9c9d6' }}>{t('sum.notNow')}</div>
-            </div>
-            <div style={{ fontSize: 11.5, lineHeight: 1.45, color: '#7a7a8a', marginTop: 12 }}>{t('sum.oneObservation')}</div>
+        <div style={{ marginTop: 16, padding: 14, borderRadius: 16, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.08)' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.4 }}>{t('sum.mathTookLonger', { min: Math.abs(mathDelta), word: mathDelta > 0 ? t('sum.longer') : t('sum.shorter') })}</div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 11 }}>
+            <Chip label={t('sum.applyFuture')} active={!!state.adaptive} onClick={() => update({ adaptive: true })} />
+            <Chip label={t('sum.notNow')} active={!state.adaptive} onClick={() => update({ adaptive: false })} />
           </div>
-        </>
+        </div>
       )}
 
-      <div style={{ marginTop: 14, padding: 15, borderRadius: 18, background: 'rgba(46,230,197,.06)', border: '1px solid rgba(46,230,197,.22)' }}>
-        <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#8ff0de' }}>{t('sum.tipTomorrow')}</div>
-        <div style={{ fontSize: 13.5, lineHeight: 1.5, fontWeight: 650, marginTop: 9 }}>
-          {keptPick > 0 ? t('sum.tipUnfinished') : t('sum.tipHardest')}
-        </div>
-      </div>
-
-      <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)' }}>
-        <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('sum.beforeSaving')}</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 14 }}>
-          {completedIds.map((id) => {
-            const d = def(id);
-            return <Row key={id} label={t(VALUE_KEY[d.subject]) || d.subject || titleOf(id)} value={t('sum.doneIn', { min: state.sessionReview[id]?.minutes || 0 })} />;
-          })}
-          {leftover.length > 0 && <Row label={t('sum.unfinishedTitle')} value={t('sum.unfinishedRow', { kept: keptPick, dropped: droppedPick, missed: missedCount })} />}
-          <Row label={t('sum.day')} value={t('sum.dayValue', { value: t(VALUE_KEY[state.dayHard]) || state.dayHard })} />
-          <Row label={t('sum.energy')} value={t('sum.energyValue', { value: t(VALUE_KEY[state.dayEnergy]) || state.dayEnergy })} />
-        </div>
-        <div style={{ height: 1, background: 'rgba(255,255,255,.07)', margin: '15px -16px' }} />
-        <div style={{ fontSize: 12.5, lineHeight: 1.45, color: state.adaptive ? '#c9baff' : '#a3a3b3' }}>
-          {(state.adaptive && mathDelta !== 0) ? t('sum.futureMathBlocks', { min: state.sessionReview.math?.minutes || 0 }) : t('sum.noChangeEstimates')}
-        </div>
-      </div>
-
-      <div onClick={saveLater} style={{ marginTop: 16, textAlign: 'center', fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('sum.saveLater')}</div>
+      <div style={{ marginTop: 18, fontSize: 13.5, lineHeight: 1.5, color: '#8ff0de' }}>💡 {keptPick > 0 ? t('sum.tipUnfinished') : t('sum.tipHardest')}</div>
 
       <StickyFooter>
         <PrimaryButton
@@ -192,53 +161,15 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
         >
           {t('sum.finishDay')}
         </PrimaryButton>
+        <div role="button" onClick={saveLater} style={{ textAlign: 'center', fontSize: 13.5, fontWeight: 650, color: '#a58cff', marginTop: 12, cursor: 'pointer' }}>{t('sum.saveLater')}</div>
       </StickyFooter>
     </div>
     </>
   );
 }
 
-function Row({ label, value, color }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 13 }}>
-      <span style={{ color: '#9a9aab' }}>{label}</span>
-      <span style={{ fontWeight: 700, color: color || undefined }}>{value}</span>
-    </div>
-  );
-}
-
-function SessionReview({ subject, subjectColor, title, deadline, planned, actual, diff, onMinus, onPlus, hard, onHard, know, onKnow, t }) {
-  return (
-    <div style={{ padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.08)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-        <span style={{ fontSize: 10.5, fontWeight: 750, letterSpacing: '.06em', color: subjectColor }}>{subject}</span>
-        <span style={{ fontSize: 10.5, fontWeight: 750, color: '#5fdd9b', padding: '4px 9px', borderRadius: 8, background: 'rgba(53,208,127,.14)' }}>{t('sum.done')}</span>
-      </div>
-      <div style={{ fontSize: 15.5, fontWeight: 700, lineHeight: 1.3, marginTop: 7 }}>{title}</div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 11, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 11.5, color: '#8a8a99' }}>{planned}</span>
-        <span style={{ fontSize: 11, color: '#6b6b7a' }}>→</span>
-        <span style={{ fontSize: 12.5, fontWeight: 700 }}>{actual}</span>
-        <span style={{ fontSize: 10.5, fontWeight: 650, color: '#8fbaff', padding: '3px 7px', borderRadius: 7, background: 'rgba(91,156,255,.14)' }}>{diff}</span>
-        {deadline && <span style={{ fontSize: 10.5, fontWeight: 650, color: '#f5a524', padding: '3px 7px', borderRadius: 7, background: 'rgba(245,165,36,.13)', border: '1px solid rgba(245,165,36,.28)' }}>{deadline}</span>}
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 12 }}>
-        <span style={{ fontSize: 12, color: '#9a9aab', flex: 1 }}>{t('sum.actualTimeLabel')}</span>
-        <div onClick={onMinus} style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, fontWeight: 650, cursor: 'pointer' }}>−</div>
-        <div style={{ minWidth: 66, textAlign: 'center', fontSize: 15, fontWeight: 750 }}>{actual}</div>
-        <div onClick={onPlus} style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, fontWeight: 650, cursor: 'pointer' }}>+</div>
-      </div>
-      <div style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6', margin: '16px 0 9px' }}>{t('sum.howHardSession')}</div>
-      <div style={{ display: 'flex', gap: 9 }}>
-        {HARD_OPTIONS.map((x) => <OptionRow key={x} label={t(VALUE_KEY[x]) || x} active={hard === x} onClick={() => onHard(x)} />)}
-      </div>
-      <div style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6', margin: '16px 0 9px' }}>{t('sum.howWellNow')}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-        {KNOW_OPTIONS.map((x, i) => <ListRow key={x} label={t(VALUE_KEY[x]) || x} active={know === x} onClick={() => onKnow(x)} last={i === KNOW_OPTIONS.length - 1} />)}
-      </div>
-    </div>
-  );
-}
+const STEP = { width: 36, height: 36, borderRadius: 11, background: 'rgba(255,255,255,.055)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, fontWeight: 650, cursor: 'pointer' };
+const SUBQ = { fontSize: 13, fontWeight: 650, color: '#c9c9d6', margin: '14px 0 9px' };
 
 // Same visual language as the achievement-unlock and rescue-day popups —
 // a finished day is worth its own moment, not just another inline card

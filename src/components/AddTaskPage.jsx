@@ -7,6 +7,7 @@ import { iconForSubject, iconForTask } from '../lib/taskAuto';
 import { AppShellPortal, Chip, Toggle } from './ui';
 import WheelDatePicker from './WheelDatePicker';
 import WheelTimePicker from './WheelTimePicker';
+import { SettingRow } from './ListRows';
 
 // What a new task is. Picking one names the task (with the subject, e.g.
 // "Biology Project") and sets a sensible length, so most tasks are added in
@@ -43,6 +44,7 @@ export default function AddTaskPage({ planner }) {
   const errs = state.editErrors || {};
   const [moreOpen, setMoreOpen] = useState(false);
   const [renaming, setRenaming] = useState(false);
+  const [openRow, setOpenRow] = useState(null);
   if (!fm || fm.id != null) return null;
 
   const kindDef = TASK_KINDS.find((k) => k.kind === fm.kind);
@@ -151,33 +153,30 @@ export default function AddTaskPage({ planner }) {
             </>
           )}
 
-          <div style={label}>{t('addTask.when')}</div>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <div role="button" style={segBtn(fm.dayChoice === 'today')} onClick={() => patchTaskEdit({ dayChoice: 'today' })}>{t('taskEdit.dayToday')}</div>
-            <div role="button" style={segBtn(fm.dayChoice === 'tomorrow')} onClick={() => patchTaskEdit({ dayChoice: 'tomorrow' })}>{t('taskEdit.dayTomorrow')}</div>
-            <div role="button" style={segBtn(fm.dayChoice === 'pick')} onClick={() => patchTaskEdit({ dayChoice: 'pick', dayDate: fm.dayDate || localDateKey() })}>📅 {t('addTask.date')}</div>
-          </div>
-          {fm.dayChoice === 'pick' && (
-            <div style={{ marginTop: 10 }}>
-              <WheelDatePicker value={fm.dayDate} minDate={localDateKey()} onChange={(v) => patchTaskEdit({ dayDate: v })} />
-            </div>
-          )}
-
-          {!isTodo && (
-            <>
-              <div style={label}>{t('addTask.howLong')}</div>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 6, borderRadius: 15, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)' }}>
-                <div role="button" onClick={() => stepTaskDur(-5)} style={stepBtn}>−</div>
-                <div style={{ fontSize: 19, fontWeight: 750 }}>{fm.dur} min</div>
-                <div role="button" onClick={() => stepTaskDur(5)} style={stepBtn}>+</div>
+          <div style={{ marginTop: 14 }}>
+            <SettingRow icon="📅" label={t('addTask.when')} value={dayText} open={openRow === 'when'} onClick={() => setOpenRow(openRow === 'when' ? null : 'when')}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <div role="button" style={segBtn(fm.dayChoice === 'today')} onClick={() => patchTaskEdit({ dayChoice: 'today' })}>{t('taskEdit.dayToday')}</div>
+                <div role="button" style={segBtn(fm.dayChoice === 'tomorrow')} onClick={() => patchTaskEdit({ dayChoice: 'tomorrow' })}>{t('taskEdit.dayTomorrow')}</div>
+                <div role="button" style={segBtn(fm.dayChoice === 'pick')} onClick={() => patchTaskEdit({ dayChoice: 'pick', dayDate: fm.dayDate || localDateKey() })}>📅 {t('addTask.date')}</div>
               </div>
-              {errs.dur && <div style={errStyle}>{errs.dur}</div>}
-            </>
-          )}
-
-          <div role="button" onClick={() => setMoreOpen(!showMore)} style={{ marginTop: 16, padding: '12px 14px', borderRadius: 14, border: '1px dashed rgba(255,255,255,.14)', fontSize: 13, color: '#9a9aab', display: 'flex', justifyContent: 'space-between', gap: 10, cursor: 'pointer' }}>
-            <span>{t('addTask.more')} · {t('addTask.moreHint')}</span>
-            <span style={{ transform: showMore ? 'rotate(180deg)' : 'none' }}>⌄</span>
+              {fm.dayChoice === 'pick' && (
+                <div style={{ marginTop: 10 }}>
+                  <WheelDatePicker value={fm.dayDate} minDate={localDateKey()} onChange={(v) => patchTaskEdit({ dayDate: v })} />
+                </div>
+              )}
+            </SettingRow>
+            {!isTodo && (
+              <SettingRow icon="⏱️" label={t('addTask.howLong')} value={fm.dur + ' min'} open={openRow === 'dur'} onClick={() => setOpenRow(openRow === 'dur' ? null : 'dur')}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: 6, borderRadius: 15, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.1)' }}>
+                  <div role="button" onClick={() => stepTaskDur(-5)} style={stepBtn}>−</div>
+                  <div style={{ fontSize: 19, fontWeight: 750 }}>{fm.dur} min</div>
+                  <div role="button" onClick={() => stepTaskDur(5)} style={stepBtn}>+</div>
+                </div>
+              </SettingRow>
+            )}
+            {!isTodo && errs.dur && <div style={errStyle}>{errs.dur}</div>}
+            <SettingRow icon="⚙️" label={t('addTask.more')} value="" open={showMore} onClick={() => setMoreOpen(!showMore)} />
           </div>
 
           {showMore && (

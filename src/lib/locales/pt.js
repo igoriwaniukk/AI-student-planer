@@ -1076,4 +1076,7 @@ export default {
   "plan.newPlan": "Novo plano",
   "planner.yourDay": "Seu dia",
   "planner.buildPlanTime": "Criar meu plano · {time}",
+  "sum.headline": "{done} de {total} feitas · {time} de estudo",
+  "sum.sessionsLabel": "Sessões",
+  "sum.noteRow": "Nota",
 };

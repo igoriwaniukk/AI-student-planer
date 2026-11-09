@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { KINDS, SUBJECTS, GOALS, LEVELS, NUM_TODAY } from '../lib/plannerData';
 import { formatMonthDay, daysUntilFromISODate, localDateKey } from '../lib/plannerLogic';
 import { VALUE_KEY } from '../lib/i18n';
-import { BackButton, StickyFooter, Chip, ListRow, ConfirmCard, LabelRequired } from '../components/ui';
+import { BackButton, StickyFooter, Chip, ConfirmCard, Toggle } from '../components/ui';
+import { Eyebrow, SettingRow, ROW_LINE } from '../components/ListRows';
 import WheelDatePicker from '../components/WheelDatePicker';
 import WheelTimePicker from '../components/WheelTimePicker';
 import { useLang } from '../lib/useLang';
@@ -19,135 +21,94 @@ function daysLabel(t, daysUntil) {
 }
 
 
+// Section labels come from the old form's uppercase field labels (dl.date
+// "DATE"); rows want them in normal case.
+const sentence = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : s);
+
 export default function Deadline({ planner }) {
   const { t } = useLang();
   const { state, setField, addTopic, setTopic, removeTopic, deadlineSubmit, goHomeDeadline } = planner;
+  const [open, setOpen] = useState(null);
+  const toggle = (k) => setOpen((o) => (o === k ? null : k));
   const nameEmpty = !state.nameValue.trim();
   const topicsMissing = state.autoPlan && (state.topics.length === 0 || state.topics.some((tp) => !tp.trim()));
   const daysUntil = daysUntilFromISODate(state.examDate);
   const dateValid = daysUntil != null && daysUntil >= 0;
   const valid = !!state.kind && !!state.subject && !nameEmpty && dateValid && !topicsMissing;
-  const difficultyLabel = diffLabel(t, state.difficulty);
+  const dateValue = state.examDate ? formatMonthDay(NUM_TODAY + daysUntil) + ' · ' + (dateValid ? daysLabel(t, daysUntil) : t('dl.datePassed')) : '—';
 
   return (
     <>
-    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '16px 20px 116px', position: 'relative', zIndex: 1 }}>
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '16px 20px 210px', position: 'relative', zIndex: 1 }}>
       <BackButton onClick={() => planner.go('home')} />
-      <div style={{ fontSize: 29, fontWeight: 750, letterSpacing: '-.025em', marginTop: 20 }}>{t('dl.title')}</div>
-      <div style={{ fontSize: 13, lineHeight: 1.5, color: '#8a8a99', marginTop: 8 }}>{t('dl.subtitle')}</div>
+      <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-.02em', marginTop: 14 }}>{t('dl.title')}</div>
 
-      <LabelRequired label={t('dl.kindLabel')} />
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
+      <Eyebrow text={t('dl.kindLabel')} />
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 11 }}>
         {KINDS.map((k) => <Chip key={k} label={t(VALUE_KEY[k]) || k} active={state.kind === k} onClick={() => setField('kind', k)} />)}
       </div>
 
-      <LabelRequired label={t('dl.subjectLabel')} />
-      <div onClick={() => setField('subjectsOpen', !state.subjectsOpen)} style={{ height: 54, borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 15px', cursor: 'pointer' }}>
-        <span style={{ fontSize: 15, fontWeight: 650 }}>{t(VALUE_KEY[state.subject]) || state.subject}</span>
-        <span style={{ fontSize: 10, color: '#8a8a99' }}>▼</span>
+      <Eyebrow text={t('dl.subjectLabel')} />
+      <div className="sc" style={{ display: 'flex', gap: 8, overflowX: 'auto', margin: '11px -20px 0', padding: '0 20px 2px' }}>
+        {SUBJECTS.map((sub) => <div key={sub} style={{ flex: 'none' }}><Chip label={t(VALUE_KEY[sub]) || sub} active={state.subject === sub} onClick={() => planner.update({ subject: sub })} /></div>)}
       </div>
-      {state.subjectsOpen && (
-        <div style={{ marginTop: 9, borderRadius: 15, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.09)', overflow: 'hidden' }}>
-          {SUBJECTS.map((s, i) => <ListRow key={s} label={t(VALUE_KEY[s]) || s} active={state.subject === s} onClick={() => planner.update({ subject: s, subjectsOpen: false })} last={i === SUBJECTS.length - 1} />)}
-        </div>
-      )}
 
-      <LabelRequired label={t('dl.nameLabel')} />
+      <Eyebrow text={t('dl.nameLabel')} />
       <input
         value={state.nameValue}
         onChange={(e) => setField('nameValue', e.target.value)}
         placeholder={t('dl.namePlaceholder')}
-        style={{ width: '100%', boxSizing: 'border-box', minHeight: 54, borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid ' + (nameEmpty ? 'rgba(245,165,36,.5)' : 'rgba(255,255,255,.09)'), padding: '14px 15px', fontSize: 15, fontWeight: 650, lineHeight: 1.35, color: '#f4f4f7', fontFamily: 'inherit', outline: 'none' }}
+        style={{ width: '100%', boxSizing: 'border-box', height: 50, marginTop: 10, borderRadius: 14, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', padding: '0 14px', fontSize: 16, fontWeight: 650, color: '#f4f4f7', fontFamily: 'inherit', outline: 'none' }}
       />
-      {nameEmpty && <div style={{ fontSize: 12, color: '#f5a524', marginTop: 8 }}>{t('dl.nameRequired')}</div>}
 
-      <LabelRequired label={t('dl.dateLabel')} />
-      <div style={{ display: 'flex', gap: 9 }}>
-        <div style={{ flex: 3 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', color: '#7a7a8a', marginBottom: 6, textAlign: 'center' }}>{t('dl.date')}</div>
-          <WheelDatePicker value={state.examDate} minDate={localDateKey()} onChange={(v) => setField('examDate', v)} />
-        </div>
-        <div style={{ flex: 2 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', color: '#7a7a8a', marginBottom: 6, textAlign: 'center' }}>{t('dl.time')}</div>
-          <WheelTimePicker value={state.examTime || '09:00'} onChange={(v) => setField('examTime', v)} />
-        </div>
+      <Eyebrow text={t('addTask.when')} />
+      <SettingRow icon="📅" label={sentence(t('dl.date'))} value={dateValue} color={state.examDate && !dateValid ? '#f7c46c' : '#c9baff'} open={open === 'date'} onClick={() => toggle('date')}>
+        <WheelDatePicker value={state.examDate} minDate={localDateKey()} onChange={(v) => setField('examDate', v)} />
+        {state.examDate && !dateValid && <div style={{ fontSize: 12.5, color: '#f5a524', marginTop: 8 }}>{t('dl.pickFuture')}</div>}
+      </SettingRow>
+      <SettingRow icon="🕘" label={sentence(t('dl.time'))} value={state.examTime || '09:00'} open={open === 'time'} onClick={() => toggle('time')}>
+        <div style={{ width: 160 }}><WheelTimePicker value={state.examTime || '09:00'} onChange={(v) => setField('examTime', v)} /></div>
+      </SettingRow>
+
+      <div role="button" onClick={() => setField('autoPlan', !state.autoPlan)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '16px 0 13px', marginTop: 10, borderBottom: ROW_LINE, cursor: 'pointer' }}>
+        <span style={{ fontSize: 16, width: 22, textAlign: 'center', flex: 'none' }}>✨</span>
+        <div style={{ flex: 1, minWidth: 0, fontSize: 14.5, fontWeight: 700 }}>{t('dl.autoPlanTitle')}</div>
+        <Toggle on={state.autoPlan} />
       </div>
-      {state.examDate && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginTop: 10 }}>
-          <span style={{ fontSize: 11.5, fontWeight: 650, color: dateValid ? '#8ff0de' : '#f5a524', padding: '5px 10px', borderRadius: 8, background: dateValid ? 'rgba(46,230,197,.13)' : 'rgba(245,165,36,.13)' }}>{dateValid ? daysLabel(t, daysUntil) : t('dl.datePassed')}</span>
-          {!dateValid && <span style={{ fontSize: 12, color: '#f5a524' }}>{t('dl.pickFuture')}</span>}
-        </div>
+
+      {state.autoPlan && (
+        <>
+          <Eyebrow text={t('dl.topicsLabel')} />
+          {state.topics.map((topic, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: ROW_LINE }}>
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: '#7a7a8a', width: 22, textAlign: 'center', flex: 'none' }}>{i + 1}</span>
+              <input
+                value={topic} onChange={(e) => setTopic(i, e.target.value)} placeholder={t('dl.topicPlaceholder')}
+                style={{ flex: 1, minWidth: 0, fontSize: 15, fontWeight: 650, background: 'none', border: 'none', color: '#f4f4f7', fontFamily: 'inherit', padding: '4px 0', outline: 'none' }}
+              />
+              <span role="button" aria-label={t('dl.remove')} onClick={() => removeTopic(i)} style={{ fontSize: 13, color: '#8a8a99', cursor: 'pointer', padding: '4px 6px' }}>✕</span>
+            </div>
+          ))}
+          <div role="button" onClick={addTopic} style={{ padding: '12px 0', fontSize: 14, fontWeight: 700, color: '#a58cff', cursor: 'pointer' }}>{t('dl.addTopic')}</div>
+          {state.topicErr && topicsMissing && <div style={{ fontSize: 12.5, color: '#f5a524' }}>{t('dl.topicRequired')}</div>}
+
+          <SettingRow icon="🧩" label={t('dl.difficulty')} value={diffLabel(t, state.difficulty)} open={open === 'diff'} onClick={() => toggle('diff')}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {DIFFICULTIES.map((d) => <Chip key={d} label={diffLabel(t, d)} active={state.difficulty === d} onClick={() => setField('difficulty', d)} />)}
+            </div>
+          </SettingRow>
+          <SettingRow icon="🧠" label={t('dl.knowledge')} value={state.level + '/5'} open={open === 'level'} onClick={() => toggle('level')}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {LEVELS.map((l, i) => <Chip key={l} label={(i + 1) + '. ' + (t(VALUE_KEY[l]) || l)} active={state.level === i + 1} onClick={() => setField('level', i + 1)} />)}
+            </div>
+          </SettingRow>
+          <SettingRow icon="🎯" label={t('dl.goal')} value={t(VALUE_KEY[state.goal]) || state.goal} open={open === 'goal'} onClick={() => toggle('goal')}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {GOALS.map((g) => <Chip key={g} label={t(VALUE_KEY[g]) || g} active={state.goal === g} onClick={() => setField('goal', g)} />)}
+            </div>
+          </SettingRow>
+        </>
       )}
-
-      <LabelRequired label={t('dl.topicsLabel')} tag={t('dl.recommended')} tagColor="#8ff0de" />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-        {state.topics.map((topic, i) => (
-          <div key={i} style={{ minHeight: 52, borderRadius: 15, background: 'rgba(255,255,255,.04)', border: '1px solid rgba(255,255,255,.08)', padding: '13px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 11.5, fontWeight: 700, color: '#7a7a8a', width: 14 }}>{i + 1}</span>
-            <input
-              value={topic} onChange={(e) => setTopic(i, e.target.value)} placeholder={t('dl.topicPlaceholder')}
-              style={{ flex: 1, fontSize: 14, fontWeight: 650, lineHeight: 1.35, background: 'none', border: 'none', color: '#f4f4f7', fontFamily: 'inherit', padding: 0, outline: 'none' }}
-            />
-            <span onClick={() => removeTopic(i)} style={{ fontSize: 12.5, fontWeight: 650, color: '#8a8a99', cursor: 'pointer', padding: '4px 6px' }}>{t('dl.remove')}</span>
-          </div>
-        ))}
-      </div>
-      <div onClick={addTopic} style={{ marginTop: 10, height: 48, borderRadius: 15, border: '1.5px dashed rgba(255,255,255,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13.5, fontWeight: 650, color: '#9a9aab', cursor: 'pointer' }}>{t('dl.addTopic')}</div>
-      {state.topicErr && topicsMissing && <div style={{ fontSize: 12, color: '#f5a524', marginTop: 8 }}>{t('dl.topicRequired')}</div>}
-
-      <div style={{ fontSize: 15, fontWeight: 700, margin: '22px 0 11px' }}>{t('dl.difficultyQ')}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-        {DIFFICULTIES.map((d) => (
-          <div key={d} onClick={() => setField('difficulty', d)} style={{ height: 48, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 650, cursor: 'pointer', background: state.difficulty === d ? 'rgba(124,92,255,.14)' : 'rgba(255,255,255,.035)', border: '1.5px solid ' + (state.difficulty === d ? 'rgba(124,92,255,.6)' : 'rgba(255,255,255,.1)'), color: state.difficulty === d ? '#e6dfff' : '#c9c9d6' }}>{diffLabel(t, d)}</div>
-        ))}
-      </div>
-
-      <div style={{ fontSize: 15, fontWeight: 700, margin: '22px 0 11px' }}>{t('dl.knowledgeQ')}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-        {LEVELS.map((l, i) => <ListRow key={l} label={(i + 1) + '. ' + (t(VALUE_KEY[l]) || l)} active={state.level === i + 1} onClick={() => setField('level', i + 1)} last={i === LEVELS.length - 1} />)}
-      </div>
-      <div style={{ fontSize: 11.5, lineHeight: 1.45, color: '#7a7a8a', marginTop: 10 }}>{t('dl.knowledgeNote')}</div>
-
-      <div style={{ fontSize: 15, fontWeight: 700, margin: '22px 0 11px' }}>{t('dl.goalQ')}</div>
-      <div onClick={() => setField('goalsOpen', !state.goalsOpen)} style={{ height: 54, borderRadius: 15, background: 'rgba(255,255,255,.045)', border: '1px solid rgba(255,255,255,.09)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 15px', cursor: 'pointer' }}>
-        <span style={{ fontSize: 15, fontWeight: 650 }}>{t(VALUE_KEY[state.goal]) || state.goal}</span>
-        <span style={{ fontSize: 10, color: '#8a8a99' }}>▼</span>
-      </div>
-      {state.goalsOpen && (
-        <div style={{ marginTop: 9, borderRadius: 15, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.09)', overflow: 'hidden' }}>
-          {GOALS.map((g, i) => <ListRow key={g} label={t(VALUE_KEY[g]) || g} active={state.goal === g} onClick={() => planner.update({ goal: g, goalsOpen: false })} last={i === GOALS.length - 1} />)}
-        </div>
-      )}
-      <div style={{ fontSize: 11.5, color: '#7a7a8a', marginTop: 10 }}>{t('dl.goalNote')}</div>
-
-      <div onClick={() => setField('autoPlan', !state.autoPlan)} style={{ marginTop: 20, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', gap: 13, cursor: 'pointer' }}>
-        <div style={{ width: 44, height: 26, flex: 'none', borderRadius: 99, padding: 3, display: 'flex', alignItems: 'center', background: state.autoPlan ? '#7c5cff' : 'rgba(255,255,255,.14)', justifyContent: state.autoPlan ? 'flex-end' : 'flex-start' }}>
-          <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff' }} />
-        </div>
-        <div>
-          <div style={{ fontSize: 13.5, fontWeight: 700, lineHeight: 1.35 }}>{t('dl.autoPlanTitle')}</div>
-          <div style={{ fontSize: 11.5, lineHeight: 1.45, color: '#7a7a8a', marginTop: 5 }}>{t('dl.autoPlanDesc')}</div>
-        </div>
-      </div>
-
-      <div style={{ marginTop: 16, padding: 16, borderRadius: 20, background: 'rgba(255,255,255,.03)', border: '1px solid rgba(255,255,255,.07)' }}>
-        <div style={{ fontSize: 9.5, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('dl.summary')}</div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 11, marginTop: 14 }}>
-          <Row label={t('dl.kind')} value={t(VALUE_KEY[state.kind]) || state.kind} />
-          <Row label={t('dl.subject')} value={t(VALUE_KEY[state.subject]) || state.subject} />
-          <Row label={t('dl.deadline')} value={state.examDate ? t('dl.deadlineValue', { date: formatMonthDay(NUM_TODAY + daysUntil), time: state.examTime || '09:00' }) : '—'} />
-          <Row label={t('dl.left')} value={state.examDate ? (dateValid ? daysLabel(t, daysUntil) : t('dl.datePassed')) : '—'} />
-          <Row label={t('dl.scope')} value={state.topics.length === 1 ? t('dl.oneTopic') : t('dl.nTopics', { n: state.topics.length })} />
-          <Row label={t('dl.difficulty')} value={t('dl.difficultyValue', { level: difficultyLabel })} />
-          <Row label={t('dl.knowledge')} value={t('dl.knowledgeValue', { level: state.level })} />
-          <Row label={t('dl.goal')} value={t('dl.goalValue', { goal: t(VALUE_KEY[state.goal]) || state.goal })} />
-        </div>
-        <div style={{ height: 1, background: 'rgba(255,255,255,.07)', margin: '15px -16px' }} />
-        <div style={{ display: 'flex', gap: 9 }}>
-          <span style={{ color: '#35d07f', fontSize: 12 }}>✓</span>
-          <span style={{ fontSize: 12.5, lineHeight: 1.45, color: '#5fdd9b' }}>{state.autoPlan ? t('dl.enoughTime') : t('dl.noSessionsWillSave')}</span>
-        </div>
-      </div>
 
       <StickyFooter>
         <div
@@ -156,6 +117,7 @@ export default function Deadline({ planner }) {
         >
           {state.autoPlan ? t('dl.saveAndCreate') : t('dl.saveDeadline')}
         </div>
+        {nameEmpty && <div style={{ textAlign: 'center', fontSize: 12.5, color: '#f7c46c', marginTop: 10 }}>{t('dl.nameRequired')}</div>}
       </StickyFooter>
 
       {state.deadlineOnlySaved && (
@@ -163,14 +125,5 @@ export default function Deadline({ planner }) {
       )}
     </div>
     </>
-  );
-}
-
-function Row({ label, value }) {
-  return (
-    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 13 }}>
-      <span style={{ color: '#9a9aab' }}>{label}</span>
-      <span style={{ fontWeight: 700, textAlign: 'right' }}>{value}</span>
-    </div>
   );
 }

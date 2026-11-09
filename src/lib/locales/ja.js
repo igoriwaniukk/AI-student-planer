@@ -1076,4 +1076,7 @@ export default {
   "plan.newPlan": "新しいプラン",
   "planner.yourDay": "あなたの一日",
   "planner.buildPlanTime": "プランを作成 · {time}",
+  "sum.headline": "{done}/{total} 完了 · 勉強 {time}",
+  "sum.sessionsLabel": "セッション",
+  "sum.noteRow": "メモ",
 };
