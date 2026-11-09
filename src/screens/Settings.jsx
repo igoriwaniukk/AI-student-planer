@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { version as APP_VERSION } from '../../package.json';
+import { version as WEB_VERSION } from '../../package.json';
+
+// In the iPhone app, its own version (the one in the App Store); on the web,
+// the website's.
+const APP_VERSION = (typeof window !== 'undefined' && window.PulgoNative?.version) || WEB_VERSION;
 import { upcomingExams, computeStreak, planFor } from '../lib/plannerLogic';
 import { NUM_TODAY } from '../lib/plannerData';
 import { LANGS, LANG_NAMES } from '../lib/i18n';
