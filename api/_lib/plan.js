@@ -38,7 +38,7 @@ export const PLAN_TOOL = {
           required: ['examId', 'durationMinutes', 'start'],
         },
       },
-      rationale: { type: 'string', description: 'Jedno lub dwa zwięzłe zdania wyjaśniające uczniowi, dlaczego taka kolejność/godziny (i ewentualne powtórki).' },
+      rationale: { type: 'string', description: 'Jedno krótkie zdanie (najwyżej ok. 20 słów) skierowane wprost do ucznia, w drugiej osobie („ty”), dlaczego taka kolejność/godziny. Bez mówienia o „uczniu” w trzeciej osobie, bez godzin pobudki/startu i bez technicznych szczegółów.' },
     },
     required: ['blocks'],
   },
@@ -55,7 +55,7 @@ export function buildPlanSystemPrompt(lang) {
       '(z już zaplanowanymi i zrobionymi sesjami nauki), rzeczy do zrobienia, notatki, stałe zajęcia i plan na drugi dzień — korzystaj z niego.',
     respondIn,
     'Twarde ograniczenia, których NIE WOLNO złamać:',
-    '- Żadna sesja nie może zaczynać się przed podaną godziną pobudki ucznia.',
+    '- Żadna sesja nie może zaczynać się przed podaną najwcześniejszą godziną startu.',
     '- Żadna sesja nie może kończyć się później niż podana godzina snu ucznia.',
     '- Żadna sesja nie może nachodzić na żadne ze stałych zajęć ucznia wymienionych w wiadomości.',
     '- Zostaw sensowną przerwę (co najmniej 10–15 minut) między sesjami, więcej przy niskiej energii.',
@@ -81,7 +81,7 @@ export function buildPlanUserMessage(tasks, energy, pref, activitiesNote, activi
     lines.push(`Pora dnia, o której uczniowi najlepiej się uczy: ${studyTime} — jeśli to możliwe przy zachowaniu ograniczeń, faworyzuj tę porę.`);
   }
   if (constraints && typeof constraints.wakeMinutes === 'number' && typeof constraints.bedtimeMinutes === 'number') {
-    lines.push(`Pobudka ucznia: ${fmt(constraints.wakeMinutes)} (${constraints.wakeMinutes} min od północy) — żadna sesja nie może zaczynać się wcześniej.`);
+    lines.push(`Najwcześniejsza godzina startu (pobudka albo obecna godzina, gdy planowany jest dzisiejszy dzień): ${fmt(constraints.wakeMinutes)} (${constraints.wakeMinutes} min od północy) — żadna sesja nie może zaczynać się wcześniej.`);
     lines.push(`Pora snu ucznia: ${fmt(constraints.bedtimeMinutes)} (${constraints.bedtimeMinutes} min od północy) — żadna sesja nie może kończyć się później.`);
     if (constraints.blocks && constraints.blocks.length) {
       lines.push('Stałe zajęcia ucznia dziś (żadna sesja nie może na nie nachodzić):');

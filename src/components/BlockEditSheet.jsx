@@ -5,7 +5,7 @@ import { BottomSheet } from './ui';
 
 export default function BlockEditSheet({ planner }) {
   const { t } = useLang();
-  const { state, constraints, def, moveBlockEdit, cancelBlockEdit, saveBlockEdit } = planner;
+  const { state, constraints, def, moveBlockEdit, cancelBlockEdit, saveBlockEdit, openTaskEdit } = planner;
   const b = state.blockEdit;
   if (!b) return null;
   const d = def(b.id);
@@ -32,7 +32,10 @@ export default function BlockEditSheet({ planner }) {
         <Stepper plus onClick={() => moveBlockEdit({ dur: Math.min(180, b.dur + 5) })} />
       </div>
 
-      <div style={{ fontSize: 12.5, color: '#8a8a99', marginTop: 14 }}>{t('block.end', { time: fmt(b.start + b.dur) })}</div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14 }}>
+        <span style={{ fontSize: 12.5, color: '#8a8a99' }}>{t('block.end', { time: fmt(b.start + b.dur) })}</span>
+        <span role="button" onClick={() => { cancelBlockEdit(); openTaskEdit(b.id); }} style={{ fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('plan.editTaskDetails')} ›</span>
+      </div>
 
       {msg && (
         <div style={{ marginTop: 14, padding: 13, borderRadius: 14, background: 'rgba(245,165,36,.08)', border: '1px solid rgba(245,165,36,.3)', fontSize: 12.5, lineHeight: 1.45, color: '#f7c46c' }}>{msg}</div>
