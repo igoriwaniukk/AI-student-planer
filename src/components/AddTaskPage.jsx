@@ -85,7 +85,8 @@ export default function AddTaskPage({ planner }) {
     <AppShellPortal>
       <div className="sc" style={{ position: 'absolute', inset: 0, zIndex: 86, background: '#08080c', overflowY: 'auto', display: 'flex', flexDirection: 'column', animation: 'quickAddIn .26s ease both' }}>
         <div style={{ position: 'absolute', width: 420, height: 420, borderRadius: '50%', top: -170, left: -130, background: '#7f5cff', filter: 'blur(90px)', opacity: 0.3, pointerEvents: 'none' }} />
-        <div style={{ position: 'relative', flex: '1 0 auto', padding: 'var(--top-pad) 20px 16px' }}>
+        {/* .app-shell > .sc already adds the status-bar room (index.css) */}
+        <div style={{ position: 'relative', flex: '1 0 auto', padding: '12px 20px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div onClick={cancelTaskEdit} aria-label={t('taskEdit.cancel')} role="button" style={{ width: 40, height: 40, borderRadius: '50%', background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#c9c9d6', fontSize: 20, cursor: 'pointer', flex: 'none' }}>‹</div>
             <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-.02em' }}>{t('addTask.title')}</div>
