@@ -2,12 +2,12 @@ import { useRef, useState } from 'react';
 import { hm, weeklyReview } from '../lib/plannerLogic';
 import { STUDY_TIME_OPTIONS, PREF_OPTIONS, PRIORITY_SUBJECT_OPTIONS, ACTIVITY_OPTIONS } from '../lib/plannerData';
 import { aboutMeFacts, ABOUT_NOTE_MAX } from '../lib/aboutMe';
-import { VALUE_KEY } from '../lib/i18n';
+import { VALUE_KEY, getCurrentLang, localeOf } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { resizeImageToDataURL } from '../lib/image';
 import { Chip, EnergyPicker, BottomSheet } from '../components/ui';
 import { PugImg } from '../components/PugMascot';
-import { usePremium } from '../lib/premium';
+import { usePremium, openPaywall } from '../lib/premium';
 import NotificationBell from '../components/NotificationBell';
 import WheelTimePicker from '../components/WheelTimePicker';
 
@@ -279,6 +279,47 @@ function RhythmList({ profileDefaults, setProfileDefaults, activities, setActivi
   );
 }
 
+// Pulgo Premium on the profile: a big card to try it, or — with Premium —
+// that it's active and when it renews. Hidden while Premium is switched off.
+function PremiumCard() {
+  const { t } = useLang();
+  const premium = usePremium();
+  if (!premium.enabled) return null;
+  if (premium.premium) {
+    let renews = '';
+    if (premium.expiresAt) {
+      try { renews = new Intl.DateTimeFormat(localeOf(getCurrentLang()), { day: 'numeric', month: 'short', year: 'numeric' }).format(new Date(premium.expiresAt)); } catch { renews = ''; }
+    }
+    return (
+      <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 12, padding: '13px 16px', borderRadius: 20, background: 'rgba(53,208,127,.08)', border: '1px solid rgba(53,208,127,.35)' }}>
+        <div style={{ fontSize: 22 }}>✅</div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 15, fontWeight: 800 }}>{t('premium.settingsActive')}</div>
+          <div style={{ fontSize: 12.5, color: '#b9b9c6', marginTop: 2 }}>{renews ? t('premium.profileRenews', { date: renews }) : t('premium.profileActiveSub')}</div>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div
+      role="button"
+      onClick={() => openPaywall('profile')}
+      style={{ position: 'relative', overflow: 'hidden', marginTop: 14, padding: 16, borderRadius: 24, background: '#120f1e', border: '1px solid rgba(139,109,255,.5)', boxShadow: '0 0 40px rgba(124,92,255,.22)', cursor: 'pointer' }}
+    >
+      <div style={{ position: 'absolute', width: 220, height: 220, borderRadius: '50%', right: -60, top: -80, background: '#7f5cff', filter: 'blur(60px)', opacity: 0.35, pointerEvents: 'none' }} />
+      <div style={{ position: 'relative', display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 10.5, fontWeight: 800, letterSpacing: '.1em', color: '#c9baff' }}>👑 {t('premium.eyebrow')}</div>
+          <div style={{ fontSize: 20, fontWeight: 800, marginTop: 6, lineHeight: 1.15, letterSpacing: '-.01em' }}>{t('premium.title1')} <span style={{ color: '#a58cff' }}>{t('premium.title2')}</span></div>
+          <div style={{ fontSize: 12.5, color: '#b9b9c6', marginTop: 6, lineHeight: 1.4 }}>✨ {t('premium.card1')} · 📚 {t('premium.card2')}</div>
+        </div>
+        <div style={{ flex: 'none', borderRadius: '50%', boxShadow: '0 0 0 2.5px #8b6dff, 0 0 22px rgba(139,109,255,.6)' }}><PugImg size={62} /></div>
+      </div>
+      <div style={{ position: 'relative', marginTop: 13, height: 46, borderRadius: 15, background: 'linear-gradient(160deg,#8b6dff,#6d4dff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 800, boxShadow: '0 8px 20px rgba(109,77,255,.4)' }}>{t('premium.tryFree')}</div>
+    </div>
+  );
+}
+
 export default function Profile({ studentName, setStudentName, profilePhoto, setProfilePhoto, activities, setActivities, planner, profileDefaults, setProfileDefaults, studyHistory, recurringActivities, streak }) {
   const { t } = useLang();
   const facts = aboutMeFacts({ activities, defaults: profileDefaults, energy: planner.state.energy, recurringActivities });
@@ -289,6 +330,7 @@ export default function Profile({ studentName, setStudentName, profilePhoto, set
         studentName={studentName} setStudentName={setStudentName} profilePhoto={profilePhoto} setProfilePhoto={setProfilePhoto}
         activities={activities} studyHistory={studyHistory} planner={planner} streak={streak}
       />
+      <PremiumCard />
       <KnowsBubble facts={facts} />
       <Label>{t('profile.tellMore')}</Label>
       <NoteCard activities={activities} setActivities={setActivities} />

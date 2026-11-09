@@ -1036,4 +1036,7 @@ export default {
   "addTask.idea.errands": "Recados",
   "addTask.idea.call": "Telefonema",
   "addTask.idea.tidy": "Arrumar",
+  "premium.tryFree": "Experimenta 7 dias grátis",
+  "premium.profileRenews": "IA ilimitada · renova a {date}",
+  "premium.profileActiveSub": "IA ilimitada",
 };

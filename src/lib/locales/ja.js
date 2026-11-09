@@ -1036,4 +1036,7 @@ export default {
   "addTask.idea.errands": "用事",
   "addTask.idea.call": "電話",
   "addTask.idea.tidy": "片付け",
+  "premium.tryFree": "7日間無料で試す",
+  "premium.profileRenews": "AI無制限 · {date}に更新",
+  "premium.profileActiveSub": "AI無制限",
 };

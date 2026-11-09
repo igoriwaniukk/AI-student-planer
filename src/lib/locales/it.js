@@ -1036,4 +1036,7 @@ export default {
   "addTask.idea.errands": "Commissioni",
   "addTask.idea.call": "Telefonata",
   "addTask.idea.tidy": "Riordinare",
+  "premium.tryFree": "Prova 7 giorni gratis",
+  "premium.profileRenews": "IA illimitata · si rinnova il {date}",
+  "premium.profileActiveSub": "IA illimitata",
 };
