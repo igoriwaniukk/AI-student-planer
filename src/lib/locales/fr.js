@@ -952,6 +952,8 @@ export default {
   "premium.card1": "Aucune limite par jour",
   "premium.card2Label": "AVANT CHAQUE CONTRÔLE",
   "premium.card2": "Plans de révision à la demande",
+  "premium.card3Label": "GELS DE SÉRIE",
+  "premium.card3": "Ne perds jamais ta série",
   "premium.yearly": "Annuel",
   "premium.yearlySub": "7 jours gratuits · seulement {perMonth} / mois",
   "premium.monthly": "Mensuel",
@@ -1061,9 +1063,5 @@ export default {
   "streakCard.freezeProgress": "Séances avant le prochain 🧊 : {n}/{total}",
   "streakCard.freezesFull": "Gels au complet — tu es protégé 🧊",
   "streakCard.frozenSaved": "Un gel a sauvé ta série 🧊",
-  "streak.milestoneLabel": "PALIER DÉBLOQUÉ",
-  "streak.milestoneBadge": "Nouveau badge : {n} jours d'affilée",
   "streak.freezeGift": "+1 gel (cadeau Premium)",
-  "profile.badgesTitle": "BADGES DE SÉRIE",
-  "profile.badgeDays": "{n} jours",
 };

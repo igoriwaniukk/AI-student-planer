@@ -1,15 +1,14 @@
 import { localDateKey } from './plannerLogic.js';
 
-// Streak rewards: badges at milestones (everyone) and streak freezes
-// (Premium). Freezes are earned by studying — every SESSIONS_PER_FREEZE
-// finished sessions give one, up to MAX_FREEZES — plus one as a gift at
-// each milestone. A missed day is covered automatically: it's marked
+// Streak rewards (Premium): streak freezes. Earned by studying — every
+// SESSIONS_PER_FREEZE finished sessions give one, up to MAX_FREEZES — plus
+// one as a gift at each milestone. `badges` records the milestones already
+// reached, so each one is celebrated and rewarded only once. A missed day is covered automatically: it's marked
 // `frozen` in studyHistory, which keeps the run going without adding to it
 // (see computeStreak). Kept as { freezes, progress, badges } under
 // KEYS.streakRewards, synced with the account like the rest.
 
 export const STREAK_MILESTONES = [7, 10, 30, 50, 100, 200, 365];
-export const MILESTONE_BADGE = { 7: '🌱', 10: '🥉', 30: '🥈', 50: '🥇', 100: '💎', 200: '🏆', 365: '👑' };
 export const MAX_FREEZES = 3;
 export const SESSIONS_PER_FREEZE = 3;
 export const SESSION_DONE_EVENT = 'pulgo-session-done';
@@ -51,7 +50,7 @@ export function missedDaysToFreeze(studyHistory, freezes, today = new Date()) {
   return [];
 }
 
-// Milestones reached (by the best run so far) that don't have a badge yet.
+// Milestones reached (by the best run so far) that aren't recorded yet.
 export function newMilestones(badges, best) {
   return STREAK_MILESTONES.filter((m) => m <= best && !(badges || []).includes(m));
 }

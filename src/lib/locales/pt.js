@@ -952,6 +952,8 @@ export default {
   "premium.card1": "Sem limites diários",
   "premium.card2Label": "ANTES DE CADA TESTE",
   "premium.card2": "Planos de estudo na hora",
+  "premium.card3Label": "CONGELAR SEQUÊNCIA",
+  "premium.card3": "Nunca perca sua sequência",
   "premium.yearly": "Anual",
   "premium.yearlySub": "7 dias grátis · só {perMonth} / mês",
   "premium.monthly": "Mensal",
@@ -1061,9 +1063,5 @@ export default {
   "streakCard.freezeProgress": "Sessões até o próximo 🧊: {n}/{total}",
   "streakCard.freezesFull": "Congelamentos completos — você está protegido 🧊",
   "streakCard.frozenSaved": "Um congelamento salvou sua sequência 🧊",
-  "streak.milestoneLabel": "MARCO DESBLOQUEADO",
-  "streak.milestoneBadge": "Nova medalha: {n} dias seguidos",
   "streak.freezeGift": "+1 congelamento (presente Premium)",
-  "profile.badgesTitle": "MEDALHAS DE SEQUÊNCIA",
-  "profile.badgeDays": "{n} dias",
 };

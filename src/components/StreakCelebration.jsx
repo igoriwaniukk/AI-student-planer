@@ -3,15 +3,14 @@ import { dayInfo } from '../lib/plannerLogic';
 import { DAY_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { Confetti } from './ui';
-import { MILESTONE_BADGE } from '../lib/streakRewards';
+import { STREAK_MILESTONES } from '../lib/streakRewards';
 
-// milestone: { n, gift } when today's streak just reached a badge (see
-// hooks/useStreakRewards.js) — the badge is shown, plus the free freeze
-// Premium gets with it.
+// milestone: { n, gift } when today's streak just reached a milestone (see
+// hooks/useStreakRewards.js) — gift is the free freeze Premium gets with it.
 export default function StreakCelebration({ streak, milestone, onClose }) {
   const { t } = useLang();
   if (!streak) return null;
-  const badge = milestone && milestone.n === streak ? MILESTONE_BADGE[streak] : null;
+  const isMilestone = STREAK_MILESTONES.includes(streak);
   const week = Array.from({ length: 7 }, (_, i) => dayInfo(NUM_TODAY - 6 + i));
 
   return (
@@ -26,15 +25,13 @@ export default function StreakCelebration({ streak, milestone, onClose }) {
         <div style={{ fontSize: 21, fontWeight: 750, marginTop: 2 }}>
           {streak === 1 ? t('streak.celebrateStarted') : t('streak.celebrateTitle', { n: streak })}
         </div>
-        {badge && (
-          <div style={{ marginTop: 14, padding: '12px 14px', borderRadius: 16, background: 'linear-gradient(135deg,rgba(245,165,36,.16),rgba(139,109,255,.12))', border: '1px solid rgba(245,165,36,.4)', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left' }}>
-            <div style={{ width: 46, height: 46, flex: 'none', borderRadius: '50%', background: 'radial-gradient(circle at 35% 30%,#ffe3a3,#f5a524 60%,#a8620c)', boxShadow: '0 0 18px rgba(245,165,36,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>{badge}</div>
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '.12em', color: '#f5a524' }}>{t('streak.milestoneLabel')}</div>
-              <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: 3, color: '#f7e2bd' }}>{t('streak.milestoneBadge', { n: streak })}</div>
-              {milestone.gift && <div style={{ display: 'inline-block', marginTop: 6, padding: '3px 8px', borderRadius: 8, background: 'rgba(92,184,255,.14)', border: '1px solid rgba(92,184,255,.4)', fontSize: 11.5, fontWeight: 700, color: '#bdefff' }}>🧊 {t('streak.freezeGift')}</div>}
-            </div>
+        {isMilestone && (
+          <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 12, background: 'rgba(245,165,36,.12)', border: '1px solid rgba(245,165,36,.35)', fontSize: 13, fontWeight: 650, color: '#f7c46c' }}>
+            🎉 {t('streak.celebrateMilestone', { n: streak })}
           </div>
+        )}
+        {milestone?.gift && milestone.n === streak && (
+          <div style={{ display: 'inline-block', marginTop: 8, padding: '6px 12px', borderRadius: 10, background: 'rgba(92,184,255,.14)', border: '1px solid rgba(92,184,255,.4)', fontSize: 12.5, fontWeight: 700, color: '#bdefff' }}>🧊 {t('streak.freezeGift')}</div>
         )}
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginTop: 18 }}>

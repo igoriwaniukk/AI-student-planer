@@ -952,6 +952,8 @@ export default {
   "premium.card1": "1日の回数制限なし",
   "premium.card2Label": "テストの前に毎回",
   "premium.card2": "勉強プランをいつでも",
+  "premium.card3Label": "連続記録フリーズ",
+  "premium.card3": "連続記録をもう途切れさせない",
   "premium.yearly": "年額",
   "premium.yearlySub": "7日間無料 · 月あたりわずか{perMonth}",
   "premium.monthly": "月額",
@@ -1061,9 +1063,5 @@ export default {
   "streakCard.freezeProgress": "次の 🧊 まであと：{n}/{total} セッション",
   "streakCard.freezesFull": "フリーズは満タン——連続記録は守られています 🧊",
   "streakCard.frozenSaved": "フリーズが連続記録を守りました 🧊",
-  "streak.milestoneLabel": "マイルストーン達成",
-  "streak.milestoneBadge": "新しいバッジ：{n}日連続",
   "streak.freezeGift": "+1 フリーズ（Premium ギフト）",
-  "profile.badgesTitle": "連続記録バッジ",
-  "profile.badgeDays": "{n}日",
 };

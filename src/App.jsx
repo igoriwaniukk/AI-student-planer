@@ -381,7 +381,6 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
           studyHistory={studyHistory}
           recurringActivities={recurringActivities}
           streak={streak}
-          streakBadges={streakRewards.rewards.badges}
         />
       )}
       {screen === 'settings' && (
