@@ -52,6 +52,16 @@ Pulgo is my iPhone app for everyone who studies (students, and adults taking cou
 - **Settings:** language, reminders, sign out, **Delete account** (Apple requires it).
 - **Languages:** Polish, English, Spanish, Portuguese, German, French, Italian, Chinese, Japanese.
 
+## Pug World (planned, after 1.1 is approved)
+A 3D pet game inside Pulgo — your dog goes to "dog school" and learns when you study. Agreed with Igor (Nov 2026):
+- **Real 3D dog with a full body** (own style, not a copy). A ready-made dog as a stand-in while a 3D artist makes the real Pulgo — brief in `PUG_WORLD_ARTIST_BRIEF.md`.
+- **Version 1:** Pulgo only; **Home** (cozy student bedroom, window shows real day/night); care bars (food, sleep, fun, clean) needing **2–3 short visits a day** (never sick or dying); **School** — every finished session = a lesson in that subject, quizzes, weekly report card, a final exam per grade (~2 weeks), **graduation after ~2–3 months** → choose the next dog; real exams give the dog a bonus exam; rested/fed dog learns faster.
+- **Friends and classes in version 1:** invite link / friend code, visit friends' dogs, send treats, reactions only (no free chat), nicknames, block/remove; classes with a weekly ranking (time + days, resets Monday) and a class goal.
+- Rewards: treats 🦴, coins 🪙, XP ⭐. A card pops up after each session ("Pulgo learned Math! [Feed] [Play]").
+- Opens from a **card on Home**. **Free for everyone**; Premium adds outfits/furniture, +50% treats and coins, later extra dog slots and rare dogs.
+- Built hidden inside the real app, visible only to Igor's account, then switched on for everyone (no App Store build).
+- Later: more dogs (3–4 starters, rare ones), more rooms and outfits, maybe world trips with a passport.
+
 ## Look
 - Dark background `#08080c`
 - Purple accents `#8b6dff → #6d4dff`
