@@ -23,6 +23,7 @@ export const KEYS = {
   chatMessages: 'sp_chatMessages',
   premiumSince: 'sp_premiumSince',
   streakRewards: 'sp_streakRewards',
+  pugWorld: 'sp_pugWorld',
 };
 
 // Fired whenever any useLocalStorage value is written — cloudSync.js listens

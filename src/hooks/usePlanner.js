@@ -12,6 +12,7 @@ import { requestAIPrep, toPrepCards } from '../lib/aiPrep';
 import { requestAIRescue } from '../lib/aiRescue';
 import { WIN_EVENT } from '../lib/premium';
 import { SESSION_DONE_EVENT } from '../lib/streakRewards';
+import { PLAN_DONE_EVENT, DAY_DONE_EVENT } from '../lib/pugWorld/events';
 
 // The only slice of usePlanner's state that survives a reload / syncs across
 // devices (via KEYS.plannerData in store.js) — everything else here is
@@ -947,6 +948,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       const taskDefs = cleaned.taskDefs.map((d) => (d.pendingDraft && approved[d.id] ? { ...d, pendingDraft: false } : d));
       return { saved: true, manualMode: false, plans: { ...s.plans, [day]: approved }, drafts, ...cleaned, taskDefs };
     });
+    window.dispatchEvent(new Event(PLAN_DONE_EVENT));
   }
   function goHomeSaved() {
     update({ saved: false, screen: 'home' });
@@ -1157,6 +1159,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   // copy is added for tomorrow instead.
   function finishDay(stats) {
     window.dispatchEvent(new Event(WIN_EVENT));
+    window.dispatchEvent(new Event(DAY_DONE_EVENT));
     update((s) => {
       const choices = s.unfinishedChoices || {};
       let taskDefs = s.taskDefs;

@@ -31,6 +31,9 @@ import {
 } from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
 import { useStreakRewards } from './hooks/useStreakRewards';
+import { usePugWorld } from './hooks/usePugWorld';
+import PugWorld from './components/pugWorld/PugWorld';
+import { PugWorldToast } from './components/pugWorld/PugWorldCard';
 import { LanguageProvider } from './lib/LanguageContext';
 import { computeStreak, studiedToday, localDateKey, daySessionBreakdown, statusOn, dayOpenTasks, wrapUpMinutes, planFor } from './lib/plannerLogic';
 import { NUM_TODAY } from './lib/plannerData';
@@ -222,6 +225,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
   const premium = usePremium();
   const [paywall, setPaywall] = useState(null);
   const streakRewards = useStreakRewards({ studyHistory, streak, isPremium: premium.enabled && premium.premium, freezeDays });
+  const pugWorld = usePugWorld({ streak, isPremium: premium.enabled && premium.premium });
   const pendingWin = useRef(false);
   const openTried = useRef(false);
   useEffect(() => {
@@ -347,6 +351,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
           profilePhoto={profilePhoto}
           studyHistory={studyHistory}
           streakRewards={streakRewards.rewards}
+          pugWorld={pugWorld}
         />
       )}
       {screen === 'calendar' && <Calendar planner={planner} activities={activities} recurringActivities={recurringActivities} />}
@@ -421,6 +426,10 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
 
       {/* Waits for the focus screen's finish animation before celebrating. */}
       {celebrating && screen !== 'focus' && <StreakCelebration streak={streak} milestone={streakRewards.milestone} onClose={() => { setCelebrating(false); streakRewards.clearMilestone(); }} />}
+
+      {/* Pug World, the dog collection game (hidden preview, see lib/pugWorld/events.js). */}
+      {pugWorld.enabled && pugWorld.open && <PugWorld pw={pugWorld} onClose={() => pugWorld.setOpen(null)} />}
+      <PugWorldToast pw={pugWorld} />
 
       {paywall && <Paywall reason={paywall} onClose={() => setPaywall(null)} />}
     </div>
