@@ -5,7 +5,7 @@
 ---
 
 ## About the project
-Pulgo is an AI study-planner app for students (iPhone). We're adding a pet game: your **3D pug** goes to "dog school" and learns when you study. It lives in a cozy bedroom and a classroom. We need our mascot, **Pulgo the pug**, as a **full-body, animated 3D character** for a real-time web 3D game (three.js inside the app).
+Pulgo is an AI study-planner app for students (iPhone). We're adding a pet game: studying earns coins, and you spend them on your **3D pug** — food, toys, outfits, furniture — and watch it grow from a tiny puppy into an adult dog. It lives in a cozy bedroom. We need our mascot, **Pulgo the pug**, as a **full-body, animated 3D character** for a real-time web 3D game (three.js inside the app).
 
 **Reference:** our current mascot picture (attached: `pug-avatar.png`). It's a cute pug in a graduation cap with a purple bow tie, in a soft 3D-film look: big shiny eyes, rounded shapes, warm fawn fur and a black face mask. The 3D model should look like **this exact pug**, with a **full body**: four legs, a curly tail and a chubby body.
 
@@ -25,7 +25,10 @@ Please create an **original** character from our reference, not based on any exi
 - **Attachment points** (empty bones) for accessories: **head (hats)**, **neck (collars, bow ties)**, **back (backpack/clothes)**.
 - Real-world scale, facing +Z (glTF forward), animations at 30 fps, **looping animations must loop seamlessly**.
 
-## Animations (about 14)
+## Growth stages
+The dog grows up in the game: **newborn puppy → puppy → young → adult**. Please make the proportions change with age (a puppy has a bigger head, shorter legs, clumsier moves), either as **blend shapes / bone scaling on one model** (preferred, so all animations are shared) or as separate models on the same skeleton.
+
+## Animations (about 18)
 | # | Name | Loop? | What it shows |
 |---|---|---|---|
 | 1 | `idle` | loop | standing, breathing, small tail wag |
@@ -38,10 +41,14 @@ Please create an **original** character from our reference, not based on any exi
 | 8 | `drink` | loop | drinking from a bowl |
 | 9 | `bath_shake` | once | shakes off water after a bath |
 | 10 | `play_ball` | once | jumps / pounces on a ball |
-| 11 | `study` | loop | sitting at a small desk, paws on a book, "writing" and nodding |
-| 12 | `celebrate` | once | happy jump, spins, tail wag (lesson done / exam passed) |
+| 11 | `brush` | loop | enjoys being brushed (eyes half closed, leg kick) |
+| 12 | `celebrate` | once | happy jump, tail wag (new toy, grew up) |
 | 13 | `sad` | loop | ears down, a little sad ("misses you"), never sick |
 | 14 | `pet_happy` | once | reacts happily when tapped / petted |
+| 15 | `trick_sit` | once | sits on command |
+| 16 | `trick_paw` | once | gives a paw |
+| 17 | `trick_spin` | once | spins around |
+| 18 | `trick_roll` | once | rolls over |
 
 ## Deliverables
 1. `pulgo.glb` with the model and all animations above, tested in a glTF viewer (e.g. gltf-viewer or three.js editor).
@@ -51,8 +58,8 @@ Please create an **original** character from our reference, not based on any exi
 
 ## Nice to have (quote separately)
 - Accessories as separate `.glb`s fitted to the attachment points: graduation cap, bow tie, school backpack, a hoodie.
-- 3–4 more dog breeds on the **same skeleton**, so they share the animations: corgi, shiba, beagle.
+- 5 more dog breeds on the **same skeleton**, so they share the animations: beagle, dachshund, corgi, shiba, husky.
 
 ## Please include in your offer
 - Your portfolio of **animated stylized animals** (ideally game- or web-ready).
-- Price and timeline for the main pug with the 14 animations, and for the "nice to have" items.
+- Price and timeline for the main pug with the growth stages and 18 animations, and for the "nice to have" items.

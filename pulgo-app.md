@@ -53,14 +53,16 @@ Pulgo is my iPhone app for everyone who studies (students, and adults taking cou
 - **Languages:** Polish, English, Spanish, Portuguese, German, French, Italian, Chinese, Japanese.
 
 ## Pug World (planned, after 1.1 is approved)
-A 3D pet game inside Pulgo — your dog goes to "dog school" and learns when you study. Agreed with Igor (Nov 2026):
-- **Real 3D dog with a full body** (own style, not a copy). A ready-made dog as a stand-in while a 3D artist makes the real Pulgo — brief in `PUG_WORLD_ARTIST_BRIEF.md`.
-- **Version 1:** Pulgo only; **Home** (cozy student bedroom, window shows real day/night); care bars (food, sleep, fun, clean) needing **2–3 short visits a day** (never sick or dying); **School** — every finished session = a lesson in that subject, quizzes, weekly report card, a final exam per grade (~2 weeks), **graduation after ~2–3 months** → choose the next dog; real exams give the dog a bonus exam; rested/fed dog learns faster.
-- **Friends and classes in version 1:** invite link / friend code, visit friends' dogs, send treats, reactions only (no free chat), nicknames, block/remove; classes with a weekly ranking (time + days, resets Monday) and a class goal.
-- Rewards: treats 🦴, coins 🪙, XP ⭐. A card pops up after each session ("Pulgo learned Math! [Feed] [Play]").
-- Opens from a **card on Home**. **Free for everyone**; Premium adds outfits/furniture, +50% treats and coins, later extra dog slots and rare dogs.
+A 3D pet game inside Pulgo — like Forest, but with dogs: **studying earns coins, coins buy things for your dog.** The game itself is pure fun, not "more school" (Igor dropped the dog-school idea on Nov 13, 2026). Agreed:
+- **Real 3D dogs with a full body** (own style, not a copy). A ready-made dog as a stand-in while a 3D artist makes the real Pulgo — brief in `PUG_WORLD_ARTIST_BRIEF.md`.
+- **Coins 🪙** from studying (suggested: 1 per session minute, +20 plan, +30 finished day, +10 per streak day); rare **gems 💎** for 7/30-day streaks.
+- **Grow up through care:** newborn → puppy → young → adult over ~4–6 weeks; each stage looks/moves differently and unlocks tricks and shop items.
+- **Care at home** (cozy student bedroom, window shows real day/night): feed, water, bath, brush, play, pet, bed, tricks — **2–3 short visits a day**; never sick or dying.
+- **Shop:** food & treats, toys, home items (beds, lamps, plants, rugs, posters), outfits, dogs.
+- **Dogs:** Pulgo free; **buy any dog with coins any time** — 6 breeds at launch (pug, beagle, dachshund, corgi, shiba, husky), more in updates.
+- **Friends in version 1:** invite code, visit rooms, a daily gift, reactions (no chat), nicknames, block/remove, weekly ranking 👑.
+- A card pops up after each session (coins + Feed / Shop). Opens from a **card on Home**. **Free for everyone**; Premium adds outfits/furniture, +50% coins, later extra perks.
 - Built hidden inside the real app, visible only to Igor's account, then switched on for everyone (no App Store build).
-- Later: more dogs (3–4 starters, rare ones), more rooms and outfits, maybe world trips with a passport.
 
 ## Look
 - Dark background `#08080c`
