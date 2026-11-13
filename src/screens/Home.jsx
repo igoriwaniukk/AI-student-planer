@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import PugWorldCard from '../components/pugWorld/PugWorldCard';
 import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
 import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, planFor, draftFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, bestStreak, studiedToday, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn, offTrackReason, fmt, todoTimeLabel } from '../lib/plannerLogic';
 import { dailyTip } from '../lib/dailyTip';
@@ -623,7 +624,7 @@ function TipCard({ state, streak, doneToday }) {
   );
 }
 
-export default function Home({ planner, studentName, profilePhoto, studyHistory = {}, streakRewards = null }) {
+export default function Home({ planner, studentName, profilePhoto, studyHistory = {}, streakRewards = null, pugWorld = null }) {
   const { t } = useLang();
   const { state } = planner;
   const [viewDay, setViewDay] = useState(NUM_TODAY);
@@ -729,6 +730,8 @@ export default function Home({ planner, studentName, profilePhoto, studyHistory 
         />
         {isRealDay && <div onClick={() => { planner.update({ planToday: true }); planner.go('plan'); }} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('home.seeFullPlan')} <span style={{ fontSize: 11 }}>›</span></div>}
       </div>
+
+      {isRealDay && <PugWorldCard pw={pugWorld} />}
 
       <WeekCard planner={planner} streak={streak} />
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { version as WEB_VERSION } from '../../package.json';
 
 // In the iPhone app, its own version (the one in the App Store); on the web,
@@ -11,6 +11,7 @@ import { useLang } from '../lib/useLang';
 import { useCustomReminders, resetAppData } from '../lib/store';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { BackButton, BottomSheet, Toggle } from '../components/ui';
+import { pugPreviewOn, setPugPreview, openPugWorld } from '../lib/pugWorld/events';
 import { usePremium, openPaywall, restorePremium, canBuyHere, MANAGE_SUBSCRIPTION_URL } from '../lib/premium';
 
 function Label({ children }) {
@@ -90,6 +91,19 @@ export default function Settings({ planner, studentName, profilePhoto, email, st
   const [reminders] = useCustomReminders();
   const [page, setPage] = useState(null);
   const [confirming, setConfirming] = useState(null);
+  // Hidden switch for Pug World while it isn't launched: tap Version 7 times.
+  const [pugOn, setPugOn] = useState(pugPreviewOn);
+  const versionTaps = useRef({ n: 0, at: 0 });
+  const tapVersion = () => {
+    const now = Date.now();
+    const v = versionTaps.current;
+    v.n = now - v.at < 1500 ? v.n + 1 : 1;
+    v.at = now;
+    if (v.n < 7) return;
+    v.n = 0;
+    setPugPreview(!pugOn);
+    setPugOn(!pugOn);
+  };
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [infoSheet, setInfoSheet] = useState(null);
@@ -180,7 +194,8 @@ export default function Settings({ planner, studentName, profilePhoto, email, st
       <Group>
         <Row first title={t('settings.privacyPolicy')} nav onClick={() => setInfoSheet('privacy')} />
         <Row title={t('settings.termsOfService')} nav onClick={() => setInfoSheet('terms')} />
-        <Row title={t('settings.versionLabel')} value={APP_VERSION} />
+        <Row title={t('settings.versionLabel')} value={APP_VERSION} onClick={tapVersion} />
+        {pugOn && <Row title={'🐶 ' + t('pw.title')} sub={t('pw.previewOn')} nav onClick={() => openPugWorld()} />}
       </Group>
 
       <Label>{t('settings.account')}</Label>
