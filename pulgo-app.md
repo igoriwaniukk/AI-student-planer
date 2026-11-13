@@ -52,7 +52,7 @@ Pulgo is my iPhone app for everyone who studies (students, and adults taking cou
 - **Settings:** language, reminders, sign out, **Delete account** (Apple requires it).
 - **Languages:** Polish, English, Spanish, Portuguese, German, French, Italian, Chinese, Japanese.
 
-## Pug World (planned, after 1.1 is approved)
+## Pug World (planned, next big update)
 A 3D pet game inside Pulgo — like Forest, but with dogs: **studying earns coins, coins buy things for your dog.** The game itself is pure fun, not "more school" (Igor dropped the dog-school idea on Nov 13, 2026). Agreed:
 - **Real 3D dogs with a full body** (own style, not a copy). A ready-made dog as a stand-in while a 3D artist makes the real Pulgo — brief in `PUG_WORLD_ARTIST_BRIEF.md`.
 - **Coins 🪙** from studying (suggested: 1 per session minute, +20 plan, +30 finished day, +10 per streak day); rare **gems 💎** for 7/30-day streaks.
@@ -82,6 +82,9 @@ A 3D pet game inside Pulgo — like Forest, but with dogs: **studying earns coin
 - **Oct 26:** still waiting. If there's no answer, call Apple Developer Support (developer.apple.com/contact → Membership and Account → Phone).
 - **Oct 29–30:** the contact form went to the App Review Board as an "appeal" (ticket APL619794). They closed it because the app is already resubmitted, and forwarded my message to an App Review team member, who will write in App Store Connect if needed. Next step if nothing happens: reply to Apple's latest message in App Store Connect → App Review.
 - **Oct 31, 2026: APPROVED 🎉** — "In Review" and then "Ready for Distribution" on the same day. Pulgo 1.0 is in the App Store.
+- **Nov 9, 2026:** version 1.1 (Premium) submitted with both subscriptions. Apple's automatic check stopped it (Guideline 3.1.2: no Terms of Use (EULA) link in the Description). Fixed by adding the Terms of Use and Privacy Policy links to the end of the Description in every language, then resubmitted.
+- **By Nov 13, 2026: 1.1 APPROVED 🎉** — Pulgo 1.1 with Pulgo Premium is live in the App Store.
+- **For every future submission with subscriptions:** keep the Terms of Use and Privacy links at the end of the Description in every language.
 - **TestFlight:**
   - internal group "Team (Expo)" works now (add people via Users and Access, role Marketing)
   - external group "Beta" with a public link created; build 1.0.0 (2) is "Waiting for Beta App Review", and the link starts working once it's approved
@@ -91,7 +94,7 @@ A 3D pet game inside Pulgo — like Forest, but with dogs: **studying earns coin
   - Keep the demo account working, since Apple uses it for every update.
 - The review answer text and recording script are in `APP_STORE_READINESS.md` (step 10). Reuse them for future versions.
 
-## Version 1.1 (next)
+## Version 1.1 (live since Nov 2026)
 - **Setup progress (Nov 2026):**
   - Paid Apps agreement signed; bank account and US tax form (W-8BEN) submitted, waiting to become Active
   - Small Business Program applied for (15% instead of 30%)
