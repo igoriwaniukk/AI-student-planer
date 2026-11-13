@@ -52,17 +52,18 @@ Pulgo is my iPhone app for everyone who studies (students, and adults taking cou
 - **Settings:** language, reminders, sign out, **Delete account** (Apple requires it).
 - **Languages:** Polish, English, Spanish, Portuguese, German, French, Italian, Chinese, Japanese.
 
-## Pug World (planned, next big update)
-A 3D pet game inside Pulgo — like Forest, but with dogs: **studying earns coins, coins buy things for your dog.** The game itself is pure fun, not "more school" (Igor dropped the dog-school idea on Nov 13, 2026). Agreed:
-- **Real 3D dogs with a full body** (own style, not a copy). A ready-made dog as a stand-in while a 3D artist makes the real Pulgo — brief in `PUG_WORLD_ARTIST_BRIEF.md`.
-- **Coins 🪙** from studying (suggested: 1 per session minute, +20 plan, +30 finished day, +10 per streak day); rare **gems 💎** for 7/30-day streaks.
-- **Grow up through care:** newborn → puppy → young → adult over ~4–6 weeks; each stage looks/moves differently and unlocks tricks and shop items.
-- **Care at home** (cozy student bedroom, window shows real day/night): feed, water, bath, brush, play, pet, bed, tricks — **2–3 short visits a day**; never sick or dying.
-- **Shop:** food & treats, toys, home items (beds, lamps, plants, rugs, posters), outfits, dogs.
-- **Dogs:** Pulgo free; **buy any dog with coins any time** — 6 breeds at launch (pug, beagle, dachshund, corgi, shiba, husky), more in updates.
-- **Friends in version 1:** invite code, visit rooms, a daily gift, reactions (no chat), nicknames, block/remove, weekly ranking 👑.
-- A card pops up after each session (coins + Feed / Shop). Opens from a **card on Home**. **Free for everyone**; Premium adds outfits/furniture, +50% coins, later extra perks.
-- Built hidden inside the real app, visible only to Igor's account, then switched on for everyone (no App Store build).
+## Pug World: dog collection game (planned, next big update)
+Studying earns **chests**; chests hold **collectible 3D dogs**. Agreed with Igor (Nov 2026), replacing the earlier dog-school and dog-care ideas:
+- **Start:** choose 1 of 3 starter dogs.
+- **Chests 🎁:** small for every finished session, silver for a finished plan/day, gold for streak milestones, epic for winning the weekly friends ranking; plus the day-7 calendar chest and the 3-missions bonus chest.
+- **~30 dogs at launch:** 6 breeds × fur colours × special skins (golden, crystal, galaxy, rainbow) — about 15 Common, 9 Rare, 4 Epic, 2 Legendary. Chances shown in the app.
+- **Duplicates level a dog up** (★ → ★★ → ★★★). Every dog has **power**; the **collection score** is the total and is compared with friends; strong dogs give **small perks** (e.g. Legendary +10% coins from sessions, Epic protects the streak once a week).
+- **No care** (no hunger/bath bars). Dogs are shown as **album cards** and in a **3D showcase** (spin, outfits, a trick).
+- **Outfits** from chests and the shop; **today's shop** (4 daily offers); **daily rewards calendar**; **3 daily missions**; **collection book set rewards** (e.g. "all corgis").
+- **Friends:** invite codes, compare collections/power/favourite dogs, weekly ranking. No chat, nicknames, block/remove.
+- **Never sold for money:** chests only from studying and playing (paid loot boxes are restricted by Apple and banned in some countries). Premium = one bonus chest a day.
+- **3D dogs:** Claude builds toy-style 3D dogs in code first (free); a 3D artist can upgrade them later — brief in `PUG_WORLD_ARTIST_BRIEF.md`.
+- Built inside the live 1.1 app, hidden for Igor's account, then switched on for everyone (no App Store build). Later: **real shelter dogs** (coins → real meals paid by Pulgo, monthly budget) in the first update after launch; App Store **1.2** later for new screenshots and a home-screen widget.
 
 ## Look
 - Dark background `#08080c`
