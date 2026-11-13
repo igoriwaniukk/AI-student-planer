@@ -342,6 +342,8 @@ const thumbCache = new Map();
 export function dogThumbnail(dogId, { worn, silhouette, size = 256 } = {}) {
   const key = [dogId, silhouette ? 's' : '', worn ? JSON.stringify(worn) : '', size].join('|');
   if (thumbCache.has(key)) return thumbCache.get(key);
+  // The phone can take a 3D context back (memory, background): start over.
+  if (thumb && thumb.renderer.getContext().isContextLost()) { thumb.renderer.dispose(); thumb = null; }
   if (!thumb) {
     const canvas = document.createElement('canvas');
     const renderer = makeRenderer(canvas, { keep: true });

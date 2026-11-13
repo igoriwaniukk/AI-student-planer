@@ -58,7 +58,7 @@ export default function PugWorld({ pw, onClose }) {
             </div>
           </>
         )}
-        {opening && <ChestOpen pw={pw} chestId={opening} onNext={setOpening} onClose={() => setOpening(null)} />}
+        {opening && <ChestOpen key={opening} pw={pw} chestId={opening} onNext={setOpening} onClose={() => setOpening(null)} />}
         {showDog && <DogShowcase pw={pw} dogId={showDog} onClose={() => setShowDog(null)} />}
         {chances && <ChancesSheet onClose={() => setChances(false)} />}
       </div>
