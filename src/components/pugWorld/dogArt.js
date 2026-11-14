@@ -46,6 +46,22 @@ const NECK_WEAR = {
   bandana: `<path d="M62 134 C84 144 116 144 138 134 L100 176 Z" fill="#2ee6c5"${o}/><circle cx="92" cy="148" r="2.6" fill="#fff"/><circle cx="108" cy="148" r="2.6" fill="#fff"/><circle cx="100" cy="160" r="2.6" fill="#fff"/>`,
 };
 
+const OUTFIT_ART = { ...HEAD_WEAR, ...FACE_WEAR, ...NECK_WEAR };
+// Tight view boxes for drawing an outfit on its own (shop, wardrobe).
+const OUTFIT_BOX = {
+  gradcap: '39 -16 122 122', cap: '51 -14 118 118', beanie: '39 -23.5 122 122', partyhat: '67.5 -20 71 71',
+  flowers: '45 -9 104 104', headphones: '25 10.5 150 150', sunglasses: '51 41 98 98', roundglasses: '51 39 98 98',
+  bowtie: '69 110 62 62', scarf: '51 110 98 98', bandana: '57 112 86 86',
+};
+// One outfit drawn by itself, centred in a square.
+export function outfitSVG(id, size = 64) {
+  const art = OUTFIT_ART[id];
+  if (!art) return '';
+  const vb = OUTFIT_BOX[id] || '30 -16 140 210';
+  return `<svg width="${size}" height="${size}" viewBox="${vb}" xmlns="http://www.w3.org/2000/svg">${art}</svg>`;
+}
+export const OUTFIT_IDS = Object.keys(OUTFIT_ART);
+
 let uid = 0;
 // Returns an SVG string. opts: { worn: { head, face, neck }, size }
 export function dogSVG(dogId, opts = {}) {
