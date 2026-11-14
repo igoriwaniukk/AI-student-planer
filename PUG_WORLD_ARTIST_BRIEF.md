@@ -1,52 +1,35 @@
-# 3D artist brief: Pulgo dog collection (6 cute 3D dog breeds)
+# Illustrator brief: Pulgo dog collection (cute 2D sticker dogs)
 
-*Post this on Fiverr / Upwork (search "3D stylized animal character rigging animation", "cute 3D game character", "glTF character for web").*
+*Post this on Fiverr / Upwork (search "cute chibi animal illustration", "kawaii dog stickers", "2D game character sprites", "SVG illustration").*
 
 ---
 
 ## About the project
-Pulgo is an AI study-planner app for students (iPhone). We're adding a **dog collection game**: studying earns chests, chests contain cute **3D dogs** of different rarities, and players collect them, dress them up and show them in a 3D showcase (spin, outfits, a trick). We need **6 dog breeds** as cute full-body 3D characters for real-time web 3D (three.js inside the app), starting with our mascot, **Pulgo the pug**.
+Pulgo is an AI study-planner app for students (iPhone). It has a **dog collection game**: studying earns chests, chests contain cute dogs of different rarities, and players collect them in an album, level them up and dress them up. Today the dogs are simple drawings made in code; we'd like a professional set in the **same style**, starting with our mascot, **Pulgo the pug**.
 
-**Reference:** our current mascot picture (attached: `pug-avatar.png`). It's a cute pug in a graduation cap with a purple bow tie, in a soft 3D-film look: big shiny eyes, rounded shapes, warm fawn fur and a black face mask. The pug should look like **this exact pug**, with a **full body**: four legs, a curly tail and a chubby body. The other 5 breeds should match the same cute style.
-
-Please create an **original** character from our reference, not based on any existing game or film character.
+**Reference:** our current in-app dogs (attached screenshots) and our mascot (attached: `pug-avatar.png`, a pug in a graduation cap with a purple bow tie). Please create **original** characters, not based on any existing game or film.
 
 ## Style
-- Cute stylized 3D, like an animated family film: soft, rounded, big expressive eyes.
-- Clean and readable on a phone screen. Calm, not hyper.
-- Fur colour: warm fawn/beige; black face mask and ears. Optional removable accessories: a **graduation cap with a purple tassel** and a **purple bow tie / collar**.
+- Cute **chibi / sticker** look: big head, small sitting body, big shiny eyes, rosy cheeks, small tongue.
+- Clean **dark outline** and a **white sticker border**; flat colours with very light shading.
+- Front-facing, sitting, all dogs in the same pose and size so they line up in an album grid.
+- Must read well small (about 80 px) and large (about 320 px), on light cards and on a dark background.
+
+## The set
+- **6 breeds:** pug (Pulgo), beagle, dachshund, corgi, shiba inu, husky.
+- **30 dogs:** each breed in several colours (e.g. fawn / black / apricot pug, tricolour / lemon beagle, red / black-and-tan / cream dachshund…), plus special skins: **golden, crystal, galaxy, rainbow, neon, cosmic** (the full list is in `src/lib/pugWorld/catalog.js`).
+- **Outfits** fitted to the same pose: graduation cap, cap, beanie, party hat, flower crown, headphones, sunglasses, round glasses, bow tie, scarf, bandana.
 
 ## Technical requirements
-- **Format:** `.glb` (glTF 2.0) with all animations embedded, plus the source file (`.blend` preferred).
-- **Polycount:** about **10,000–20,000 triangles** for the dog (mobile web).
-- **Textures:** one material if possible, base colour plus optional roughness/normal, **1024–2048 px**.
-- **Rig:** a quadruped skeleton that is clean for game use (root bone at the floor, between the paws).
-- **Face:** blend shapes or bones for **blink**, **mouth open**, **happy**, **sad/sleepy** and **ear wiggle**.
-- **Attachment points** (empty bones) for accessories: **head (hats)**, **neck (collars, bow ties)**, **back (backpack/clothes)**.
-- Real-world scale, facing +Z (glTF forward), animations at 30 fps, **looping animations must loop seamlessly**.
-
-## Breeds and variants
-- **6 breeds on one shared quadruped skeleton** (so they share animations): **pug (Pulgo), beagle, dachshund, corgi, shiba inu, husky**.
-- Colour variants are made by us in code, so please keep fur colour in a **separate, clean texture / material** (e.g. a base-colour texture with a mask for markings).
-- Rare skins (golden, crystal, galaxy, rainbow) are also done by us with materials — no extra models needed.
-
-## Animations (3 per breed, shared skeleton)
-| # | Name | Loop? | What it shows |
-|---|---|---|---|
-| 1 | `idle` | loop | standing or sitting, breathing, small tail wag, blink |
-| 2 | `happy` | once | a happy jump with a tail wag (when the dog is revealed from a chest) |
-| 3 | `trick` | once | a fun trick: spin around, or sit and give a paw |
+- **SVG** files (one per dog, one per outfit), 200 × 200 view box, same position for every dog so outfits fit all of them.
+- Separate layers / groups for the **tail** and the **eyes** (we animate a tail wag and a blink).
+- Colours as plain fills (no raster images inside the SVG), small file size.
 
 ## Deliverables
-1. One `.glb` per breed with its model and the 3 animations, tested in a glTF viewer (e.g. gltf-viewer or three.js editor).
-2. Source file (`.blend` or equivalent) and textures.
-3. A short preview video of each animation.
-4. **Full commercial rights**: we can use and modify the character in our app, store pages and marketing.
-
-## Nice to have (quote separately)
-- Accessories as separate `.glb`s fitted to the attachment points: graduation cap, bow tie, cap, sunglasses, scarf, hoodie.
-- More breeds later on the same skeleton (golden retriever, dalmatian, samoyed, French bulldog…).
+1. 30 dog SVGs + 11 outfit SVGs, plus a preview sheet.
+2. Source files (Illustrator / Figma / Affinity).
+3. **Full commercial rights**: we can use and change the art in our app, store pages and marketing.
 
 ## Please include in your offer
-- Your portfolio of **animated stylized animals** (ideally game- or web-ready).
-- Price and timeline for the 6 breeds with 3 animations each (and a price per extra breed), and for the "nice to have" items.
+- Your portfolio of **cute animal / sticker** illustrations.
+- Price and timeline for the 30 dogs and 11 outfits, and a price per extra dog later.
