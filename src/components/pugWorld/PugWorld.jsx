@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { AppShellPortal } from '../ui';
 import { useLang } from '../../lib/useLang';
 import { localDateKey } from '../../lib/plannerLogic';
-import { DOGS, DOG_BY_ID, BREED_IDS, STARTERS, OUTFIT_BY_ID, OUTFIT_ICON, RARITY_COLOR, RARITIES } from '../../lib/pugWorld/catalog.js';
+import { DOGS, DOG_BY_ID, BREED_IDS, STARTERS, OUTFIT_BY_ID, RARITY_COLOR, RARITIES } from '../../lib/pugWorld/catalog.js';
 import {
   CALENDAR, CHEST_PRICE, MISSIONS, MISSION_COINS, canClaimCalendar, claimCalendar, collectionScore, dogPower, bumpMission,
   shopOffers, buyOutfit, buyChest, breedDogs, chooseStarter,
 } from '../../lib/pugWorld/logic.js';
 import Dog2D from './Dog2D';
+import Wardrobe from './Wardrobe';
+import { CoinIcon, SparkleIcon, OutfitPic } from './icons';
 import DogThumb from './DogThumb';
 import ChestIcon from './Chest';
 import { CHEST_COLORS } from './theme';
@@ -71,7 +73,7 @@ export default function PugWorld({ pw, onClose }) {
           <>
             <TopBar title={t('pw.tab.' + tab)} onBack={onClose} right={<CoinPill n={state.coins} />} />
             <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 28px' }}>
-              {tab === 'dogs' && <MyDogs pw={pw} hideStage={!!overlay} onOpenChest={setOpening} onShowDog={setShowDog} onChances={() => setChances(true)} onStudy={onClose} />}
+              {tab === 'dogs' && <MyDogs pw={pw} hideStage={!!overlay} onOpenChest={setOpening} onChances={() => setChances(true)} onStudy={onClose} onShop={() => setTab('shop')} />}
               {tab === 'album' && <Album state={state} onShowDog={setShowDog} onChances={() => setChances(true)} />}
               {tab === 'shop' && <Shop pw={pw} />}
               {tab === 'friends' && <Friends />}
@@ -91,7 +93,7 @@ export default function PugWorld({ pw, onClose }) {
           </>
         )}
         {opening && <ChestOpen key={opening} pw={pw} chestId={opening} onNext={setOpening} onClose={() => setOpening(null)} />}
-        {showDog && <DogShowcase pw={pw} dogId={showDog} onClose={() => setShowDog(null)} />}
+        {showDog && <DogShowcase pw={pw} dogId={showDog} onClose={() => setShowDog(null)} onShop={() => { setShowDog(null); setTab('shop'); }} />}
         {chances && <ChancesSheet onClose={() => setChances(false)} />}
       </div>
     </AppShellPortal>
@@ -129,17 +131,24 @@ function Starter({ onPick, onClose }) {
 }
 
 // ---------- My dogs: the favourite on stage, chests, missions, calendar ----------
-function MyDogs({ pw, hideStage, onOpenChest, onShowDog, onChances, onStudy }) {
+function MyDogs({ pw, hideStage, onOpenChest, onChances, onStudy, onShop }) {
   const { t } = useLang();
   const { state, update } = pw;
   const fav = state.favorite && state.dogs[state.favorite] ? state.favorite : Object.keys(state.dogs)[0];
   const level = state.dogs[fav]?.level || 1;
   const [trick, setTrick] = useState(0);
+  const doTrick = () => { setTrick((k) => k + 1); update((s) => bumpMission(s, 'trick')); };
   const owned = Object.keys(state.dogs).length;
   const today = localDateKey();
   return (
     <>
-      <Stage height={280}>{!hideStage && <Dog2D dogId={fav} worn={state.outfits.worn[fav]} trickKey={trick} />}</Stage>
+      <Stage height={280}>
+        {!hideStage && <Dog2D dogId={fav} worn={state.outfits.worn[fav]} trickKey={trick} />}
+        <div onClick={doTrick} style={{ position: 'absolute', right: 26, bottom: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+          <div style={{ width: 52, height: 52, borderRadius: '50%', background: PURPLE, display: 'grid', placeItems: 'center', boxShadow: '0 8px 20px rgba(109,77,255,.5)' }}><SparkleIcon size={24} /></div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#c9baff' }}>{t('pw.trick')}</div>
+        </div>
+      </Stage>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 19, fontWeight: 800 }}>{dogName(t, fav)}</span>
         <RarityPill rarity={DOG_BY_ID[fav].rarity} />
@@ -149,10 +158,7 @@ function MyDogs({ pw, hideStage, onOpenChest, onShowDog, onChances, onStudy }) {
         <span>⚡ {t('pw.power', { n: dogPower(fav, level) })}</span>
       </div>
       <DogStrip state={state} current={fav} onPick={(id) => update((s) => ({ ...s, favorite: id }))} />
-      <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-        <Button ghost style={{ flex: 1 }} onClick={() => { setTrick((k) => k + 1); update((s) => bumpMission(s, 'trick')); }}>✨ {t('pw.trick')}</Button>
-        <Button ghost style={{ flex: 1 }} onClick={() => onShowDog(fav)}>👕 {t('pw.dressUp')}</Button>
-      </div>
+      <Wardrobe state={state} dogId={fav} update={update} onShop={onShop} />
 
       <Chests state={state} onOpenChest={onOpenChest} onChances={onChances} onStudy={onStudy} />
 
@@ -295,7 +301,7 @@ function Missions({ state }) {
 }
 
 function CoinChip({ n }) {
-  return <span style={{ fontSize: 12, fontWeight: 800, color: '#ffd27a', padding: '4px 9px', borderRadius: 99, background: 'rgba(245,165,36,.12)', border: '1px solid rgba(245,165,36,.3)', whiteSpace: 'nowrap', flex: 'none' }}>🪙 {n}</span>;
+  return <span style={{ fontSize: 12, fontWeight: 800, color: '#ffd27a', padding: '4px 9px', borderRadius: 99, background: 'rgba(245,165,36,.12)', border: '1px solid rgba(245,165,36,.3)', whiteSpace: 'nowrap', flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}><CoinIcon size={13} />{n}</span>;
 }
 
 function Calendar({ state, today, onClaim }) {
@@ -312,7 +318,7 @@ function Calendar({ state, today, onClaim }) {
           return (
             <div key={i} style={{ borderRadius: 12, padding: '7px 0 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: next ? 'rgba(139,109,255,.18)' : 'rgba(255,255,255,.04)', border: next ? '1.5px solid #8b6dff' : '1px solid rgba(255,255,255,.06)', opacity: done ? 0.45 : 1, position: 'relative' }}>
               <span style={{ fontSize: 10, fontWeight: 700, color: '#8a8a99' }}>{i + 1}</span>
-              {r.chest ? <ChestIcon type={r.chest} size={22} /> : <span style={{ fontSize: 15, lineHeight: '22px' }}>🪙</span>}
+              {r.chest ? <ChestIcon type={r.chest} size={22} /> : <span style={{ height: 22, display: 'grid', placeItems: 'center' }}><CoinIcon size={18} /></span>}
               <span style={{ fontSize: 9.5, fontWeight: 700, color: '#c9c9d6' }}>{r.coins || '×1'}</span>
               {done && <span style={{ position: 'absolute', top: 2, right: 3, fontSize: 10, color: '#35d07f' }}>✓</span>}
             </div>
@@ -406,14 +412,14 @@ function Shop({ pw }) {
           return (
             <div key={o.id} style={{ borderRadius: 18, padding: 12, background: 'rgba(255,255,255,.035)', border: o.deal ? '1.5px solid rgba(245,165,36,.6)' : '1px solid rgba(255,255,255,.07)', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               {o.deal && <span style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 99, background: '#f5a524', color: '#2a1300' }}>−50%</span>}
-              <div style={{ fontSize: 40, marginTop: 6 }}>{OUTFIT_ICON[o.id]}</div>
+              <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#c9d8f5', display: 'grid', placeItems: 'center', marginTop: 4 }}><OutfitPic id={o.id} size={54} /></div>
               <div style={{ fontSize: 13, fontWeight: 700, marginTop: 6, textAlign: 'center' }}>{t('pw.outfit.' + o.id)}</div>
               <div style={{ fontSize: 11, color: '#8a8a99', marginTop: 2 }}>{t('pw.slot.' + OUTFIT_BY_ID[o.id].slot)}</div>
               <Button
                 ghost={own} disabled={own || state.coins < o.price} style={{ height: 36, marginTop: 10, alignSelf: 'stretch', fontSize: 13 }}
                 onClick={() => buy((s) => buyOutfit(s, today, o.id), t('pw.shop.got', { name: t('pw.outfit.' + o.id) }))}
               >
-                {own ? t('pw.owned') : <>{o.deal && <s style={{ opacity: 0.6, fontWeight: 600 }}>{full}</s>} 🪙 {o.price}</>}
+                {own ? t('pw.owned') : <>{o.deal && <s style={{ opacity: 0.6, fontWeight: 600 }}>{full}</s>} <CoinIcon size={14} /> {o.price}</>}
               </Button>
             </div>
           );
@@ -424,7 +430,7 @@ function Shop({ pw }) {
           <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderTop: i ? '1px solid rgba(255,255,255,.06)' : 'none' }}>
             <ChestIcon type={type} size={44} />
             <div style={{ flex: 1, fontSize: 14, fontWeight: 700 }}>{t('pw.chest.' + type)}</div>
-            <Button disabled={state.coins < CHEST_PRICE[type]} style={{ height: 36, fontSize: 13 }} onClick={() => buy((s) => buyChest(s, type), t('pw.shop.gotChest'))}>🪙 {CHEST_PRICE[type]}</Button>
+            <Button disabled={state.coins < CHEST_PRICE[type]} style={{ height: 36, fontSize: 13 }} onClick={() => buy((s) => buyChest(s, type), t('pw.shop.gotChest'))}><CoinIcon size={14} /> {CHEST_PRICE[type]}</Button>
           </div>
         ))}
       </Card>

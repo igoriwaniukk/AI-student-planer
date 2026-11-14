@@ -1091,7 +1091,6 @@ export default {
   "pw.power": "{n} de poder",
   "pw.powerLabel": "Poder",
   "pw.trick": "Truco",
-  "pw.dressUp": "Vestir",
   "pw.chests": "Cofres",
   "pw.chances": "Probabilidades",
   "pw.chancesTitle": "Qué hay en los cofres",
@@ -1155,7 +1154,6 @@ export default {
   "pw.isFavorite": "Favorito",
   "pw.setFavorite": "Marcar como favorito",
   "pw.outfits": "Accesorios",
-  "pw.noOutfits": "Aún no tienes accesorios. Encuéntralos en cofres o cómpralos en la Tienda.",
   "pw.home.start": "Elige tu primer perro: los cofres te esperan",
   "pw.home.chests": "Cofres por abrir: {n}",
   "pw.toast.title": "¡+1 cofre por tu sesión!",
@@ -1209,4 +1207,6 @@ export default {
   "pw.nextChest": "PRÓXIMO COFRE",
   "pw.startSession": "Empezar una sesión",
   "pw.resetsIn": "Se renueva en {n} h",
+  "pw.wornCount": "Puestos: {n}",
+  "pw.none": "Nada",
 };

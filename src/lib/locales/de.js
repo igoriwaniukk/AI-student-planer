@@ -1091,7 +1091,6 @@ export default {
   "pw.power": "{n} Stärke",
   "pw.powerLabel": "Stärke",
   "pw.trick": "Trick",
-  "pw.dressUp": "Anziehen",
   "pw.chests": "Truhen",
   "pw.chances": "Chancen",
   "pw.chancesTitle": "Was in den Truhen steckt",
@@ -1155,7 +1154,6 @@ export default {
   "pw.isFavorite": "Liebling",
   "pw.setFavorite": "Als Liebling wählen",
   "pw.outfits": "Outfits",
-  "pw.noOutfits": "Noch keine Outfits. Du findest sie in Truhen oder kaufst sie im Shop.",
   "pw.home.start": "Wähle deinen ersten Hund – Truhen warten",
   "pw.home.chests": "Truhen zum Öffnen: {n}",
   "pw.toast.title": "+1 Truhe für deine Einheit!",
@@ -1209,4 +1207,6 @@ export default {
   "pw.nextChest": "NÄCHSTE TRUHE",
   "pw.startSession": "Einheit starten",
   "pw.resetsIn": "Neu in {n} Std.",
+  "pw.wornCount": "Angezogen: {n}",
+  "pw.none": "Nichts",
 };

@@ -1091,7 +1091,6 @@ export default {
   "pw.power": "パワー {n}",
   "pw.powerLabel": "パワー",
   "pw.trick": "芸",
-  "pw.dressUp": "着せ替え",
   "pw.chests": "宝箱",
   "pw.chances": "確率",
   "pw.chancesTitle": "宝箱の中身",
@@ -1155,7 +1154,6 @@ export default {
   "pw.isFavorite": "お気に入り",
   "pw.setFavorite": "お気に入りにする",
   "pw.outfits": "衣装",
-  "pw.noOutfits": "まだ衣装がありません。宝箱で見つけるか、ショップで買おう。",
   "pw.home.start": "最初の犬を選ぼう。宝箱が待っています",
   "pw.home.chests": "開けられる宝箱：{n}",
   "pw.toast.title": "勉強のごほうびに宝箱+1！",
@@ -1209,4 +1207,6 @@ export default {
   "pw.nextChest": "次の宝箱",
   "pw.startSession": "勉強を始める",
   "pw.resetsIn": "あと{n}時間で更新",
+  "pw.wornCount": "着用中 {n}",
+  "pw.none": "なし",
 };
