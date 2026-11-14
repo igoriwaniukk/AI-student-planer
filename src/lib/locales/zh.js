@@ -1147,7 +1147,7 @@ export default {
   "pw.res.set": "{breed}合集完成！获得金宝箱和 200 金币。",
   "pw.openNext": "打开下一个 · {n}",
   "pw.done": "完成",
-  "pw.spinHint": "拖动旋转",
+  "pw.tapHint": "点一下狗狗，它会跳起来",
   "pw.level": "等级",
   "pw.max": "满级",
   "pw.toNextStar": "升到下一颗星",

@@ -1147,7 +1147,7 @@ export default {
   "pw.res.set": "¡Colección completa: {breed}! Ganas un cofre de oro y 200 monedas.",
   "pw.openNext": "Abrir siguiente · {n}",
   "pw.done": "Listo",
-  "pw.spinHint": "Arrastra para girar",
+  "pw.tapHint": "Toca al perro para que salte",
   "pw.level": "Nivel",
   "pw.max": "Máx.",
   "pw.toNextStar": "para la siguiente estrella",

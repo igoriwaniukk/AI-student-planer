@@ -1147,7 +1147,7 @@ export default {
   "pw.res.set": "Collezione completa: {breed}! Un forziere d'oro e 200 monete sono tuoi.",
   "pw.openNext": "Apri il prossimo · {n}",
   "pw.done": "Fatto",
-  "pw.spinHint": "Trascina per ruotare",
+  "pw.tapHint": "Tocca il cane per farlo saltare",
   "pw.level": "Livello",
   "pw.max": "Max",
   "pw.toNextStar": "per la prossima stella",

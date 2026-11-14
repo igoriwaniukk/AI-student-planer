@@ -7,7 +7,7 @@ import {
   CALENDAR, CHEST_PRICE, MISSIONS, MISSION_COINS, canClaimCalendar, claimCalendar, collectionScore, dogPower, bumpMission,
   shopOffers, buyOutfit, buyChest, breedDogs, chooseStarter,
 } from '../../lib/pugWorld/logic.js';
-import Dog3D from './Dog3D';
+import Dog2D from './Dog2D';
 import DogThumb from './DogThumb';
 import ChestIcon from './Chest';
 import { CHEST_COLORS } from './theme';
@@ -22,6 +22,8 @@ import { PURPLE } from './theme';
 // tabs: My dogs · Album · Shop · Friends (coming next).
 const TABS = [['dogs', '🐶'], ['album', '📖'], ['shop', '🛍️'], ['friends', '👥']];
 const CHEST_ORDER = ['epic', 'gold', 'silver', 'small'];
+// Album cards: light, in the rarity's colour (the dogs are stickers).
+const TILE = { common: '#c9d8f5', rare: '#bfe0ff', epic: '#dccbff', legendary: '#ffe7a8' };
 
 export default function PugWorld({ pw, onClose }) {
   const { t } = useLang();
@@ -78,7 +80,7 @@ function Starter({ onPick, onClose }) {
           <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-.02em' }}>{t('pw.start.title')}</div>
           <div style={{ fontSize: 13.5, color: '#a3a3b3', marginTop: 6, lineHeight: 1.45 }}>{t('pw.start.sub')}</div>
         </div>
-        <Stage height={270}><Dog3D dogId={pick} /></Stage>
+        <Stage height={270}><Dog2D dogId={pick} /></Stage>
         <div style={{ textAlign: 'center', fontSize: 18, fontWeight: 750 }}>{dogName(t, pick)}</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginTop: 16 }}>
           {STARTERS.map((id) => (
@@ -107,7 +109,7 @@ function MyDogs({ pw, hideStage, onOpenChest, onShowDog, onChances }) {
   const today = localDateKey();
   return (
     <>
-      <Stage height={280}>{!hideStage && <Dog3D dogId={fav} worn={state.outfits.worn[fav]} trickKey={trick} />}</Stage>
+      <Stage height={280}>{!hideStage && <Dog2D dogId={fav} worn={state.outfits.worn[fav]} trickKey={trick} />}</Stage>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 19, fontWeight: 800 }}>{dogName(t, fav)}</span>
         <RarityPill rarity={DOG_BY_ID[fav].rarity} />
@@ -242,13 +244,13 @@ function Album({ state, onShowDog, onChances }) {
           const have = state.dogs[d.id];
           const c = RARITY_COLOR[d.rarity];
           return (
-            <div key={d.id} onClick={have ? () => onShowDog(d.id) : undefined} style={{ borderRadius: 16, padding: '6px 4px 9px', background: have ? `linear-gradient(180deg, ${c}1f, rgba(255,255,255,.03))` : 'rgba(255,255,255,.025)', border: `1px solid ${have ? c + '66' : 'rgba(255,255,255,.06)'}`, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: have ? 'pointer' : 'default', position: 'relative' }}>
+            <div key={d.id} onClick={have ? () => onShowDog(d.id) : undefined} style={{ borderRadius: 16, padding: '6px 4px 9px', background: TILE[d.rarity], opacity: have ? 1 : 0.8, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: have ? 'pointer' : 'default', position: 'relative' }}>
               <div style={{ position: 'relative' }}>
                 <DogThumb dogId={d.id} silhouette={!have} size={84} />
-                {!have && <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 24, fontWeight: 800, color: '#8a86a8' }}>?</span>}
+                {!have && <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 26, fontWeight: 900, color: '#fff' }}>?</span>}
               </div>
-              <div style={{ fontSize: 11, fontWeight: 700, textAlign: 'center', lineHeight: 1.25, minHeight: 28, display: 'flex', alignItems: 'center', padding: '0 2px', color: have ? '#f4f4f7' : '#6a6a7c' }}>{have ? dogName(t, d.id) : '???'}</div>
-              {have ? <Stars level={have.level} size={11} /> : <span style={{ width: 7, height: 7, borderRadius: '50%', background: c, marginTop: 3 }} />}
+              <div style={{ fontSize: 11, fontWeight: 750, textAlign: 'center', lineHeight: 1.25, minHeight: 28, display: 'flex', alignItems: 'center', padding: '0 2px', color: '#2a2440' }}>{have ? dogName(t, d.id) : '???'}</div>
+              {have ? <Stars level={have.level} size={11} dim="#8a8aa6" /> : <span style={{ width: 7, height: 7, borderRadius: '50%', background: c, marginTop: 3 }} />}
             </div>
           );
         })}

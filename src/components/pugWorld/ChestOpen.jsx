@@ -3,7 +3,7 @@ import { useLang } from '../../lib/useLang';
 import { DOG_BY_ID, OUTFIT_ICON, RARITY_COLOR, RARITIES } from '../../lib/pugWorld/catalog.js';
 import { CHEST_ODDS, LEVEL_COPIES, openChest } from '../../lib/pugWorld/logic.js';
 import { isNativeApp, postToApp } from '../../lib/nativeBridge';
-import Dog3D from './Dog3D';
+import Dog2D from './Dog2D';
 import ChestIcon from './Chest';
 import { CHEST_COLORS } from './theme';
 import { dogName } from './names';
@@ -13,8 +13,7 @@ import { RarityPill, Stars, Button } from './bits';
 // glowing in the colour of what's inside → the lid bursts open with a flash
 // and light rays → the dog jumps out, with what it means (new dog, a copy
 // towards the next level, a level up, or coins when it's already at max
-// level), the coins, and an outfit or set reward. The 3D dog loads while
-// the chest shakes, so it's there the moment the lid opens.
+// level), the coins, and an outfit or set reward.
 const KEYFRAMES = `
 @keyframes pwShake{0%{transform:rotate(0) scale(1)}12%{transform:rotate(-3deg) scale(1.02)}25%{transform:rotate(3deg) scale(1.03)}38%{transform:rotate(-5deg) scale(1.05)}51%{transform:rotate(5deg) scale(1.06)}64%{transform:rotate(-7deg) scale(1.08)}77%{transform:rotate(7deg) scale(1.1)}90%{transform:rotate(-4deg) scale(1.12)}100%{transform:rotate(0) scale(1.14)}}
 @keyframes pwPop{0%{transform:scale(1.14);opacity:1}30%{transform:scale(1.32);opacity:1}100%{transform:scale(.7) translateY(50px);opacity:0}}
@@ -37,7 +36,7 @@ const SPARKS = Array.from({ length: 14 }, (_, i) => {
 export default function ChestOpen({ pw, chestId, onNext, onClose }) {
   const { t } = useLang();
   // What's inside is decided when the chest is shown (and only saved on the
-  // tap), so the 3D dog can load quietly before the animation starts.
+  // tap), so the dog is ready before the animation starts.
   const [pre] = useState(() => openChest(pw.state, chestId));
   const [phase, setPhase] = useState('closed'); // closed → shake → burst → reveal
   const [dogReady, setDogReady] = useState(false);
@@ -120,7 +119,7 @@ function Reveal({ res, c, revealed, happy, onDogReady, nextChest, onNext, onClos
         <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '.16em', color: c }}>{t(headline)}</div>
       </div>
       <div style={{ flex: 1, minHeight: 240, position: 'relative', opacity: revealed ? 1 : 0, animation: revealed ? 'pwDogIn .55s ease-out both' : 'none' }}>
-        <Dog3D dogId={res.dog} worn={res.state.outfits.worn[res.dog]} happyKey={happy} onReady={onDogReady} />
+        <Dog2D dogId={res.dog} worn={res.state.outfits.worn[res.dog]} happyKey={happy} onReady={onDogReady} />
       </div>
       <div style={{ padding: '0 20px', textAlign: 'center' }}>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, flexWrap: 'wrap', ...up(1) }}>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLang } from '../../lib/useLang';
 import { DOG_BY_ID, OUTFITS, OUTFIT_ICON, RARITY_COLOR } from '../../lib/pugWorld/catalog.js';
 import { LEVEL_COPIES, MAX_LEVEL, dogPower, dogPerk, toggleOutfit, bumpMission } from '../../lib/pugWorld/logic.js';
-import Dog3D from './Dog3D';
+import Dog2D from './Dog2D';
 import { dogName } from './names';
 import { RarityPill, Stars, Button, TopBar, Stage } from './bits';
 import { CARD, PURPLE } from './theme';
@@ -26,8 +26,8 @@ export default function DogShowcase({ pw, dogId, onClose }) {
     <div style={{ position: 'absolute', inset: 0, zIndex: 5, background: '#08080c', display: 'flex', flexDirection: 'column', paddingTop: 'var(--top-pad)', animation: 'fadeUp .2s ease both' }}>
       <TopBar title={dogName(t, dogId)} onBack={onClose} back="‹" />
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px calc(var(--safe-bottom) + 24px)' }}>
-        <Stage height={300} color={c}><Dog3D dogId={dogId} worn={worn} trickKey={trick} /></Stage>
-        <div style={{ textAlign: 'center', fontSize: 11.5, color: '#77778a', marginTop: -6 }}>{t('pw.spinHint')}</div>
+        <Stage height={300} color={c}><Dog2D dogId={dogId} worn={worn} trickKey={trick} /></Stage>
+        <div style={{ textAlign: 'center', fontSize: 11.5, color: '#77778a', marginTop: -6 }}>{t('pw.tapHint')}</div>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 10 }}>
           <RarityPill rarity={dog.rarity} />
           <Stars level={have.level} size={16} />

@@ -1147,7 +1147,7 @@ export default {
   "pw.res.set": "Collection complète : {breed} ! Un coffre d'or et 200 pièces pour toi.",
   "pw.openNext": "Ouvrir le suivant · {n}",
   "pw.done": "Terminé",
-  "pw.spinHint": "Fais glisser pour tourner",
+  "pw.tapHint": "Touche le chien pour le faire sauter",
   "pw.level": "Niveau",
   "pw.max": "Max",
   "pw.toNextStar": "avant la prochaine étoile",
