@@ -1205,4 +1205,8 @@ export default {
   "pw.outfit.bowtie": "领结",
   "pw.outfit.scarf": "围巾",
   "pw.outfit.bandana": "方巾",
+  "pw.readyToOpen": "可以打开",
+  "pw.nextChest": "下一个宝箱",
+  "pw.startSession": "开始学习",
+  "pw.resetsIn": "{n} 小时后更新",
 };

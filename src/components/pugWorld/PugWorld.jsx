@@ -14,8 +14,8 @@ import { CHEST_COLORS } from './theme';
 import ChestOpen, { ChancesSheet } from './ChestOpen';
 import DogShowcase from './DogShowcase';
 import { dogName } from './names';
-import { Card, RarityPill, Stars, Coins, Button, TopBar, CoinPill, Stage } from './bits';
-import { PURPLE } from './theme';
+import { Card, RarityPill, Stars, Button, TopBar, CoinPill, Stage } from './bits';
+import { PURPLE, CARD } from './theme';
 
 // Pug World: the dog collection game. Studying earns chests, chests hold
 // dogs (and coins, sometimes outfits). Full screen over the app with its own
@@ -45,7 +45,7 @@ export default function PugWorld({ pw, onClose }) {
           <>
             <TopBar title={t('pw.tab.' + tab)} onBack={onClose} right={<CoinPill n={state.coins} />} />
             <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 28px' }}>
-              {tab === 'dogs' && <MyDogs pw={pw} hideStage={!!overlay} onOpenChest={setOpening} onShowDog={setShowDog} onChances={() => setChances(true)} />}
+              {tab === 'dogs' && <MyDogs pw={pw} hideStage={!!overlay} onOpenChest={setOpening} onShowDog={setShowDog} onChances={() => setChances(true)} onStudy={onClose} />}
               {tab === 'album' && <Album state={state} onShowDog={setShowDog} onChances={() => setChances(true)} />}
               {tab === 'shop' && <Shop pw={pw} />}
               {tab === 'friends' && <Friends />}
@@ -99,7 +99,7 @@ function Starter({ onPick, onClose }) {
 }
 
 // ---------- My dogs: the favourite on stage, chests, missions, calendar ----------
-function MyDogs({ pw, hideStage, onOpenChest, onShowDog, onChances }) {
+function MyDogs({ pw, hideStage, onOpenChest, onShowDog, onChances, onStudy }) {
   const { t } = useLang();
   const { state, update } = pw;
   const fav = state.favorite && state.dogs[state.favorite] ? state.favorite : Object.keys(state.dogs)[0];
@@ -123,29 +123,7 @@ function MyDogs({ pw, hideStage, onOpenChest, onShowDog, onChances }) {
         <Button ghost style={{ flex: 1 }} onClick={() => onShowDog(fav)}>👕 {t('pw.dressUp')}</Button>
       </div>
 
-      <Card title={t('pw.chests')} right={<span onClick={onChances} style={{ fontSize: 12.5, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('pw.chances')}</span>}>
-        {state.chests.length ? (
-          <div style={{ display: 'flex', gap: 10, overflowX: 'auto' }}>
-            {CHEST_ORDER.map((type) => {
-              const list = state.chests.filter((c) => c.type === type);
-              if (!list.length) return null;
-              return (
-                <div key={type} onClick={() => onOpenChest(list[0].id)} style={{ flex: '0 0 auto', minWidth: 88, padding: '10px 8px 9px', borderRadius: 16, background: 'rgba(255,255,255,.04)', border: `1px solid ${CHEST_COLORS[type].band}88`, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer', position: 'relative' }}>
-                  {list.length > 1 && <span style={{ position: 'absolute', top: 6, right: 6, fontSize: 11, fontWeight: 800, padding: '1px 6px', borderRadius: 99, background: '#ff5f6d' }}>{list.length}</span>}
-                  <ChestIcon type={type} size={50} />
-                  <div style={{ fontSize: 11.5, fontWeight: 700, marginTop: 4 }}>{t('pw.chest.' + type)}</div>
-                  <div style={{ fontSize: 11, color: '#a58cff', fontWeight: 700, marginTop: 2 }}>{t('pw.open')}</div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            <ChestIcon type="small" size={42} style={{ opacity: 0.45, filter: 'grayscale(1)' }} />
-            <div style={{ fontSize: 13, color: '#a3a3b3', lineHeight: 1.45 }}>{t('pw.noChests')}</div>
-          </div>
-        )}
-      </Card>
+      <Chests state={state} onOpenChest={onOpenChest} onChances={onChances} onStudy={onStudy} />
 
       <Missions state={state} />
       <Calendar state={state} today={today} onClaim={() => update((s) => claimCalendar(s, today).state)} />
@@ -164,34 +142,110 @@ function MyDogs({ pw, hideStage, onOpenChest, onShowDog, onChances }) {
   );
 }
 
+// Chests: a big card for the best chest waiting (or, with none, how to win
+// one), then how many of each kind there are.
+function Chests({ state, onOpenChest, onChances, onStudy }) {
+  const { t } = useLang();
+  const count = (type) => state.chests.filter((c) => c.type === type).length;
+  const total = state.chests.length;
+  const best = CHEST_ORDER.find((type) => count(type)) || null;
+  const type = best || 'small';
+  const col = CHEST_COLORS[type];
+  const openType = (ty) => { const c = state.chests.find((x) => x.type === ty); if (c) onOpenChest(c.id); };
+  const R = 48, LEN = 2 * Math.PI * R;
+  return (
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '20px 2px 10px' }}>
+        <div style={{ fontSize: 15, fontWeight: 750 }}>{t('pw.chests')}</div>
+        <span onClick={onChances} style={{ fontSize: 12.5, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('pw.chances')}</span>
+      </div>
+      <div style={{ padding: 16, borderRadius: 20, border: '1px solid rgba(139,109,255,.35)', background: 'radial-gradient(circle at 22% 45%, rgba(139,109,255,.3), transparent 62%), #100d1c', display: 'flex', gap: 14, alignItems: 'center' }}>
+        <div style={{ position: 'relative', width: 112, height: 112, flex: 'none', display: 'grid', placeItems: 'center' }}>
+          <svg width="112" height="112" viewBox="0 0 112 112" style={{ position: 'absolute', inset: 0 }}>
+            <circle cx="56" cy="56" r={R} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="6" />
+            {best && <circle cx="56" cy="56" r={R} fill="none" stroke={col.lid} strokeWidth="6" strokeDasharray={`${LEN} ${LEN}`} opacity=".9" />}
+            {!best && <circle cx="56" cy="56" r={R} fill="none" stroke="rgba(165,140,255,.45)" strokeWidth="2" strokeDasharray="4 7" />}
+          </svg>
+          <ChestIcon type={type} size={70} locked={!best} />
+          {total > 1 && <span style={{ position: 'absolute', top: 4, right: 4, fontSize: 12, fontWeight: 800, padding: '2px 8px', borderRadius: 99, background: '#ff5f6d' }}>{total}</span>}
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', color: '#c9baff' }}>{t(best ? 'pw.readyToOpen' : 'pw.nextChest')}</div>
+          <div style={{ fontSize: 17, fontWeight: 800, marginTop: 3 }}>{t('pw.chest.' + type)}</div>
+          <div style={{ fontSize: 12.5, color: '#b9b9c8', marginTop: 4, lineHeight: 1.4 }}>{best ? t('pw.home.chests', { n: total }) : t('pw.noChests')}</div>
+          <Button onClick={best ? () => openType(best) : onStudy} style={{ marginTop: 10, height: 38, fontSize: 13.5, borderRadius: 12 }}>{t(best ? 'pw.open' : 'pw.startSession')}</Button>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginTop: 10 }}>
+        {['small', 'silver', 'gold', 'epic'].map((ty) => {
+          const n = count(ty);
+          return (
+            <div key={ty} onClick={n ? () => openType(ty) : undefined} style={{ ...CARD, padding: '8px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: n ? 'pointer' : 'default' }}>
+              <ChestIcon type={ty} size={26} locked={!n} />
+              <span style={{ fontSize: 13, fontWeight: 800, color: n ? '#fff' : '#5f5f72' }}>×{n}</span>
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+const MISSION_ICON = { session: '📖', session2: '📚', chest: '🎁', chest2: '🎁', dress: '👕', plan: '🗓️', trick: '✨', album: '📒' };
+function ProgressBar({ pct, done }) {
+  return (
+    <div style={{ height: 4, borderRadius: 9, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
+      <div style={{ width: pct + '%', height: '100%', borderRadius: 9, background: done ? '#35d07f' : PURPLE }} />
+    </div>
+  );
+}
+
+// Today's 3 missions with their progress, and the silver chest for all 3.
 function Missions({ state }) {
   const { t } = useLang();
   const items = state.missions.items || [];
   if (!items.length) return null;
+  const now = new Date();
+  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+  const hours = Math.max(1, Math.ceil((midnight - now) / 3600000));
+  const doneCount = items.filter((m) => m.done).length;
   return (
-    <Card title={t('pw.missions')} right={<span style={{ fontSize: 12, color: '#8a8a99' }}>{t('pw.missionsReset')}</span>}>
+    <Card title={t('pw.missions')} right={<span style={{ fontSize: 12, color: '#8a8a99' }}>{t('pw.resetsIn', { n: hours })}</span>}>
       {items.map((m, i) => {
         const [ev, n] = MISSIONS[m.id] || ['', 1];
-        const have = Math.min(n, state.missions.counts[ev] || 0);
+        const have = m.done ? n : Math.min(n, state.missions.counts[ev] || 0);
         return (
-          <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '10px 0', borderTop: i ? '1px solid rgba(255,255,255,.06)' : 'none' }}>
-            <span style={{ width: 22, height: 22, borderRadius: '50%', flex: 'none', display: 'grid', placeItems: 'center', ...(m.done ? { background: '#35d07f' } : { border: '2px solid #44445a', boxSizing: 'border-box' }) }}>
-              {m.done && <svg width="11" height="9" viewBox="0 0 13 11" fill="none"><path d="M1 5.6L4.6 9.4 12 1.6" stroke="#0b2a18" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" /></svg>}
-            </span>
+          <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '10px 0', borderTop: i ? '1px solid rgba(255,255,255,.06)' : 'none', marginTop: i ? 0 : -4 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 11, background: 'rgba(255,255,255,.06)', display: 'grid', placeItems: 'center', fontSize: 17, flex: 'none' }}>{MISSION_ICON[m.id] || '⭐'}</div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13.5, fontWeight: 650, color: m.done ? '#8a8a99' : '#f4f4f7' }}>{t('pw.mission.' + m.id)}</div>
-              {n > 1 && !m.done && <div style={{ fontSize: 11.5, color: '#8a8a99', marginTop: 2 }}>{have}/{n}</div>}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+                <div style={{ flex: 1 }}><ProgressBar pct={(have / n) * 100} done={m.done} /></div>
+                <span style={{ fontSize: 11, color: '#8a8a99', fontWeight: 700 }}>{have}/{n}</span>
+              </div>
             </div>
-            <Coins n={'+' + MISSION_COINS} size={12.5} />
+            <CoinChip n={'+' + MISSION_COINS} />
           </div>
         );
       })}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, padding: '10px 12px', borderRadius: 14, background: state.missions.bonus ? 'rgba(53,208,127,.08)' : 'rgba(255,255,255,.04)' }}>
-        <ChestIcon type="silver" size={28} />
-        <div style={{ flex: 1, fontSize: 12.5, color: state.missions.bonus ? '#7fe3ad' : '#b9b9c8', fontWeight: 600 }}>{t(state.missions.bonus ? 'pw.missionsBonusDone' : 'pw.missionsBonus')}</div>
+        <ChestIcon type="silver" size={30} glow={false} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 12.5, fontWeight: 700, color: state.missions.bonus ? '#7fe3ad' : '#d9d9e6' }}>{t(state.missions.bonus ? 'pw.missionsBonusDone' : 'pw.missionsBonus')}</div>
+          {!state.missions.bonus && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+              <div style={{ flex: 1 }}><ProgressBar pct={(doneCount / items.length) * 100} /></div>
+              <span style={{ fontSize: 11, color: '#8a8a99', fontWeight: 700 }}>{doneCount}/{items.length}</span>
+            </div>
+          )}
+        </div>
       </div>
     </Card>
   );
+}
+
+function CoinChip({ n }) {
+  return <span style={{ fontSize: 12, fontWeight: 800, color: '#ffd27a', padding: '4px 9px', borderRadius: 99, background: 'rgba(245,165,36,.12)', border: '1px solid rgba(245,165,36,.3)', whiteSpace: 'nowrap', flex: 'none' }}>🪙 {n}</span>;
 }
 
 function Calendar({ state, today, onClaim }) {

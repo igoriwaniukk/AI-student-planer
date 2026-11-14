@@ -1205,4 +1205,8 @@ export default {
   "pw.outfit.bowtie": "蝶ネクタイ",
   "pw.outfit.scarf": "マフラー",
   "pw.outfit.bandana": "バンダナ",
+  "pw.readyToOpen": "開けられます",
+  "pw.nextChest": "次の宝箱",
+  "pw.startSession": "勉強を始める",
+  "pw.resetsIn": "あと{n}時間で更新",
 };

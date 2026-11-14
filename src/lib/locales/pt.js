@@ -1205,4 +1205,8 @@ export default {
   "pw.outfit.bowtie": "Gravata-borboleta",
   "pw.outfit.scarf": "Cachecol",
   "pw.outfit.bandana": "Bandana",
+  "pw.readyToOpen": "PRONTO PARA ABRIR",
+  "pw.nextChest": "PRÓXIMO BAÚ",
+  "pw.startSession": "Começar uma sessão",
+  "pw.resetsIn": "Renova em {n} h",
 };
