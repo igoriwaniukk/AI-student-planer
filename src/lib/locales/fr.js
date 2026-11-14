@@ -1205,4 +1205,8 @@ export default {
   "pw.outfit.bowtie": "Nœud papillon",
   "pw.outfit.scarf": "Écharpe",
   "pw.outfit.bandana": "Bandana",
+  "pw.readyToOpen": "PRÊT À OUVRIR",
+  "pw.nextChest": "PROCHAIN COFFRE",
+  "pw.startSession": "Commencer une séance",
+  "pw.resetsIn": "Renouvelé dans {n} h",
 };

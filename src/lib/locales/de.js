@@ -1205,4 +1205,8 @@ export default {
   "pw.outfit.bowtie": "Fliege",
   "pw.outfit.scarf": "Schal",
   "pw.outfit.bandana": "Halstuch",
+  "pw.readyToOpen": "BEREIT ZUM ÖFFNEN",
+  "pw.nextChest": "NÄCHSTE TRUHE",
+  "pw.startSession": "Einheit starten",
+  "pw.resetsIn": "Neu in {n} Std.",
 };
