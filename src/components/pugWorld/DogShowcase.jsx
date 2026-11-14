@@ -46,7 +46,11 @@ export default function DogShowcase({ pw, dogId, onClose }) {
 
         <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
           <Button ghost style={{ flex: 1 }} onClick={() => { setTrick((k) => k + 1); update((s) => bumpMission(s, 'trick')); }}>✨ {t('pw.trick')}</Button>
-          <Button ghost={fav} style={{ flex: 1 }} onClick={() => update((s) => ({ ...s, favorite: dogId }))}>{fav ? '★ ' + t('pw.isFavorite') : '☆ ' + t('pw.setFavorite')}</Button>
+          {fav ? (
+            <div style={{ flex: 1, height: 46, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14.5, fontWeight: 700, color: '#ffd27a', background: 'rgba(245,165,36,.1)', border: '1px solid rgba(245,165,36,.35)' }}>★ {t('pw.isFavorite')}</div>
+          ) : (
+            <Button style={{ flex: 1 }} onClick={() => update((s) => ({ ...s, favorite: dogId }))}>☆ {t('pw.setFavorite')}</Button>
+          )}
         </div>
 
         <div style={{ ...CARD, marginTop: 14 }}>
