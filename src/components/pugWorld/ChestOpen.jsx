@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLang } from '../../lib/useLang';
-import { DOG_BY_ID, OUTFIT_ICON, RARITY_COLOR, RARITIES } from '../../lib/pugWorld/catalog.js';
+import { DOG_BY_ID, RARITY_COLOR, RARITIES } from '../../lib/pugWorld/catalog.js';
 import { CHEST_ODDS, LEVEL_COPIES, openChest } from '../../lib/pugWorld/logic.js';
 import { isNativeApp, postToApp } from '../../lib/nativeBridge';
 import Dog2D from './Dog2D';
+import { CoinIcon, OutfitPic } from './icons';
 import ChestIcon from './Chest';
 import { CHEST_COLORS } from './theme';
 import { dogName } from './names';
@@ -129,8 +130,8 @@ function Reveal({ res, c, revealed, happy, onDogReady, nextChest, onNext, onClos
         <div style={{ marginTop: 6, ...up(2) }}><Stars level={have.level} size={16} /></div>
         {detail && <div style={{ fontSize: 13.5, color: '#b9b9c8', marginTop: 6, ...up(2) }}>{detail}</div>}
         <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 14, flexWrap: 'wrap', ...up(3) }}>
-          <Reward>🪙 +{res.coins}</Reward>
-          {res.outfit && <Reward>{OUTFIT_ICON[res.outfit]} {t('pw.outfit.' + res.outfit)}</Reward>}
+          <Reward><CoinIcon size={15} /> +{res.coins}</Reward>
+          {res.outfit && <Reward><OutfitPic id={res.outfit} size={22} /> {t('pw.outfit.' + res.outfit)}</Reward>}
         </div>
         {res.set && (
           <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 14, background: 'rgba(53,208,127,.1)', border: '1px solid rgba(53,208,127,.35)', fontSize: 13, color: '#8ff0bf', fontWeight: 650, ...up(4) }}>
@@ -147,7 +148,7 @@ function Reveal({ res, c, revealed, happy, onDogReady, nextChest, onNext, onClos
 }
 
 function Reward({ children }) {
-  return <span style={{ fontSize: 13.5, fontWeight: 750, padding: '7px 12px', borderRadius: 99, background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.1)' }}>{children}</span>;
+  return <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 750, padding: '7px 12px', borderRadius: 99, background: 'rgba(255,255,255,.07)', border: '1px solid rgba(255,255,255,.1)' }}>{children}</span>;
 }
 
 // What each chest can hold, in percent (shown openly, as App Store rules ask

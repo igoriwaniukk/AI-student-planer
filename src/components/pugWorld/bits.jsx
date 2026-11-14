@@ -2,6 +2,7 @@ import { RARITY_COLOR } from '../../lib/pugWorld/catalog.js';
 import { MAX_LEVEL } from '../../lib/pugWorld/logic.js';
 import { useLang } from '../../lib/useLang';
 import { CARD, PURPLE } from './theme';
+import { CoinIcon } from './icons';
 
 // Small shared pieces of the Pug World screens.
 
@@ -38,7 +39,7 @@ export function Stars({ level, size = 13, dim = '#3a3a4a' }) {
 }
 
 export function Coins({ n, size = 13 }) {
-  return <span style={{ fontSize: size, fontWeight: 750, whiteSpace: 'nowrap' }}>🪙 {n}</span>;
+  return <span style={{ fontSize: size, fontWeight: 750, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: 4 }}><CoinIcon size={size + 2} />{n}</span>;
 }
 
 export function Button({ children, onClick, disabled, ghost, style }) {
@@ -70,13 +71,13 @@ export function TopBar({ title, onBack, right, back = '✕' }) {
 
 export function CoinPill({ n }) {
   return (
-    <div style={{ height: 32, padding: '0 12px', borderRadius: 99, background: 'rgba(245,165,36,.12)', border: '1px solid rgba(245,165,36,.35)', display: 'flex', alignItems: 'center', fontSize: 13.5, fontWeight: 800, color: '#ffd27a', flex: 'none' }}>
-      🪙 {n}
+    <div style={{ height: 32, padding: '0 12px', borderRadius: 99, background: 'rgba(245,165,36,.12)', border: '1px solid rgba(245,165,36,.35)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 800, color: '#ffd27a', flex: 'none' }}>
+      <CoinIcon size={17} />{n}
     </div>
   );
 }
 
-// The round glowing floor under a 3D dog.
+// The round glowing floor under the big dog.
 export function Stage({ children, height = 290, color = '#8b6dff' }) {
   return (
     <div style={{ position: 'relative', height, margin: '0 -16px' }}>

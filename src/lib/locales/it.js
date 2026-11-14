@@ -1091,7 +1091,6 @@ export default {
   "pw.power": "{n} di potenza",
   "pw.powerLabel": "Potenza",
   "pw.trick": "Trucco",
-  "pw.dressUp": "Vesti",
   "pw.chests": "Forzieri",
   "pw.chances": "Probabilità",
   "pw.chancesTitle": "Cosa c'è nei forzieri",
@@ -1155,7 +1154,6 @@ export default {
   "pw.isFavorite": "Preferito",
   "pw.setFavorite": "Imposta come preferito",
   "pw.outfits": "Accessori",
-  "pw.noOutfits": "Ancora nessun accessorio. Trovali nei forzieri o comprali nel Negozio.",
   "pw.home.start": "Scegli il tuo primo cane: i forzieri ti aspettano",
   "pw.home.chests": "Forzieri da aprire: {n}",
   "pw.toast.title": "+1 forziere per la tua sessione!",
@@ -1209,4 +1207,6 @@ export default {
   "pw.nextChest": "PROSSIMO FORZIERE",
   "pw.startSession": "Inizia una sessione",
   "pw.resetsIn": "Si rinnova tra {n} h",
+  "pw.wornCount": "Indossati: {n}",
+  "pw.none": "Niente",
 };

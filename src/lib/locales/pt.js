@@ -1091,7 +1091,6 @@ export default {
   "pw.power": "{n} de poder",
   "pw.powerLabel": "Poder",
   "pw.trick": "Truque",
-  "pw.dressUp": "Vestir",
   "pw.chests": "Baús",
   "pw.chances": "Chances",
   "pw.chancesTitle": "O que há nos baús",
@@ -1155,7 +1154,6 @@ export default {
   "pw.isFavorite": "Favorito",
   "pw.setFavorite": "Definir como favorito",
   "pw.outfits": "Acessórios",
-  "pw.noOutfits": "Ainda sem acessórios. Encontre nos baús ou compre na Loja.",
   "pw.home.start": "Escolha seu primeiro cão — os baús estão esperando",
   "pw.home.chests": "Baús para abrir: {n}",
   "pw.toast.title": "+1 baú pela sua sessão!",
@@ -1209,4 +1207,6 @@ export default {
   "pw.nextChest": "PRÓXIMO BAÚ",
   "pw.startSession": "Começar uma sessão",
   "pw.resetsIn": "Renova em {n} h",
+  "pw.wornCount": "Usando: {n}",
+  "pw.none": "Nada",
 };

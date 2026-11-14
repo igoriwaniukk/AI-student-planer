@@ -1091,7 +1091,6 @@ export default {
   "pw.power": "{n} de puissance",
   "pw.powerLabel": "Puissance",
   "pw.trick": "Tour",
-  "pw.dressUp": "Habiller",
   "pw.chests": "Coffres",
   "pw.chances": "Probabilités",
   "pw.chancesTitle": "Ce que contiennent les coffres",
@@ -1155,7 +1154,6 @@ export default {
   "pw.isFavorite": "Favori",
   "pw.setFavorite": "Mettre en favori",
   "pw.outfits": "Tenues",
-  "pw.noOutfits": "Pas encore de tenues. Trouve-les dans les coffres ou achète-les à la Boutique.",
   "pw.home.start": "Choisis ton premier chien — des coffres t'attendent",
   "pw.home.chests": "Coffres à ouvrir : {n}",
   "pw.toast.title": "+1 coffre pour ta séance !",
@@ -1209,4 +1207,6 @@ export default {
   "pw.nextChest": "PROCHAIN COFFRE",
   "pw.startSession": "Commencer une séance",
   "pw.resetsIn": "Renouvelé dans {n} h",
+  "pw.wornCount": "Portés : {n}",
+  "pw.none": "Aucun",
 };

@@ -1091,7 +1091,6 @@ export default {
   "pw.power": "战力 {n}",
   "pw.powerLabel": "战力",
   "pw.trick": "才艺",
-  "pw.dressUp": "装扮",
   "pw.chests": "宝箱",
   "pw.chances": "概率",
   "pw.chancesTitle": "宝箱里有什么",
@@ -1155,7 +1154,6 @@ export default {
   "pw.isFavorite": "最爱",
   "pw.setFavorite": "设为最爱",
   "pw.outfits": "装扮",
-  "pw.noOutfits": "还没有装扮。可以在宝箱里找到，或在商店购买。",
   "pw.home.start": "选择你的第一只狗狗——宝箱在等你",
   "pw.home.chests": "待打开的宝箱：{n}",
   "pw.toast.title": "学习奖励 +1 宝箱！",
@@ -1209,4 +1207,6 @@ export default {
   "pw.nextChest": "下一个宝箱",
   "pw.startSession": "开始学习",
   "pw.resetsIn": "{n} 小时后更新",
+  "pw.wornCount": "已穿戴 {n} 件",
+  "pw.none": "无",
 };
