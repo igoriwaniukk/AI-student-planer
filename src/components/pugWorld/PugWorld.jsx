@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AppShellPortal } from '../ui';
 import { useLang } from '../../lib/useLang';
 import { localDateKey } from '../../lib/plannerLogic';
-import { DOGS, DOG_BY_ID, BREED_IDS, STARTERS, OUTFIT_BY_ID, OUTFIT_ICON, RARITY_COLOR } from '../../lib/pugWorld/catalog.js';
+import { DOGS, DOG_BY_ID, BREED_IDS, STARTERS, OUTFIT_BY_ID, OUTFIT_ICON, RARITY_COLOR, RARITIES } from '../../lib/pugWorld/catalog.js';
 import {
   CALENDAR, CHEST_PRICE, MISSIONS, MISSION_COINS, canClaimCalendar, claimCalendar, collectionScore, dogPower, bumpMission,
   shopOffers, buyOutfit, buyChest, breedDogs, chooseStarter,
@@ -20,7 +20,33 @@ import { PURPLE, CARD } from './theme';
 // Pug World: the dog collection game. Studying earns chests, chests hold
 // dogs (and coins, sometimes outfits). Full screen over the app with its own
 // tabs: My dogs · Album · Shop · Friends (coming next).
-const TABS = [['dogs', '🐶'], ['album', '📖'], ['shop', '🛍️'], ['friends', '👥']];
+// Line icons like the app's own tab bar (no emoji).
+const TABS = [
+  ['dogs', (c) => (
+    <>
+      <ellipse cx="11" cy="14.4" rx="4.4" ry="3.6" stroke={c} strokeWidth="1.5" />
+      <circle cx="5.6" cy="9.4" r="1.7" stroke={c} strokeWidth="1.5" />
+      <circle cx="9" cy="6" r="1.8" stroke={c} strokeWidth="1.5" />
+      <circle cx="13" cy="6" r="1.8" stroke={c} strokeWidth="1.5" />
+      <circle cx="16.4" cy="9.4" r="1.7" stroke={c} strokeWidth="1.5" />
+    </>
+  )],
+  ['album', (c) => <path d="M11 5.8C9 4.4 6 4 3.2 4.6v12.2c2.8-.6 5.8-.2 7.8 1.2 2-1.4 5-1.8 7.8-1.2V4.6C16 4 13 4.4 11 5.8zM11 5.8V18" stroke={c} strokeWidth="1.5" strokeLinejoin="round" />],
+  ['shop', (c) => (
+    <>
+      <path d="M4.4 7.6h13.2l-1 10a1.6 1.6 0 01-1.6 1.4H7a1.6 1.6 0 01-1.6-1.4l-1-10z" stroke={c} strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M8 9.8V6.6a3 3 0 016 0v3.2" stroke={c} strokeWidth="1.5" strokeLinecap="round" />
+    </>
+  )],
+  ['friends', (c) => (
+    <>
+      <circle cx="8.4" cy="7.8" r="2.9" stroke={c} strokeWidth="1.5" />
+      <path d="M3 18.2a5.4 5.4 0 0110.8 0" stroke={c} strokeWidth="1.5" strokeLinecap="round" />
+      <circle cx="15.4" cy="8.6" r="2.3" stroke={c} strokeWidth="1.5" />
+      <path d="M15.2 13.2a4.4 4.4 0 014.2 4.6" stroke={c} strokeWidth="1.5" strokeLinecap="round" />
+    </>
+  )],
+];
 const CHEST_ORDER = ['epic', 'gold', 'silver', 'small'];
 // Album cards: light, in the rarity's colour (the dogs are stickers).
 const TILE = { common: '#c9d8f5', rare: '#bfe0ff', epic: '#dccbff', legendary: '#ffe7a8' };
@@ -51,12 +77,16 @@ export default function PugWorld({ pw, onClose }) {
               {tab === 'friends' && <Friends />}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', borderTop: '1px solid rgba(255,255,255,.07)', background: 'rgba(12,12,18,.96)', paddingBottom: 'var(--safe-bottom)' }}>
-              {TABS.map(([id, icon]) => (
-                <div key={id} onClick={() => setTab(id)} style={{ padding: '9px 0 8px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: 'pointer', opacity: tab === id ? 1 : 0.5 }}>
-                  <span style={{ fontSize: 20, filter: tab === id ? 'none' : 'grayscale(.6)' }}>{icon}</span>
-                  <span style={{ fontSize: 10.5, fontWeight: 700, color: tab === id ? '#c9baff' : '#a3a3b3' }}>{t('pw.tab.' + id)}</span>
-                </div>
-              ))}
+              {TABS.map(([id, icon]) => {
+                const c = tab === id ? '#a58cff' : '#7a7a8a';
+                return (
+                  <div key={id} onClick={() => setTab(id)} style={{ position: 'relative', padding: '10px 0 9px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
+                    <svg width="21" height="21" viewBox="0 0 22 22" fill="none">{icon(c)}</svg>
+                    <span style={{ fontSize: 10.5, fontWeight: 650, color: c }}>{t('pw.tab.' + id)}</span>
+                    {tab === id && <span style={{ position: 'absolute', bottom: 3, width: 22, height: 3, borderRadius: 99, background: PURPLE }} />}
+                  </div>
+                );
+              })}
             </div>
           </>
         )}
@@ -118,6 +148,7 @@ function MyDogs({ pw, hideStage, onOpenChest, onShowDog, onChances, onStudy }) {
         <Stars level={level} />
         <span>⚡ {t('pw.power', { n: dogPower(fav, level) })}</span>
       </div>
+      <DogStrip state={state} current={fav} onPick={(id) => update((s) => ({ ...s, favorite: id }))} />
       <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
         <Button ghost style={{ flex: 1 }} onClick={() => { setTrick((k) => k + 1); update((s) => bumpMission(s, 'trick')); }}>✨ {t('pw.trick')}</Button>
         <Button ghost style={{ flex: 1 }} onClick={() => onShowDog(fav)}>👕 {t('pw.dressUp')}</Button>
@@ -139,6 +170,25 @@ function MyDogs({ pw, hideStage, onOpenChest, onShowDog, onChances, onStudy }) {
         </div>
       </Card>
     </>
+  );
+}
+
+// All your dogs in a row under the big one: tap one to make it your
+// favourite (the dog on the stage and on Home).
+function DogStrip({ state, current, onPick }) {
+  const ids = DOGS.filter((d) => state.dogs[d.id]).sort((a, b) => RARITIES.indexOf(b.rarity) - RARITIES.indexOf(a.rarity)).map((d) => d.id);
+  if (ids.length < 2) return null;
+  return (
+    <div style={{ display: 'flex', gap: 8, overflowX: 'auto', margin: '14px -16px 0', padding: '4px 16px' }}>
+      {ids.map((id) => {
+        const on = id === current;
+        return (
+          <div key={id} onClick={() => onPick(id)} style={{ flex: 'none', width: 56, height: 56, borderRadius: 16, background: TILE[DOG_BY_ID[id].rarity], display: 'grid', placeItems: 'center', cursor: 'pointer', boxShadow: on ? '0 0 0 2.5px #08080c, 0 0 0 4.5px #8b6dff' : 'none', opacity: on ? 1 : 0.85 }}>
+            <DogThumb dogId={id} size={50} />
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
