@@ -29,10 +29,10 @@ export function RarityPill({ rarity, small }) {
   );
 }
 
-export function Stars({ level, size = 13 }) {
+export function Stars({ level, size = 13, dim = '#3a3a4a' }) {
   return (
     <span style={{ fontSize: size, letterSpacing: 1, whiteSpace: 'nowrap' }}>
-      {Array.from({ length: MAX_LEVEL }, (_, i) => <span key={i} style={{ color: i < level ? '#f5c451' : '#3a3a4a' }}>★</span>)}
+      {Array.from({ length: MAX_LEVEL }, (_, i) => <span key={i} style={{ color: i < level ? '#f5c451' : dim }}>★</span>)}
     </span>
   );
 }

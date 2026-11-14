@@ -1147,7 +1147,7 @@ export default {
   "pw.res.set": "{breed}セット完成！金の宝箱と200コインを獲得しました。",
   "pw.openNext": "次を開ける・{n}",
   "pw.done": "完了",
-  "pw.spinHint": "ドラッグで回転",
+  "pw.tapHint": "犬をタップするとジャンプします",
   "pw.level": "レベル",
   "pw.max": "最大",
   "pw.toNextStar": "次の星まで",

@@ -1147,7 +1147,7 @@ export default {
   "pw.res.set": "Coleção completa: {breed}! Um baú de ouro e 200 moedas são seus.",
   "pw.openNext": "Abrir próximo · {n}",
   "pw.done": "Pronto",
-  "pw.spinHint": "Arraste para girar",
+  "pw.tapHint": "Toque no cão para ele pular",
   "pw.level": "Nível",
   "pw.max": "Máx.",
   "pw.toNextStar": "para a próxima estrela",

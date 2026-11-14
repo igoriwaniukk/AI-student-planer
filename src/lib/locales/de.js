@@ -1147,7 +1147,7 @@ export default {
   "pw.res.set": "Set komplett: {breed}! Eine Goldtruhe und 200 Münzen gehören dir.",
   "pw.openNext": "Nächste öffnen · {n}",
   "pw.done": "Fertig",
-  "pw.spinHint": "Zum Drehen ziehen",
+  "pw.tapHint": "Tippe auf den Hund, dann springt er",
   "pw.level": "Stufe",
   "pw.max": "Max.",
   "pw.toNextStar": "bis zum nächsten Stern",

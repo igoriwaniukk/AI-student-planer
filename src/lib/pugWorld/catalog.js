@@ -1,6 +1,6 @@
-// Pug World's content: the breeds (their 3D shape), the ~30 collectible
+// Pug World's content: the breeds, the ~30 collectible
 // dogs (a breed + colours, or a special skin), and the outfits. Pure data —
-// the 3D look is built from it in components/pugWorld/dogModel.js, names
+// the drawings are made from it in components/pugWorld/dogArt.js, names
 // come from the pw.breed.* / pw.var.* / pw.outfit.* texts.
 
 export const RARITIES = ['common', 'rare', 'epic', 'legendary'];
