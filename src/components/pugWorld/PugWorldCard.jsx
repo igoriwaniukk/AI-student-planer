@@ -1,27 +1,28 @@
+import { useState } from 'react';
 import { useLang } from '../../lib/useLang';
 import { MISSIONS, MISSION_COINS, SESSION_COINS } from '../../lib/pugWorld/logic.js';
 import { openPugWorld } from '../../lib/pugWorld/events';
 import { AppShellPortal } from '../ui';
 import Dog2D from './Dog2D';
-import DogThumb from './DogThumb';
 import ChestIcon from './Chest';
 import { CoinIcon } from './icons';
 import { PURPLE } from './theme';
 
 const MISSION_ICON = { session: '📖', session2: '📚', chest: '🎁', chest2: '🎁', dress: '👕', plan: '🗓️', trick: '✨', album: '📒' };
 
-// Home: your dog, today's missions and the chests waiting — the way into
-// Pug World, right under the streak.
+// Home: your dog (alive: breathes, blinks, wags), today's missions and the
+// chests waiting, right under the streak; tap to play.
 export default function PugWorldCard({ pw }) {
   const { t } = useLang();
+  const [jump, setJump] = useState(0);
   if (!pw?.enabled) return null;
   const { state } = pw;
   const chests = state.chests.length;
   const items = state.missions.items || [];
   return (
-    <div onClick={() => openPugWorld()} style={{ marginTop: 12, padding: '12px 14px', borderRadius: 20, cursor: 'pointer', background: 'linear-gradient(160deg,rgba(139,109,255,.14),rgba(139,109,255,.03))', border: '1px solid rgba(139,109,255,.35)', display: 'flex', gap: 12, alignItems: 'center' }}>
-      <div style={{ width: 76, height: 76, borderRadius: 18, background: '#c9d8f5', display: 'grid', placeItems: 'center', flex: 'none' }}>
-        <DogThumb dogId={pw.started ? state.favorite : 'pug-fawn'} worn={pw.started ? state.outfits.worn[state.favorite] : undefined} size={70} />
+    <div onClick={() => { setJump((k) => k + 1); setTimeout(() => openPugWorld(), 350); }} style={{ marginTop: 12, padding: '12px 14px', borderRadius: 20, cursor: 'pointer', background: 'linear-gradient(160deg,rgba(139,109,255,.14),rgba(139,109,255,.03))', border: '1px solid rgba(139,109,255,.35)', display: 'flex', gap: 12, alignItems: 'center' }}>
+      <div style={{ width: 76, height: 76, borderRadius: 18, background: '#c9d8f5', display: 'grid', placeItems: 'center', flex: 'none', overflow: 'hidden' }}>
+        <div style={{ width: 90, height: 90, flex: 'none' }}><Dog2D dogId={pw.started ? state.favorite : 'pug-fawn'} worn={pw.started ? state.outfits.worn[state.favorite] : undefined} happyKey={jump} /></div>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -31,7 +32,7 @@ export default function PugWorldCard({ pw }) {
               <ChestIcon type="small" size={18} glow={false} />{chests}
             </span>
           )}
-          <span style={{ marginLeft: 'auto', color: '#7a7a8c', fontSize: 17 }}>›</span>
+          <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 800, color: '#fff', padding: '4px 10px', borderRadius: 99, background: PURPLE, flex: 'none' }}>{t('pw.play')} ›</span>
         </div>
         {!pw.started || !items.length ? (
           <div style={{ fontSize: 12.5, color: '#b9b9c8', marginTop: 4, lineHeight: 1.4 }}>{t('pw.home.start')}</div>
