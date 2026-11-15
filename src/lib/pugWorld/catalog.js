@@ -61,7 +61,9 @@ export const DOGS = [
 export const DOG_BY_ID = Object.fromEntries(DOGS.map((x) => [x.id, x]));
 export const STARTERS = ['pug-fawn', 'corgi-red', 'shiba-red'];
 
-// Outfits: one per slot can be worn (head, face, neck).
+// Outfits: one per slot can be worn (head, face, neck, body). Parts of a
+// full outfit set carry `set`.
+export const SLOTS = ['head', 'face', 'neck', 'body'];
 export const OUTFITS = [
   { id: 'gradcap', slot: 'head', price: 300 },
   { id: 'cap', slot: 'head', price: 200 },
@@ -74,6 +76,21 @@ export const OUTFITS = [
   { id: 'bowtie', slot: 'neck', price: 150 },
   { id: 'scarf', slot: 'neck', price: 250 },
   { id: 'bandana', slot: 'neck', price: 150 },
+  // full outfit sets
+  { id: 'wizardhat', slot: 'head', price: 300, set: 'wizard' },
+  { id: 'starglasses', slot: 'face', price: 250, set: 'wizard' },
+  { id: 'wizardcape', slot: 'body', price: 350, set: 'wizard' },
+  { id: 'heroband', slot: 'head', price: 200, set: 'hero' },
+  { id: 'heromask', slot: 'face', price: 250, set: 'hero' },
+  { id: 'herocape', slot: 'body', price: 350, set: 'hero' },
+  { id: 'piratehat', slot: 'head', price: 300, set: 'pirate' },
+  { id: 'eyepatch', slot: 'face', price: 200, set: 'pirate' },
+  { id: 'pirateshirt', slot: 'body', price: 300, set: 'pirate' },
+  { id: 'chefhat', slot: 'head', price: 250, set: 'chef' },
+  { id: 'chefscarf', slot: 'neck', price: 150, set: 'chef' },
+  { id: 'apron', slot: 'body', price: 300, set: 'chef' },
 ];
 export const OUTFIT_BY_ID = Object.fromEntries(OUTFITS.map((x) => [x.id, x]));
-export const OUTFIT_ICON = { gradcap: '🎓', cap: '🧢', beanie: '🧶', partyhat: '🥳', flowers: '🌸', headphones: '🎧', sunglasses: '🕶️', roundglasses: '👓', bowtie: '🎀', scarf: '🧣', bandana: '🎽' };
+// Full outfit sets: buy the parts one by one, or all at once for less.
+export const OUTFIT_SETS = ['wizard', 'hero', 'pirate', 'chef'].map((id) => ({ id, parts: OUTFITS.filter((o) => o.set === id).map((o) => o.id) }));
+export const SET_DISCOUNT = 0.25;

@@ -1,4 +1,4 @@
-import { DOGS, DOG_BY_ID, BREED_IDS, OUTFITS, OUTFIT_BY_ID } from './catalog.js';
+import { DOGS, DOG_BY_ID, BREED_IDS, OUTFITS, OUTFIT_BY_ID, OUTFIT_SETS, SET_DISCOUNT } from './catalog.js';
 
 // Pug World's rules, pure and tested (logic.test.js). The whole game state
 // is one object kept under KEYS.pugWorld (see hooks/usePugWorld.js):
@@ -126,8 +126,12 @@ export function dogPerk(dogId, level = 1) {
   return dog && PERK_PCT[dog.rarity] ? PERK_PCT[dog.rarity] * level : 0;
 }
 // Extra % coins from every Epic and Legendary dog owned (capped at 30%).
+// Plus 5% while the favourite dog wears a complete outfit set.
+export const SET_BONUS = 5;
 export function coinBonus(state) {
-  return Math.min(30, Object.entries(normalize(state).dogs).reduce((a, [id, x]) => a + dogPerk(id, x.level), 0));
+  const s = normalize(state);
+  const dogs = Math.min(30, Object.entries(s.dogs).reduce((a, [id, x]) => a + dogPerk(id, x.level), 0));
+  return dogs + (fullSetOn(s, s.favorite) ? SET_BONUS : 0);
 }
 
 // ---------- sets ----------
@@ -217,6 +221,39 @@ export function buyChest(state, type) {
   const price = CHEST_PRICE[type];
   if (!price || s.coins < price) return null;
   return addChest({ ...s, coins: s.coins - price }, type, 'shop');
+}
+
+// ---------- outfit sets ----------
+// The set a dog is wearing completely, or null.
+export function fullSetOn(state, dogId) {
+  const worn = normalize(state).outfits.worn[dogId] || {};
+  const on = Object.values(worn);
+  return OUTFIT_SETS.find((set) => set.parts.every((p) => on.includes(p)))?.id || null;
+}
+// Price of the parts still missing, 25% off when bought as a set.
+export function setPrice(state, setId) {
+  const s = normalize(state);
+  const set = OUTFIT_SETS.find((x) => x.id === setId);
+  if (!set) return 0;
+  const missing = set.parts.filter((p) => !s.outfits.owned.includes(p));
+  return Math.round(missing.reduce((a, p) => a + OUTFIT_BY_ID[p].price, 0) * (1 - SET_DISCOUNT));
+}
+export function buySet(state, setId) {
+  const s = normalize(state);
+  const set = OUTFIT_SETS.find((x) => x.id === setId);
+  const price = setPrice(s, setId);
+  if (!set || !price || s.coins < price) return null;
+  const owned = [...new Set(s.outfits.owned.concat(set.parts))];
+  return { ...s, coins: s.coins - price, outfits: { ...s.outfits, owned } };
+}
+// Puts every part of an owned set on a dog.
+export function wearSet(state, dogId, setId) {
+  const s = normalize(state);
+  const set = OUTFIT_SETS.find((x) => x.id === setId);
+  if (!set || !s.dogs[dogId] || !set.parts.every((p) => s.outfits.owned.includes(p))) return s;
+  const worn = { ...(s.outfits.worn[dogId] || {}) };
+  set.parts.forEach((p) => { worn[OUTFIT_BY_ID[p].slot] = p; });
+  return bumpMission({ ...s, outfits: { ...s.outfits, worn: { ...s.outfits.worn, [dogId]: worn } } }, 'dress');
 }
 
 // Puts an outfit on a dog (or takes it off when it's already worn).

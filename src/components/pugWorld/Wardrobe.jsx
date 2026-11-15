@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { useLang } from '../../lib/useLang';
-import { OUTFITS } from '../../lib/pugWorld/catalog.js';
-import { toggleOutfit } from '../../lib/pugWorld/logic.js';
+import { OUTFITS, SLOTS } from '../../lib/pugWorld/catalog.js';
+import { toggleOutfit, fullSetOn, SET_BONUS } from '../../lib/pugWorld/logic.js';
 import { CoinIcon, HangerIcon, OutfitPic } from './icons';
 import { CARD } from './theme';
 
-// The wardrobe: Head / Face / Neck, then every outfit of that slot as a
+// The wardrobe: Head / Face / Neck / Body, then every outfit of that slot as a
 // picture. Tap one you own to put it on (tap again, or "None", to take it
 // off); grey ones aren't yours yet (price shown, tap to go to the Shop).
-const SLOTS = ['head', 'face', 'neck'];
 const OWN_BG = '#c9d8f5';
 
 export default function Wardrobe({ state, dogId, update, onShop, style }) {
@@ -16,6 +15,8 @@ export default function Wardrobe({ state, dogId, update, onShop, style }) {
   const [slot, setSlot] = useState('head');
   const worn = state.outfits.worn[dogId] || {};
   const wornCount = SLOTS.filter((s) => worn[s]).length;
+  const fullSet = fullSetOn(state, dogId);
+  const isFav = state.favorite === dogId;
   const list = OUTFITS.filter((o) => o.slot === slot);
   const ring = { boxShadow: '0 0 0 2.5px #0f0e15, 0 0 0 4.5px #8b6dff' };
   const tileBase = { flex: 'none', width: 88, height: 96, borderRadius: 16, position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' };
@@ -24,11 +25,13 @@ export default function Wardrobe({ state, dogId, update, onShop, style }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
         <HangerIcon />
         <div style={{ flex: 1, fontSize: 15, fontWeight: 750 }}>{t('pw.outfits')}</div>
-        {wornCount > 0 && <span style={{ fontSize: 12, color: '#8a8a99' }}>{t('pw.wornCount', { n: wornCount })}</span>}
+        {fullSet
+          ? <span style={{ fontSize: 11.5, fontWeight: 750, color: '#7fe3ad', padding: '3px 9px', borderRadius: 99, background: 'rgba(53,208,127,.1)', border: '1px solid rgba(53,208,127,.35)' }}>✓ {t('pw.set.' + fullSet)}{isFav ? ' · +' + SET_BONUS + '%' : ''}</span>
+          : wornCount > 0 && <span style={{ fontSize: 12, color: '#8a8a99' }}>{t('pw.wornCount', { n: wornCount })}</span>}
       </div>
       <div style={{ display: 'flex', padding: 3, borderRadius: 12, background: 'rgba(255,255,255,.06)', marginBottom: 12 }}>
         {SLOTS.map((s) => (
-          <div key={s} onClick={() => setSlot(s)} style={{ flex: 1, height: 32, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, fontSize: 13, fontWeight: 700, cursor: 'pointer', ...(s === slot ? { background: '#8b6dff', color: '#fff' } : { color: '#a3a3b3' }) }}>
+          <div key={s} onClick={() => setSlot(s)} style={{ flex: 1, height: 32, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, fontSize: 12.5, fontWeight: 700, cursor: 'pointer', ...(s === slot ? { background: '#8b6dff', color: '#fff' } : { color: '#a3a3b3' }) }}>
             {t('pw.slot.' + s)}{worn[s] && <span style={{ width: 5, height: 5, borderRadius: '50%', background: s === slot ? '#fff' : '#a58cff' }} />}
           </div>
         ))}

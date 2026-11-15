@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react';
 import { AppShellPortal } from '../ui';
 import { useLang } from '../../lib/useLang';
 import { localDateKey } from '../../lib/plannerLogic';
-import { DOGS, DOG_BY_ID, BREED_IDS, STARTERS, OUTFIT_BY_ID, RARITY_COLOR, RARITIES } from '../../lib/pugWorld/catalog.js';
+import { DOGS, DOG_BY_ID, BREED_IDS, STARTERS, OUTFIT_BY_ID, OUTFIT_SETS, RARITY_COLOR, RARITIES } from '../../lib/pugWorld/catalog.js';
 import {
   CALENDAR, CHEST_PRICE, MISSIONS, MISSION_COINS, canClaimCalendar, claimCalendar, collectionScore, dogPower, bumpMission,
-  shopOffers, buyOutfit, buyChest, breedDogs, chooseStarter,
+  shopOffers, buyOutfit, buyChest, breedDogs, chooseStarter, buySet, setPrice, wearSet, fullSetOn,
 } from '../../lib/pugWorld/logic.js';
 import Dog2D from './Dog2D';
 import Wardrobe from './Wardrobe';
@@ -422,6 +422,7 @@ function Shop({ pw }) {
           );
         })}
       </div>
+      <OutfitSets state={state} today={today} buy={buy} update={update} />
       <Card title={t('pw.chests')} style={{ marginTop: 16 }}>
         {['small', 'silver'].map((type, i) => (
           <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderTop: i ? '1px solid rgba(255,255,255,.06)' : 'none' }}>
@@ -433,6 +434,63 @@ function Shop({ pw }) {
       </Card>
       {msg && <div style={{ marginTop: 12, fontSize: 13, color: '#c9baff', textAlign: 'center' }}>{msg}</div>}
       <div style={{ fontSize: 11.5, color: '#77778a', textAlign: 'center', marginTop: 16, lineHeight: 1.45 }}>{t('pw.shop.note')}</div>
+    </>
+  );
+}
+
+// Full outfit sets: the favourite dog wearing it, its parts (buy one by
+// one) and the whole set for 25% less; once owned, put it all on at once.
+function OutfitSets({ state, today, buy, update }) {
+  const { t } = useLang();
+  const fav = state.favorite && state.dogs[state.favorite] ? state.favorite : Object.keys(state.dogs)[0];
+  const wearingSet = fullSetOn(state, fav);
+  return (
+    <>
+      <div style={{ fontSize: 15, fontWeight: 750, marginTop: 20 }}>{t('pw.outfitSets')}</div>
+      <div style={{ fontSize: 12.5, color: '#a3a3b3', marginTop: 4, lineHeight: 1.45 }}>{t('pw.outfitSetsSub')}</div>
+      {OUTFIT_SETS.map((set) => {
+        const owned = set.parts.filter((p) => state.outfits.owned.includes(p));
+        const all = owned.length === set.parts.length;
+        const price = setPrice(state, set.id);
+        const full = set.parts.filter((p) => !owned.includes(p)).reduce((a, p) => a + OUTFIT_BY_ID[p].price, 0);
+        const worn = Object.fromEntries(set.parts.map((p) => [OUTFIT_BY_ID[p].slot, p]));
+        return (
+          <div key={set.id} style={{ ...CARD, marginTop: 10, display: 'flex', gap: 12, alignItems: 'center' }}>
+            <div style={{ width: 96, height: 96, borderRadius: 16, background: '#c9d8f5', display: 'grid', placeItems: 'center', flex: 'none' }}>
+              <DogThumb dogId={fav} worn={worn} size={90} />
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 15, fontWeight: 800 }}>{t('pw.set.' + set.id)}</span>
+                {!all && <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 99, background: '#f5a524', color: '#2a1300' }}>−25%</span>}
+              </div>
+              <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+                {set.parts.map((p) => {
+                  const own = owned.includes(p);
+                  return (
+                    <div key={p} onClick={own ? undefined : () => buy((s) => buyOutfit(s, today, p), t('pw.shop.got', { name: t('pw.outfit.' + p) }))} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: own ? 'default' : 'pointer' }}>
+                      <div style={{ width: '100%', height: 40, borderRadius: 11, background: own ? '#c9d8f5' : 'rgba(255,255,255,.06)', display: 'grid', placeItems: 'center' }}>
+                        <OutfitPic id={p} size={34} style={own ? undefined : { filter: 'grayscale(1)', opacity: 0.45 }} />
+                      </div>
+                      {own
+                        ? <span style={{ fontSize: 10.5, fontWeight: 800, color: '#35d07f' }}>✓</span>
+                        : <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10.5, fontWeight: 800, color: '#ffd27a' }}><CoinIcon size={11} />{OUTFIT_BY_ID[p].price}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+              {!all && (
+                <Button disabled={state.coins < price} style={{ height: 36, marginTop: 8, fontSize: 13 }} onClick={() => buy((s) => buySet(s, set.id), t('pw.shop.got', { name: t('pw.set.' + set.id) }))}>
+                  {t('pw.buySet')} · <s style={{ opacity: 0.6, fontWeight: 600 }}>{full}</s> <CoinIcon size={14} /> {price}
+                </Button>
+              )}
+              {all && (wearingSet === set.id
+                ? <div style={{ height: 36, marginTop: 8, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#7fe3ad', background: 'rgba(53,208,127,.1)', border: '1px solid rgba(53,208,127,.35)' }}>✓ {t('pw.wearing')}</div>
+                : <Button ghost style={{ height: 36, marginTop: 8, fontSize: 13 }} onClick={() => update((s) => wearSet(s, fav, set.id))}>{t('pw.wearSet')}</Button>)}
+            </div>
+          </div>
+        );
+      })}
     </>
   );
 }

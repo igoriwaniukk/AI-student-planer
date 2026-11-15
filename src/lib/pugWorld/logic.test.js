@@ -3,7 +3,7 @@ import { DOGS, STARTERS, RARITIES, BREED_IDS } from './catalog';
 import {
   EMPTY, normalize, CHEST_ODDS, rollRarity, addDog, openChest, addChest, dogPower, collectionScore, coinBonus,
   missionsFor, ensureDay, bumpMission, claimCalendar, canClaimCalendar, shopOffers, buyOutfit, buyChest, toggleOutfit,
-  onSession, onPlan, onDayFinished, onStreak, onPremiumDay, chooseStarter, completedSets, breedDogs,
+  onSession, onPlan, onDayFinished, buySet, setPrice, wearSet, fullSetOn, onStreak, onPremiumDay, chooseStarter, completedSets, breedDogs,
 } from './logic';
 
 const seq = (...xs) => { let i = 0; return () => xs[i++ % xs.length]; };
@@ -107,6 +107,28 @@ describe('daily', () => {
     s = toggleOutfit(s, 'pug-fawn', 'cap'); expect(s.outfits.worn['pug-fawn'].head).toBe('cap');
     s = toggleOutfit(s, 'pug-fawn', 'beanie'); expect(s.outfits.worn['pug-fawn'].head).toBe('beanie');
     s = toggleOutfit(s, 'pug-fawn', 'beanie'); expect(s.outfits.worn['pug-fawn'].head).toBeUndefined();
+  });
+});
+
+describe('outfit sets', () => {
+  it('a set costs 25% less than its missing parts, and only those', () => {
+    const rich = { ...EMPTY, coins: 2000, dogs: { 'pug-fawn': { copies: 0, level: 1 } }, favorite: 'pug-fawn' };
+    expect(setPrice(rich, 'wizard')).toBe(Math.round((300 + 250 + 350) * 0.75));
+    const withHat = { ...rich, outfits: { owned: ['wizardhat'], worn: {} } };
+    expect(setPrice(withHat, 'wizard')).toBe(Math.round((250 + 350) * 0.75));
+    const after = buySet(withHat, 'wizard');
+    expect(after.outfits.owned).toEqual(expect.arrayContaining(['wizardhat', 'starglasses', 'wizardcape']));
+    expect(after.coins).toBe(2000 - Math.round(600 * 0.75));
+    expect(buySet({ ...EMPTY, coins: 10 }, 'wizard')).toBeNull();
+  });
+  it('wearing a full set on the favourite gives +5% coins', () => {
+    let s = buySet({ ...EMPTY, coins: 2000, dogs: { 'pug-fawn': { copies: 0, level: 1 } }, favorite: 'pug-fawn' }, 'pirate');
+    expect(coinBonus(s)).toBe(0);
+    s = wearSet(s, 'pug-fawn', 'pirate');
+    expect(fullSetOn(s, 'pug-fawn')).toBe('pirate');
+    expect(coinBonus(s)).toBe(5);
+    s = toggleOutfit(s, 'pug-fawn', 'eyepatch');
+    expect(coinBonus(s)).toBe(0);
   });
 });
 
