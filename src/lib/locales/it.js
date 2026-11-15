@@ -1231,4 +1231,9 @@ export default {
   "pw.buySet": "Compra il set",
   "pw.wearSet": "Indossalo",
   "pw.wearing": "Indossato",
+  "pw.focus.bubble": "Shh… sto studiando anch'io 📚",
+  "pw.focus.chest": "Un forziere quando finiamo",
+  "pw.done.title": "Sessione finita",
+  "pw.done.bubble": "Ce l'abbiamo fatta! Ho trovato un forziere: *toccalo per aprirlo!*",
+  "pw.later": "Più tardi",
 };

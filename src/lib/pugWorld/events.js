@@ -16,4 +16,5 @@ export function setPugPreview(on) {
   try { if (on) localStorage.setItem(PUG_PREVIEW_KEY, '1'); else localStorage.removeItem(PUG_PREVIEW_KEY); } catch { /* storage blocked */ }
   window.dispatchEvent(new Event(PUG_PREVIEW_EVENT));
 }
-export const openPugWorld = (tab) => window.dispatchEvent(new CustomEvent(PUG_OPEN_EVENT, { detail: { tab } }));
+// openPugWorld('shop') opens a tab; openPugWorld({ chest: id }) opens straight into that chest.
+export const openPugWorld = (opts) => window.dispatchEvent(new CustomEvent(PUG_OPEN_EVENT, { detail: typeof opts === 'string' ? { tab: opts } : (opts || {}) }));

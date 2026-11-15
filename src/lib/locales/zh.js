@@ -1231,4 +1231,9 @@ export default {
   "pw.buySet": "购买套装",
   "pw.wearSet": "穿上",
   "pw.wearing": "已穿上",
+  "pw.focus.bubble": "嘘……我也在学习 📚",
+  "pw.focus.chest": "学完就有宝箱",
+  "pw.done.title": "学习完成",
+  "pw.done.bubble": "我们做到了！我找到一个宝箱——*点一下打开吧！*",
+  "pw.later": "稍后",
 };

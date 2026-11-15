@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { StudyBuddy } from '../components/pugWorld/PugWorldCard';
 import { sessionClock } from '../lib/plannerLogic';
 import { iconForTask } from '../lib/taskAuto';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
@@ -53,7 +54,7 @@ function FocusRing({ c, d, finishing, note }) {
   );
 }
 
-export default function Focus({ planner }) {
+export default function Focus({ planner, pugWorld = null }) {
   const { t } = useLang();
   const { state, def, go, update, togglePause, openFinish, openBlockEdit, dismissBreakReminder, addSessionMinute } = planner;
   const [menuOpen, setMenuOpen] = useState(false);
@@ -138,6 +139,7 @@ export default function Focus({ planner }) {
         </div>
       </div>}
 
+      {!done && <StudyBuddy pw={pugWorld} />}
     </div>
 
     {!done && <div

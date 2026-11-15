@@ -92,7 +92,7 @@ export function outfitSVG(id, size = 64) {
 export const OUTFIT_IDS = Object.keys(OUTFIT_ART);
 
 let uid = 0;
-// Returns an SVG string. opts: { worn: { head, face, neck }, size }
+// Returns an SVG string. opts: { worn: { head, face, neck, body }, size, book }
 export function dogSVG(dogId, opts = {}) {
   const d = DOG_BY_ID[dogId] || DOG_BY_ID['pug-fawn'];
   const B = BREED[d.breed];
@@ -117,6 +117,8 @@ export function dogSVG(dogId, opts = {}) {
   const paw = B.socks || sk ? C.second : C.main;
   if (body?.front) p.push(body.front);
   p.push(both(`<ellipse cx="80" cy="186" rx="15" ry="10" fill="${paw}"${o}/><path d="M76 182 L76 189 M84 182 L84 189" stroke="${OL}" stroke-width="2" stroke-linecap="round"/>`));
+  // An open book held in the front paws (studying with you).
+  if (opts.book) p.push(`<path d="M100 160 C88 152 70 152 58 156 L58 192 C70 188 88 188 100 196 C112 188 130 188 142 192 L142 156 C130 152 112 152 100 160 Z" fill="#fff"${o}/><path d="M100 160 L100 196" stroke="${OL}" stroke-width="3"/><path d="M66 166 L92 164 M66 174 L92 172 M66 182 L88 180 M108 164 L134 166 M108 172 L134 174 M108 180 L130 182" stroke="#a58cff" stroke-width="3" stroke-linecap="round"/>`);
   if (B.ears === 'pointy' || B.ears === 'big') {
     const big = B.ears === 'big';
     const outer = big ? 'M42 74 C40 46 44 20 50 10 C66 18 84 32 96 48 Z' : 'M50 68 C48 48 52 28 58 18 C70 26 84 36 92 48 Z';

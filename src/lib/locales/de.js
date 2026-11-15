@@ -1231,4 +1231,9 @@ export default {
   "pw.buySet": "Set kaufen",
   "pw.wearSet": "Anziehen",
   "pw.wearing": "Angezogen",
+  "pw.focus.bubble": "Pst… ich lerne auch 📚",
+  "pw.focus.chest": "Eine Truhe, wenn wir fertig sind",
+  "pw.done.title": "Einheit geschafft",
+  "pw.done.bubble": "Geschafft! Ich habe eine Truhe gefunden – *tippe, um sie zu öffnen!*",
+  "pw.later": "Später",
 };

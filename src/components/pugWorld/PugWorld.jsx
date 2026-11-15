@@ -56,8 +56,9 @@ const TILE = { common: '#c9d8f5', rare: '#bfe0ff', epic: '#dccbff', legendary: '
 export default function PugWorld({ pw, onClose }) {
   const { t } = useLang();
   const { state, update } = pw;
-  const [tab, setTab] = useState(pw.open && pw.open !== true ? pw.open : 'dogs');
-  const [opening, setOpening] = useState(null);
+  const [tab, setTab] = useState(pw.open?.tab || 'dogs');
+  // Opened from a session's reward: straight into that chest.
+  const [opening, setOpening] = useState(() => (pw.open?.chest && pw.state.chests.some((c) => c.id === pw.open.chest) ? pw.open.chest : null));
   const [showDog, setShowDog] = useState(null);
   const [chances, setChances] = useState(false);
   const overlay = opening || showDog || chances;

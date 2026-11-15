@@ -1231,4 +1231,9 @@ export default {
   "pw.buySet": "セットを買う",
   "pw.wearSet": "着せる",
   "pw.wearing": "着用中",
+  "pw.focus.bubble": "しーっ…ぼくも勉強中 📚",
+  "pw.focus.chest": "終わったら宝箱",
+  "pw.done.title": "セッション完了",
+  "pw.done.bubble": "やったね！宝箱を見つけたよ — *タップして開けよう！*",
+  "pw.later": "あとで",
 };
