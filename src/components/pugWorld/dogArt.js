@@ -36,22 +36,51 @@ const HEAD_WEAR = {
     .map(([x, y, c]) => `<g transform="translate(${x} ${y})">${[0, 72, 144, 216, 288].map((a) => `<ellipse cx="0" cy="-6" rx="4.5" ry="6" fill="${c}" stroke="${OL}" stroke-width="1.6" transform="rotate(${a})"/>`).join('')}<circle r="3.4" fill="#fff3b0" stroke="${OL}" stroke-width="1.4"/></g>`).join(''),
   headphones: `<path d="M44 90 C40 30 160 30 156 90" fill="none" stroke="${OL}" stroke-width="13" stroke-linecap="round"/><path d="M44 90 C40 30 160 30 156 90" fill="none" stroke="#2c2a36" stroke-width="7" stroke-linecap="round"/>${both('<rect x="30" y="78" width="22" height="34" rx="10" fill="#8b6dff" stroke="#3a2a24" stroke-width="3.6"/>')}`,
 };
+Object.assign(HEAD_WEAR, {
+  wizardhat: `<path d="M64 52 C80 30 98 4 116 -10 C120 -13 124 -10 122 -5 C118 14 124 34 136 52 Z" fill="#6d4dff"${o}/><path d="M70 44 C88 42 116 42 130 44 L134 52 C114 50 86 50 66 52 Z" fill="#f5c451"${o}/><ellipse cx="100" cy="54" rx="60" ry="9" fill="#4b2fb0"${o}/><path d="M98 20 l2 5 5 1-4 3 1 5-4-3-4 3 1-5-4-3 5-1z M114 8 l1.4 3 3 .6-2.4 2 .6 3-2.6-1.6-2.6 1.6.6-3-2.4-2 3-.6z" fill="#ffe066"/>`,
+  heroband: `<path d="M41 74 C60 54 140 54 159 74 L157 86 C138 68 62 68 43 86 Z" fill="#e0475b"${o}/><path d="M156 76 C168 78 176 86 178 98 C170 94 162 90 154 86 Z M158 80 C170 74 180 76 186 84 C176 86 166 86 156 84 Z" fill="#e0475b"${o}/><path d="M100 60 l2.6 6 6.4.8-4.8 4.4 1.3 6.4L100 74.4l-5.5 3.2 1.3-6.4L91 66.8l6.4-.8z" fill="#ffe066" stroke="${OL}" stroke-width="1.6"/>`,
+  piratehat: `<path d="M68 52 C70 20 130 20 132 52 Z" fill="#26232f"${o}/><path d="M34 60 C60 40 82 46 100 48 C118 46 140 40 166 60 C140 56 120 58 100 60 C80 58 60 56 34 60 Z" fill="#1d1b24"${o}/><path d="M70 50 C90 46 110 46 130 50" fill="none" stroke="#f5c451" stroke-width="3"/><circle cx="100" cy="34" r="6" fill="#fff"${o}/><path d="M92 44 L108 38 M92 38 L108 44" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>`,
+  chefhat: `<rect x="66" y="38" width="68" height="18" rx="5" fill="#fff"${o}/><circle cx="76" cy="28" r="14" fill="#fff"${o}/><circle cx="124" cy="28" r="14" fill="#fff"${o}/><circle cx="100" cy="18" r="18" fill="#fff"${o}/><rect x="68" y="34" width="64" height="8" fill="#fff"/><path d="M84 42 L84 52 M100 42 L100 52 M116 42 L116 52" stroke="#d9d9e6" stroke-width="2"/>`,
+});
 const FACE_WEAR = {
   sunglasses: `${both(`<path d="M56 78 L92 78 C92 96 84 102 74 102 C62 102 56 94 56 78 Z" fill="#17151d"${o}/><path d="M62 82 L72 82" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity=".6"/>`)}<path d="M92 82 Q100 78 108 82" fill="none" stroke="${OL}" stroke-width="3.6"/>`,
   roundglasses: `${both('<circle cx="74" cy="88" r="17" fill="rgba(255,255,255,.12)" stroke="#d9a73a" stroke-width="4"/>')}<path d="M91 86 Q100 81 109 86" fill="none" stroke="#d9a73a" stroke-width="4"/>`,
 };
+Object.assign(FACE_WEAR, {
+  starglasses: `${both(`<path d="M74 70 L79 81 L91 82 L82 90 L85 102 L74 96 L63 102 L66 90 L57 82 L69 81 Z" fill="rgba(255,224,102,.35)" stroke="#f5c451" stroke-width="3.4" stroke-linejoin="round"/>`)}<path d="M90 86 Q100 81 110 86" fill="none" stroke="#f5c451" stroke-width="3.4"/>`,
+  heromask: `<path fill-rule="evenodd" d="M46 82 C56 70 76 70 90 78 C96 81 104 81 110 78 C124 70 144 70 154 82 C152 100 134 106 120 102 C110 99 104 94 100 92 C96 94 90 99 80 102 C66 106 48 100 46 82 Z M61 88 a13 14 0 1 0 26 0 a13 14 0 1 0 -26 0 Z M113 88 a13 14 0 1 0 26 0 a13 14 0 1 0 -26 0 Z" fill="#e0475b"${o}/>`,
+  eyepatch: `<path d="M44 68 L112 86 M140 93 L158 98" stroke="#1d1b24" stroke-width="4" stroke-linecap="round"/><ellipse cx="126" cy="89" rx="16" ry="15" fill="#1d1b24"${o}/>`,
+});
 const NECK_WEAR = {
   bowtie: `<path d="M100 140 L74 128 L76 154 Z" fill="#8b6dff"${o}/><path d="M100 140 L126 128 L124 154 Z" fill="#8b6dff"${o}/><circle cx="100" cy="141" r="7" fill="#a58cff"${o}/>`,
   scarf: `<path d="M58 132 C80 146 120 146 142 132 L144 146 C120 160 80 160 56 146 Z" fill="#e0475b"${o}/><path d="M118 148 L132 182 L116 186 L106 152 Z" fill="#e0475b"${o}/><path d="M64 140 L72 150 M84 146 L88 154" stroke="#b8323f" stroke-width="2.5"/>`,
   bandana: `<path d="M62 134 C84 144 116 144 138 134 L100 176 Z" fill="#2ee6c5"${o}/><circle cx="92" cy="148" r="2.6" fill="#fff"/><circle cx="108" cy="148" r="2.6" fill="#fff"/><circle cx="100" cy="160" r="2.6" fill="#fff"/>`,
 };
 
-const OUTFIT_ART = { ...HEAD_WEAR, ...FACE_WEAR, ...NECK_WEAR };
+Object.assign(NECK_WEAR, {
+  chefscarf: `<path d="M62 134 C84 144 116 144 138 134 L136 146 C114 154 86 154 64 146 Z" fill="#e0475b"${o}/><circle cx="100" cy="150" r="8" fill="#e0475b"${o}/><path d="M96 156 L88 176 L100 170 L112 176 L104 156 Z" fill="#e0475b"${o}/>`,
+});
+// Body wear: `back` goes behind the dog (capes), `front` over its chest.
+const cape = (c, dark, extra = '') => ({
+  back: `<path d="M60 128 C42 152 36 178 40 196 C60 190 80 194 100 190 C120 194 140 190 160 196 C164 178 158 152 140 128 Z" fill="${c}"${o}/><path d="M60 128 C50 150 46 172 48 190" fill="none" stroke="${dark}" stroke-width="3"/><path d="M140 128 C150 150 154 172 152 190" fill="none" stroke="${dark}" stroke-width="3"/>${extra}`,
+  front: `<path d="M64 130 C80 142 120 142 136 130 L132 140 C116 150 84 150 68 140 Z" fill="${c}"${o}/><circle cx="100" cy="142" r="6.5" fill="#f5c451"${o}/>`,
+});
+const BODY_WEAR = {
+  wizardcape: cape('#6d4dff', '#4b2fb0', '<path d="M50 160 l1.6 3.6 3.8.5-2.8 2.6.8 3.8-3.4-2-3.4 2 .8-3.8-2.8-2.6 3.8-.5z M150 172 l1.6 3.6 3.8.5-2.8 2.6.8 3.8-3.4-2-3.4 2 .8-3.8-2.8-2.6 3.8-.5z" fill="#ffe066"/>'),
+  herocape: cape('#e0475b', '#b8323f'),
+  pirateshirt: { front: `<clipPath id="g-shirt"><path d="M60 186 C54 154 68 132 100 132 C132 132 146 154 140 186 Z"/></clipPath><g clip-path="url(#g-shirt)"><rect x="40" y="126" width="120" height="70" fill="#fff"/>${[136, 150, 164, 178].map((y) => `<rect x="40" y="${y}" width="120" height="7" fill="#e0475b"/>`).join('')}</g><path d="M60 186 C54 154 68 132 100 132 C132 132 146 154 140 186" fill="none"${o}/>` },
+  apron: { front: `<path d="M80 136 L72 128 M120 136 L128 128" stroke="#e8e8f0" stroke-width="4" stroke-linecap="round"/><path d="M78 136 L122 136 L128 186 L72 186 Z" fill="#fff"${o}/><rect x="88" y="152" width="24" height="14" rx="3" fill="none" stroke="#c9c9d6" stroke-width="2.4"/>` },
+};
+const OUTFIT_ART = { ...HEAD_WEAR, ...FACE_WEAR, ...NECK_WEAR, ...Object.fromEntries(Object.entries(BODY_WEAR).map(([k, v]) => [k, (v.back || '') + (v.front || '')])) };
 // Tight view boxes for drawing an outfit on its own (shop, wardrobe).
 const OUTFIT_BOX = {
   gradcap: '39 -16 122 122', cap: '51 -14 118 118', beanie: '39 -23.5 122 122', partyhat: '67.5 -20 71 71',
   flowers: '45 -9 104 104', headphones: '25 10.5 150 150', sunglasses: '51 41 98 98', roundglasses: '51 39 98 98',
   bowtie: '69 110 62 62', scarf: '51 110 98 98', bandana: '57 112 86 86',
+  wizardhat: '35 -40 130 130', starglasses: '50 37 100 100', wizardcape: '31 93 138 138',
+  heroband: '36 -1 155 155', heromask: '41 29 118 118', herocape: '31 93 138 138',
+  piratehat: '29 -28 142 142', eyepatch: '39 24 124 124', pirateshirt: '49 108 102 102',
+  chefhat: '57 -15 86 86', chefscarf: '57 112 86 86', apron: '65 121 70 70',
 };
 // One outfit drawn by itself, centred in a square.
 export function outfitSVG(id, size = 64) {
@@ -79,11 +108,14 @@ export function dogSVG(dogId, opts = {}) {
     fluff: `<path d="M132 160 C168 162 182 132 172 108 C168 100 158 102 158 110 C160 128 150 142 132 142 Z" fill="${C.main}"${o}/><path d="M170 112 C174 124 170 136 160 144" fill="none" stroke="${C.second}" stroke-width="7" stroke-linecap="round"/>`,
     none: '',
   };
+  const body = worn.body && BODY_WEAR[worn.body];
+  if (body?.back) p.push(body.back);
   if (B.tail !== 'none') p.push(`<g class="pw-tail">${tails[B.tail]}</g>`);
   p.push(`<path d="M56 186 C50 150 66 118 100 118 C134 118 150 150 144 186 Z" fill="${C.main}"${o}/>`);
   p.push(`<path d="M78 186 C74 158 86 136 100 136 C114 136 126 158 122 186 Z" fill="${C.second}"/>`);
   if (d.spots) p.push(`<circle cx="70" cy="160" r="7" fill="${C.dark}"/><circle cx="132" cy="150" r="5" fill="${C.dark}"/><circle cx="128" cy="172" r="6" fill="${C.dark}"/>`);
   const paw = B.socks || sk ? C.second : C.main;
+  if (body?.front) p.push(body.front);
   p.push(both(`<ellipse cx="80" cy="186" rx="15" ry="10" fill="${paw}"${o}/><path d="M76 182 L76 189 M84 182 L84 189" stroke="${OL}" stroke-width="2" stroke-linecap="round"/>`));
   if (B.ears === 'pointy' || B.ears === 'big') {
     const big = B.ears === 'big';
