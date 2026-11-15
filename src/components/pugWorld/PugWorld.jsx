@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AppShellPortal } from '../ui';
 import { useLang } from '../../lib/useLang';
 import { localDateKey } from '../../lib/plannerLogic';
-import { DOGS, DOG_BY_ID, BREED_IDS, STARTERS, OUTFIT_BY_ID, OUTFIT_SETS, RARITY_COLOR, RARITIES } from '../../lib/pugWorld/catalog.js';
+import { DOGS, DOG_BY_ID, BREED_IDS, STARTERS, OUTFIT_BY_ID, OUTFIT_SETS, RARITY_COLOR } from '../../lib/pugWorld/catalog.js';
 import {
   CALENDAR, CHEST_PRICE, MISSIONS, MISSION_COINS, canClaimCalendar, claimCalendar, collectionScore, dogPower, bumpMission,
   shopOffers, buyOutfit, buyChest, breedDogs, chooseStarter, buySet, setPrice, wearSet, fullSetOn,
@@ -73,7 +73,7 @@ export default function PugWorld({ pw, onClose }) {
           <>
             <TopBar title={t('pw.tab.' + tab)} onBack={onClose} right={<CoinPill n={state.coins} />} />
             <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 28px' }}>
-              {tab === 'dogs' && <MyDogs pw={pw} hideStage={!!overlay} onOpenChest={setOpening} onChances={() => setChances(true)} onStudy={onClose} onShop={() => setTab('shop')} />}
+              {tab === 'dogs' && <MyDogs pw={pw} hideStage={!!overlay} onOpenChest={setOpening} onChances={() => setChances(true)} onStudy={onClose} onShop={() => setTab('shop')} onAlbum={() => setTab('album')} />}
               {tab === 'album' && <Album state={state} onShowDog={setShowDog} onChances={() => setChances(true)} />}
               {tab === 'shop' && <Shop pw={pw} />}
               {tab === 'friends' && <Friends />}
@@ -131,7 +131,7 @@ function Starter({ onPick, onClose }) {
 }
 
 // ---------- My dogs: the favourite on stage, chests, missions, calendar ----------
-function MyDogs({ pw, hideStage, onOpenChest, onChances, onStudy, onShop }) {
+function MyDogs({ pw, hideStage, onOpenChest, onChances, onStudy, onShop, onAlbum }) {
   const { t } = useLang();
   const { state, update } = pw;
   const fav = state.favorite && state.dogs[state.favorite] ? state.favorite : Object.keys(state.dogs)[0];
@@ -154,7 +154,7 @@ function MyDogs({ pw, hideStage, onOpenChest, onChances, onStudy, onShop }) {
         <Stars level={level} />
         <span>⚡ {t('pw.power', { n: dogPower(fav, level) })}</span>
       </div>
-      <DogStrip state={state} current={fav} onPick={(id) => update((s) => ({ ...s, favorite: id }))} />
+      <DogStrip state={state} current={fav} onPick={(id) => update((s) => ({ ...s, favorite: id }))} onAlbum={onAlbum} />
       <Wardrobe state={state} dogId={fav} update={update} onShop={onShop} />
 
       <Chests state={state} onOpenChest={onOpenChest} onChances={onChances} onStudy={onStudy} />
@@ -176,22 +176,34 @@ function MyDogs({ pw, hideStage, onOpenChest, onChances, onStudy, onShop }) {
   );
 }
 
-// All your dogs in a row under the big one: tap one to make it your
-// favourite (the dog on the stage and on Home).
-function DogStrip({ state, current, onPick }) {
-  const ids = DOGS.filter((d) => state.dogs[d.id]).sort((a, b) => RARITIES.indexOf(b.rarity) - RARITIES.indexOf(a.rarity)).map((d) => d.id);
-  if (ids.length < 2) return null;
+// The other versions of the same breed in a row under the big dog: tap one
+// you have to make it your favourite; the ones not found yet look like in
+// the album ("?"). "Album ›" switches to another breed.
+function DogStrip({ state, current, onPick, onAlbum }) {
+  const { t } = useLang();
+  const breed = DOG_BY_ID[current]?.breed;
+  if (!breed) return null;
+  const all = breedDogs(breed);
+  const have = all.filter((d) => state.dogs[d.id]).length;
   return (
-    <div style={{ display: 'flex', gap: 8, overflowX: 'auto', margin: '14px -16px 0', padding: '4px 16px' }}>
-      {ids.map((id) => {
-        const on = id === current;
-        return (
-          <div key={id} onClick={() => onPick(id)} style={{ flex: 'none', width: 56, height: 56, borderRadius: 16, background: TILE[DOG_BY_ID[id].rarity], display: 'grid', placeItems: 'center', cursor: 'pointer', boxShadow: on ? '0 0 0 2.5px #08080c, 0 0 0 4.5px #8b6dff' : 'none', opacity: on ? 1 : 0.85 }}>
-            <DogThumb dogId={id} size={50} />
-          </div>
-        );
-      })}
-    </div>
+    <>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '16px 2px 0' }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: '#d9d9e6' }}>{t('pw.breed.' + breed)} <span style={{ color: '#8a8a99', fontWeight: 600 }}>{have}/{all.length}</span></div>
+        <span onClick={onAlbum} style={{ fontSize: 12.5, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('pw.tab.album')} ›</span>
+      </div>
+      <div style={{ display: 'flex', gap: 8, overflowX: 'auto', margin: '6px -16px 0', padding: '4px 16px' }}>
+        {all.map((d) => {
+          const own = !!state.dogs[d.id];
+          const on = d.id === current;
+          return (
+            <div key={d.id} onClick={own ? () => onPick(d.id) : undefined} style={{ flex: 'none', width: 56, height: 56, borderRadius: 16, position: 'relative', background: TILE[d.rarity], display: 'grid', placeItems: 'center', cursor: own ? 'pointer' : 'default', boxShadow: on ? '0 0 0 2.5px #08080c, 0 0 0 4.5px #8b6dff' : 'none', opacity: on ? 1 : own ? 0.9 : 0.7 }}>
+              <DogThumb dogId={d.id} size={50} silhouette={!own} />
+              {!own && <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 20, fontWeight: 900, color: '#fff' }}>?</span>}
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
