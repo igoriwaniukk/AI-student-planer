@@ -26,10 +26,10 @@ const FLIP = [
   { transform: 'perspective(600px) translateY(0) rotateY(360deg)' },
 ];
 
-export default function Dog2D({ dogId, worn, happyKey = 0, trickKey = 0, onReady, style }) {
+export default function Dog2D({ dogId, worn, book = false, happyKey = 0, trickKey = 0, onReady, style }) {
   const jumper = useRef(null);
   const wornKey = JSON.stringify(worn || {});
-  const svg = useMemo(() => dogSVG(dogId, { worn: JSON.parse(wornKey) }), [dogId, wornKey]);
+  const svg = useMemo(() => dogSVG(dogId, { worn: JSON.parse(wornKey), book }), [dogId, wornKey, book]);
   const play = (frames, ms) => jumper.current?.animate(frames, { duration: ms, easing: 'ease-out' });
   useEffect(() => { onReady?.(); }, [dogId]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => { if (happyKey) play(JUMP, 650); }, [happyKey]);

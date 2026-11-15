@@ -701,6 +701,7 @@ export default function Home({ planner, studentName, profilePhoto, studyHistory 
         frozenDays={frozenDays} savedByFreeze={!!studyHistory[localDateKey(yesterday)]?.frozen} rewards={streakRewards}
       />
       <StreakNotice notice={streakNotice} onDismiss={() => setLastSeenStreak(streak)} />
+      {isRealDay && <PugWorldCard pw={pugWorld} />}
 
       {state.rescueApplied && (() => {
         const movedCount = Object.values(state.rescueDecisions || {}).filter((d) => d === 'moved').length;
@@ -731,7 +732,6 @@ export default function Home({ planner, studentName, profilePhoto, studyHistory 
         {isRealDay && <div onClick={() => { planner.update({ planToday: true }); planner.go('plan'); }} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 14, fontSize: 13, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('home.seeFullPlan')} <span style={{ fontSize: 11 }}>›</span></div>}
       </div>
 
-      {isRealDay && <PugWorldCard pw={pugWorld} />}
 
       <WeekCard planner={planner} streak={streak} />
 

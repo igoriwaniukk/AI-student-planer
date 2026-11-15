@@ -27,13 +27,13 @@ export function usePugWorld({ streak, isPremium }) {
   }, [stored]);
   const state = normalize(stored || EMPTY);
   const [enabled, setEnabled] = useState(pugPreviewOn);
-  const [open, setOpen] = useState(null); // null = closed, else the tab
+  const [open, setOpen] = useState(null); // null = closed, else { tab, chest }
   const [toast, setToast] = useState(null);
   const update = useCallback((fn) => setStored((s) => fn(normalize(s || EMPTY))), [setStored]);
 
   useEffect(() => {
     const onPreview = () => setEnabled(pugPreviewOn());
-    const onOpen = (e) => setOpen(e.detail?.tab || 'dogs');
+    const onOpen = (e) => setOpen({ tab: e.detail?.tab || 'dogs', chest: e.detail?.chest || null });
     window.addEventListener(PUG_PREVIEW_EVENT, onPreview);
     window.addEventListener(PUG_OPEN_EVENT, onOpen);
     return () => {
@@ -74,17 +74,20 @@ export function usePugWorld({ streak, isPremium }) {
   }, [enabled, today, streak, isPremium, update]);
 
   const toastTimer = useRef(null);
+  // The small "+1 chest" message (game not started yet) goes away by
+  // itself; the session reward (SessionReward) waits to be opened or closed.
+  const started = Object.keys(state.dogs).length > 0;
   useEffect(() => {
-    if (!toast) return undefined;
+    if (!toast || started) return undefined;
     clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToast(null), 6000);
     return () => clearTimeout(toastTimer.current);
-  }, [toast]);
+  }, [toast, started]);
 
   return {
     enabled,
     state,
-    started: Object.keys(state.dogs).length > 0,
+    started,
     update,
     open,
     setOpen,

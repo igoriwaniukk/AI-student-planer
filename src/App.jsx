@@ -33,7 +33,7 @@ import { usePlanner } from './hooks/usePlanner';
 import { useStreakRewards } from './hooks/useStreakRewards';
 import { usePugWorld } from './hooks/usePugWorld';
 import PugWorld from './components/pugWorld/PugWorld';
-import { PugWorldToast } from './components/pugWorld/PugWorldCard';
+import { SessionReward } from './components/pugWorld/PugWorldCard';
 import { LanguageProvider } from './lib/LanguageContext';
 import { computeStreak, studiedToday, localDateKey, daySessionBreakdown, statusOn, dayOpenTasks, wrapUpMinutes, planFor } from './lib/plannerLogic';
 import { NUM_TODAY } from './lib/plannerData';
@@ -246,7 +246,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
     };
   }, []);
   // Only on a quiet Home: no celebration, finish sheet or plan being made.
-  const quietHome = screen === 'home' && !celebrating && !state.finishTask && !state.generating && !paywall && !quickAddOpen;
+  const quietHome = screen === 'home' && !celebrating && !state.finishTask && !state.generating && !paywall && !quickAddOpen && !(pugWorld.enabled && pugWorld.toast);
   useEffect(() => {
     if (!premium.enabled || premium.premium || !quietHome) return undefined;
     if (pendingWin.current) {
@@ -363,7 +363,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
       {screen === 'deadline' && <Deadline planner={planner} />}
       {screen === 'prep' && <Prep planner={planner} />}
       {screen === 'summary' && <Summary planner={planner} recordStudyDay={recordStudyDay} />}
-      {screen === 'focus' && <Focus planner={planner} />}
+      {screen === 'focus' && <Focus planner={planner} pugWorld={pugWorld} />}
       {screen === 'plans' && (
         <Plans
           planner={planner}
@@ -429,7 +429,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
 
       {/* Pug World, the dog collection game (hidden preview, see lib/pugWorld/events.js). */}
       {pugWorld.enabled && pugWorld.open && <PugWorld pw={pugWorld} onClose={() => pugWorld.setOpen(null)} />}
-      <PugWorldToast pw={pugWorld} />
+      <SessionReward pw={pugWorld} ready={!celebrating && screen !== 'focus' && !paywall} />
 
       {paywall && <Paywall reason={paywall} onClose={() => setPaywall(null)} />}
     </div>

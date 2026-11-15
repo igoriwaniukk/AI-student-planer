@@ -1231,4 +1231,9 @@ export default {
   "pw.buySet": "Comprar conjunto",
   "pw.wearSet": "Vestir",
   "pw.wearing": "Vestindo",
+  "pw.focus.bubble": "Psiu… eu também estou estudando 📚",
+  "pw.focus.chest": "Um baú quando terminarmos",
+  "pw.done.title": "Sessão concluída",
+  "pw.done.bubble": "Conseguimos! Achei um baú — *toque para abrir!*",
+  "pw.later": "Depois",
 };

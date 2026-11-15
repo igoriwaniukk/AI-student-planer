@@ -1231,4 +1231,9 @@ export default {
   "pw.buySet": "Acheter la tenue",
   "pw.wearSet": "L'enfiler",
   "pw.wearing": "Portée",
+  "pw.focus.bubble": "Chut… moi aussi je révise 📚",
+  "pw.focus.chest": "Un coffre à la fin",
+  "pw.done.title": "Séance terminée",
+  "pw.done.bubble": "On a réussi ! J'ai trouvé un coffre — *touche-le pour l'ouvrir !*",
+  "pw.later": "Plus tard",
 };
