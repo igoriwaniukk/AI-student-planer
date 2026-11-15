@@ -9,14 +9,14 @@ import {
 } from '../../lib/pugWorld/logic.js';
 import Dog2D from './Dog2D';
 import Wardrobe from './Wardrobe';
-import { CoinIcon, SparkleIcon, OutfitPic } from './icons';
+import { CoinIcon, OutfitPic } from './icons';
 import DogThumb from './DogThumb';
 import ChestIcon from './Chest';
 import { CHEST_COLORS } from './theme';
 import ChestOpen, { ChancesSheet } from './ChestOpen';
 import DogShowcase from './DogShowcase';
 import { dogName } from './names';
-import { Card, RarityPill, Stars, Button, TopBar, CoinPill, Stage } from './bits';
+import { Card, RarityPill, Stars, Button, TopBar, CoinPill, Stage, TrickButton } from './bits';
 import { PURPLE, CARD } from './theme';
 
 // Pug World: the dog collection game. Studying earns chests, chests hold
@@ -144,10 +144,7 @@ function MyDogs({ pw, hideStage, onOpenChest, onChances, onStudy, onShop }) {
     <>
       <Stage height={280}>
         {!hideStage && <Dog2D dogId={fav} worn={state.outfits.worn[fav]} trickKey={trick} />}
-        <div onClick={doTrick} style={{ position: 'absolute', right: 26, bottom: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-          <div style={{ width: 52, height: 52, borderRadius: '50%', background: PURPLE, display: 'grid', placeItems: 'center', boxShadow: '0 8px 20px rgba(109,77,255,.5)' }}><SparkleIcon size={24} /></div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#c9baff' }}>{t('pw.trick')}</div>
-        </div>
+        <TrickButton onClick={doTrick} />
       </Stage>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 19, fontWeight: 800 }}>{dogName(t, fav)}</span>

@@ -2,7 +2,7 @@ import { RARITY_COLOR } from '../../lib/pugWorld/catalog.js';
 import { MAX_LEVEL } from '../../lib/pugWorld/logic.js';
 import { useLang } from '../../lib/useLang';
 import { CARD, PURPLE } from './theme';
-import { CoinIcon } from './icons';
+import { CoinIcon, SparkleIcon } from './icons';
 
 // Small shared pieces of the Pug World screens.
 
@@ -73,6 +73,17 @@ export function CoinPill({ n }) {
   return (
     <div style={{ height: 32, padding: '0 12px', borderRadius: 99, background: 'rgba(245,165,36,.12)', border: '1px solid rgba(245,165,36,.35)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 800, color: '#ffd27a', flex: 'none' }}>
       <CoinIcon size={17} />{n}
+    </div>
+  );
+}
+
+// The round Trick button that sits on the stage, right of the big dog.
+export function TrickButton({ onClick }) {
+  const { t } = useLang();
+  return (
+    <div onClick={onClick} style={{ position: 'absolute', right: 26, bottom: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+      <div style={{ width: 52, height: 52, borderRadius: '50%', background: PURPLE, display: 'grid', placeItems: 'center', boxShadow: '0 8px 20px rgba(109,77,255,.5)' }}><SparkleIcon size={24} /></div>
+      <div style={{ fontSize: 11, fontWeight: 700, color: '#c9baff' }}>{t('pw.trick')}</div>
     </div>
   );
 }
