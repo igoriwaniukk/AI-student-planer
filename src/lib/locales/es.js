@@ -1080,7 +1080,6 @@ export default {
   "sum.sessionsLabel": "Sesiones",
   "sum.noteRow": "Nota",
   "pw.title": "Mis perros",
-  "pw.play": "Jugar",
   "pw.tab.dogs": "Mis perros",
   "pw.tab.album": "Álbum",
   "pw.tab.shop": "Tienda",

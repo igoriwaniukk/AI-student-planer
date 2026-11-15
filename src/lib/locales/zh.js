@@ -1080,7 +1080,6 @@ export default {
   "sum.sessionsLabel": "学习时段",
   "sum.noteRow": "备注",
   "pw.title": "我的狗狗",
-  "pw.play": "去玩",
   "pw.tab.dogs": "我的狗狗",
   "pw.tab.album": "图鉴",
   "pw.tab.shop": "商店",

@@ -11,7 +11,7 @@ import { PURPLE } from './theme';
 const MISSION_ICON = { session: '📖', session2: '📚', chest: '🎁', chest2: '🎁', dress: '👕', plan: '🗓️', trick: '✨', album: '📒' };
 
 // Home: your dog (alive: breathes, blinks, wags), today's missions and the
-// chests waiting, right under the streak; tap to play.
+// chests waiting, right under the streak; tap to open your dogs.
 export default function PugWorldCard({ pw }) {
   const { t } = useLang();
   const [jump, setJump] = useState(0);
@@ -32,7 +32,7 @@ export default function PugWorldCard({ pw }) {
               <ChestIcon type="small" size={18} glow={false} />{chests}
             </span>
           )}
-          <span style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 3, fontSize: 12, fontWeight: 800, color: '#fff', padding: '4px 10px', borderRadius: 99, background: PURPLE, flex: 'none' }}>{t('pw.play')} ›</span>
+          <span style={{ marginLeft: 'auto', color: '#7a7a8c', fontSize: 18 }}>›</span>
         </div>
         {!pw.started || !items.length ? (
           <div style={{ fontSize: 12.5, color: '#b9b9c8', marginTop: 4, lineHeight: 1.4 }}>{t('pw.home.start')}</div>

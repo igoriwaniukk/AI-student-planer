@@ -1080,7 +1080,6 @@ export default {
   "sum.sessionsLabel": "セッション",
   "sum.noteRow": "メモ",
   "pw.title": "マイドッグ",
-  "pw.play": "あそぶ",
   "pw.tab.dogs": "マイドッグ",
   "pw.tab.album": "図鑑",
   "pw.tab.shop": "ショップ",
