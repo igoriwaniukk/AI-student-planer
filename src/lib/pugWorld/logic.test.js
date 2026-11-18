@@ -3,7 +3,7 @@ import { DOGS, STARTERS, RARITIES, BREED_IDS } from './catalog';
 import {
   EMPTY, normalize, CHEST_ODDS, CHEST_CONTENTS, rollRarity, addDog, openChest, addChest, dogPower, collectionScore, coinBonus,
   missionsFor, ensureDay, bumpMission, claimCalendar, canClaimCalendar, shopOffers, buyOutfit, buyChest, toggleOutfit,
-  onSession, onPlan, onDayFinished, rollUpgrade, setChestType, buySet, setPrice, wearSet, fullSetOn, onStreak, onPremiumDay, chooseStarter, completedSets, breedDogs,
+  onSession, onPlan, onDayFinished, monthlyFor, MONTHLY_TARGET, rollUpgrade, setChestType, buySet, setPrice, wearSet, fullSetOn, onStreak, onPremiumDay, chooseStarter, completedSets, breedDogs,
 } from './logic';
 
 const seq = (...xs) => { let i = 0; return () => xs[i++ % xs.length]; };
@@ -131,6 +131,20 @@ describe('daily', () => {
     s = toggleOutfit(s, 'pug-fawn', 'cap'); expect(s.outfits.worn['pug-fawn'].head).toBe('cap');
     s = toggleOutfit(s, 'pug-fawn', 'beanie'); expect(s.outfits.worn['pug-fawn'].head).toBe('beanie');
     s = toggleOutfit(s, 'pug-fawn', 'beanie'); expect(s.outfits.worn['pug-fawn'].head).toBeUndefined();
+  });
+});
+
+describe('monthly challenge', () => {
+  it('20 sessions in a month give an epic chest and 300 coins, once; a new month starts over', () => {
+    let s = EMPTY;
+    for (let i = 0; i < MONTHLY_TARGET; i++) s = onSession(s, 'c' + i, '2026-11');
+    expect(monthlyFor(s, '2026-11')).toMatchObject({ sessions: 20, done: true });
+    expect(s.chests.filter((c) => c.from === 'monthly')).toHaveLength(1);
+    s = onSession(s, 'x', '2026-11');
+    expect(s.chests.filter((c) => c.from === 'monthly')).toHaveLength(1);
+    expect(monthlyFor(s, '2026-12')).toMatchObject({ sessions: 0, done: false });
+    s = onSession(s, 'y', '2026-12');
+    expect(monthlyFor(s, '2026-12').sessions).toBe(1);
   });
 });
 

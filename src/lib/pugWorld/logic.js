@@ -14,6 +14,7 @@ export const EMPTY = {
   missions: { date: null, items: [], counts: {}, bonus: false },
   shop: { date: null, bought: [] },
   sets: [], rewarded: { streaks: [], days: [], premium: null, plan: null },
+  monthly: { month: null, sessions: 0, done: false },
 };
 export function normalize(s) {
   const x = s && typeof s === 'object' ? s : {};
@@ -28,6 +29,7 @@ export function normalize(s) {
     shop: { ...EMPTY.shop, ...(x.shop || {}) },
     sets: Array.isArray(x.sets) ? x.sets : [],
     rewarded: { ...EMPTY.rewarded, ...(x.rewarded || {}) },
+    monthly: { ...EMPTY.monthly, ...(x.monthly || {}) },
   };
 }
 
@@ -314,9 +316,31 @@ export const PLAN_COINS = 15;
 export const DAY_COINS = 30;
 export const STREAK_CHESTS = [3, 7, 14, 30, 50, 100];
 
-// `id`: the new chest's id, so the app can open exactly that one.
-export function onSession(state, id) {
-  return bumpMission(addCoins(addChest(state, 'small', 'session', id), SESSION_COINS), 'session');
+// `id`: the new chest's id, so the app can open exactly that one;
+// `month` ('2026-11'): counts towards the monthly challenge.
+export function onSession(state, id, month) {
+  const s = bumpMission(addCoins(addChest(state, 'small', 'session', id), SESSION_COINS), 'session');
+  return month ? countMonthly(s, month) : s;
+}
+
+// ---------- monthly challenge ----------
+// Finish MONTHLY_TARGET study sessions in a calendar month: an epic chest
+// and MONTHLY_COINS coins, once a month.
+export const MONTHLY_TARGET = 20;
+export const MONTHLY_COINS = 300;
+export function monthlyFor(state, month) {
+  const m = normalize(state).monthly;
+  return m.month === month ? m : { month, sessions: 0, done: false };
+}
+export function countMonthly(state, month) {
+  const s = normalize(state);
+  const m = monthlyFor(s, month);
+  const sessions = m.sessions + 1;
+  let next = { ...s, monthly: { month, sessions, done: m.done } };
+  if (!m.done && sessions >= MONTHLY_TARGET) {
+    next = addChest({ ...next, monthly: { month, sessions, done: true }, coins: next.coins + MONTHLY_COINS }, 'epic', 'monthly');
+  }
+  return next;
 }
 // Approving a plan: coins once a day (re-approving can't farm them).
 export function onPlan(state, date) {

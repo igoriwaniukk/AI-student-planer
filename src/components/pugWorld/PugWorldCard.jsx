@@ -1,18 +1,17 @@
 import { useState } from 'react';
 import { useLang } from '../../lib/useLang';
-import { MISSIONS, MISSION_COINS, SESSION_COINS } from '../../lib/pugWorld/logic.js';
+import { SESSION_COINS, MONTHLY_TARGET, monthlyFor } from '../../lib/pugWorld/logic.js';
+import { localDateKey } from '../../lib/plannerLogic';
 import { openPugWorld } from '../../lib/pugWorld/events';
 import { AppShellPortal } from '../ui';
 import Dog2D from './Dog2D';
 import ChestIcon from './Chest';
 import ChestOpen from './ChestOpen';
 import { CoinIcon } from './icons';
-import { PURPLE } from './theme';
 
-const MISSION_ICON = { session: '📖', session2: '📚', chest: '🎁', chest2: '🎁', dress: '👕', plan: '🗓️', trick: '✨', album: '📒' };
-
-// Home: your dog (alive: breathes, blinks, wags), today's missions and the
-// chests waiting, right under the streak; tap to open your dogs.
+// Home: your dog (alive: breathes, blinks, wags), chests waiting, and one
+// short progress line (today's missions, the monthly challenge); tap to
+// open the Pets page.
 export default function PugWorldCard({ pw }) {
   const { t } = useLang();
   const [jump, setJump] = useState(0);
@@ -20,6 +19,8 @@ export default function PugWorldCard({ pw }) {
   const { state } = pw;
   const chests = state.chests.length;
   const items = state.missions.items || [];
+  const doneCount = items.filter((m) => m.done).length;
+  const month = monthlyFor(state, localDateKey().slice(0, 7));
   return (
     <div onClick={() => { setJump((k) => k + 1); setTimeout(() => openPugWorld(), 350); }} style={{ marginTop: 12, padding: '12px 14px', borderRadius: 20, cursor: 'pointer', background: 'linear-gradient(160deg,rgba(139,109,255,.14),rgba(139,109,255,.03))', border: '1px solid rgba(139,109,255,.35)', display: 'flex', gap: 12, alignItems: 'center' }}>
       <div style={{ width: 76, height: 76, borderRadius: 18, background: '#c9d8f5', display: 'grid', placeItems: 'center', flex: 'none', overflow: 'hidden' }}>
@@ -37,27 +38,19 @@ export default function PugWorldCard({ pw }) {
         </div>
         {!pw.started || !items.length ? (
           <div style={{ fontSize: 12.5, color: '#b9b9c8', marginTop: 4, lineHeight: 1.4 }}>{t('pw.home.start')}</div>
-        ) : items.map((m) => {
-          const [ev, n] = MISSIONS[m.id] || ['', 1];
-          const have = m.done ? n : Math.min(n, state.missions.counts[ev] || 0);
-          return (
-            <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 7 }}>
-              <span style={{ width: 22, height: 22, borderRadius: 7, background: 'rgba(255,255,255,.06)', display: 'grid', placeItems: 'center', fontSize: 11.5, flex: 'none' }}>{MISSION_ICON[m.id] || '⭐'}</span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 650, color: m.done ? '#8a8a99' : '#ececf3', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{t('pw.mission.' + m.id)}</div>
-                <div style={{ height: 3, borderRadius: 9, background: 'rgba(255,255,255,.08)', marginTop: 4, overflow: 'hidden' }}>
-                  <div style={{ width: (have / n) * 100 + '%', height: '100%', background: m.done ? '#35d07f' : PURPLE }} />
-                </div>
-              </div>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10.5, fontWeight: 800, color: m.done ? '#35d07f' : '#ffd27a', flex: 'none' }}>
-                {m.done ? '✓' : <><CoinIcon size={11} />{MISSION_COINS}</>}
-              </span>
-            </div>
-          );
-        })}
+        ) : (
+          <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
+            <Chip done={doneCount === items.length}>{t('pw.home.missions', { n: doneCount, total: items.length })}</Chip>
+            <Chip done={month.done}>{t('pw.home.month', { n: Math.min(month.sessions, MONTHLY_TARGET), total: MONTHLY_TARGET })}</Chip>
+          </div>
+        )}
       </div>
     </div>
   );
+}
+
+function Chip({ done, children }) {
+  return <span style={{ fontSize: 12, fontWeight: 700, padding: '5px 10px', borderRadius: 99, background: done ? 'rgba(53,208,127,.12)' : 'rgba(255,255,255,.06)', color: done ? '#7fe3ad' : '#d9d9e6', whiteSpace: 'nowrap' }}>{done ? '✓ ' : ''}{children}</span>;
 }
 
 // The study timer: your dog studies with you.
@@ -91,7 +84,7 @@ function SpeechBubble({ children }) {
 // the game is started: a small "+1 chest" message at the top instead.
 export function SessionReward({ pw, ready }) {
   const { t } = useLang();
-  if (!pw?.enabled || !pw.toast || pw.open || !ready) return null;
+  if (!pw?.enabled || !pw.toast || !ready) return null;
   // The chest this session added (remembered in the toast, so it stays put
   // while it opens and leaves the list).
   const chestId = pw.toast.chest;
@@ -113,7 +106,7 @@ export function SessionReward({ pw, ready }) {
 // Small "+1 chest" message at the top, tap to open the game.
 export function PugWorldToast({ pw }) {
   const { t } = useLang();
-  if (!pw?.enabled || !pw.toast || pw.open) return null;
+  if (!pw?.enabled || !pw.toast) return null;
   return (
     <AppShellPortal>
       <div

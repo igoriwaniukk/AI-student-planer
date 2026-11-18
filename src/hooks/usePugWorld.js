@@ -9,7 +9,7 @@ import { EMPTY, normalize, ensureDay, chestId, onSession, onPlan, onDayFinished,
 // in MainApp. Studying feeds the game: a finished session, an approved plan,
 // a finished day, streak milestones and (Premium) a daily bonus chest.
 // While the game is hidden (no preview on this device) nothing is collected.
-export function usePugWorld({ streak, isPremium, freezeRoom = true, addFreeze }) {
+export function usePugWorld({ streak, isPremium, freezeRoom = true, addFreeze, onOpenRequest }) {
   // Saved only once there's something to save (not via useLocalStorage,
   // which would write an empty value on first load — and an empty copy from
   // a phone that never played could win a sync conflict over real progress).
@@ -27,13 +27,15 @@ export function usePugWorld({ streak, isPremium, freezeRoom = true, addFreeze })
   }, [stored]);
   const state = normalize(stored || EMPTY);
   const [enabled, setEnabled] = useState(pugPreviewOn);
-  const [open, setOpen] = useState(null); // null = closed, else { tab, chest }
+  // openPugWorld(...) asks the app to show the Pets page (tab / chest).
+  const openRequest = useRef(onOpenRequest);
+  useEffect(() => { openRequest.current = onOpenRequest; });
   const [toast, setToast] = useState(null);
   const update = useCallback((fn) => setStored((s) => fn(normalize(s || EMPTY))), [setStored]);
 
   useEffect(() => {
     const onPreview = () => setEnabled(pugPreviewOn());
-    const onOpen = (e) => setOpen({ tab: e.detail?.tab || 'dogs', chest: e.detail?.chest || null });
+    const onOpen = (e) => openRequest.current?.({ tab: e.detail?.tab || null, chest: e.detail?.chest || null });
     window.addEventListener(PUG_PREVIEW_EVENT, onPreview);
     window.addEventListener(PUG_OPEN_EVENT, onOpen);
     return () => {
@@ -44,7 +46,7 @@ export function usePugWorld({ streak, isPremium, freezeRoom = true, addFreeze })
 
   useEffect(() => {
     if (!enabled) return undefined;
-    const session = () => { const id = chestId(); update((s) => onSession(s, id)); setToast({ at: Date.now(), chest: id }); };
+    const session = () => { const id = chestId(); update((s) => onSession(s, id, localDateKey().slice(0, 7))); setToast({ at: Date.now(), chest: id }); };
     const plan = () => update((s) => onPlan(s, localDateKey()));
     const day = () => update((s) => onDayFinished(s, localDateKey()));
     window.addEventListener(SESSION_DONE_EVENT, session);
@@ -91,8 +93,6 @@ export function usePugWorld({ streak, isPremium, freezeRoom = true, addFreeze })
     freezeRoom,
     addFreeze: () => addFreeze?.(),
     update,
-    open,
-    setOpen,
     toast,
     clearToast: () => setToast(null),
   };

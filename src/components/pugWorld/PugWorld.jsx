@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react';
 import { AppShellPortal } from '../ui';
 import { useLang } from '../../lib/useLang';
+import { localeOf } from '../../lib/i18n';
 import { localDateKey } from '../../lib/plannerLogic';
 import { DOGS, DOG_BY_ID, BREED_IDS, STARTERS, OUTFIT_BY_ID, OUTFIT_SETS, RARITY_COLOR } from '../../lib/pugWorld/catalog.js';
 import {
   CALENDAR, CHEST_PRICE, MISSIONS, MISSION_COINS, canClaimCalendar, claimCalendar, collectionScore, dogPower, bumpMission,
-  shopOffers, buyOutfit, buyChest, breedDogs, chooseStarter, buySet, setPrice, wearSet, fullSetOn,
+  shopOffers, buyOutfit, buyChest, breedDogs, chooseStarter, buySet, setPrice, wearSet, fullSetOn, monthlyFor, MONTHLY_TARGET, MONTHLY_COINS,
 } from '../../lib/pugWorld/logic.js';
 import Dog2D from './Dog2D';
 import Wardrobe from './Wardrobe';
@@ -15,50 +16,28 @@ import ChestIcon from './Chest';
 import { CHEST_COLORS } from './theme';
 import ChestOpen, { ChancesSheet } from './ChestOpen';
 import DogShowcase from './DogShowcase';
+import Yard from './Yard';
 import { dogName } from './names';
-import { Card, RarityPill, Stars, Button, TopBar, CoinPill, Stage, TrickButton } from './bits';
+import { Card, RarityPill, Stars, Button, CoinPill, Stage, TrickButton } from './bits';
 import { PURPLE, CARD } from './theme';
 
 // Pug World: the dog collection game. Studying earns chests, chests hold
 // dogs (and coins, sometimes outfits). Full screen over the app with its own
 // tabs: My dogs · Album · Shop · Friends (coming next).
-// Line icons like the app's own tab bar (no emoji).
-const TABS = [
-  ['dogs', (c) => (
-    <>
-      <ellipse cx="11" cy="14.4" rx="4.4" ry="3.6" stroke={c} strokeWidth="1.5" />
-      <circle cx="5.6" cy="9.4" r="1.7" stroke={c} strokeWidth="1.5" />
-      <circle cx="9" cy="6" r="1.8" stroke={c} strokeWidth="1.5" />
-      <circle cx="13" cy="6" r="1.8" stroke={c} strokeWidth="1.5" />
-      <circle cx="16.4" cy="9.4" r="1.7" stroke={c} strokeWidth="1.5" />
-    </>
-  )],
-  ['album', (c) => <path d="M11 5.8C9 4.4 6 4 3.2 4.6v12.2c2.8-.6 5.8-.2 7.8 1.2 2-1.4 5-1.8 7.8-1.2V4.6C16 4 13 4.4 11 5.8zM11 5.8V18" stroke={c} strokeWidth="1.5" strokeLinejoin="round" />],
-  ['shop', (c) => (
-    <>
-      <path d="M4.4 7.6h13.2l-1 10a1.6 1.6 0 01-1.6 1.4H7a1.6 1.6 0 01-1.6-1.4l-1-10z" stroke={c} strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="M8 9.8V6.6a3 3 0 016 0v3.2" stroke={c} strokeWidth="1.5" strokeLinecap="round" />
-    </>
-  )],
-  ['friends', (c) => (
-    <>
-      <circle cx="8.4" cy="7.8" r="2.9" stroke={c} strokeWidth="1.5" />
-      <path d="M3 18.2a5.4 5.4 0 0110.8 0" stroke={c} strokeWidth="1.5" strokeLinecap="round" />
-      <circle cx="15.4" cy="8.6" r="2.3" stroke={c} strokeWidth="1.5" />
-      <path d="M15.2 13.2a4.4 4.4 0 014.2 4.6" stroke={c} strokeWidth="1.5" strokeLinecap="round" />
-    </>
-  )],
-];
+const TABS = ['yard', 'missions', 'album', 'shop', 'friends'];
 const CHEST_ORDER = ['epic', 'gold', 'silver', 'small'];
 // Album cards: light, in the rarity's colour (the dogs are stickers).
 const TILE = { common: '#c9d8f5', rare: '#bfe0ff', epic: '#dccbff', legendary: '#ffe7a8' };
 
-export default function PugWorld({ pw, onClose }) {
+// The Pets page (a tab of the app): Yard · Missions · Album · Shop ·
+// Friends as chips on top. `intent` = what was asked for (a tab, or a chest
+// to open right away); `onStudy` goes back to studying.
+export default function PugWorld({ pw, intent, onStudy }) {
   const { t } = useLang();
   const { state, update } = pw;
-  const [tab, setTab] = useState(pw.open?.tab || 'dogs');
-  // Opened from a session's reward: straight into that chest.
-  const [opening, setOpening] = useState(() => (pw.open?.chest && pw.state.chests.some((c) => c.id === pw.open.chest) ? pw.open.chest : null));
+  const first = intent?.tab === 'dogs' ? 'yard' : intent?.tab;
+  const [tab, setTab] = useState(TABS.includes(first) ? first : 'yard');
+  const [opening, setOpening] = useState(() => (intent?.chest && pw.state.chests.some((c) => c.id === intent.chest) ? intent.chest : null));
   const [showDog, setShowDog] = useState(null);
   const [chances, setChances] = useState(false);
   const overlay = opening || showDog || chances;
@@ -66,49 +45,53 @@ export default function PugWorld({ pw, onClose }) {
   useEffect(() => { if (tab === 'album' && pw.started) update((s) => bumpMission(s, 'album')); }, [tab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <AppShellPortal>
-      <div style={{ position: 'absolute', inset: 0, zIndex: 90, background: '#08080c', display: 'flex', flexDirection: 'column', paddingTop: 'var(--top-pad)', animation: 'fadeUp .25s ease both' }}>
-        {!pw.started ? (
-          <Starter onClose={onClose} onPick={(id) => update((s) => chooseStarter(s, id))} />
-        ) : (
-          <>
-            <TopBar title={t('pw.tab.' + tab)} onBack={onClose} right={<CoinPill n={state.coins} />} />
-            <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 28px' }}>
-              {tab === 'dogs' && <MyDogs pw={pw} hideStage={!!overlay} onOpenChest={setOpening} onChances={() => setChances(true)} onStudy={onClose} onShop={() => setTab('shop')} onAlbum={() => setTab('album')} />}
-              {tab === 'album' && <Album state={state} onShowDog={setShowDog} onChances={() => setChances(true)} />}
-              {tab === 'shop' && <Shop pw={pw} />}
-              {tab === 'friends' && <Friends />}
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', borderTop: '1px solid rgba(255,255,255,.07)', background: 'rgba(12,12,18,.96)', paddingBottom: 'var(--safe-bottom)' }}>
-              {TABS.map(([id, icon]) => {
-                const c = tab === id ? '#a58cff' : '#7a7a8a';
-                return (
-                  <div key={id} onClick={() => setTab(id)} style={{ position: 'relative', padding: '10px 0 9px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
-                    <svg width="21" height="21" viewBox="0 0 22 22" fill="none">{icon(c)}</svg>
-                    <span style={{ fontSize: 10.5, fontWeight: 650, color: c }}>{t('pw.tab.' + id)}</span>
-                    {tab === id && <span style={{ position: 'absolute', bottom: 3, width: 22, height: 3, borderRadius: 99, background: PURPLE }} />}
-                  </div>
-                );
-              })}
-            </div>
-          </>
-        )}
-        {opening && <ChestOpen key={opening} pw={pw} chestId={opening} onNext={setOpening} onClose={() => setOpening(null)} />}
-        {showDog && <DogShowcase pw={pw} dogId={showDog} onClose={() => setShowDog(null)} onShop={() => { setShowDog(null); setTab('shop'); }} />}
-        {chances && <ChancesSheet onClose={() => setChances(false)} />}
-      </div>
-    </AppShellPortal>
+    <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 16px calc(var(--tabbar-h) + 28px)', position: 'relative', zIndex: 1 }}>
+      {!pw.started ? (
+        <Starter onPick={(id) => update((s) => chooseStarter(s, id))} />
+      ) : (
+        <>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ flex: 1, fontSize: 26, fontWeight: 800, letterSpacing: '-.02em' }}>{t('tab.pets')}</div>
+            <CoinPill n={state.coins} />
+          </div>
+          <div style={{ display: 'flex', gap: 7, overflowX: 'auto', margin: '14px -16px 4px', padding: '0 16px 2px' }}>
+            {TABS.map((id) => {
+              const badge = id === 'missions' ? (state.missions.items || []).filter((m) => !m.done).length : 0;
+              return (
+                <div key={id} onClick={() => setTab(id)} style={{ flex: 'none', height: 34, padding: '0 14px', borderRadius: 99, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, cursor: 'pointer', background: tab === id ? '#8b6dff' : 'rgba(255,255,255,.06)', color: tab === id ? '#fff' : '#b9b9c8' }}>
+                  {t('pw.tab.' + id)}
+                  {badge > 0 && <span style={{ minWidth: 17, height: 17, borderRadius: 99, fontSize: 10.5, fontWeight: 800, display: 'grid', placeItems: 'center', background: tab === id ? 'rgba(255,255,255,.25)' : '#ff5f6d', color: '#fff' }}>{badge}</span>}
+                </div>
+              );
+            })}
+          </div>
+          {tab === 'yard' && <MyDogs pw={pw} paused={!!overlay} onOpenChest={setOpening} onChances={() => setChances(true)} onStudy={onStudy} onShop={() => setTab('shop')} onAlbum={() => setTab('album')} onShowDog={setShowDog} />}
+          {tab === 'missions' && <MissionsTab pw={pw} />}
+          {tab === 'album' && <Album state={state} onShowDog={setShowDog} onChances={() => setChances(true)} />}
+          {tab === 'shop' && <Shop pw={pw} />}
+          {tab === 'friends' && <Friends />}
+        </>
+      )}
+      {overlay && (
+        <AppShellPortal>
+          <div style={{ position: 'absolute', inset: 0, zIndex: 90 }}>
+            {opening && <ChestOpen key={opening} pw={pw} chestId={opening} onNext={setOpening} onClose={() => setOpening(null)} />}
+            {showDog && <DogShowcase pw={pw} dogId={showDog} onClose={() => setShowDog(null)} onShop={() => { setShowDog(null); setTab('shop'); }} />}
+            {chances && <ChancesSheet onClose={() => setChances(false)} />}
+          </div>
+        </AppShellPortal>
+      )}
+    </div>
   );
 }
 
 // ---------- first visit: pick a starter ----------
-function Starter({ onPick, onClose }) {
+function Starter({ onPick }) {
   const { t } = useLang();
   const [pick, setPick] = useState(STARTERS[0]);
   return (
     <>
-      <TopBar title={t('pw.title')} onBack={onClose} />
-      <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px 24px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100%' }}>
         <div style={{ textAlign: 'center', marginTop: 4 }}>
           <div style={{ fontSize: 24, fontWeight: 800, letterSpacing: '-.02em' }}>{t('pw.start.title')}</div>
           <div style={{ fontSize: 13.5, color: '#a3a3b3', marginTop: 6, lineHeight: 1.45 }}>{t('pw.start.sub')}</div>
@@ -131,8 +114,8 @@ function Starter({ onPick, onClose }) {
   );
 }
 
-// ---------- My dogs: the favourite on stage, chests, missions, calendar ----------
-function MyDogs({ pw, hideStage, onOpenChest, onChances, onStudy, onShop, onAlbum }) {
+// ---------- Yard: your dogs walking around, the favourite's outfits, chests ----------
+function MyDogs({ pw, paused, onOpenChest, onChances, onStudy, onShop, onAlbum, onShowDog }) {
   const { t } = useLang();
   const { state, update } = pw;
   const fav = state.favorite && state.dogs[state.favorite] ? state.favorite : Object.keys(state.dogs)[0];
@@ -140,14 +123,14 @@ function MyDogs({ pw, hideStage, onOpenChest, onChances, onStudy, onShop, onAlbu
   const [trick, setTrick] = useState(0);
   const doTrick = () => { setTrick((k) => k + 1); update((s) => bumpMission(s, 'trick')); };
   const owned = Object.keys(state.dogs).length;
-  const today = localDateKey();
   return (
     <>
-      <Stage height={280}>
-        {!hideStage && <Dog2D dogId={fav} worn={state.outfits.worn[fav]} trickKey={trick} />}
+      <div style={{ position: 'relative', marginTop: 10 }}>
+        <Yard state={state} favorite={fav} onTapDog={onShowDog} trickKey={trick} paused={paused} />
         <TrickButton onClick={doTrick} />
-      </Stage>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+      </div>
+      <div style={{ fontSize: 11.5, color: '#77778a', textAlign: 'center', marginTop: 8 }}>{t('pw.yard.hint')}</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
         <span style={{ fontSize: 19, fontWeight: 800 }}>{dogName(t, fav)}</span>
         <RarityPill rarity={DOG_BY_ID[fav].rarity} />
       </div>
@@ -159,9 +142,6 @@ function MyDogs({ pw, hideStage, onOpenChest, onChances, onStudy, onShop, onAlbu
       <Wardrobe state={state} dogId={fav} update={update} onShop={onShop} />
 
       <Chests state={state} onOpenChest={onOpenChest} onChances={onChances} onStudy={onStudy} />
-
-      <Missions state={state} />
-      <Calendar state={state} today={today} onClaim={() => update((s) => claimCalendar(s, today).state)} />
 
       <Card style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ flex: 1 }}>
@@ -254,6 +234,54 @@ function Chests({ state, onOpenChest, onChances, onStudy }) {
         })}
       </div>
     </>
+  );
+}
+
+// ---------- Missions: today's missions, the monthly challenge, daily rewards ----------
+function MissionsTab({ pw }) {
+  const { state, update } = pw;
+  const today = localDateKey();
+  return (
+    <>
+      <Missions state={state} />
+      <Monthly state={state} today={today} />
+      <Calendar state={state} today={today} onClaim={() => update((s) => claimCalendar(s, today).state)} />
+    </>
+  );
+}
+
+function Monthly({ state, today }) {
+  const { t, lang } = useLang();
+  const month = today.slice(0, 7);
+  const m = monthlyFor(state, month);
+  const [y, mo, d] = today.split('-').map(Number);
+  const daysLeft = new Date(y, mo, 0).getDate() - d;
+  const monthName = new Date(y, mo - 1, 1).toLocaleDateString(localeOf(lang), { month: 'long' });
+  const name = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+  const pct = Math.min(100, (m.sessions / MONTHLY_TARGET) * 100);
+  return (
+    <div style={{ marginTop: 12, padding: 16, borderRadius: 20, border: '1px solid rgba(176,109,255,.4)', background: 'radial-gradient(circle at 85% 20%, rgba(176,109,255,.28), transparent 60%), #120f22' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', color: '#c9a8ff' }}>{t('pw.monthly.label').toUpperCase()}</div>
+          <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4 }}>{t('pw.monthly.title', { month: name })}</div>
+          <div style={{ fontSize: 12.5, color: '#b9b9c8', marginTop: 4 }}>{t('pw.monthly.goal', { n: MONTHLY_TARGET })}</div>
+        </div>
+        <ChestIcon type="epic" size={60} locked={false} />
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>
+        <div style={{ flex: 1, height: 10, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
+          <div style={{ width: pct + '%', height: '100%', borderRadius: 99, background: m.done ? '#35d07f' : 'linear-gradient(90deg,#b06dff,#6d4dff)' }} />
+        </div>
+        <span style={{ fontSize: 13, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{Math.min(m.sessions, MONTHLY_TARGET)}/{MONTHLY_TARGET}</span>
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, fontSize: 12, color: '#a3a3b3' }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          {m.done ? <span style={{ color: '#7fe3ad', fontWeight: 700 }}>✓ {t('pw.monthly.done')}</span> : <>{t('pw.monthly.reward')} <ChestIcon type="epic" size={18} glow={false} /> + <CoinIcon size={13} /> {MONTHLY_COINS}</>}
+        </span>
+        {!m.done && <span>{t('pw.monthly.daysLeft', { n: daysLeft })}</span>}
+      </div>
+    </div>
   );
 }
 

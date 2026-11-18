@@ -189,7 +189,7 @@ function useCloudSync(session) {
   return { ready, syncError };
 }
 
-const TAB_SCREENS = new Set(['home', 'calendar', 'tasks', 'profile']);
+const TAB_SCREENS = new Set(['home', 'calendar', 'tasks', 'profile', 'pets']);
 const JUST_ONBOARDED_KEY = 'sp_justOnboarded';
 // The local date this page load's day numbers were computed for.
 const LOADED_DAY = localDateKey();
@@ -226,7 +226,13 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
   const premium = usePremium();
   const [paywall, setPaywall] = useState(null);
   const streakRewards = useStreakRewards({ studyHistory, streak, isPremium: premium.enabled && premium.premium, freezeDays });
-  const pugWorld = usePugWorld({ streak, isPremium: premium.enabled && premium.premium, freezeRoom: streakRewards.rewards.freezes < MAX_FREEZES, addFreeze: streakRewards.addFreeze });
+  // The Pets tab (the dog game, while it's a preview: only when switched
+  // on). openPugWorld(...) lands here, with the tab / chest asked for.
+  const [petsIntent, setPetsIntent] = useState({ n: 0 });
+  const pugWorld = usePugWorld({
+    streak, isPremium: premium.enabled && premium.premium, freezeRoom: streakRewards.rewards.freezes < MAX_FREEZES, addFreeze: streakRewards.addFreeze,
+    onOpenRequest: (req) => { setPetsIntent((p) => ({ n: p.n + 1, ...req })); planner.go('pets'); },
+  });
   const pendingWin = useRef(false);
   const openTried = useRef(false);
   useEffect(() => {
@@ -340,6 +346,11 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoSummaryDue]);
 
+  useEffect(() => {
+    if (screen === 'pets' && !pugWorld.enabled) planner.go('home');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [screen, pugWorld.enabled]);
+
   // A minimised session floats above the tab bar on the tab screens.
   const showRunningBar = !!state.activeTask && TAB_SCREENS.has(screen);
 
@@ -355,6 +366,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
           pugWorld={pugWorld}
         />
       )}
+      {screen === 'pets' && pugWorld.enabled && <PugWorld key={petsIntent.n} pw={pugWorld} intent={petsIntent} onStudy={() => planner.go('home')} />}
       {screen === 'calendar' && <Calendar planner={planner} activities={activities} recurringActivities={recurringActivities} />}
       {screen === 'tasks' && <Tasks planner={planner} />}
       {screen === 'planner' && <Planner planner={planner} />}
@@ -423,13 +435,11 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
 
       <AddTaskPage key={state.taskEdit && state.taskEdit.id == null ? 'add-task' : 'closed'} planner={planner} />
 
-      {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} onFabClick={() => setQuickAddOpen(true)} fabActive={quickAddOpen} />}
+      {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} onFabClick={() => setQuickAddOpen(true)} fabActive={quickAddOpen} pets={pugWorld.enabled} />}
 
       {/* Waits for the focus screen's finish animation before celebrating. */}
       {celebrating && screen !== 'focus' && <StreakCelebration streak={streak} milestone={streakRewards.milestone} onClose={() => { setCelebrating(false); streakRewards.clearMilestone(); }} />}
 
-      {/* Pug World, the dog collection game (hidden preview, see lib/pugWorld/events.js). */}
-      {pugWorld.enabled && pugWorld.open && <PugWorld pw={pugWorld} onClose={() => pugWorld.setOpen(null)} />}
       <SessionReward pw={pugWorld} ready={!celebrating && screen !== 'focus' && !paywall} />
 
       {paywall && <Paywall reason={paywall} onClose={() => setPaywall(null)} />}
