@@ -131,6 +131,21 @@ export function openChest(state, chestIdOrType, rng = Math.random, { freezeRoom 
   return { state: next, chest, kind, dog, rarity, result: added.result, level: added.level, spareCoins: added.coins || 0, coins, outfit, freeze: kind === 'freeze', set: set || null };
 }
 
+// After a study session the chest can be tapped 3 times; each tap may
+// upgrade it one step (chances in percent, shown in the app).
+export const UPGRADE_TAPS = 3;
+export const UPGRADE_CHANCE = { small: 25, silver: 15, gold: 8 };
+const NEXT_CHEST = { small: 'silver', silver: 'gold', gold: 'epic' };
+export function rollUpgrade(type, rng = Math.random) {
+  const chance = UPGRADE_CHANCE[type];
+  return chance && rng() * 100 < chance ? NEXT_CHEST[type] : type;
+}
+// Changes a waiting chest's kind (after upgrades).
+export function setChestType(state, id, type) {
+  const s = normalize(state);
+  return { ...s, chests: s.chests.map((c) => (c.id === id ? { ...c, type } : c)) };
+}
+
 export function addChest(state, type, from, id = chestId()) {
   const s = normalize(state);
   return { ...s, chests: s.chests.concat({ id, type, from }) };

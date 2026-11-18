@@ -1243,4 +1243,7 @@ export default {
   "pw.res.freeze": "¡CONGELAR RACHA!",
   "pw.res.bonus": "¡MONEDAS EXTRA!",
   "pw.res.freezeDetail": "Protege tu racha una vez si te saltas un día",
+  "pw.upgradeHint": "¡Toca para tener la oportunidad de un cofre mejor!",
+  "pw.upgraded": "¡MEJORADO!",
+  "pw.chancesUpgrade": "Tras una sesión de estudio tocas el cofre 3 veces; cada toque puede mejorarlo:",
 };

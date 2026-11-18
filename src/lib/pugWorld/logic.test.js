@@ -3,7 +3,7 @@ import { DOGS, STARTERS, RARITIES, BREED_IDS } from './catalog';
 import {
   EMPTY, normalize, CHEST_ODDS, CHEST_CONTENTS, rollRarity, addDog, openChest, addChest, dogPower, collectionScore, coinBonus,
   missionsFor, ensureDay, bumpMission, claimCalendar, canClaimCalendar, shopOffers, buyOutfit, buyChest, toggleOutfit,
-  onSession, onPlan, onDayFinished, buySet, setPrice, wearSet, fullSetOn, onStreak, onPremiumDay, chooseStarter, completedSets, breedDogs,
+  onSession, onPlan, onDayFinished, rollUpgrade, setChestType, buySet, setPrice, wearSet, fullSetOn, onStreak, onPremiumDay, chooseStarter, completedSets, breedDogs,
 } from './logic';
 
 const seq = (...xs) => { let i = 0; return () => xs[i++ % xs.length]; };
@@ -56,6 +56,14 @@ describe('chests and dogs', () => {
     const full = openChest(s, 'small', seq(0.35, 0.5), { freezeRoom: false });
     expect(full.freeze).toBe(false);
     expect(full.kind).toBe('coins');
+  });
+  it('a tap can upgrade a chest one step, epic is the top', () => {
+    expect(rollUpgrade('small', () => 0.1)).toBe('silver');
+    expect(rollUpgrade('small', () => 0.9)).toBe('small');
+    expect(rollUpgrade('gold', () => 0.01)).toBe('epic');
+    expect(rollUpgrade('epic', () => 0)).toBe('epic');
+    const s = setChestType(addChest(EMPTY, 'small', 'session', 'c1'), 'c1', 'gold');
+    expect(s.chests[0]).toMatchObject({ id: 'c1', type: 'gold' });
   });
   it('chest contents add up to 100%', () => {
     Object.values(CHEST_CONTENTS).forEach((o) => expect(Object.values(o).reduce((a, b) => a + b, 0)).toBe(100));

@@ -1243,4 +1243,7 @@ export default {
   "pw.res.freeze": "连续天数冻结！",
   "pw.res.bonus": "额外金币！",
   "pw.res.freezeDetail": "漏掉一天时保护一次你的连续天数",
+  "pw.upgradeHint": "点一下，有机会获得更好的宝箱！",
+  "pw.upgraded": "升级了！",
+  "pw.chancesUpgrade": "每次学习结束后可以点宝箱 3 次，每次都有机会升级：",
 };

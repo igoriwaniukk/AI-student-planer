@@ -1243,4 +1243,7 @@ export default {
   "pw.res.freeze": "SERIEN-FREEZE!",
   "pw.res.bonus": "BONUSMÜNZEN!",
   "pw.res.freezeDetail": "Schützt deine Serie einmal, wenn du einen Tag auslässt",
+  "pw.upgradeHint": "Tippe für die Chance auf eine bessere Truhe!",
+  "pw.upgraded": "VERBESSERT!",
+  "pw.chancesUpgrade": "Nach einer Lerneinheit tippst du 3-mal auf die Truhe; jedes Tippen kann sie verbessern:",
 };
