@@ -15,7 +15,8 @@ import { CoinIcon } from './icons';
 export default function PugWorldCard({ pw }) {
   const { t } = useLang();
   const [jump, setJump] = useState(0);
-  if (!pw?.enabled) return null;
+  // Once you have a dog it sits on the streak card instead (HomePet).
+  if (!pw?.enabled || pw.started) return null;
   const { state } = pw;
   const chests = state.chests.length;
   const items = state.missions.items || [];
@@ -43,6 +44,30 @@ export default function PugWorldCard({ pw }) {
             <Chip done={doneCount === items.length}>{t('pw.home.missions', { n: doneCount, total: items.length })}</Chip>
             <Chip done={month.done}>{t('pw.home.month', { n: Math.min(month.sessions, MONTHLY_TARGET), total: MONTHLY_TARGET })}</Chip>
           </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Home: your favourite dog sits on top of the streak card, alive (breathes,
+// blinks, wags). Tap: it jumps, then the Pets page opens. A red number =
+// chests waiting.
+const PET_SIZE = 104;
+export function HomePet({ pw }) {
+  const [jump, setJump] = useState(0);
+  if (!pw?.enabled || !pw.started) return null;
+  const fav = pw.state.favorite;
+  const chests = pw.state.chests.length;
+  return (
+    <div style={{ position: 'relative', height: 0, zIndex: 2 }}>
+      <div
+        onClick={() => { setJump((k) => k + 1); setTimeout(() => openPugWorld(), 380); }}
+        style={{ position: 'absolute', right: 76, top: -(PET_SIZE - 22), width: PET_SIZE, height: PET_SIZE, cursor: 'pointer' }}
+      >
+        <Dog2D dogId={fav} worn={pw.state.outfits.worn[fav]} happyKey={jump} style={{ alignItems: 'flex-end' }} />
+        {chests > 0 && (
+          <span style={{ position: 'absolute', top: 18, left: 8, minWidth: 20, height: 20, padding: '0 5px', borderRadius: 99, background: '#ff5f6d', border: '2px solid #08080c', display: 'grid', placeItems: 'center', fontSize: 11, fontWeight: 800, color: '#fff' }}>{chests}</span>
         )}
       </div>
     </div>

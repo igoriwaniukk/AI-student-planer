@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import PugWorldCard from '../components/pugWorld/PugWorldCard';
+import PugWorldCard, { HomePet } from '../components/pugWorld/PugWorldCard';
 import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
 import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, planFor, draftFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, bestStreak, studiedToday, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn, offTrackReason, fmt, todoTimeLabel } from '../lib/plannerLogic';
 import { dailyTip } from '../lib/dailyTip';
@@ -696,6 +696,7 @@ export default function Home({ planner, studentName, profilePhoto, studyHistory 
         </div>
       </div>
 
+      {isRealDay && <HomePet pw={pugWorld} />}
       <StreakCard
         streak={streak} best={Math.max(streak, bestStreak(studyHistory))} doneToday={doneToday} selectedDay={viewDay} onSelectDay={setViewDay} eventDays={new Set(upcoming.map((e) => e.day))}
         frozenDays={frozenDays} savedByFreeze={!!studyHistory[localDateKey(yesterday)]?.frozen} rewards={streakRewards}
