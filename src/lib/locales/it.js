@@ -1270,4 +1270,6 @@ export default {
   "pw.place.planner": "Pianifica",
   "pw.place.focus": "Studio",
   "pw.place.none": "Da nessuna parte",
+  "pw.tab.dog": "Il mio cane",
+  "pw.tapBtn": "Tocca!",
 };

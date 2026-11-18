@@ -1270,4 +1270,6 @@ export default {
   "pw.place.planner": "Tag planen",
   "pw.place.focus": "Lernen",
   "pw.place.none": "Nirgends",
+  "pw.tab.dog": "Mein Hund",
+  "pw.tapBtn": "Tippen!",
 };

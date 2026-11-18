@@ -1270,4 +1270,6 @@ export default {
   "pw.place.planner": "1日の計画",
   "pw.place.focus": "学習タイマー",
   "pw.place.none": "どこにも",
+  "pw.tab.dog": "わたしの犬",
+  "pw.tapBtn": "タップ！",
 };

@@ -74,7 +74,7 @@ const PLACE_ICON = {
   focus: (c) => <><circle cx="11" cy="12" r="7" stroke={c} strokeWidth="1.5" /><path d="M11 8.4V12l2.4 1.6M8.6 2.6h4.8" stroke={c} strokeWidth="1.5" strokeLinecap="round" /></>,
   none: (c) => <path d="M6 11h10" stroke={c} strokeWidth="1.6" strokeLinecap="round" />,
 };
-function Places({ state, dogId, update }) {
+export function Places({ state, dogId, update }) {
   const { t } = useLang();
   const fav = state.favorite === dogId;
   const mine = placesOf(state, dogId);

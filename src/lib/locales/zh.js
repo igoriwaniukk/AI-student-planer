@@ -1270,4 +1270,6 @@ export default {
   "pw.place.planner": "规划一天",
   "pw.place.focus": "学习计时",
   "pw.place.none": "不显示",
+  "pw.tab.dog": "我的狗狗",
+  "pw.tapBtn": "点一下！",
 };

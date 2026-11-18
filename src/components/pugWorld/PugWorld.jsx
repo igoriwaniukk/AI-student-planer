@@ -12,13 +12,12 @@ import Wardrobe from './Wardrobe';
 import { CoinIcon, OutfitPic } from './icons';
 import DogThumb from './DogThumb';
 import ChestIcon from './Chest';
-import { CHEST_COLORS } from './theme';
 import ChestOpen, { ChancesSheet } from './ChestOpen';
-import DogShowcase from './DogShowcase';
-import Yard from './Yard';
+import DogShowcase, { Places } from './DogShowcase';
 import { dogName } from './names';
-import { Card, RarityPill, Stars, Button, CoinPill, Stage, TrickButton } from './bits';
-import { PURPLE, CARD } from './theme';
+import { Card, RarityPill, Stars, Button, CoinPill, Stage, Chunky } from './bits';
+import { SparkleIcon } from './icons';
+import { PURPLE, CARD, CHEST_BRIGHT, RARITY_BRIGHT } from './theme';
 
 // The dog collection game. Studying earns chests, chests hold dogs (and
 // coins, outfits, streak freezes).
@@ -59,12 +58,12 @@ export default function PugWorld({ pw, intent, onStudy, onBack }) {
           </div>
           <div style={{ display: 'flex', gap: 7, overflowX: 'auto', margin: '14px -16px 4px', padding: '0 16px 2px' }}>
             {TABS.map((id) => (
-              <div key={id} onClick={() => setTab(id)} style={{ flex: 'none', height: 34, padding: '0 14px', borderRadius: 99, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, cursor: 'pointer', background: tab === id ? '#8b6dff' : 'rgba(255,255,255,.06)', color: tab === id ? '#fff' : '#b9b9c8' }}>
-                {t('pw.tab.' + id)}
+              <div key={id} onClick={() => setTab(id)} style={{ flex: 'none', height: 36, padding: '0 15px', borderRadius: 12, display: 'flex', alignItems: 'center', fontSize: 13.5, fontWeight: 900, cursor: 'pointer', marginBottom: 3, ...(tab === id ? { background: '#1cb0f6', boxShadow: '0 3px 0 #1899d6', color: '#fff' } : { background: '#1a1825', boxShadow: '0 3px 0 #0f0e17', color: '#b9b9c8' }) }}>
+                {t(id === 'yard' ? 'pw.tab.dog' : 'pw.tab.' + id)}
               </div>
             ))}
           </div>
-          {tab === 'yard' && <MyDogs pw={pw} paused={!!overlay} onOpenChest={setOpening} onChances={() => setChances(true)} onStudy={onStudy} onShop={() => setTab('shop')} onAlbum={() => setTab('album')} onShowDog={setShowDog} />}
+          {tab === 'yard' && <MyDogs pw={pw} onOpenChest={setOpening} onChances={() => setChances(true)} onStudy={onStudy} onShop={() => setTab('shop')} onAlbum={() => setTab('album')} />}
           {tab === 'album' && <Album state={state} onShowDog={setShowDog} onChances={() => setChances(true)} />}
           {tab === 'shop' && <Shop pw={pw} />}
           {tab === 'friends' && <Friends />}
@@ -112,34 +111,46 @@ function Starter({ onPick }) {
   );
 }
 
-// ---------- Yard: your dogs walking around, the favourite's outfits, chests ----------
-function MyDogs({ pw, paused, onOpenChest, onChances, onStudy, onShop, onAlbum, onShowDog }) {
+// ---------- My dog: your favourite, big and alive, its chests and outfits ----------
+// One dog on a stage in its rarity's bright colour: tap it to make it jump,
+// Trick for a flip. Under it: its breed's versions (pick another to show),
+// the chests as colour tiles, where it lives, its outfits.
+function MyDogs({ pw, onOpenChest, onChances, onStudy, onShop, onAlbum }) {
   const { t } = useLang();
   const { state, update } = pw;
   const fav = state.favorite && state.dogs[state.favorite] ? state.favorite : Object.keys(state.dogs)[0];
   const level = state.dogs[fav]?.level || 1;
   const [trick, setTrick] = useState(0);
+  const [jump, setJump] = useState(0);
   const doTrick = () => { setTrick((k) => k + 1); update((s) => bumpMission(s, 'trick')); };
   const owned = Object.keys(state.dogs).length;
+  const [light, base, shade] = RARITY_BRIGHT[DOG_BY_ID[fav].rarity];
   return (
     <>
-      <div style={{ position: 'relative', marginTop: 10 }}>
-        <Yard state={state} favorite={fav} onTapDog={onShowDog} trickKey={trick} paused={paused} />
-        <TrickButton onClick={doTrick} />
+      <div onClick={() => setJump((k) => k + 1)} style={{ position: 'relative', marginTop: 14, height: 300, borderRadius: 28, overflow: 'hidden', cursor: 'pointer', background: `radial-gradient(circle at 50% 46%, ${light} 0, ${base} 48%, ${shade} 100%)`, boxShadow: `0 5px 0 ${shade}`, marginBottom: 5 }}>
+        {[[8, 12], [86, 18], [14, 76], [84, 72], [48, 7]].map(([x, y], i) => (
+          <span key={i} style={{ position: 'absolute', left: x + '%', top: y + '%', color: '#fff', fontSize: 14, opacity: 0.75 }}>✦</span>
+        ))}
+        <div style={{ position: 'absolute', left: '50%', bottom: 22, width: 190, height: 22, marginLeft: -95, borderRadius: '50%', background: 'rgba(0,0,0,.16)' }} />
+        <div style={{ position: 'absolute', inset: '6px 40px 8px' }}><Dog2D dogId={fav} worn={state.outfits.worn[fav]} trickKey={trick} happyKey={jump} /></div>
+        <div onClick={(e) => { e.stopPropagation(); doTrick(); }} style={{ position: 'absolute', right: 14, bottom: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#ffc800', boxShadow: '0 4px 0 #e5a900', display: 'grid', placeItems: 'center' }}><SparkleIcon size={24} /></div>
+          <span style={{ fontSize: 11, fontWeight: 900, color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,.3)' }}>{t('pw.trick')}</span>
+        </div>
       </div>
-      <div style={{ fontSize: 11.5, color: '#77778a', textAlign: 'center', marginTop: 8 }}>{t('pw.yard.hint')}</div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
-        <span style={{ fontSize: 19, fontWeight: 800 }}>{dogName(t, fav)}</span>
-        <RarityPill rarity={DOG_BY_ID[fav].rarity} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
+        <span style={{ fontSize: 22, fontWeight: 900 }}>{dogName(t, fav)}</span>
+        <RarityPill rarity={DOG_BY_ID[fav].rarity} solid />
       </div>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 6, fontSize: 12.5, color: '#a3a3b3', alignItems: 'center' }}>
-        <Stars level={level} />
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 6, fontSize: 13, fontWeight: 700, color: '#c9c9d6', alignItems: 'center' }}>
+        <Stars level={level} size={15} />
         <span>⚡ {t('pw.power', { n: dogPower(fav, level) })}</span>
       </div>
       <DogStrip state={state} current={fav} onPick={(id) => update((s) => ({ ...s, favorite: id }))} onAlbum={onAlbum} />
-      <Wardrobe state={state} dogId={fav} update={update} onShop={onShop} />
 
       <Chests state={state} onOpenChest={onOpenChest} onChances={onChances} onStudy={onStudy} />
+      <Places state={state} dogId={fav} update={update} />
+      <Wardrobe state={state} dogId={fav} update={update} onShop={onShop} />
 
       <Card style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ flex: 1 }}>
@@ -186,51 +197,40 @@ function DogStrip({ state, current, onPick, onAlbum }) {
   );
 }
 
-// Chests: a big card for the best chest waiting (or, with none, how to win
-// one), then how many of each kind there are.
+// Chests: one bright tile per kind (small orange, silver blue, gold yellow,
+// epic purple) with how many are waiting; tap a tile to open one. None at
+// all: how to win one.
 function Chests({ state, onOpenChest, onChances, onStudy }) {
   const { t } = useLang();
   const count = (type) => state.chests.filter((c) => c.type === type).length;
-  const total = state.chests.length;
-  const best = CHEST_ORDER.find((type) => count(type)) || null;
-  const type = best || 'small';
-  const col = CHEST_COLORS[type];
   const openType = (ty) => { const c = state.chests.find((x) => x.type === ty); if (c) onOpenChest(c.id); };
-  const R = 48, LEN = 2 * Math.PI * R;
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '20px 2px 10px' }}>
-        <div style={{ fontSize: 15, fontWeight: 750 }}>{t('pw.chests')}</div>
-        <span onClick={onChances} style={{ fontSize: 12.5, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('pw.chances')}</span>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '22px 2px 10px' }}>
+        <div style={{ fontSize: 17, fontWeight: 900 }}>{t('pw.chests')}</div>
+        <span onClick={onChances} style={{ fontSize: 12.5, fontWeight: 700, color: '#a58cff', cursor: 'pointer' }}>{t('pw.chances')}</span>
       </div>
-      <div style={{ padding: 16, borderRadius: 20, border: '1px solid rgba(139,109,255,.35)', background: 'radial-gradient(circle at 22% 45%, rgba(139,109,255,.3), transparent 62%), #100d1c', display: 'flex', gap: 14, alignItems: 'center' }}>
-        <div style={{ position: 'relative', width: 112, height: 112, flex: 'none', display: 'grid', placeItems: 'center' }}>
-          <svg width="112" height="112" viewBox="0 0 112 112" style={{ position: 'absolute', inset: 0 }}>
-            <circle cx="56" cy="56" r={R} fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="6" />
-            {best && <circle cx="56" cy="56" r={R} fill="none" stroke={col.lid} strokeWidth="6" strokeDasharray={`${LEN} ${LEN}`} opacity=".9" />}
-            {!best && <circle cx="56" cy="56" r={R} fill="none" stroke="rgba(165,140,255,.45)" strokeWidth="2" strokeDasharray="4 7" />}
-          </svg>
-          <ChestIcon type={type} size={70} locked={!best} />
-          {total > 1 && <span style={{ position: 'absolute', top: 4, right: 4, fontSize: 12, fontWeight: 800, padding: '2px 8px', borderRadius: 99, background: '#ff5f6d' }}>{total}</span>}
-        </div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', color: '#c9baff' }}>{t(best ? 'pw.readyToOpen' : 'pw.nextChest')}</div>
-          <div style={{ fontSize: 17, fontWeight: 800, marginTop: 3 }}>{t('pw.chest.' + type)}</div>
-          <div style={{ fontSize: 12.5, color: '#b9b9c8', marginTop: 4, lineHeight: 1.4 }}>{best ? t('pw.home.chests', { n: total }) : t('pw.noChests')}</div>
-          <Button onClick={best ? () => openType(best) : onStudy} style={{ marginTop: 10, height: 38, fontSize: 13.5, borderRadius: 12 }}>{t(best ? 'pw.open' : 'pw.startSession')}</Button>
-        </div>
-      </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginTop: 10 }}>
-        {['small', 'silver', 'gold', 'epic'].map((ty) => {
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+        {CHEST_ORDER.slice().reverse().map((ty) => {
           const n = count(ty);
+          const [, base, shade] = CHEST_BRIGHT[ty];
           return (
-            <div key={ty} onClick={n ? () => openType(ty) : undefined} style={{ ...CARD, padding: '8px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: n ? 'pointer' : 'default' }}>
-              <ChestIcon type={ty} size={26} locked={!n} />
-              <span style={{ fontSize: 13, fontWeight: 800, color: n ? '#fff' : '#5f5f72' }}>×{n}</span>
+            <div key={ty} onClick={n ? () => openType(ty) : undefined} style={{ borderRadius: 22, padding: '12px 12px 12px', marginBottom: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: n ? 'pointer' : 'default', ...(n ? { background: `linear-gradient(160deg, ${base}, ${shade})`, boxShadow: `0 5px 0 ${shade}` } : { background: '#1a1825', boxShadow: '0 5px 0 #0f0e17' }) }}>
+              <ChestIcon type={ty} size={96} locked={!n} />
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6, alignSelf: 'stretch', marginTop: 6 }}>
+                <span style={{ fontSize: 13.5, fontWeight: 900, color: n ? '#fff' : '#6f6f80', lineHeight: 1.15 }}>{t('pw.chest.' + ty)}</span>
+                <span style={{ flex: 'none', fontSize: 14, fontWeight: 900, padding: '3px 10px', borderRadius: 99, background: n ? 'rgba(255,255,255,.28)' : 'rgba(255,255,255,.05)', color: n ? '#fff' : '#4a4858' }}>×{n}</span>
+              </div>
             </div>
           );
         })}
       </div>
+      {!state.chests.length && (
+        <>
+          <div style={{ fontSize: 13, color: '#b9b9c8', textAlign: 'center', margin: '8px 10px 12px', lineHeight: 1.45 }}>{t('pw.noChests')}</div>
+          <Chunky onClick={onStudy}>{t('pw.startSession')}</Chunky>
+        </>
+      )}
     </>
   );
 }

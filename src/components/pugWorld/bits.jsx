@@ -1,7 +1,7 @@
 import { RARITY_COLOR } from '../../lib/pugWorld/catalog.js';
 import { MAX_LEVEL } from '../../lib/pugWorld/logic.js';
 import { useLang } from '../../lib/useLang';
-import { CARD, PURPLE } from './theme';
+import { CARD, PURPLE, RARITY_BRIGHT, GREEN } from './theme';
 import { CoinIcon, SparkleIcon } from './icons';
 
 // Small shared pieces of the Pug World screens.
@@ -20,11 +20,19 @@ export function Card({ title, right, children, style }) {
   );
 }
 
-export function RarityPill({ rarity, small }) {
+// `solid`: white on the rarity's bright colour (the big dog); solid="white":
+// the rarity's colour on white (on a background already in that colour).
+export function RarityPill({ rarity, small, solid }) {
   const { t } = useLang();
   const c = RARITY_COLOR[rarity];
+  const [, base, shade] = RARITY_BRIGHT[rarity];
+  const look = solid === 'white'
+    ? { color: shade, background: '#fff', borderRadius: 8, boxShadow: '0 2px 0 rgba(0,0,0,.15)' }
+    : solid
+      ? { color: '#fff', background: base, borderRadius: 8, boxShadow: `0 2px 0 ${shade}` }
+      : { color: c, background: c + '22', border: `1px solid ${c}55`, borderRadius: 99 };
   return (
-    <span style={{ fontSize: small ? 9 : 10, fontWeight: 800, letterSpacing: '.08em', padding: small ? '2px 6px' : '3px 8px', borderRadius: 99, color: c, background: c + '22', border: `1px solid ${c}55`, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+    <span style={{ fontSize: small ? 9 : 10.5, fontWeight: 900, letterSpacing: '.08em', padding: small ? '2px 6px' : '3px 8px', textTransform: 'uppercase', whiteSpace: 'nowrap', ...look }}>
       {t('pw.rarity.' + rarity)}
     </span>
   );
@@ -94,6 +102,24 @@ export function Stage({ children, height = 290, color = '#8b6dff' }) {
     <div style={{ position: 'relative', height, margin: '0 -16px' }}>
       <div style={{ position: 'absolute', left: '50%', bottom: 18, width: 260, height: 70, transform: 'translateX(-50%)', borderRadius: '50%', background: `radial-gradient(ellipse at center, ${color}55, ${color}11 60%, transparent 72%)` }} />
       <div style={{ position: 'absolute', inset: 0 }}>{children}</div>
+    </div>
+  );
+}
+
+// A chunky button with a pressed-down edge (Duolingo style).
+// `pal` = [light, base, shade]; `text` = label colour.
+export function Chunky({ children, onClick, pal = GREEN, text = '#fff', disabled, style }) {
+  return (
+    <div
+      onClick={disabled ? undefined : (e) => { e.stopPropagation(); onClick?.(e); }}
+      style={{
+        height: 50, borderRadius: 16, padding: '0 18px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        fontSize: 15, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', color: text, userSelect: 'none',
+        background: pal[1], boxShadow: `0 4px 0 ${pal[2]}`, marginBottom: 4, cursor: disabled ? 'default' : 'pointer', opacity: disabled ? 0.5 : 1,
+        ...style,
+      }}
+    >
+      {children}
     </div>
   );
 }
