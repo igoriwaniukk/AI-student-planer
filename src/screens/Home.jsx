@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import PugWorldCard, { HomePet } from '../components/pugWorld/PugWorldCard';
+import PugWorldCard from '../components/pugWorld/PugWorldCard';
+import HomePets from '../components/pugWorld/HomePets';
 import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
 import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, planFor, draftFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, bestStreak, studiedToday, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn, offTrackReason, fmt, todoTimeLabel } from '../lib/plannerLogic';
 import { dailyTip } from '../lib/dailyTip';
@@ -130,7 +131,9 @@ function StreakCard({ streak, best, doneToday, selectedDay, onSelectDay, eventDa
   const freezes = rewards?.freezes || 0;
   const progress = rewards?.progress || 0;
   return (
-    <div style={{
+    // data-perch: the little dogs (HomePets) stand only on the right part
+    // of this card's edge, clear of the greeting text above it.
+    <div data-perch="0.55-1" style={{
       marginTop: 14, padding: '16px 14px 10px', borderRadius: 22,
       border: isPremium ? '1px solid rgba(245,196,81,.55)' : '1px solid rgba(255,255,255,.07)',
       boxShadow: isPremium ? '0 0 26px rgba(245,196,81,.16)' : 'none',
@@ -550,7 +553,7 @@ function WeekCard({ planner, streak }) {
     </div>
   );
   return (
-    <div style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
+    <div data-perch="" style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 10 }}>
         <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('week.title')}</div>
         <span style={{ fontSize: 11.5, color: '#8a8a99' }}>{range}</span>
@@ -696,7 +699,6 @@ export default function Home({ planner, studentName, profilePhoto, studyHistory 
         </div>
       </div>
 
-      {isRealDay && <HomePet pw={pugWorld} />}
       <StreakCard
         streak={streak} best={Math.max(streak, bestStreak(studyHistory))} doneToday={doneToday} selectedDay={viewDay} onSelectDay={setViewDay} eventDays={new Set(upcoming.map((e) => e.day))}
         frozenDays={frozenDays} savedByFreeze={!!studyHistory[localDateKey(yesterday)]?.frozen} rewards={streakRewards}
@@ -718,14 +720,17 @@ export default function Home({ planner, studentName, profilePhoto, studyHistory 
         );
       })()}
 
-      {isRealDay
-        ? <NextSessionCard planner={planner} />
-        : viewDay < NUM_TODAY
-          ? <PastDayCard info={info} summary={state.daySummaries?.[localDateKey(realDateForNum(viewDay))]} />
-          : <DayPlanPlaceholder info={info} day={viewDay} planner={planner} />}
+      {/* data-perch: the little dogs (HomePets) can stand on this card */}
+      <div data-perch="">
+        {isRealDay
+          ? <NextSessionCard planner={planner} />
+          : viewDay < NUM_TODAY
+            ? <PastDayCard info={info} summary={state.daySummaries?.[localDateKey(realDateForNum(viewDay))]} />
+            : <DayPlanPlaceholder info={info} day={viewDay} planner={planner} />}
+      </div>
       {showRestart && <RestartCard reason={restartReason} planner={planner} onDismiss={() => setDismissedRestart(restartReason.key)} />}
 
-      <div id="today-tasks" style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
+      <div id="today-tasks" data-perch="" style={{ marginTop: 12, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
         <TodayChecklist
           planner={planner} day={viewDay}
           heading={isRealDay ? t('home.todayTasks') : t('home.tasksForDay', { date: (t(DAY_KEY[info.label] + '.short') || info.short) + ' ' + info.monthDay })}
@@ -777,6 +782,7 @@ export default function Home({ planner, studentName, profilePhoto, studyHistory 
       )}
 
       <TaskEditSheet planner={planner} />
+      <HomePets pw={pugWorld} />
 
       </div>
     </>
