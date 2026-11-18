@@ -31,6 +31,7 @@ import {
 } from './lib/store';
 import { usePlanner } from './hooks/usePlanner';
 import { useStreakRewards } from './hooks/useStreakRewards';
+import { MAX_FREEZES } from './lib/streakRewards';
 import { usePugWorld } from './hooks/usePugWorld';
 import PugWorld from './components/pugWorld/PugWorld';
 import { SessionReward } from './components/pugWorld/PugWorldCard';
@@ -225,7 +226,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
   const premium = usePremium();
   const [paywall, setPaywall] = useState(null);
   const streakRewards = useStreakRewards({ studyHistory, streak, isPremium: premium.enabled && premium.premium, freezeDays });
-  const pugWorld = usePugWorld({ streak, isPremium: premium.enabled && premium.premium });
+  const pugWorld = usePugWorld({ streak, isPremium: premium.enabled && premium.premium, freezeRoom: streakRewards.rewards.freezes < MAX_FREEZES, addFreeze: streakRewards.addFreeze });
   const pendingWin = useRef(false);
   const openTried = useRef(false);
   useEffect(() => {

@@ -32,7 +32,7 @@ export function normalize(s) {
 }
 
 // ---------- chests ----------
-// Chances in percent; shown in the app ("Chances").
+// Which rarity a dog from a chest is, in percent; shown in the app.
 export const CHEST_ODDS = {
   small: { common: 75, rare: 22, epic: 2.7, legendary: 0.3 },
   silver: { common: 60, rare: 32, epic: 7, legendary: 1 },
@@ -40,7 +40,6 @@ export const CHEST_ODDS = {
   epic: { common: 0, rare: 50, epic: 40, legendary: 10 },
 };
 const CHEST_COINS = { small: [10, 20], silver: [30, 50], gold: [80, 120], epic: [150, 220] };
-const CHEST_OUTFIT = { small: 0.15, silver: 0.3, gold: 0.6, epic: 0.8 };
 export const CHEST_PRICE = { small: 150, silver: 400 };
 
 // Copies needed to reach each level (level 1 = owned). Max level 3.
@@ -81,32 +80,60 @@ export function addDog(state, dogId) {
 }
 
 // Opens the first waiting chest of a type (or the given id).
-export function openChest(state, chestIdOrType, rng = Math.random) {
+// What a chest holds, in percent: a dog only sometimes (so dogs stay
+// special), otherwise an outfit, a streak freeze or bonus coins. Some
+// coins come with every chest. Shown in the app ("Chances").
+export const CHEST_CONTENTS = {
+  small: { dog: 10, outfit: 20, freeze: 10, coins: 60 },
+  silver: { dog: 25, outfit: 30, freeze: 15, coins: 30 },
+  gold: { dog: 60, outfit: 25, freeze: 15, coins: 0 },
+  epic: { dog: 100, outfit: 0, freeze: 0, coins: 0 },
+};
+const BONUS_COINS_X = 3;
+
+// Opens the first waiting chest of a type (or the given id). `freezeRoom`:
+// whether a streak freeze can still be held (else coins come instead).
+// The caller adds the freeze to the streak rewards when `freeze` is true.
+export function openChest(state, chestIdOrType, rng = Math.random, { freezeRoom = true } = {}) {
   const s = normalize(state);
   const i = s.chests.findIndex((c) => c.id === chestIdOrType || c.type === chestIdOrType);
   if (i < 0) return null;
   const chest = s.chests[i];
-  const rarity = rollRarity(chest.type, rng);
-  const dog = pick(DOGS.filter((x) => x.rarity === rarity), rng);
-  const coins = Math.round(between(CHEST_COINS[chest.type] || CHEST_COINS.small, rng) * (1 + coinBonus(s) / 100));
-  let next = { ...s, chests: s.chests.filter((_, j) => j !== i), coins: s.coins + coins };
-  const added = addDog(next, dog.id);
-  next = added.state;
+  const odds = CHEST_CONTENTS[chest.type] || CHEST_CONTENTS.small;
+  let roll = rng() * 100;
+  let kind = 'coins';
+  for (const k of ['dog', 'outfit', 'freeze', 'coins']) {
+    if (odds[k] > 0 && roll < odds[k]) { kind = k; break; }
+    roll -= odds[k];
+  }
+  const missing = OUTFITS.filter((o) => !s.outfits.owned.includes(o.id));
+  if (kind === 'outfit' && !missing.length) kind = 'coins';
+  if (kind === 'freeze' && !freezeRoom) kind = 'coins';
+
+  let next = { ...s, chests: s.chests.filter((_, j) => j !== i) };
+  let dog = null, rarity = null, added = { result: null };
+  if (kind === 'dog') {
+    rarity = rollRarity(chest.type, rng);
+    dog = pick(DOGS.filter((x) => x.rarity === rarity), rng).id;
+  }
+  const base = between(CHEST_COINS[chest.type] || CHEST_COINS.small, rng) * (kind === 'coins' ? BONUS_COINS_X : 1);
+  const coins = Math.round(base * (1 + coinBonus(s) / 100));
+  next = { ...next, coins: next.coins + coins };
+  if (dog) { added = addDog(next, dog); next = added.state; }
   let outfit = null;
-  const missing = OUTFITS.filter((o) => !next.outfits.owned.includes(o.id));
-  if (missing.length && rng() < (CHEST_OUTFIT[chest.type] || 0)) {
+  if (kind === 'outfit') {
     outfit = pick(missing, rng).id;
     next = { ...next, outfits: { ...next.outfits, owned: next.outfits.owned.concat(outfit) } };
   }
   next = bumpMission(next, 'chest');
-  const set = completedSets(next).find((b) => !next.sets.includes(b));
+  const set = dog ? completedSets(next).find((b) => !next.sets.includes(b)) : null;
   if (set) next = { ...next, sets: next.sets.concat(set), chests: next.chests.concat({ id: chestId(), type: 'gold', from: 'set' }), coins: next.coins + 200 };
-  return { state: next, chest, dog: dog.id, rarity, result: added.result, level: added.level, spareCoins: added.coins || 0, coins, outfit, set: set || null };
+  return { state: next, chest, kind, dog, rarity, result: added.result, level: added.level, spareCoins: added.coins || 0, coins, outfit, freeze: kind === 'freeze', set: set || null };
 }
 
-export function addChest(state, type, from) {
+export function addChest(state, type, from, id = chestId()) {
   const s = normalize(state);
-  return { ...s, chests: s.chests.concat({ id: chestId(), type, from }) };
+  return { ...s, chests: s.chests.concat({ id, type, from }) };
 }
 export function addCoins(state, amount) {
   const s = normalize(state);
@@ -272,8 +299,9 @@ export const PLAN_COINS = 15;
 export const DAY_COINS = 30;
 export const STREAK_CHESTS = [3, 7, 14, 30, 50, 100];
 
-export function onSession(state) {
-  return bumpMission(addCoins(addChest(state, 'small', 'session'), SESSION_COINS), 'session');
+// `id`: the new chest's id, so the app can open exactly that one.
+export function onSession(state, id) {
+  return bumpMission(addCoins(addChest(state, 'small', 'session', id), SESSION_COINS), 'session');
 }
 // Approving a plan: coins once a day (re-approving can't farm them).
 export function onPlan(state, date) {

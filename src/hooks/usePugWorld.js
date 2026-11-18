@@ -3,13 +3,13 @@ import { KEYS, STORAGE_CHANGED_EVENT } from '../lib/store';
 import { localDateKey } from '../lib/plannerLogic';
 import { SESSION_DONE_EVENT } from '../lib/streakRewards';
 import { PLAN_DONE_EVENT, DAY_DONE_EVENT, PUG_OPEN_EVENT, PUG_PREVIEW_EVENT, pugPreviewOn } from '../lib/pugWorld/events';
-import { EMPTY, normalize, ensureDay, onSession, onPlan, onDayFinished, onStreak, onPremiumDay } from '../lib/pugWorld/logic';
+import { EMPTY, normalize, ensureDay, chestId, onSession, onPlan, onDayFinished, onStreak, onPremiumDay } from '../lib/pugWorld/logic';
 
 // Owns Pug World's state (KEYS.pugWorld, synced like the rest). Mounted once
 // in MainApp. Studying feeds the game: a finished session, an approved plan,
 // a finished day, streak milestones and (Premium) a daily bonus chest.
 // While the game is hidden (no preview on this device) nothing is collected.
-export function usePugWorld({ streak, isPremium }) {
+export function usePugWorld({ streak, isPremium, freezeRoom = true, addFreeze }) {
   // Saved only once there's something to save (not via useLocalStorage,
   // which would write an empty value on first load — and an empty copy from
   // a phone that never played could win a sync conflict over real progress).
@@ -44,7 +44,7 @@ export function usePugWorld({ streak, isPremium }) {
 
   useEffect(() => {
     if (!enabled) return undefined;
-    const session = () => { update(onSession); setToast({ at: Date.now() }); };
+    const session = () => { const id = chestId(); update((s) => onSession(s, id)); setToast({ at: Date.now(), chest: id }); };
     const plan = () => update((s) => onPlan(s, localDateKey()));
     const day = () => update((s) => onDayFinished(s, localDateKey()));
     window.addEventListener(SESSION_DONE_EVENT, session);
@@ -88,6 +88,8 @@ export function usePugWorld({ streak, isPremium }) {
     enabled,
     state,
     started,
+    freezeRoom,
+    addFreeze: () => addFreeze?.(),
     update,
     open,
     setOpen,

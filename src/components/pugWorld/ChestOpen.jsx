@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLang } from '../../lib/useLang';
 import { DOG_BY_ID, RARITY_COLOR, RARITIES } from '../../lib/pugWorld/catalog.js';
-import { CHEST_ODDS, LEVEL_COPIES, openChest } from '../../lib/pugWorld/logic.js';
+import { CHEST_ODDS, CHEST_CONTENTS, LEVEL_COPIES, openChest } from '../../lib/pugWorld/logic.js';
 import { isNativeApp, postToApp } from '../../lib/nativeBridge';
 import Dog2D from './Dog2D';
-import { CoinIcon, OutfitPic } from './icons';
+import { CoinIcon, OutfitPic, FreezeIcon } from './icons';
 import ChestIcon from './Chest';
 import { CHEST_COLORS } from './theme';
 import { dogName } from './names';
@@ -27,6 +27,7 @@ const KEYFRAMES = `
 @keyframes pwUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 `;
 const SHAKE_MS = 750;
+const KIND_COLOR = { outfit: '#2ee6c5', freeze: '#7cc2ff', coins: '#f5c451' };
 const BURST_MS = 520;
 const SPARKS = Array.from({ length: 14 }, (_, i) => {
   const a = (i / 14) * Math.PI * 2 + (i % 2) * 0.2;
@@ -34,11 +35,13 @@ const SPARKS = Array.from({ length: 14 }, (_, i) => {
   return { dx: Math.cos(a) * r, dy: Math.sin(a) * r, size: 5 + (i % 3) * 3, delay: (i % 4) * 30 };
 });
 
-export default function ChestOpen({ pw, chestId, onNext, onClose }) {
+// `auto`: opens by itself (the chest right after a study session), with
+// `banner` above it; no "open next" then.
+export default function ChestOpen({ pw, chestId, onNext, onClose, auto = false, banner = null }) {
   const { t } = useLang();
   // What's inside is decided when the chest is shown (and only saved on the
   // tap), so the dog is ready before the animation starts.
-  const [pre] = useState(() => openChest(pw.state, chestId));
+  const [pre] = useState(() => openChest(pw.state, chestId, Math.random, { freezeRoom: pw.freezeRoom !== false }));
   const [phase, setPhase] = useState('closed'); // closed → shake → burst → reveal
   const [dogReady, setDogReady] = useState(false);
   const res = pre;
@@ -50,6 +53,7 @@ export default function ChestOpen({ pw, chestId, onNext, onClose }) {
     if (phase !== 'closed') return;
     if (!pre) { onClose(); return; }
     pw.update(() => pre.state);
+    if (pre.freeze) pw.addFreeze?.();
     setPhase('shake');
     timers.current.push(setTimeout(() => setPhase('burst'), SHAKE_MS));
     timers.current.push(setTimeout(() => {
@@ -57,13 +61,20 @@ export default function ChestOpen({ pw, chestId, onNext, onClose }) {
       if (isNativeApp()) postToApp('haptic', { kind: 'success' });
     }, SHAKE_MS + BURST_MS - 150));
   };
-  const next = (id) => onNext(id);
+  const next = (id) => onNext?.(id);
+  useEffect(() => {
+    if (!auto) return undefined;
+    const id = setTimeout(open, 900);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const c = res && phase !== 'closed' ? RARITY_COLOR[res.rarity] : '#8b6dff';
+  const kindColor = res ? (res.kind === 'dog' ? RARITY_COLOR[res.rarity] : KIND_COLOR[res.kind]) : '#8b6dff';
+  const c = res && phase !== 'closed' ? kindColor : '#8b6dff';
   const revealed = phase === 'reveal';
-  const nextChest = res && res.state.chests[0];
+  const nextChest = onNext && res ? res.state.chests[0] : null;
   return (
-    <div onClick={phase === 'closed' ? open : undefined} style={{ position: 'absolute', inset: 0, zIndex: 5, backgroundColor: '#08080c', overflow: 'hidden', cursor: phase === 'closed' ? 'pointer' : 'default', animation: 'fadeUp .2s ease both' }}>
+    <div onClick={phase === 'closed' && !auto ? open : undefined} style={{ position: 'absolute', inset: 0, zIndex: 5, backgroundColor: '#08080c', overflow: 'hidden', cursor: phase === 'closed' ? 'pointer' : 'default', animation: 'fadeUp .2s ease both' }}>
       <style>{KEYFRAMES}</style>
       {/* glow: the chest's own colour, turning into the rarity's while it shakes */}
       <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 50% 42%, ${CHEST_COLORS[type].glow}, transparent 55%)`, opacity: phase === 'closed' ? 1 : 0, transition: 'opacity .6s ease', animation: phase === 'closed' ? 'pwBreath 2.6s ease-in-out infinite' : 'none' }} />
@@ -77,6 +88,7 @@ export default function ChestOpen({ pw, chestId, onNext, onClose }) {
 
       <div onClick={(e) => { e.stopPropagation(); onClose(); }} style={{ position: 'absolute', zIndex: 3, top: 'calc(var(--top-pad) + 6px)', left: 16, width: 36, height: 36, borderRadius: '50%', background: 'rgba(255,255,255,.07)', display: 'grid', placeItems: 'center', fontSize: 14, color: '#c9c9d6', cursor: 'pointer' }}>✕</div>
 
+      {banner && !revealed && <div style={{ position: 'absolute', left: 0, right: 0, top: 'calc(var(--top-pad) + 60px)', display: 'flex', justifyContent: 'center', zIndex: 2 }}>{banner}</div>}
       {/* the chest */}
       {!revealed && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
@@ -94,7 +106,7 @@ export default function ChestOpen({ pw, chestId, onNext, onClose }) {
             )}
           </div>
           <div style={{ fontSize: 22, fontWeight: 800, marginTop: 14, opacity: phase === 'closed' ? 1 : 0, transition: 'opacity .25s' }}>{t('pw.chest.' + type)}</div>
-          <div style={{ fontSize: 14, color: '#a3a3b3', marginTop: 8, opacity: phase === 'closed' ? 1 : 0, transition: 'opacity .25s' }}>{t('pw.tapToOpen')}</div>
+          {!auto && <div style={{ fontSize: 14, color: '#a3a3b3', marginTop: 8, opacity: phase === 'closed' ? 1 : 0, transition: 'opacity .25s' }}>{t('pw.tapToOpen')}</div>}
         </div>
       )}
 
@@ -106,33 +118,42 @@ export default function ChestOpen({ pw, chestId, onNext, onClose }) {
 
 function Reveal({ res, c, revealed, happy, onDogReady, nextChest, onNext, onClose }) {
   const { t } = useLang();
-  const dog = DOG_BY_ID[res.dog];
-  const have = res.state.dogs[res.dog];
-  const headline = { new: 'pw.res.new', copy: 'pw.res.copy', levelUp: 'pw.res.levelUp', coins: 'pw.res.coins' }[res.result];
+  const isDog = res.kind === 'dog';
+  const dog = isDog ? DOG_BY_ID[res.dog] : null;
+  const have = isDog ? res.state.dogs[res.dog] : null;
+  const headline = isDog
+    ? { new: 'pw.res.new', copy: 'pw.res.copy', levelUp: 'pw.res.levelUp', coins: 'pw.res.coins' }[res.result]
+    : { outfit: 'pw.res.outfit', freeze: 'pw.res.freeze', coins: 'pw.res.bonus' }[res.kind];
   let detail = '';
   if (res.result === 'copy') detail = t('pw.res.copyDetail', { n: have.copies, total: LEVEL_COPIES[have.level + 1] });
   if (res.result === 'levelUp') detail = t('pw.res.levelDetail', { n: have.level });
   if (res.result === 'coins') detail = t('pw.res.coinsDetail', { n: res.spareCoins });
+  if (res.kind === 'freeze') detail = t('pw.res.freezeDetail');
   const up = (i) => ({ animation: revealed ? `pwUp .4s ${0.25 + i * 0.08}s ease-out both` : 'none', opacity: revealed ? undefined : 0 });
+  const title = isDog ? dogName(t, dog.id) : res.kind === 'outfit' ? t('pw.outfit.' + res.outfit) : res.kind === 'freeze' ? t('pw.kind.freeze') : `+${res.coins}`;
   return (
     <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', paddingTop: 'var(--top-pad)', paddingBottom: 'calc(var(--safe-bottom) + 16px)', pointerEvents: revealed ? 'auto' : 'none' }}>
       <div style={{ textAlign: 'center', marginTop: 18, ...up(0) }}>
         <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '.16em', color: c }}>{t(headline)}</div>
       </div>
-      <div style={{ flex: 1, minHeight: 240, position: 'relative', opacity: revealed ? 1 : 0, animation: revealed ? 'pwDogIn .55s ease-out both' : 'none' }}>
-        <Dog2D dogId={res.dog} worn={res.state.outfits.worn[res.dog]} happyKey={happy} onReady={onDogReady} />
+      <div style={{ flex: 1, minHeight: 240, position: 'relative', display: 'grid', placeItems: 'center', opacity: revealed ? 1 : 0, animation: revealed ? 'pwDogIn .55s ease-out both' : 'none' }}>
+        {isDog && <Dog2D dogId={res.dog} worn={res.state.outfits.worn[res.dog]} happyKey={happy} onReady={onDogReady} />}
+        {res.kind === 'outfit' && <div style={{ width: 210, height: 210, borderRadius: '50%', background: '#c9d8f5', display: 'grid', placeItems: 'center', boxShadow: '0 0 60px rgba(46,230,197,.35)' }}><OutfitPic id={res.outfit} size={150} /></div>}
+        {res.kind === 'freeze' && <FreezeIcon size={190} style={{ filter: 'drop-shadow(0 0 40px rgba(124,194,255,.55))' }} />}
+        {res.kind === 'coins' && <CoinIcon size={180} style={{ filter: 'drop-shadow(0 0 40px rgba(245,196,81,.55))' }} />}
       </div>
       <div style={{ padding: '0 20px', textAlign: 'center' }}>
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8, flexWrap: 'wrap', ...up(1) }}>
-          <span style={{ fontSize: 22, fontWeight: 800 }}>{dogName(t, dog.id)}</span>
-          <RarityPill rarity={res.rarity} />
+          <span style={{ fontSize: 22, fontWeight: 800 }}>{title}</span>
+          {isDog && <RarityPill rarity={res.rarity} />}
         </div>
-        <div style={{ marginTop: 6, ...up(2) }}><Stars level={have.level} size={16} /></div>
+        {isDog && <div style={{ marginTop: 6, ...up(2) }}><Stars level={have.level} size={16} /></div>}
         {detail && <div style={{ fontSize: 13.5, color: '#b9b9c8', marginTop: 6, ...up(2) }}>{detail}</div>}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 14, flexWrap: 'wrap', ...up(3) }}>
-          <Reward><CoinIcon size={15} /> +{res.coins}</Reward>
-          {res.outfit && <Reward><OutfitPic id={res.outfit} size={22} /> {t('pw.outfit.' + res.outfit)}</Reward>}
-        </div>
+        {res.kind !== 'coins' && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 8, marginTop: 14, flexWrap: 'wrap', ...up(3) }}>
+            <Reward><CoinIcon size={15} /> +{res.coins}</Reward>
+          </div>
+        )}
         {res.set && (
           <div style={{ marginTop: 12, padding: '10px 12px', borderRadius: 14, background: 'rgba(53,208,127,.1)', border: '1px solid rgba(53,208,127,.35)', fontSize: 13, color: '#8ff0bf', fontWeight: 650, ...up(4) }}>
             🏆 {t('pw.res.set', { breed: t('pw.breed.' + res.set) })}
@@ -165,6 +186,14 @@ export function ChancesSheet({ onClose }) {
         <div style={{ display: 'grid', gridTemplateColumns: '1.3fr repeat(4,1fr)', gap: '10px 4px', marginTop: 16, alignItems: 'center', fontSize: 12.5 }}>
           <span />
           {['small', 'silver', 'gold', 'epic'].map((ty) => <div key={ty} style={{ display: 'flex', justifyContent: 'center' }}><ChestIcon type={ty} size={30} /></div>)}
+          {['dog', 'outfit', 'freeze', 'coins'].map((k) => (
+            <KindRow key={k} k={k} label={t('pw.kind.' + k)} />
+          ))}
+        </div>
+        <div style={{ fontSize: 13, fontWeight: 750, marginTop: 18 }}>{t('pw.chancesDogs')}</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1.3fr repeat(4,1fr)', gap: '10px 4px', marginTop: 10, alignItems: 'center', fontSize: 12.5 }}>
+          <span />
+          {['small', 'silver', 'gold', 'epic'].map((ty) => <div key={ty} style={{ display: 'flex', justifyContent: 'center' }}><ChestIcon type={ty} size={30} /></div>)}
           {RARITIES.map((r) => (
             <Row key={r} r={r} />
           ))}
@@ -172,6 +201,14 @@ export function ChancesSheet({ onClose }) {
         <div style={{ fontSize: 11.5, color: '#8a8a99', marginTop: 16, lineHeight: 1.5 }}>{t('pw.chancesNote')}</div>
       </div>
     </div>
+  );
+}
+function KindRow({ k, label }) {
+  return (
+    <>
+      <span style={{ fontSize: 12, fontWeight: 700, color: '#d9d9e6' }}>{label}</span>
+      {['small', 'silver', 'gold', 'epic'].map((ty) => <div key={ty} style={{ textAlign: 'center', fontWeight: 700, color: CHEST_CONTENTS[ty][k] ? '#ececf3' : '#55556a' }}>{CHEST_CONTENTS[ty][k] ? CHEST_CONTENTS[ty][k] + '%' : '—'}</div>)}
+    </>
   );
 }
 function Row({ r }) {
