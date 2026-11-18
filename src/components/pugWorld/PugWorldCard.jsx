@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useLang } from '../../lib/useLang';
-import { SESSION_COINS, MONTHLY_TARGET, monthlyFor } from '../../lib/pugWorld/logic.js';
+import { SESSION_COINS, MONTHLY_TARGET, monthlyFor, dogsOn } from '../../lib/pugWorld/logic.js';
 import { localDateKey } from '../../lib/plannerLogic';
-import { openPugWorld } from '../../lib/pugWorld/events';
+import { openPugWorld, openMissions } from '../../lib/pugWorld/events';
+import { MissionRow } from './missionBits';
+import { hoursToMidnight } from './missionUtil';
 import { AppShellPortal } from '../ui';
 import Dog2D from './Dog2D';
 import ChestIcon from './Chest';
@@ -15,7 +17,8 @@ import { CoinIcon } from './icons';
 export default function PugWorldCard({ pw }) {
   const { t } = useLang();
   const [jump, setJump] = useState(0);
-  // Once you have dogs they stand on the Home cards instead (HomePets).
+  // Once you have dogs: the missions card (HomeMissions) and the little
+  // dogs on the cards (ScreenPets) instead.
   if (!pw?.enabled || pw.started) return null;
   const { state } = pw;
   const chests = state.chests.length;
@@ -50,15 +53,39 @@ export default function PugWorldCard({ pw }) {
   );
 }
 
+// Home, once you have a dog: today's 3 missions (like Duolingo); tap to
+// open the Missions page. Little dogs can stand on it (data-perch).
+export function HomeMissions({ pw }) {
+  const { t } = useLang();
+  if (!pw?.enabled || !pw.started) return null;
+  const { state } = pw;
+  const items = state.missions.items || [];
+  if (!items.length) return null;
+  const doneCount = items.filter((m) => m.done).length;
+  return (
+    <div data-perch="" onClick={() => openMissions()} style={{ marginTop: 18, padding: '13px 15px 8px', borderRadius: 18, cursor: 'pointer', background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ flex: 1, minWidth: 0, fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a' }}>{t('pw.todayMissions').toUpperCase()} · {doneCount}/{items.length}</div>
+        <span style={{ fontSize: 11.5, fontWeight: 800, color: '#f5a524', whiteSpace: 'nowrap' }}>⏱ {t('pw.resetsIn', { n: hoursToMidnight() })}</span>
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: '#a58cff', whiteSpace: 'nowrap' }}>{t('pw.seeAll')} ›</span>
+      </div>
+      <div style={{ marginTop: 4 }}>
+        {items.map((m) => <MissionRow key={m.id} state={state} m={m} />)}
+      </div>
+    </div>
+  );
+}
+
 function Chip({ done, children }) {
   return <span style={{ fontSize: 12, fontWeight: 700, padding: '5px 10px', borderRadius: 99, background: done ? 'rgba(53,208,127,.12)' : 'rgba(255,255,255,.06)', color: done ? '#7fe3ad' : '#d9d9e6', whiteSpace: 'nowrap' }}>{done ? '✓ ' : ''}{children}</span>;
 }
 
-// The study timer: your dog studies with you.
+// The study timer: your dog studies with you (the one that lives on the
+// study timer, else the favourite).
 export function StudyBuddy({ pw }) {
   const { t } = useLang();
   if (!pw?.enabled || !pw.started) return null;
-  const fav = pw.state.favorite;
+  const fav = dogsOn(pw.state, 'focus')[0] || pw.state.favorite;
   return (
     <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, marginTop: 22, alignSelf: 'stretch', maxWidth: 360 }}>
       <div style={{ width: 96, height: 96, flex: 'none' }}><Dog2D dogId={fav} worn={pw.state.outfits.worn[fav]} book /></div>

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import PugWorldCard from '../components/pugWorld/PugWorldCard';
-import HomePets from '../components/pugWorld/HomePets';
+import PugWorldCard, { HomeMissions } from '../components/pugWorld/PugWorldCard';
+import ScreenPets from '../components/pugWorld/ScreenPets';
 import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
 import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, planFor, draftFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, bestStreak, studiedToday, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn, offTrackReason, fmt, todoTimeLabel } from '../lib/plannerLogic';
 import { dailyTip } from '../lib/dailyTip';
@@ -131,7 +131,7 @@ function StreakCard({ streak, best, doneToday, selectedDay, onSelectDay, eventDa
   const freezes = rewards?.freezes || 0;
   const progress = rewards?.progress || 0;
   return (
-    // data-perch: the little dogs (HomePets) stand only on the right part
+    // data-perch: the little dogs (ScreenPets) stand only on the right part
     // of this card's edge, clear of the greeting text above it.
     <div data-perch="0.55-1" style={{
       marginTop: 14, padding: '16px 14px 10px', borderRadius: 22,
@@ -705,6 +705,7 @@ export default function Home({ planner, studentName, profilePhoto, studyHistory 
       />
       <StreakNotice notice={streakNotice} onDismiss={() => setLastSeenStreak(streak)} />
       {isRealDay && <PugWorldCard pw={pugWorld} />}
+      {isRealDay && <HomeMissions pw={pugWorld} />}
 
       {state.rescueApplied && (() => {
         const movedCount = Object.values(state.rescueDecisions || {}).filter((d) => d === 'moved').length;
@@ -720,7 +721,7 @@ export default function Home({ planner, studentName, profilePhoto, studyHistory 
         );
       })()}
 
-      {/* data-perch: the little dogs (HomePets) can stand on this card */}
+      {/* data-perch: the little dogs (ScreenPets) can stand on this card */}
       <div data-perch="">
         {isRealDay
           ? <NextSessionCard planner={planner} />
@@ -782,7 +783,7 @@ export default function Home({ planner, studentName, profilePhoto, studyHistory 
       )}
 
       <TaskEditSheet planner={planner} />
-      <HomePets pw={pugWorld} />
+      <ScreenPets pw={pugWorld} place="home" />
 
       </div>
     </>

@@ -1,4 +1,4 @@
-import { DOGS, DOG_BY_ID, BREED_IDS, OUTFITS, OUTFIT_BY_ID, OUTFIT_SETS, SET_DISCOUNT } from './catalog.js';
+import { DOGS, DOG_BY_ID, BREED_IDS, RARITIES, OUTFITS, OUTFIT_BY_ID, OUTFIT_SETS, SET_DISCOUNT } from './catalog.js';
 
 // Pug World's rules, pure and tested (logic.test.js). The whole game state
 // is one object kept under KEYS.pugWorld (see hooks/usePugWorld.js):
@@ -6,6 +6,7 @@ import { DOGS, DOG_BY_ID, BREED_IDS, OUTFITS, OUTFIT_BY_ID, OUTFIT_SETS, SET_DIS
 //   chests: [{ id, type, from }]           outfits: { owned: [], worn: { [dogId]: { head, face, neck } } }
 //   calendar: { day, last }                missions: { date, items: [{ id, done }], counts, bonus }
 //   shop: { date, bought: [] }             sets: [breed]   rewarded: { streaks: [], days: [] }
+//   monthly: { month, sessions, done }     homes: { [dogId]: [place] } | null (= never chosen)
 
 export const EMPTY = {
   v: 1, dogs: {}, favorite: null, coins: 0, chests: [],
@@ -15,6 +16,7 @@ export const EMPTY = {
   shop: { date: null, bought: [] },
   sets: [], rewarded: { streaks: [], days: [], premium: null, plan: null },
   monthly: { month: null, sessions: 0, done: false },
+  homes: null,
 };
 export function normalize(s) {
   const x = s && typeof s === 'object' ? s : {};
@@ -30,6 +32,7 @@ export function normalize(s) {
     sets: Array.isArray(x.sets) ? x.sets : [],
     rewarded: { ...EMPTY.rewarded, ...(x.rewarded || {}) },
     monthly: { ...EMPTY.monthly, ...(x.monthly || {}) },
+    homes: x.homes && typeof x.homes === 'object' && !Array.isArray(x.homes) ? x.homes : null,
   };
 }
 
@@ -324,10 +327,12 @@ export function onSession(state, id, month) {
 }
 
 // ---------- monthly challenge ----------
-// Finish MONTHLY_TARGET study sessions in a calendar month: an epic chest
-// and MONTHLY_COINS coins, once a month.
+// Finish MONTHLY_TARGET study sessions in a calendar month, with a chest on
+// the way at each milestone (the last one: an epic chest and MONTHLY_COINS
+// coins), once a month.
 export const MONTHLY_TARGET = 20;
 export const MONTHLY_COINS = 300;
+export const MONTHLY_MILESTONES = [{ at: 7, chest: 'small' }, { at: 13, chest: 'silver' }, { at: MONTHLY_TARGET, chest: 'epic' }];
 export function monthlyFor(state, month) {
   const m = normalize(state).monthly;
   return m.month === month ? m : { month, sessions: 0, done: false };
@@ -337,6 +342,8 @@ export function countMonthly(state, month) {
   const m = monthlyFor(s, month);
   const sessions = m.sessions + 1;
   let next = { ...s, monthly: { month, sessions, done: m.done } };
+  const mid = MONTHLY_MILESTONES.find((x) => x.at === sessions && x.at < MONTHLY_TARGET);
+  if (mid && !m.done) next = addChest(next, mid.chest, 'monthly');
   if (!m.done && sessions >= MONTHLY_TARGET) {
     next = addChest({ ...next, monthly: { month, sessions, done: true }, coins: next.coins + MONTHLY_COINS }, 'epic', 'monthly');
   }
@@ -373,4 +380,60 @@ export function chooseStarter(state, dogId) {
   const s = normalize(state);
   if (Object.keys(s.dogs).length) return s;
   return { ...s, dogs: { [dogId]: { copies: 0, level: 1 } }, favorite: dogId, chests: s.chests.concat({ id: chestId(), type: 'small', from: 'welcome' }) };
+}
+
+// ---------- where dogs live ----------
+// Each dog can live on up to DOG_MAX_PLACES screens; each screen shows up to
+// PLACE_MAX_DOGS dogs. The favourite always lives on Home (on top of its
+// other places). Until you choose (homes = null): Home shows the favourite
+// and your 2 rarest dogs, the study timer the favourite.
+export const PLACES = ['home', 'calendar', 'tasks', 'planner', 'focus'];
+export const PLACE_MAX_DOGS = 3;
+export const DOG_MAX_PLACES = 2;
+function rarest(s) {
+  return Object.keys(s.dogs).filter((id) => DOG_BY_ID[id] && id !== s.favorite)
+    .sort((a, b) => RARITIES.indexOf(DOG_BY_ID[b].rarity) - RARITIES.indexOf(DOG_BY_ID[a].rarity));
+}
+function homesOf(s) {
+  if (s.homes) return s.homes;
+  const out = {};
+  rarest(s).slice(0, PLACE_MAX_DOGS - 1).forEach((id) => { out[id] = ['home']; });
+  return out;
+}
+export function dogsOn(state, place) {
+  const s = normalize(state);
+  const homes = homesOf(s);
+  let list = Object.keys(homes).filter((id) => s.dogs[id] && DOG_BY_ID[id] && (homes[id] || []).includes(place));
+  if (place === 'home' && s.favorite) list = [s.favorite, ...list.filter((id) => id !== s.favorite)];
+  if (place === 'focus' && !list.length && s.favorite) list = [s.favorite];
+  return list.slice(0, PLACE_MAX_DOGS);
+}
+// The screens a dog chose (the favourite's Home is not counted).
+export function placesOf(state, dogId) {
+  const s = normalize(state);
+  return (homesOf(s)[dogId] || []).filter((p) => PLACES.includes(p) && !(p === 'home' && dogId === s.favorite));
+}
+// Is there room for this dog on `place`?
+export function placeHasRoom(state, place, dogId) {
+  const s = normalize(state);
+  const others = dogsOn(s, place).filter((id) => id !== dogId);
+  return others.length < PLACE_MAX_DOGS;
+}
+// Turn a screen on/off for a dog (unchanged when it isn't allowed).
+// `place` null = "Nowhere": the dog leaves every screen.
+export function togglePlace(state, dogId, place) {
+  const s = normalize(state);
+  if (!s.dogs[dogId]) return s;
+  const homes = { ...homesOf(s) };
+  const cur = placesOf(s, dogId);
+  let next;
+  if (place == null) next = [];
+  else if (cur.includes(place)) next = cur.filter((p) => p !== place);
+  else {
+    if (place === 'home' && dogId === s.favorite) return s;
+    if (cur.length >= DOG_MAX_PLACES || !placeHasRoom(s, place, dogId)) return s;
+    next = [...cur, place];
+  }
+  if (next.length) homes[dogId] = next; else delete homes[dogId];
+  return { ...s, homes };
 }

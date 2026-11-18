@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ScreenPets from '../components/pugWorld/ScreenPets';
 import { durOf, hm, weekdayDateLabel, fmt, freeWindows, taskDueOnDay, isTaskOn, plannedElsewhere } from '../lib/plannerLogic';
 import { iconForTask, iconForActivity } from '../lib/taskAuto';
 import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
@@ -10,7 +11,7 @@ import { Eyebrow, Check, SettingRow, ROW_LINE } from '../components/ListRows';
 
 const PREFS = ['Wolny wieczór', 'Najpierw najtrudniejsze', 'Więcej krótkich przerw'];
 
-export default function Planner({ planner }) {
+export default function Planner({ planner, pugWorld = null }) {
   const { t } = useLang();
   const [open, setOpen] = useState(null);
   const toggle = (k) => setOpen((o) => (o === k ? null : k));
@@ -40,7 +41,8 @@ export default function Planner({ planner }) {
       <div style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-.02em', marginTop: 14 }}>{t('planner.title', { day: dayWord })}</div>
       <div style={{ fontSize: 14, color: '#a3a3b3', marginTop: 5 }}>{t('planner.date', { date: weekdayDateLabel(planDayNum) })}</div>
 
-      <div style={{ display: 'flex', gap: 9, marginTop: 14 }}>
+      {/* data-perch: the little dogs that live on Plan a day (ScreenPets) stand on the right of these rows */}
+      <div data-perch="0.6-1" style={{ display: 'flex', gap: 9, marginTop: 14 }}>
         <Chip label={t('planner.pickToday')} active={!!state.planToday} onClick={() => update({ planToday: true })} />
         <Chip label={t('planner.pickTomorrow')} active={!state.planToday} onClick={() => update({ planToday: false })} />
       </div>
@@ -78,7 +80,7 @@ export default function Planner({ planner }) {
         </>
       )}
 
-      <Eyebrow text={t('planner.yourDay')} />
+      <div data-perch="0.6-1"><Eyebrow text={t('planner.yourDay')} /></div>
       <SettingRow icon="🕐" label={t('tl.freeTime')} value={fmt(constraints.wakeMinutes) + '–' + fmt(constraints.bedtimeMinutes)} open={open === 'time'} onClick={() => toggle('time')}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
           <div style={{ flex: 1 }}>
@@ -124,6 +126,7 @@ export default function Planner({ planner }) {
       </StickyFooter>
 
       <TaskEditSheet planner={planner} />
+      <ScreenPets pw={pugWorld} place="planner" />
     </div>
     </>
   );

@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
-import { AppShellPortal } from '../ui';
+import { AppShellPortal, BackButton } from '../ui';
 import { useLang } from '../../lib/useLang';
-import { localeOf } from '../../lib/i18n';
 import { localDateKey } from '../../lib/plannerLogic';
 import { DOGS, DOG_BY_ID, BREED_IDS, STARTERS, OUTFIT_BY_ID, OUTFIT_SETS, RARITY_COLOR } from '../../lib/pugWorld/catalog.js';
 import {
-  CALENDAR, CHEST_PRICE, MISSIONS, MISSION_COINS, canClaimCalendar, claimCalendar, collectionScore, dogPower, bumpMission,
-  shopOffers, buyOutfit, buyChest, breedDogs, chooseStarter, buySet, setPrice, wearSet, fullSetOn, monthlyFor, MONTHLY_TARGET, MONTHLY_COINS,
+  CHEST_PRICE, collectionScore, dogPower, bumpMission,
+  shopOffers, buyOutfit, buyChest, breedDogs, chooseStarter, buySet, setPrice, wearSet, fullSetOn,
 } from '../../lib/pugWorld/logic.js';
 import Dog2D from './Dog2D';
 import Wardrobe from './Wardrobe';
@@ -21,24 +20,24 @@ import { dogName } from './names';
 import { Card, RarityPill, Stars, Button, CoinPill, Stage, TrickButton } from './bits';
 import { PURPLE, CARD } from './theme';
 
-// Pug World: the dog collection game. Studying earns chests, chests hold
-// dogs (and coins, sometimes outfits). Full screen over the app with its own
-// tabs: My dogs · Album · Shop · Friends (coming next).
-const TABS = ['yard', 'missions', 'album', 'shop', 'friends'];
+// The dog collection game. Studying earns chests, chests hold dogs (and
+// coins, outfits, streak freezes).
+const TABS = ['yard', 'album', 'shop', 'friends'];
 const CHEST_ORDER = ['epic', 'gold', 'silver', 'small'];
 // Album cards: light, in the rarity's colour (the dogs are stickers).
 const TILE = { common: '#c9d8f5', rare: '#bfe0ff', epic: '#dccbff', legendary: '#ffe7a8' };
 
-// The Pets page (a tab of the app): Yard · Missions · Album · Shop ·
-// Friends as chips on top. `intent` = what was asked for (a tab, or a chest
-// to open right away); `onStudy` goes back to studying.
-export default function PugWorld({ pw, intent, onStudy }) {
+// The My dogs page (opened by tapping a dog anywhere, or from the Missions
+// page): Yard · Album · Shop · Friends as chips on top. `intent` = what was
+// asked for (a tab, a chest to open right away, or a dog to show up close);
+// `onStudy` goes back to studying, `onBack` to where you came from.
+export default function PugWorld({ pw, intent, onStudy, onBack }) {
   const { t } = useLang();
   const { state, update } = pw;
   const first = intent?.tab === 'dogs' ? 'yard' : intent?.tab;
   const [tab, setTab] = useState(TABS.includes(first) ? first : 'yard');
   const [opening, setOpening] = useState(() => (intent?.chest && pw.state.chests.some((c) => c.id === intent.chest) ? intent.chest : null));
-  const [showDog, setShowDog] = useState(null);
+  const [showDog, setShowDog] = useState(() => (intent?.dog && pw.state.dogs[intent.dog] ? intent.dog : null));
   const [chances, setChances] = useState(false);
   const overlay = opening || showDog || chances;
 
@@ -47,26 +46,25 @@ export default function PugWorld({ pw, intent, onStudy }) {
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 16px calc(var(--tabbar-h) + 28px)', position: 'relative', zIndex: 1 }}>
       {!pw.started ? (
-        <Starter onPick={(id) => update((s) => chooseStarter(s, id))} />
+        <>
+          <BackButton onClick={onBack} />
+          <Starter onPick={(id) => update((s) => chooseStarter(s, id))} />
+        </>
       ) : (
         <>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ flex: 1, fontSize: 26, fontWeight: 800, letterSpacing: '-.02em' }}>{t('tab.pets')}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <BackButton onClick={onBack} />
+            <div style={{ flex: 1, fontSize: 24, fontWeight: 800, letterSpacing: '-.02em' }}>{t('pw.title')}</div>
             <CoinPill n={state.coins} />
           </div>
           <div style={{ display: 'flex', gap: 7, overflowX: 'auto', margin: '14px -16px 4px', padding: '0 16px 2px' }}>
-            {TABS.map((id) => {
-              const badge = id === 'missions' ? (state.missions.items || []).filter((m) => !m.done).length : 0;
-              return (
-                <div key={id} onClick={() => setTab(id)} style={{ flex: 'none', height: 34, padding: '0 14px', borderRadius: 99, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, cursor: 'pointer', background: tab === id ? '#8b6dff' : 'rgba(255,255,255,.06)', color: tab === id ? '#fff' : '#b9b9c8' }}>
-                  {t('pw.tab.' + id)}
-                  {badge > 0 && <span style={{ minWidth: 17, height: 17, borderRadius: 99, fontSize: 10.5, fontWeight: 800, display: 'grid', placeItems: 'center', background: tab === id ? 'rgba(255,255,255,.25)' : '#ff5f6d', color: '#fff' }}>{badge}</span>}
-                </div>
-              );
-            })}
+            {TABS.map((id) => (
+              <div key={id} onClick={() => setTab(id)} style={{ flex: 'none', height: 34, padding: '0 14px', borderRadius: 99, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 700, cursor: 'pointer', background: tab === id ? '#8b6dff' : 'rgba(255,255,255,.06)', color: tab === id ? '#fff' : '#b9b9c8' }}>
+                {t('pw.tab.' + id)}
+              </div>
+            ))}
           </div>
           {tab === 'yard' && <MyDogs pw={pw} paused={!!overlay} onOpenChest={setOpening} onChances={() => setChances(true)} onStudy={onStudy} onShop={() => setTab('shop')} onAlbum={() => setTab('album')} onShowDog={setShowDog} />}
-          {tab === 'missions' && <MissionsTab pw={pw} />}
           {tab === 'album' && <Album state={state} onShowDog={setShowDog} onChances={() => setChances(true)} />}
           {tab === 'shop' && <Shop pw={pw} />}
           {tab === 'friends' && <Friends />}
@@ -234,137 +232,6 @@ function Chests({ state, onOpenChest, onChances, onStudy }) {
         })}
       </div>
     </>
-  );
-}
-
-// ---------- Missions: today's missions, the monthly challenge, daily rewards ----------
-function MissionsTab({ pw }) {
-  const { state, update } = pw;
-  const today = localDateKey();
-  return (
-    <>
-      <Missions state={state} />
-      <Monthly state={state} today={today} />
-      <Calendar state={state} today={today} onClaim={() => update((s) => claimCalendar(s, today).state)} />
-    </>
-  );
-}
-
-function Monthly({ state, today }) {
-  const { t, lang } = useLang();
-  const month = today.slice(0, 7);
-  const m = monthlyFor(state, month);
-  const [y, mo, d] = today.split('-').map(Number);
-  const daysLeft = new Date(y, mo, 0).getDate() - d;
-  const monthName = new Date(y, mo - 1, 1).toLocaleDateString(localeOf(lang), { month: 'long' });
-  const name = monthName.charAt(0).toUpperCase() + monthName.slice(1);
-  const pct = Math.min(100, (m.sessions / MONTHLY_TARGET) * 100);
-  return (
-    <div style={{ marginTop: 12, padding: 16, borderRadius: 20, border: '1px solid rgba(176,109,255,.4)', background: 'radial-gradient(circle at 85% 20%, rgba(176,109,255,.28), transparent 60%), #120f22' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', color: '#c9a8ff' }}>{t('pw.monthly.label').toUpperCase()}</div>
-          <div style={{ fontSize: 18, fontWeight: 800, marginTop: 4 }}>{t('pw.monthly.title', { month: name })}</div>
-          <div style={{ fontSize: 12.5, color: '#b9b9c8', marginTop: 4 }}>{t('pw.monthly.goal', { n: MONTHLY_TARGET })}</div>
-        </div>
-        <ChestIcon type="epic" size={60} locked={false} />
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 14 }}>
-        <div style={{ flex: 1, height: 10, borderRadius: 99, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
-          <div style={{ width: pct + '%', height: '100%', borderRadius: 99, background: m.done ? '#35d07f' : 'linear-gradient(90deg,#b06dff,#6d4dff)' }} />
-        </div>
-        <span style={{ fontSize: 13, fontWeight: 800, fontVariantNumeric: 'tabular-nums' }}>{Math.min(m.sessions, MONTHLY_TARGET)}/{MONTHLY_TARGET}</span>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10, fontSize: 12, color: '#a3a3b3' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-          {m.done ? <span style={{ color: '#7fe3ad', fontWeight: 700 }}>✓ {t('pw.monthly.done')}</span> : <>{t('pw.monthly.reward')} <ChestIcon type="epic" size={18} glow={false} /> + <CoinIcon size={13} /> {MONTHLY_COINS}</>}
-        </span>
-        {!m.done && <span>{t('pw.monthly.daysLeft', { n: daysLeft })}</span>}
-      </div>
-    </div>
-  );
-}
-
-const MISSION_ICON = { session: '📖', session2: '📚', chest: '🎁', chest2: '🎁', dress: '👕', plan: '🗓️', trick: '✨', album: '📒' };
-function ProgressBar({ pct, done }) {
-  return (
-    <div style={{ height: 4, borderRadius: 9, background: 'rgba(255,255,255,.08)', overflow: 'hidden' }}>
-      <div style={{ width: pct + '%', height: '100%', borderRadius: 9, background: done ? '#35d07f' : PURPLE }} />
-    </div>
-  );
-}
-
-// Today's 3 missions with their progress, and the silver chest for all 3.
-function Missions({ state }) {
-  const { t } = useLang();
-  const items = state.missions.items || [];
-  if (!items.length) return null;
-  const now = new Date();
-  const midnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-  const hours = Math.max(1, Math.ceil((midnight - now) / 3600000));
-  const doneCount = items.filter((m) => m.done).length;
-  return (
-    <Card title={t('pw.missions')} right={<span style={{ fontSize: 12, color: '#8a8a99' }}>{t('pw.resetsIn', { n: hours })}</span>}>
-      {items.map((m, i) => {
-        const [ev, n] = MISSIONS[m.id] || ['', 1];
-        const have = m.done ? n : Math.min(n, state.missions.counts[ev] || 0);
-        return (
-          <div key={m.id} style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '10px 0', borderTop: i ? '1px solid rgba(255,255,255,.06)' : 'none', marginTop: i ? 0 : -4 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 11, background: 'rgba(255,255,255,.06)', display: 'grid', placeItems: 'center', fontSize: 17, flex: 'none' }}>{MISSION_ICON[m.id] || '⭐'}</div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13.5, fontWeight: 650, color: m.done ? '#8a8a99' : '#f4f4f7' }}>{t('pw.mission.' + m.id)}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-                <div style={{ flex: 1 }}><ProgressBar pct={(have / n) * 100} done={m.done} /></div>
-                <span style={{ fontSize: 11, color: '#8a8a99', fontWeight: 700 }}>{have}/{n}</span>
-              </div>
-            </div>
-            <CoinChip n={'+' + MISSION_COINS} />
-          </div>
-        );
-      })}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6, padding: '10px 12px', borderRadius: 14, background: state.missions.bonus ? 'rgba(53,208,127,.08)' : 'rgba(255,255,255,.04)' }}>
-        <ChestIcon type="silver" size={30} glow={false} />
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 12.5, fontWeight: 700, color: state.missions.bonus ? '#7fe3ad' : '#d9d9e6' }}>{t(state.missions.bonus ? 'pw.missionsBonusDone' : 'pw.missionsBonus')}</div>
-          {!state.missions.bonus && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-              <div style={{ flex: 1 }}><ProgressBar pct={(doneCount / items.length) * 100} /></div>
-              <span style={{ fontSize: 11, color: '#8a8a99', fontWeight: 700 }}>{doneCount}/{items.length}</span>
-            </div>
-          )}
-        </div>
-      </div>
-    </Card>
-  );
-}
-
-function CoinChip({ n }) {
-  return <span style={{ fontSize: 12, fontWeight: 800, color: '#ffd27a', padding: '4px 9px', borderRadius: 99, background: 'rgba(245,165,36,.12)', border: '1px solid rgba(245,165,36,.3)', whiteSpace: 'nowrap', flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 4 }}><CoinIcon size={13} />{n}</span>;
-}
-
-function Calendar({ state, today, onClaim }) {
-  const { t } = useLang();
-  const can = canClaimCalendar(state, today);
-  const d = state.calendar.day;
-  const claimed = can ? d % 7 : ((d - 1) % 7) + 1; // claimed in this week of rewards
-  return (
-    <Card title={t('pw.calendar')} right={<span style={{ fontSize: 12, color: '#8a8a99' }}>{t('pw.calendarNote')}</span>}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5 }}>
-        {CALENDAR.map((r, i) => {
-          const done = i < claimed;
-          const next = can && i === claimed;
-          return (
-            <div key={i} style={{ borderRadius: 12, padding: '7px 0 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: next ? 'rgba(139,109,255,.18)' : 'rgba(255,255,255,.04)', border: next ? '1.5px solid #8b6dff' : '1px solid rgba(255,255,255,.06)', opacity: done ? 0.45 : 1, position: 'relative' }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: '#8a8a99' }}>{i + 1}</span>
-              {r.chest ? <ChestIcon type={r.chest} size={22} /> : <span style={{ height: 22, display: 'grid', placeItems: 'center' }}><CoinIcon size={18} /></span>}
-              <span style={{ fontSize: 9.5, fontWeight: 700, color: '#c9c9d6' }}>{r.coins || '×1'}</span>
-              {done && <span style={{ position: 'absolute', top: 2, right: 3, fontSize: 10, color: '#35d07f' }}>✓</span>}
-            </div>
-          );
-        })}
-      </div>
-      <Button onClick={onClaim} disabled={!can} ghost={!can} style={{ marginTop: 12, height: 42 }}>{t(can ? 'pw.claim' : 'pw.claimTomorrow')}</Button>
-    </Card>
   );
 }
 
