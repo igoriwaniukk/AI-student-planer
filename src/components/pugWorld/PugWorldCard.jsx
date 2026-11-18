@@ -5,6 +5,7 @@ import { openPugWorld } from '../../lib/pugWorld/events';
 import { AppShellPortal } from '../ui';
 import Dog2D from './Dog2D';
 import ChestIcon from './Chest';
+import ChestOpen from './ChestOpen';
 import { CoinIcon } from './icons';
 import { PURPLE } from './theme';
 
@@ -85,32 +86,25 @@ function SpeechBubble({ children }) {
   );
 }
 
-// After a finished session: the chest it earned, glowing, and your dog
-// telling you to tap it (or "Later"). Before the game is started: a small
-// "+1 chest" message at the top instead.
+// After a finished session: the chest it earned opens by itself, right
+// here (shake → burst → what's inside), not inside the collection. Before
+// the game is started: a small "+1 chest" message at the top instead.
 export function SessionReward({ pw, ready }) {
   const { t } = useLang();
   if (!pw?.enabled || !pw.toast || pw.open || !ready) return null;
-  const chest = [...pw.state.chests].reverse().find((c) => c.from === 'session');
-  if (!pw.started || !chest) return <PugWorldToast pw={pw} />;
-  const fav = pw.state.favorite;
-  const open = () => { pw.clearToast(); openPugWorld({ chest: chest.id }); };
+  // The chest this session added (remembered in the toast, so it stays put
+  // while it opens and leaves the list).
+  const chestId = pw.toast.chest;
+  if (!pw.started || !chestId) return <PugWorldToast pw={pw} />;
+  const banner = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, letterSpacing: '.12em', color: '#35d07f' }}>
+      {t('pw.done.title').toUpperCase()} · <CoinIcon size={13} /> +{SESSION_COINS}
+    </div>
+  );
   return (
     <AppShellPortal>
-      <style>{'@keyframes pwDrop{0%{transform:translateY(-60px) scale(.6);opacity:0}60%{transform:translateY(8px) scale(1.05);opacity:1}100%{transform:none}}@keyframes pwPulse{0%,100%{opacity:.75}50%{opacity:1}}'}</style>
-      <div style={{ position: 'absolute', inset: 0, zIndex: 120, background: 'rgba(6,6,10,.97)', display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 'calc(var(--top-pad) + 40px)', animation: 'fadeUp .25s ease both' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, letterSpacing: '.12em', color: '#35d07f' }}>
-          {t('pw.done.title').toUpperCase()} · <CoinIcon size={13} /> +{SESSION_COINS}
-        </div>
-        <div onClick={open} style={{ marginTop: 50, width: 240, height: 240, borderRadius: '50%', display: 'grid', placeItems: 'center', cursor: 'pointer', background: 'radial-gradient(circle, rgba(211,148,86,.45), transparent 65%)', animation: 'pwPulse 2.4s ease-in-out infinite' }}>
-          <div style={{ animation: 'pwDrop .6s ease-out both' }}><ChestIcon type={chest.type} size={150} /></div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, marginTop: 30, padding: '0 20px', alignSelf: 'stretch' }}>
-          <div style={{ width: 110, height: 110, flex: 'none' }}><Dog2D dogId={fav} worn={pw.state.outfits.worn[fav]} happyKey={1} /></div>
-          <SpeechBubble><span dangerouslySetInnerHTML={{ __html: t('pw.done.bubble').replace(/\*(.+?)\*/g, '<b>$1</b>') }} /></SpeechBubble>
-        </div>
-        <div style={{ flex: 1 }} />
-        <div onClick={pw.clearToast} style={{ padding: '14px 30px', marginBottom: 'calc(var(--safe-bottom) + 24px)', fontSize: 14, fontWeight: 650, color: '#8a8a99', cursor: 'pointer' }}>{t('pw.later')}</div>
+      <div style={{ position: 'absolute', inset: 0, zIndex: 120 }}>
+        <ChestOpen key={chestId} pw={pw} chestId={chestId} auto banner={banner} onClose={pw.clearToast} />
       </div>
     </AppShellPortal>
   );

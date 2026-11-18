@@ -125,7 +125,7 @@ function StreakCard({ streak, best, doneToday, selectedDay, onSelectDay, eventDa
 
   const lit = streak > 0;
   const sub = doneToday ? '✓ ' + t('home.streakSecured')
-    : savedByFreeze && isPremium ? t('streakCard.frozenSaved')
+    : savedByFreeze ? t('streakCard.frozenSaved')
       : best > 0 ? t('streakCard.best', { n: best }) : t('home.streakStart');
   const freezes = rewards?.freezes || 0;
   const progress = rewards?.progress || 0;
@@ -157,15 +157,15 @@ function StreakCard({ streak, best, doneToday, selectedDay, onSelectDay, eventDa
             <span style={{ fontSize: 15, fontWeight: 700, color: '#c9c9d6' }}>{t('streakCard.days.' + pluralForm(streak))}</span>
             {isPremium && <span style={{ alignSelf: 'center', fontSize: 9, fontWeight: 800, letterSpacing: '.08em', padding: '3px 7px', borderRadius: 99, background: 'linear-gradient(90deg,#f5a524,#ffd67a)', color: '#3a2300' }}>PREMIUM</span>}
           </div>
-          <div style={{ fontSize: 12, color: doneToday ? '#8ff0de' : savedByFreeze && isPremium ? '#9fdcff' : '#8a8a99', marginTop: 5 }}>{sub}</div>
+          <div style={{ fontSize: 12, color: doneToday ? '#8ff0de' : savedByFreeze ? '#9fdcff' : '#8a8a99', marginTop: 5 }}>{sub}</div>
         </div>
-        {isPremium && (
+        {(isPremium || freezes > 0) && (
           <div style={{ flex: 'none', textAlign: 'center' }}>
             <div style={{ fontSize: 12, fontWeight: 750, padding: '5px 10px', borderRadius: 99, background: 'rgba(120,200,255,.14)', color: '#9fdcff', border: '1px solid rgba(120,200,255,.35)', fontVariantNumeric: 'tabular-nums' }}>🧊 {freezes}/{MAX_FREEZES}</div>
             <div style={{ fontSize: 9.5, color: '#7a7a8a', marginTop: 4 }}>{t('streakCard.freezes')}</div>
           </div>
         )}
-        {showLock && (
+        {showLock && !freezes && (
           <div
             role="button"
             onClick={() => openPaywall('streak-freeze')}

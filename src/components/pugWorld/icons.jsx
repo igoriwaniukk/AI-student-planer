@@ -37,3 +37,17 @@ export function OutfitPic({ id, size = 48, style }) {
   const svg = useMemo(() => outfitSVG(id, size), [id, size]);
   return <span style={{ display: 'inline-block', width: size, height: size, flex: 'none', ...style }} dangerouslySetInnerHTML={{ __html: svg }} />;
 }
+
+// A streak freeze: a shiny ice cube.
+export function FreezeIcon({ size = 40, style }) {
+  const id = useId().replace(/[^a-zA-Z0-9]/g, '');
+  return (
+    <svg width={size} height={size} viewBox="0 0 64 64" style={{ display: 'block', flex: 'none', ...style }}>
+      <defs><linearGradient id={id} x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#e6f7ff" /><stop offset=".5" stopColor="#9fdcff" /><stop offset="1" stopColor="#5fb2f5" /></linearGradient></defs>
+      <path d="M32 6 L54 18 L54 44 L32 58 L10 44 L10 18 Z" fill={`url(#${id})`} stroke="#3f8fd8" strokeWidth="2.4" strokeLinejoin="round" />
+      <path d="M10 18 L32 30 L54 18 M32 30 L32 58" fill="none" stroke="#3f8fd8" strokeWidth="2" strokeLinejoin="round" opacity=".7" />
+      <path d="M17 22 L27 27.5" stroke="#fff" strokeWidth="3" strokeLinecap="round" opacity=".85" />
+      <path d="M38 40 l1.5 3.5 3.5 1.5 -3.5 1.5 -1.5 3.5 -1.5 -3.5 -3.5 -1.5 3.5 -1.5z" fill="#fff" />
+    </svg>
+  );
+}

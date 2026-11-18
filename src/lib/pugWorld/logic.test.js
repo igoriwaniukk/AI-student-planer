@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { DOGS, STARTERS, RARITIES, BREED_IDS } from './catalog';
 import {
-  EMPTY, normalize, CHEST_ODDS, rollRarity, addDog, openChest, addChest, dogPower, collectionScore, coinBonus,
+  EMPTY, normalize, CHEST_ODDS, CHEST_CONTENTS, rollRarity, addDog, openChest, addChest, dogPower, collectionScore, coinBonus,
   missionsFor, ensureDay, bumpMission, claimCalendar, canClaimCalendar, shopOffers, buyOutfit, buyChest, toggleOutfit,
   onSession, onPlan, onDayFinished, buySet, setPrice, wearSet, fullSetOn, onStreak, onPremiumDay, chooseStarter, completedSets, breedDogs,
 } from './logic';
@@ -36,13 +36,29 @@ describe('chests and dogs', () => {
     s = addDog(s.state, 'pug-fawn'); expect(s.level).toBe(3);
     s = addDog(s.state, 'pug-fawn'); expect(s.result).toBe('coins'); expect(s.coins).toBeGreaterThan(0);
   });
-  it('opens a chest: a dog, coins, maybe an outfit; the chest is used up', () => {
+  it('opens a chest: coins always, and a dog / outfit / freeze / bonus coins; the chest is used up', () => {
     const s = addChest(EMPTY, 'gold', 'test');
     const r = openChest(s, 'gold', seq(0.5, 0.1, 0.5, 0.1, 0.2));
+    expect(r.kind).toBe('dog');
     expect(r.state.chests).toHaveLength(0);
     expect(Object.keys(r.state.dogs)).toContain(r.dog);
     expect(r.coins).toBeGreaterThan(0);
     expect(openChest(EMPTY, 'gold')).toBeNull();
+    // a small chest is mostly not a dog
+    expect(openChest(addChest(EMPTY, 'small', 'x'), 'small', seq(0.95, 0.5)).kind).toBe('coins');
+    expect(openChest(addChest(EMPTY, 'small', 'x'), 'small', seq(0.2, 0.5, 0.5)).kind).toBe('outfit');
+    // epic is always a dog
+    expect(openChest(addChest(EMPTY, 'epic', 'x'), 'epic', seq(0.99, 0.5, 0.5, 0.5)).kind).toBe('dog');
+  });
+  it('a freeze only when there is room for one, otherwise coins', () => {
+    const s = addChest(EMPTY, 'small', 'x');
+    expect(openChest(s, 'small', seq(0.35, 0.5)).freeze).toBe(true);
+    const full = openChest(s, 'small', seq(0.35, 0.5), { freezeRoom: false });
+    expect(full.freeze).toBe(false);
+    expect(full.kind).toBe('coins');
+  });
+  it('chest contents add up to 100%', () => {
+    Object.values(CHEST_CONTENTS).forEach((o) => expect(Object.values(o).reduce((a, b) => a + b, 0)).toBe(100));
   });
   it('power grows with rarity and level; Epic/Legendary give a coin bonus', () => {
     expect(dogPower('corgi-golden', 1)).toBeGreaterThan(dogPower('pug-fawn', 3));
@@ -57,7 +73,7 @@ describe('chests and dogs', () => {
     const pugIndex = DOGS.filter((d) => d.rarity === last.rarity).indexOf(last);
     const rarityRoll = { common: 0.99, rare: 0.5, epic: 0.02, legendary: 0.001 }[last.rarity];
     const count = DOGS.filter((d) => d.rarity === last.rarity).length;
-    const r = openChest(s, 'small', seq(rarityRoll, (pugIndex + 0.5) / count, 0.5, 0.99));
+    const r = openChest(s, 'small', seq(0.01, rarityRoll, (pugIndex + 0.5) / count, 0.5, 0.99));
     expect(r.dog).toBe(last.id);
     expect(r.set).toBe('pug');
     expect(completedSets(r.state)).toContain('pug');
