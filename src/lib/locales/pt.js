@@ -1243,4 +1243,7 @@ export default {
   "pw.res.freeze": "CONGELAR SEQUÊNCIA!",
   "pw.res.bonus": "MOEDAS EXTRAS!",
   "pw.res.freezeDetail": "Protege sua sequência uma vez se você pular um dia",
+  "pw.upgradeHint": "Toque para ter a chance de um baú melhor!",
+  "pw.upgraded": "MELHOROU!",
+  "pw.chancesUpgrade": "Depois de uma sessão de estudo você toca no baú 3 vezes; cada toque pode melhorá-lo:",
 };

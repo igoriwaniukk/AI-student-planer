@@ -1243,4 +1243,7 @@ export default {
   "pw.res.freeze": "ストリークフリーズ！",
   "pw.res.bonus": "ボーナスコイン！",
   "pw.res.freezeDetail": "1日休んでも、ストリークを1回守ります",
+  "pw.upgradeHint": "タップすると、もっといい宝箱になるかも！",
+  "pw.upgraded": "アップグレード！",
+  "pw.chancesUpgrade": "勉強セッションのあと宝箱を3回タップできます。タップごとにアップグレードのチャンス：",
 };

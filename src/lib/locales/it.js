@@ -1243,4 +1243,7 @@ export default {
   "pw.res.freeze": "CONGELA SERIE!",
   "pw.res.bonus": "MONETE BONUS!",
   "pw.res.freezeDetail": "Protegge la tua serie una volta se salti un giorno",
+  "pw.upgradeHint": "Tocca per avere la possibilità di un forziere migliore!",
+  "pw.upgraded": "MIGLIORATO!",
+  "pw.chancesUpgrade": "Dopo una sessione di studio tocchi il forziere 3 volte; ogni tocco può migliorarlo:",
 };

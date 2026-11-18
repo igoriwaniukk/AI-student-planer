@@ -1243,4 +1243,7 @@ export default {
   "pw.res.freeze": "GEL DE SÉRIE !",
   "pw.res.bonus": "PIÈCES BONUS !",
   "pw.res.freezeDetail": "Protège ta série une fois si tu manques un jour",
+  "pw.upgradeHint": "Touche pour tenter d'obtenir un meilleur coffre !",
+  "pw.upgraded": "AMÉLIORÉ !",
+  "pw.chancesUpgrade": "Après une séance de révision, tu touches le coffre 3 fois ; chaque toucher peut l'améliorer :",
 };

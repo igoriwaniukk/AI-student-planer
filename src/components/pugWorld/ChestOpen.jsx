@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLang } from '../../lib/useLang';
 import { DOG_BY_ID, RARITY_COLOR, RARITIES } from '../../lib/pugWorld/catalog.js';
-import { CHEST_ODDS, CHEST_CONTENTS, LEVEL_COPIES, openChest } from '../../lib/pugWorld/logic.js';
+import { CHEST_ODDS, CHEST_CONTENTS, LEVEL_COPIES, UPGRADE_TAPS, UPGRADE_CHANCE, openChest, rollUpgrade, setChestType } from '../../lib/pugWorld/logic.js';
 import { isNativeApp, postToApp } from '../../lib/nativeBridge';
 import Dog2D from './Dog2D';
 import { CoinIcon, OutfitPic, FreezeIcon } from './icons';
@@ -25,6 +25,7 @@ const KEYFRAMES = `
 @keyframes pwSpark{0%{transform:translate(0,0) scale(1);opacity:1}100%{transform:translate(var(--dx),var(--dy)) scale(.2);opacity:0}}
 @keyframes pwBreath{0%,100%{opacity:.7}50%{opacity:1}}
 @keyframes pwUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes pwTap{0%{transform:scale(1)}40%{transform:scale(1.12,.9)}100%{transform:scale(1)}}
 `;
 const SHAKE_MS = 750;
 const KIND_COLOR = { outfit: '#2ee6c5', freeze: '#7cc2ff', coins: '#f5c451' };
@@ -35,25 +36,28 @@ const SPARKS = Array.from({ length: 14 }, (_, i) => {
   return { dx: Math.cos(a) * r, dy: Math.sin(a) * r, size: 5 + (i % 3) * 3, delay: (i % 4) * 30 };
 });
 
-// `auto`: opens by itself (the chest right after a study session), with
-// `banner` above it; no "open next" then.
+// `auto`: the chest right after a study session: 3 taps, each may upgrade
+// it (small → silver → gold → epic), then it opens by itself; `banner`
+// shows above it, and there's no "open next".
 export default function ChestOpen({ pw, chestId, onNext, onClose, auto = false, banner = null }) {
   const { t } = useLang();
-  // What's inside is decided when the chest is shown (and only saved on the
-  // tap), so the dog is ready before the animation starts.
-  const [pre] = useState(() => openChest(pw.state, chestId, Math.random, { freezeRoom: pw.freezeRoom !== false }));
-  const [phase, setPhase] = useState('closed'); // closed → shake → burst → reveal
+  const [type, setType] = useState(() => pw.state.chests.find((x) => x.id === chestId)?.type || 'small');
+  const [res, setRes] = useState(null);
+  const [phase, setPhase] = useState(auto ? 'charge' : 'closed'); // (charge →) closed → shake → burst → reveal
+  const [taps, setTaps] = useState(0);
+  const [flash, setFlash] = useState(0);
   const [dogReady, setDogReady] = useState(false);
-  const res = pre;
-  const type = pre?.chest.type || 'small';
   const timers = useRef([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
-  const open = () => {
-    if (phase !== 'closed') return;
-    if (!pre) { onClose(); return; }
-    pw.update(() => pre.state);
-    if (pre.freeze) pw.addFreeze?.();
+  // What's inside is decided on opening, for the chest as it is then.
+  const open = (finalType = type) => {
+    if (res) return;
+    const r = openChest(setChestType(pw.state, chestId, finalType), chestId, Math.random, { freezeRoom: pw.freezeRoom !== false });
+    if (!r) { onClose(); return; }
+    pw.update(() => r.state);
+    if (r.freeze) pw.addFreeze?.();
+    setRes(r);
     setPhase('shake');
     timers.current.push(setTimeout(() => setPhase('burst'), SHAKE_MS));
     timers.current.push(setTimeout(() => {
@@ -61,24 +65,31 @@ export default function ChestOpen({ pw, chestId, onNext, onClose, auto = false, 
       if (isNativeApp()) postToApp('haptic', { kind: 'success' });
     }, SHAKE_MS + BURST_MS - 150));
   };
+  // One of the 3 taps: maybe a better chest; after the last, it opens.
+  const tap = () => {
+    if (phase !== 'charge' || taps >= UPGRADE_TAPS) return;
+    const nt = rollUpgrade(type);
+    if (nt !== type) {
+      setType(nt);
+      setFlash((k) => k + 1);
+      if (isNativeApp()) postToApp('haptic', { kind: 'success' });
+    }
+    const n = taps + 1;
+    setTaps(n);
+    if (n >= UPGRADE_TAPS) timers.current.push(setTimeout(() => open(nt), 750));
+  };
   const next = (id) => onNext?.(id);
-  useEffect(() => {
-    if (!auto) return undefined;
-    const id = setTimeout(open, 900);
-    return () => clearTimeout(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const kindColor = res ? (res.kind === 'dog' ? RARITY_COLOR[res.rarity] : KIND_COLOR[res.kind]) : '#8b6dff';
   const c = res && phase !== 'closed' ? kindColor : '#8b6dff';
   const revealed = phase === 'reveal';
   const nextChest = onNext && res ? res.state.chests[0] : null;
   return (
-    <div onClick={phase === 'closed' && !auto ? open : undefined} style={{ position: 'absolute', inset: 0, zIndex: 5, backgroundColor: '#08080c', overflow: 'hidden', cursor: phase === 'closed' ? 'pointer' : 'default', animation: 'fadeUp .2s ease both' }}>
+    <div onClick={phase === 'closed' ? () => open() : phase === 'charge' ? tap : undefined} style={{ position: 'absolute', inset: 0, zIndex: 5, backgroundColor: '#08080c', overflow: 'hidden', cursor: phase === 'closed' || phase === 'charge' ? 'pointer' : 'default', animation: 'fadeUp .2s ease both' }}>
       <style>{KEYFRAMES}</style>
       {/* glow: the chest's own colour, turning into the rarity's while it shakes */}
-      <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 50% 42%, ${CHEST_COLORS[type].glow}, transparent 55%)`, opacity: phase === 'closed' ? 1 : 0, transition: 'opacity .6s ease', animation: phase === 'closed' ? 'pwBreath 2.6s ease-in-out infinite' : 'none' }} />
-      <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 50% ${revealed ? 38 : 42}%, ${c}55, transparent 60%)`, opacity: phase === 'closed' ? 0 : 1, transition: 'opacity .7s ease' }} />
+      <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 50% 42%, ${CHEST_COLORS[type].glow}, transparent 55%)`, opacity: phase === 'closed' || phase === 'charge' ? 1 : 0, transition: 'opacity .6s ease', animation: phase === 'closed' || phase === 'charge' ? 'pwBreath 2.6s ease-in-out infinite' : 'none' }} />
+      <div style={{ position: 'absolute', inset: 0, background: `radial-gradient(circle at 50% ${revealed ? 38 : 42}%, ${c}55, transparent 60%)`, opacity: phase === 'closed' || phase === 'charge' ? 0 : 1, transition: 'opacity .7s ease' }} />
       {/* light rays from the burst on */}
       {(phase === 'burst' || revealed) && (
         <div style={{ position: 'absolute', left: '50%', top: '40%', width: 760, height: 760, marginLeft: -380, marginTop: -380, animation: 'pwRaysIn .6s ease-out both', pointerEvents: 'none' }}>
@@ -93,9 +104,12 @@ export default function ChestOpen({ pw, chestId, onNext, onClose, auto = false, 
       {!revealed && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ position: 'relative', marginTop: -40 }}>
-            <div style={{ animation: phase === 'shake' ? `pwShake ${SHAKE_MS}ms ease-in both` : phase === 'burst' ? `pwPop ${BURST_MS}ms ease-in both` : 'none', transformOrigin: '50% 80%' }}>
+            <div key={phase === 'charge' ? 'tap' + taps : phase} style={{ animation: phase === 'shake' ? `pwShake ${SHAKE_MS}ms ease-in both` : phase === 'burst' ? `pwPop ${BURST_MS}ms ease-in both` : phase === 'charge' && taps ? 'pwTap .35s ease-out both' : 'none', transformOrigin: '50% 80%' }}>
               <ChestIcon type={type} size={180} open={phase === 'burst'} />
             </div>
+            {flash > 0 && phase === 'charge' && (
+              <div key={'f' + flash} style={{ position: 'absolute', left: '50%', top: '40%', width: 200, height: 200, marginLeft: -100, marginTop: -100, borderRadius: '50%', background: `radial-gradient(circle, #fff, ${CHEST_COLORS[type].lid} 45%, transparent 70%)`, animation: 'pwFlash 600ms ease-out both', pointerEvents: 'none' }} />
+            )}
             {phase === 'burst' && (
               <>
                 <div style={{ position: 'absolute', left: '50%', top: '35%', width: 160, height: 160, marginLeft: -80, marginTop: -80, borderRadius: '50%', background: `radial-gradient(circle, #fff, ${c} 45%, transparent 70%)`, animation: `pwFlash ${BURST_MS}ms ease-out both`, pointerEvents: 'none' }} />
@@ -105,13 +119,33 @@ export default function ChestOpen({ pw, chestId, onNext, onClose, auto = false, 
               </>
             )}
           </div>
-          <div style={{ fontSize: 22, fontWeight: 800, marginTop: 14, opacity: phase === 'closed' ? 1 : 0, transition: 'opacity .25s' }}>{t('pw.chest.' + type)}</div>
-          {!auto && <div style={{ fontSize: 14, color: '#a3a3b3', marginTop: 8, opacity: phase === 'closed' ? 1 : 0, transition: 'opacity .25s' }}>{t('pw.tapToOpen')}</div>}
+          <div style={{ fontSize: 22, fontWeight: 800, marginTop: 14, letterSpacing: phase === 'charge' ? '.04em' : 0, color: phase === 'charge' ? CHEST_COLORS[type].lid : '#f4f4f7', opacity: phase === 'closed' || phase === 'charge' ? 1 : 0, transition: 'opacity .25s, color .3s' }}>
+            {phase === 'charge' ? t('pw.chest.' + type).toUpperCase() : t('pw.chest.' + type)}
+          </div>
+          {flash > 0 && phase === 'charge' && <div key={'u' + flash} style={{ fontSize: 13, fontWeight: 800, letterSpacing: '.14em', color: '#35d07f', marginTop: 6, animation: 'pwUp .3s ease-out both' }}>{t('pw.upgraded')}</div>}
+          {phase === 'closed' && <div style={{ fontSize: 14, color: '#a3a3b3', marginTop: 8 }}>{t('pw.tapToOpen')}</div>}
+          {phase === 'charge' && (
+            <>
+              <div style={{ display: 'flex', gap: 16, marginTop: 30 }}>
+                {Array.from({ length: UPGRADE_TAPS }, (_, i) => {
+                  const used = i < taps, active = i === taps;
+                  return (
+                    <span key={i} style={{ width: 46, height: 46, borderRadius: '50%', display: 'grid', placeItems: 'center', background: active ? CHEST_COLORS[type].lid : used ? 'rgba(255,255,255,.14)' : 'rgba(255,255,255,.06)', transform: active ? 'translateY(-6px)' : 'none', transition: 'all .25s', boxShadow: active ? `0 8px 20px ${CHEST_COLORS[type].glow}` : 'none' }}>
+                      {used
+                        ? <svg width="16" height="13" viewBox="0 0 13 11"><path d="M1 5.6L4.6 9.4 12 1.6" stroke="#9a9aab" strokeWidth="2.2" fill="none" strokeLinecap="round" /></svg>
+                        : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={active ? '#1b1530' : '#6a6a7c'} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19V5M6 11l6-6 6 6" /></svg>}
+                    </span>
+                  );
+                })}
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 700, marginTop: 22, textAlign: 'center', padding: '0 30px' }}>{t('pw.upgradeHint')}</div>
+            </>
+          )}
         </div>
       )}
 
       {/* the dog: loaded (hidden) from the start, shown at the burst */}
-      {res && <Reveal res={res} c={c} revealed={revealed} happy={revealed && dogReady ? 1 : 0} onDogReady={() => setDogReady(true)} nextChest={nextChest} onNext={next} onClose={onClose} />}
+      {res && <Reveal key={res.chest.id} res={res} c={c} revealed={revealed} happy={revealed && dogReady ? 1 : 0} onDogReady={() => setDogReady(true)} nextChest={nextChest} onNext={next} onClose={onClose} />}
     </div>
   );
 }
@@ -188,6 +222,14 @@ export function ChancesSheet({ onClose }) {
           {['small', 'silver', 'gold', 'epic'].map((ty) => <div key={ty} style={{ display: 'flex', justifyContent: 'center' }}><ChestIcon type={ty} size={30} /></div>)}
           {['dog', 'outfit', 'freeze', 'coins'].map((k) => (
             <KindRow key={k} k={k} label={t('pw.kind.' + k)} />
+          ))}
+        </div>
+        <div style={{ fontSize: 13, fontWeight: 750, marginTop: 18 }}>{t('pw.chancesUpgrade')}</div>
+        <div style={{ display: 'flex', gap: 12, marginTop: 10, flexWrap: 'wrap' }}>
+          {Object.entries(UPGRADE_CHANCE).map(([from, pct]) => (
+            <span key={from} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12.5, fontWeight: 700 }}>
+              <ChestIcon type={from} size={22} glow={false} />→<ChestIcon type={{ small: 'silver', silver: 'gold', gold: 'epic' }[from]} size={22} glow={false} />{pct}%
+            </span>
           ))}
         </div>
         <div style={{ fontSize: 13, fontWeight: 750, marginTop: 18 }}>{t('pw.chancesDogs')}</div>
