@@ -56,6 +56,7 @@ Pulgo is my iPhone app for everyone who studies (students, and adults taking cou
 Studying earns **chests**; chests hold **collectible 3D dogs**. Agreed with Igor (Nov 2026), replacing the earlier dog-school and dog-care ideas:
 - **Start:** choose 1 of 3 starter dogs.
 - **Chests 🎁:** small for every finished session, silver for a finished plan/day, gold for streak milestones, epic for winning the weekly friends ranking; plus the day-7 calendar chest and the 3-missions bonus chest.
+- **Chest contents (Nov 18, 2026):** every chest gives coins plus one of: a dog (small 10% · silver 25% · gold 60% · epic 100%), an outfit, a **streak freeze** (works for free users too) or bonus coins. The chest from a study session **opens by itself** right after the session.
 - **~30 dogs at launch:** 6 breeds × fur colours × special skins (golden, crystal, galaxy, rainbow) — about 15 Common, 9 Rare, 4 Epic, 2 Legendary. Chances shown in the app.
 - **Duplicates level a dog up** (★ → ★★ → ★★★; at max level a copy turns into coins). Every dog has **power**; the **collection score** is the total and is compared with friends; Epic and Legendary dogs give **+% coins** (up to +30%).
 - **No care** (no hunger/bath bars). Dogs are shown as **album cards** and in a **3D showcase** (spin, outfits, a trick).
