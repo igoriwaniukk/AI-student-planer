@@ -14,11 +14,12 @@ export const CHEST_COLORS = {
 // chest-opening screen (by chest), the big dog's stage and the reveal (by
 // rarity, or by what came out of the chest). `shade` is the pressed-down
 // edge under chunky buttons and tiles.
+// Chests: in their own material — wood, silver, gold, purple.
 export const CHEST_BRIGHT = {
-  small: ['#ffc06b', '#ff9600', '#e08500'],
-  silver: ['#7fd6ff', '#1cb0f6', '#1899d6'],
-  gold: ['#ffe680', '#ffc800', '#e5a900'],
-  epic: ['#e6bcff', '#ce82ff', '#a568cc'],
+  small: ['#eab27c', '#c47a3a', '#8f5020'],
+  silver: ['#eef3f9', '#a3b4c8', '#74879f'],
+  gold: ['#fff0a0', '#f2bb1d', '#c08608'],
+  epic: ['#e6c4ff', '#a66cff', '#7438d6'],
 };
 export const RARITY_BRIGHT = {
   common: ['#9be35a', '#58cc02', '#46a302'],
