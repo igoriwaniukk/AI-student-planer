@@ -118,7 +118,7 @@ export function SessionReward({ pw, ready }) {
   const chestId = pw.toast.chest;
   if (!pw.started || !chestId) return <PugWorldToast pw={pw} />;
   const banner = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, letterSpacing: '.12em', color: '#35d07f' }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 900, letterSpacing: '.12em', color: '#fff', padding: '6px 12px', borderRadius: 99, background: 'rgba(0,0,0,.16)' }}>
       {t('pw.done.title').toUpperCase()} · <CoinIcon size={13} /> +{SESSION_COINS}
     </div>
   );
