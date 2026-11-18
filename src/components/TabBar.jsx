@@ -37,25 +37,9 @@ const TABS = [
   },
 ];
 
-// While the dog game is on, Pets takes Profile's place (the profile opens
-// from the photo on Home).
-const PETS_TAB = {
-  key: 'pets', labelKey: 'tab.pets', screens: ['pets'],
-  icon: (c) => (
-    <>
-      <ellipse cx="11" cy="14.4" rx="4.4" ry="3.6" stroke={c} strokeWidth="1.5" />
-      <circle cx="5.6" cy="9.4" r="1.7" stroke={c} strokeWidth="1.5" />
-      <circle cx="9" cy="6" r="1.8" stroke={c} strokeWidth="1.5" />
-      <circle cx="13" cy="6" r="1.8" stroke={c} strokeWidth="1.5" />
-      <circle cx="16.4" cy="9.4" r="1.7" stroke={c} strokeWidth="1.5" />
-    </>
-  ),
-};
-
-export default function TabBar({ screen, onNavigate, onFabClick, fabActive = false, pets = false }) {
+export default function TabBar({ screen, onNavigate, onFabClick, fabActive = false }) {
   const { t } = useLang();
-  const tabs = pets ? TABS.map((tab) => (tab.key === 'profile' ? PETS_TAB : tab)) : TABS;
-  const activeIndex = tabs.findIndex((tab) => !tab.fab && tab.screens.includes(screen));
+  const activeIndex = TABS.findIndex((tab) => !tab.fab && tab.screens.includes(screen));
   return (
     <div style={{
       position: 'absolute', left: 0, right: 0, bottom: 0, height: 'var(--tabbar-h)', padding: '10px 12px 0',
@@ -74,7 +58,7 @@ export default function TabBar({ screen, onNavigate, onFabClick, fabActive = fal
           }}
         />
       )}
-      {tabs.map((tab) => {
+      {TABS.map((tab) => {
         if (tab.fab) {
           return (
             <div key={tab.key} style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>

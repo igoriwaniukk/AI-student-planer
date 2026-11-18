@@ -31,7 +31,7 @@ const HELLO_OFF_KEY = 'sp_pugHelloOffDate';
 const HELLO_EVERY_MS = 3 * 60 * 1000;
 const HELLO_SHOW_MS = 4500;
 // Screens with the tab bar (same set as TAB_SCREENS in App.jsx).
-const TAB_SCREENS = new Set(['home', 'calendar', 'tasks', 'profile', 'pets']);
+const TAB_SCREENS = new Set(['home', 'calendar', 'tasks', 'profile', 'pets', 'missions']);
 
 function Avatar({ role, studentName }) {
   if (role !== 'user') {

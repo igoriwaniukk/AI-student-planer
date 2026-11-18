@@ -1,41 +1,37 @@
 import { useEffect, useRef, useState } from 'react';
-import { DOG_BY_ID, RARITIES } from '../../lib/pugWorld/catalog.js';
+import { dogsOn } from '../../lib/pugWorld/logic.js';
 import { openPugWorld } from '../../lib/pugWorld/events';
 import DogThumb from './DogThumb';
 
-// Home: a few tiny dogs from your collection (favourite + the 2 rarest)
-// stand on the top edges of the cards marked `data-perch`. Every 6–10 s
-// one of them walks a little along its card or hops over to another card —
-// one at a time, calm. Tap a dog: it jumps, then the Pets page opens.
+// The tiny dogs that live on a screen (`place`: home, calendar, tasks,
+// planner — chosen per dog in My dogs, see dogsOn) stand on the top edges of
+// the cards marked `data-perch`. Every 6–10 s one of them walks a little
+// along its card or hops to the card above or below — one at a time, calm.
+// Tap a dog: it jumps, then My dogs opens on it.
 // `data-perch="0.55-1"` = dogs only stand on that part of the card's edge
 // (e.g. not under text that sits right above it).
-// Render it as a direct child of the scrolling Home area (position:
+// Render it as a direct child of the screen's scrolling area (position:
 // relative), so the dogs scroll with the cards.
-const MAX_PETS = 3;
 const SIZE = 34;
 const FAV_SIZE = 40;
 const EDGE = 26; // keep dogs this far from a card's rounded corners
 const SPOTS = [0.7, 0.1, 0.62, 0.3]; // where dogs first stand on their card
 
-const petIds = (s) => [s.favorite, ...Object.keys(s.dogs)
-  .filter((id) => id !== s.favorite && DOG_BY_ID[id])
-  .sort((a, b) => RARITIES.indexOf(DOG_BY_ID[b].rarity) - RARITIES.indexOf(DOG_BY_ID[a].rarity))]
-  .filter((id) => id && DOG_BY_ID[id]).slice(0, MAX_PETS);
-
 const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
-export default function HomePets({ pw }) {
+export default function ScreenPets({ pw, place }) {
   const layer = useRef(null);
   const els = useRef({});
   const [perches, setPerches] = useState([]); // [{top, x0, w}]: the edge dogs may stand on, relative to the layer
   const [spots, setSpots] = useState({}); // dogId → {p: perch index, f: 0..1 along it}
   const on = !!(pw?.enabled && pw.started);
-  const ids = on ? petIds(pw.state) : [];
+  const ids = on ? dogsOn(pw.state, place) : [];
   const idsKey = ids.join(',');
+  const active = ids.length > 0;
 
   // Where the cards are (they move as the page changes): check every second.
   useEffect(() => {
-    if (!on) return undefined;
+    if (!active) return undefined;
     const measure = () => {
       const L = layer.current;
       if (!L?.parentElement) return;
@@ -52,7 +48,7 @@ export default function HomePets({ pw }) {
     const id = setInterval(measure, 1000);
     window.addEventListener('resize', measure);
     return () => { clearInterval(id); window.removeEventListener('resize', measure); };
-  }, [on]);
+  }, [active]);
 
   // Give every dog a first spot: one dog per card, from the top.
   useEffect(() => {
@@ -77,7 +73,7 @@ export default function HomePets({ pw }) {
   const latest = useRef({});
   latest.current = { perches, spots, ids };
   useEffect(() => {
-    if (!on || reducedMotion()) return undefined;
+    if (!active || reducedMotion()) return undefined;
     let timer;
     const step = () => {
       timer = setTimeout(step, 6000 + Math.random() * 4000);
@@ -123,15 +119,15 @@ export default function HomePets({ pw }) {
     };
     timer = setTimeout(step, 2500);
     return () => clearTimeout(timer);
-  }, [on]);
+  }, [active]);
 
-  if (!on) return null;
+  if (!active) return null;
   const chests = pw.state.chests.length;
   const tap = (id) => {
     els.current[id]?.animate([
       { transform: 'translateY(0)' }, { transform: 'translateY(-18px)', offset: 0.45 }, { transform: 'translateY(0)' },
     ], { duration: 420, easing: 'ease-out' });
-    setTimeout(() => openPugWorld(), 380);
+    setTimeout(() => openPugWorld({ dog: id }), 380);
   };
 
   return (

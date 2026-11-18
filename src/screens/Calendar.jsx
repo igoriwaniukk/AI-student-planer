@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ScreenPets from '../components/pugWorld/ScreenPets';
 import WeekStrip from '../components/WeekStrip';
 import { BackButton, Pill, SectionTitle } from '../components/ui';
 import { upcomingExams, dayInfo, formatMonthDay, daysPill, planFor, fmt } from '../lib/plannerLogic';
@@ -116,7 +117,7 @@ function WeekView({ planner, recurringActivities, weekStart, onOpenDay }) {
   );
 }
 
-export default function Calendar({ planner, activities, recurringActivities = [] }) {
+export default function Calendar({ planner, activities, recurringActivities = [], pugWorld = null }) {
   const { t } = useLang();
   const { state, go, update } = planner;
   const [calDay, setCalDay] = useState(NUM_TODAY);
@@ -157,7 +158,9 @@ export default function Calendar({ planner, activities, recurringActivities = []
           </div>
         )}
       </div>
-      <DayWeekSwitch view={view} setView={setView} />
+      {/* data-perch: the little dogs that live on Calendar (ScreenPets) stand
+          on these, on the right part — clear of the titles above them */}
+      <div data-perch="0.55-1"><DayWeekSwitch view={view} setView={setView} /></div>
 
       {view === 'week' ? (
         <WeekView planner={planner} recurringActivities={recurringActivities} weekStart={weekStart} onOpenDay={(num) => { setCalDay(num); setView('day'); }} />
@@ -169,6 +172,7 @@ export default function Calendar({ planner, activities, recurringActivities = []
       />
 
       <SectionTitle style={{ margin: '22px 0 12px' }}>{t('cal.upcoming')}</SectionTitle>
+      <div data-perch="0.65-1">
       {weekExams.length ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
           {weekExams.map((e) => (
@@ -185,8 +189,10 @@ export default function Calendar({ planner, activities, recurringActivities = []
       ) : (
         <Card><div style={{ fontSize: 12.5, color: '#8a8a99' }}>{t('cal.noUpcoming')}</div></Card>
       )}
+      </div>
 
       <SectionTitle style={{ margin: '22px 0 12px' }}>{t('cal.studySessions', { day: dayLabel })}</SectionTitle>
+      <div data-perch="0.65-1">
       {sessionIds.length ? (
         <DayTimeline schedule={sched} planner={planner} t={t} compact only={['study', 'gap']} />
       ) : (
@@ -196,8 +202,10 @@ export default function Calendar({ planner, activities, recurringActivities = []
         </Card>
       )}
 
+      </div>
+
       <SectionTitle style={{ margin: '22px 0 12px' }}>{t('cal.extraActivities')}</SectionTitle>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+      <div data-perch="0.65-1" style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
         {dayRecurring.map((a) => (
           <Card key={a.id}><Row icon={iconForActivity(a.name) || <WeeklyIcon size={18} />} title={a.name} sub={t('cal.recurringActivity')} right={a.start + ' · ' + a.dur + ' min'} /></Card>
         ))}
@@ -217,6 +225,7 @@ export default function Calendar({ planner, activities, recurringActivities = []
       </div>
       </>
       )}
+      <ScreenPets pw={pugWorld} place="calendar" />
     </div>
     </>
   );

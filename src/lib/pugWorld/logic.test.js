@@ -3,7 +3,7 @@ import { DOGS, STARTERS, RARITIES, BREED_IDS } from './catalog';
 import {
   EMPTY, normalize, CHEST_ODDS, CHEST_CONTENTS, rollRarity, addDog, openChest, addChest, dogPower, collectionScore, coinBonus,
   missionsFor, ensureDay, bumpMission, claimCalendar, canClaimCalendar, shopOffers, buyOutfit, buyChest, toggleOutfit,
-  onSession, onPlan, onDayFinished, monthlyFor, MONTHLY_TARGET, rollUpgrade, setChestType, buySet, setPrice, wearSet, fullSetOn, onStreak, onPremiumDay, chooseStarter, completedSets, breedDogs,
+  onSession, onPlan, onDayFinished, monthlyFor, MONTHLY_TARGET, dogsOn, placesOf, togglePlace, placeHasRoom, rollUpgrade, setChestType, buySet, setPrice, wearSet, fullSetOn, onStreak, onPremiumDay, chooseStarter, completedSets, breedDogs,
 } from './logic';
 
 const seq = (...xs) => { let i = 0; return () => xs[i++ % xs.length]; };
@@ -139,9 +139,10 @@ describe('monthly challenge', () => {
     let s = EMPTY;
     for (let i = 0; i < MONTHLY_TARGET; i++) s = onSession(s, 'c' + i, '2026-11');
     expect(monthlyFor(s, '2026-11')).toMatchObject({ sessions: 20, done: true });
-    expect(s.chests.filter((c) => c.from === 'monthly')).toHaveLength(1);
+    // a small chest at 7, a silver one at 13, the epic one at 20
+    expect(s.chests.filter((c) => c.from === 'monthly').map((c) => c.type)).toEqual(['small', 'silver', 'epic']);
     s = onSession(s, 'x', '2026-11');
-    expect(s.chests.filter((c) => c.from === 'monthly')).toHaveLength(1);
+    expect(s.chests.filter((c) => c.from === 'monthly')).toHaveLength(3);
     expect(monthlyFor(s, '2026-12')).toMatchObject({ sessions: 0, done: false });
     s = onSession(s, 'y', '2026-12');
     expect(monthlyFor(s, '2026-12').sessions).toBe(1);
@@ -189,5 +190,38 @@ describe('rewards from studying', () => {
     expect(s.favorite).toBe('corgi-red');
     expect(s.chests).toHaveLength(1);
     expect(chooseStarter(s, 'pug-fawn')).toEqual(normalize(s));
+  });
+});
+
+describe('where dogs live', () => {
+  const owned = (ids) => Object.fromEntries(ids.map((id) => [id, { copies: 0, level: 1 }]));
+  const ids = DOGS.slice(0, 6).map((d) => d.id);
+  const base = { ...EMPTY, dogs: owned(ids), favorite: ids[0] };
+  it('before choosing: Home = favourite + 2 more, study timer = favourite, other screens empty', () => {
+    expect(dogsOn(base, 'home')).toHaveLength(3);
+    expect(dogsOn(base, 'home')[0]).toBe(ids[0]);
+    expect(dogsOn(base, 'focus')).toEqual([ids[0]]);
+    expect(dogsOn(base, 'calendar')).toEqual([]);
+  });
+  it('a dog lives on up to 2 screens, a screen holds up to 3 dogs, the favourite always on Home', () => {
+    let s = togglePlace(base, ids[5], 'calendar');
+    s = togglePlace(s, ids[5], 'tasks');
+    expect(placesOf(s, ids[5])).toEqual(['calendar', 'tasks']);
+    expect(togglePlace(s, ids[5], 'planner')).toEqual(s); // a 3rd screen: no
+    s = togglePlace(s, ids[3], 'calendar');
+    s = togglePlace(s, ids[4], 'calendar');
+    expect(dogsOn(s, 'calendar')).toHaveLength(3);
+    expect(placeHasRoom(s, 'calendar', ids[2])).toBe(false);
+    expect(togglePlace(s, ids[2], 'calendar')).toEqual(s);
+    expect(togglePlace(s, ids[0], 'home')).toEqual(s); // can't take the favourite off Home
+    expect(dogsOn(s, 'home')[0]).toBe(ids[0]);
+    s = togglePlace(s, ids[5], null); // Nowhere
+    expect(placesOf(s, ids[5])).toEqual([]);
+    expect(dogsOn(s, 'calendar')).toHaveLength(2);
+  });
+  it('choosing once keeps the default Home dogs where they were', () => {
+    const before = dogsOn(base, 'home');
+    const s = togglePlace(base, ids[5], 'calendar');
+    expect(dogsOn(s, 'home')).toEqual(before.includes(ids[5]) ? dogsOn(s, 'home') : before);
   });
 });

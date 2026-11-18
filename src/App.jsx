@@ -34,6 +34,7 @@ import { useStreakRewards } from './hooks/useStreakRewards';
 import { MAX_FREEZES } from './lib/streakRewards';
 import { usePugWorld } from './hooks/usePugWorld';
 import PugWorld from './components/pugWorld/PugWorld';
+import MissionsPage from './components/pugWorld/MissionsPage';
 import { SessionReward } from './components/pugWorld/PugWorldCard';
 import { LanguageProvider } from './lib/LanguageContext';
 import { computeStreak, studiedToday, localDateKey, daySessionBreakdown, statusOn, dayOpenTasks, wrapUpMinutes, planFor } from './lib/plannerLogic';
@@ -189,7 +190,7 @@ function useCloudSync(session) {
   return { ready, syncError };
 }
 
-const TAB_SCREENS = new Set(['home', 'calendar', 'tasks', 'profile', 'pets']);
+const TAB_SCREENS = new Set(['home', 'calendar', 'tasks', 'profile', 'pets', 'missions']);
 const JUST_ONBOARDED_KEY = 'sp_justOnboarded';
 // The local date this page load's day numbers were computed for.
 const LOADED_DAY = localDateKey();
@@ -226,12 +227,20 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
   const premium = usePremium();
   const [paywall, setPaywall] = useState(null);
   const streakRewards = useStreakRewards({ studyHistory, streak, isPremium: premium.enabled && premium.premium, freezeDays });
-  // The Pets tab (the dog game, while it's a preview: only when switched
-  // on). openPugWorld(...) lands here, with the tab / chest asked for.
+  // The dog game (while it's a preview: only when switched on). Its two
+  // pages aren't tabs: My dogs ('pets', from tapping a dog anywhere) and
+  // Missions (from the missions card on Home). openPugWorld(...) /
+  // openMissions() land here; their back buttons return where you came from.
   const [petsIntent, setPetsIntent] = useState({ n: 0 });
+  const [gameBack, setGameBack] = useState({ pets: 'home', missions: 'home' });
   const pugWorld = usePugWorld({
     streak, isPremium: premium.enabled && premium.premium, freezeRoom: streakRewards.rewards.freezes < MAX_FREEZES, addFreeze: streakRewards.addFreeze,
-    onOpenRequest: (req) => { setPetsIntent((p) => ({ n: p.n + 1, ...req })); planner.go('pets'); },
+    onOpenRequest: (req) => {
+      const from = planner.state.screen;
+      if (from !== req.page) setGameBack((b) => ({ ...b, [req.page]: from }));
+      setPetsIntent((p) => ({ n: p.n + 1, ...req }));
+      planner.go(req.page);
+    },
   });
   const pendingWin = useRef(false);
   const openTried = useRef(false);
@@ -347,7 +356,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
   }, [autoSummaryDue]);
 
   useEffect(() => {
-    if (screen === 'pets' && !pugWorld.enabled) planner.go('home');
+    if ((screen === 'pets' || screen === 'missions') && !pugWorld.enabled) planner.go('home');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screen, pugWorld.enabled]);
 
@@ -366,10 +375,11 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
           pugWorld={pugWorld}
         />
       )}
-      {screen === 'pets' && pugWorld.enabled && <PugWorld key={petsIntent.n} pw={pugWorld} intent={petsIntent} onStudy={() => planner.go('home')} />}
-      {screen === 'calendar' && <Calendar planner={planner} activities={activities} recurringActivities={recurringActivities} />}
-      {screen === 'tasks' && <Tasks planner={planner} />}
-      {screen === 'planner' && <Planner planner={planner} />}
+      {screen === 'pets' && pugWorld.enabled && <PugWorld key={petsIntent.n} pw={pugWorld} intent={petsIntent} onStudy={() => planner.go('home')} onBack={() => planner.go(gameBack.pets === 'pets' ? 'home' : gameBack.pets)} />}
+      {screen === 'missions' && pugWorld.enabled && <MissionsPage pw={pugWorld} onBack={() => planner.go(gameBack.missions === 'missions' || gameBack.missions === 'pets' ? 'home' : gameBack.missions)} />}
+      {screen === 'calendar' && <Calendar planner={planner} activities={activities} recurringActivities={recurringActivities} pugWorld={pugWorld} />}
+      {screen === 'tasks' && <Tasks planner={planner} pugWorld={pugWorld} />}
+      {screen === 'planner' && <Planner planner={planner} pugWorld={pugWorld} />}
       {screen === 'plan' && <Plan planner={planner} />}
       {screen === 'rescue' && <Rescue planner={planner} />}
       {screen === 'rescueResult' && <RescueResult planner={planner} />}
@@ -435,7 +445,7 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
 
       <AddTaskPage key={state.taskEdit && state.taskEdit.id == null ? 'add-task' : 'closed'} planner={planner} />
 
-      {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} onFabClick={() => setQuickAddOpen(true)} fabActive={quickAddOpen} pets={pugWorld.enabled} />}
+      {TAB_SCREENS.has(screen) && <TabBar screen={screen} onNavigate={planner.go} onFabClick={() => setQuickAddOpen(true)} fabActive={quickAddOpen} />}
 
       {/* Waits for the focus screen's finish animation before celebrating. */}
       {celebrating && screen !== 'focus' && <StreakCelebration streak={streak} milestone={streakRewards.milestone} onClose={() => { setCelebrating(false); streakRewards.clearMilestone(); }} />}

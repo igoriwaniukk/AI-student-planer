@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ScreenPets from '../components/pugWorld/ScreenPets';
 import { PRIO_STYLE, NUM_TODAY } from '../lib/plannerData';
 import { durOf, taskDayLabel, taskDueOnDay, isTaskOn, todoTimeLabel } from '../lib/plannerLogic';
 import { iconForTask } from '../lib/taskAuto';
@@ -7,7 +8,7 @@ import { useLang } from '../lib/useLang';
 import WeekStrip from '../components/WeekStrip';
 import TaskEditSheet from '../components/TaskEditSheet';
 
-export default function Tasks({ planner }) {
+export default function Tasks({ planner, pugWorld = null }) {
   const { t } = useLang();
   const { state, toggleTask, openTaskEdit, openNewTaskEdit } = planner;
   const [viewDay, setViewDay] = useState(NUM_TODAY);
@@ -20,7 +21,8 @@ export default function Tasks({ planner }) {
       <div style={{ fontSize: 20, fontWeight: 750, letterSpacing: '-.02em', marginTop: 20 }}>{t('tasks.title')}</div>
       <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 4 }}>{t('tasks.subtitle')}</div>
 
-      <WeekStrip selectedDay={viewDay} onSelect={setViewDay} pageable weekOffset={weekOffset} onOffsetChange={setWeekOffset} topMargin={16} />
+      {/* data-perch: the little dogs that live on Tasks (ScreenPets) stand on these */}
+      <div data-perch="0.5-1"><WeekStrip selectedDay={viewDay} onSelect={setViewDay} pageable weekOffset={weekOffset} onOffsetChange={setWeekOffset} topMargin={16} /></div>
 
       <div style={{ marginTop: 18 }}>
         {dayTasks.length === 0 && (
@@ -33,6 +35,7 @@ export default function Tasks({ planner }) {
           return (
             <div
               key={d.id}
+              data-perch={i >= 1 && i < 4 ? '0.5-1' : undefined}
               onClick={() => toggleTask(d.id, viewDay)}
               style={{ marginTop: i ? 12 : 0, padding: 14, borderRadius: 18, cursor: 'pointer', background: on ? 'rgba(124,92,255,.07)' : 'rgba(255,255,255,.03)', border: '1.5px solid ' + (on ? 'rgba(124,92,255,.55)' : 'rgba(255,255,255,.07)') }}
             >
@@ -64,6 +67,7 @@ export default function Tasks({ planner }) {
       <div onClick={() => openNewTaskEdit(viewDay)} style={{ marginTop: 12, height: 50, borderRadius: 16, border: '1.5px dashed rgba(255,255,255,.14)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13.5, fontWeight: 650, color: '#9a9aab', cursor: 'pointer' }}>{t('planner.addTask')}</div>
 
       <TaskEditSheet planner={planner} />
+      <ScreenPets pw={pugWorld} place="tasks" />
     </div>
     </>
   );

@@ -27,7 +27,8 @@ export function usePugWorld({ streak, isPremium, freezeRoom = true, addFreeze, o
   }, [stored]);
   const state = normalize(stored || EMPTY);
   const [enabled, setEnabled] = useState(pugPreviewOn);
-  // openPugWorld(...) asks the app to show the Pets page (tab / chest).
+  // openPugWorld(...) / openMissions() ask the app to show My dogs (a tab /
+  // chest / dog) or the Missions page.
   const openRequest = useRef(onOpenRequest);
   useEffect(() => { openRequest.current = onOpenRequest; });
   const [toast, setToast] = useState(null);
@@ -35,7 +36,10 @@ export function usePugWorld({ streak, isPremium, freezeRoom = true, addFreeze, o
 
   useEffect(() => {
     const onPreview = () => setEnabled(pugPreviewOn());
-    const onOpen = (e) => openRequest.current?.({ tab: e.detail?.tab || null, chest: e.detail?.chest || null });
+    const onOpen = (e) => {
+      const d = e.detail || {};
+      openRequest.current?.({ page: d.page === 'missions' ? 'missions' : 'pets', tab: d.tab || null, chest: d.chest || null, dog: d.dog || null });
+    };
     window.addEventListener(PUG_PREVIEW_EVENT, onPreview);
     window.addEventListener(PUG_OPEN_EVENT, onOpen);
     return () => {
