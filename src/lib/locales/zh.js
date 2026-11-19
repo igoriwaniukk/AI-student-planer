@@ -1296,4 +1296,8 @@ export default {
   "pw.pack.hiding.few": "还有 {n} 只狗狗藏着——继续学习去找到它们！",
   "pw.pack.hiding.many": "还有 {n} 只狗狗藏着——继续学习去找到它们！",
   "pw.pack.all": "你找到了所有狗狗！🏆",
+  "pw.dressUp": "换装",
+  "pw.calDay": "第 {n} / 7 天",
+  "pw.today": "今天",
+  "pw.bigChest": "大宝箱",
 };

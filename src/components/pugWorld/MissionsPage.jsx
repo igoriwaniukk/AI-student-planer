@@ -8,7 +8,9 @@ import { BackButton } from '../ui';
 import DogThumb from './DogThumb';
 import ChestIcon from './Chest';
 import { CoinIcon } from './icons';
-import { Card, Button, CoinPill } from './bits';
+import { Chunky, CoinPill } from './bits';
+import { RARITY_BRIGHT } from './theme';
+import { dogName } from './names';
 import { MissionRow, ThickBar } from './missionBits';
 import { hoursToMidnight } from './missionUtil';
 
@@ -16,7 +18,6 @@ import { hoursToMidnight } from './missionUtil';
 // on Home: the monthly challenge (20 sessions, a chest at 7 / 13 / 20),
 // today's 3 missions, the daily rewards and a row of your dogs (tap one, or
 // "Collection", to open My dogs).
-const TILE = { common: '#c9d8f5', rare: '#bfe0ff', epic: '#dccbff', legendary: '#ffe7a8' };
 
 export default function MissionsPage({ pw, onBack }) {
   const { t } = useLang();
@@ -60,12 +61,18 @@ export default function MissionsPage({ pw, onBack }) {
             <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '.1em', color: '#8a8a99' }}>{t('pw.title').toUpperCase()} · {dogs.length}</div>
             <span onClick={() => openPugWorld()} style={{ fontSize: 12.5, fontWeight: 750, color: '#a58cff', cursor: 'pointer' }}>{t('pw.collection')} ›</span>
           </div>
-          <div style={{ display: 'flex', gap: 8, overflowX: 'auto', margin: '0 -16px', padding: '0 16px 4px' }}>
-            {dogs.map((id) => (
-              <div key={id} onClick={() => openPugWorld({ dog: id })} style={{ flex: 'none', width: 56, height: 56, borderRadius: 16, background: TILE[DOG_BY_ID[id].rarity], display: 'grid', placeItems: 'center', cursor: 'pointer', overflow: 'hidden', boxShadow: id === state.favorite ? '0 0 0 2.5px #08080c, 0 0 0 4.5px #8b6dff' : 'none' }}>
-                <DogThumb dogId={id} worn={state.outfits.worn[id]} size={54} />
-              </div>
-            ))}
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', margin: '0 -16px', padding: '4px 16px 6px' }}>
+            {dogs.map((id) => {
+              const [light, base, shade] = RARITY_BRIGHT[DOG_BY_ID[id].rarity];
+              return (
+                <div key={id} onClick={() => openPugWorld({ dog: id })} style={{ flex: 'none', width: 80, textAlign: 'center', cursor: 'pointer' }}>
+                  <div style={{ width: 80, height: 80, borderRadius: 20, background: `linear-gradient(160deg, ${light}, ${base})`, boxShadow: `0 4px 0 ${shade}${id === state.favorite ? ', 0 0 0 3px #08080c, 0 0 0 5.5px #ffc800' : ''}`, display: 'grid', placeItems: 'center', overflow: 'hidden' }}>
+                    <DogThumb dogId={id} worn={state.outfits.worn[id]} size={76} />
+                  </div>
+                  <div style={{ fontSize: 11, fontWeight: 800, marginTop: 8, lineHeight: 1.2, color: '#d9d9e6' }}>{dogName(t, id)}</div>
+                </div>
+              );
+            })}
           </div>
         </>
       )}
@@ -119,28 +126,51 @@ function MonthlyHero({ state, today }) {
   );
 }
 
+// Daily rewards as gift tiles: done = green ✓, today = glowing orange,
+// day 7 = a wide gold "BIG CHEST"; a big Collect button.
+const CAL_TILE = { done: ['#9be35a', '#58cc02', '#46a302'], today: ['#ffc06b', '#ff9600', '#e08500'] };
 function DailyRewards({ state, today, onClaim }) {
   const { t } = useLang();
   const can = canClaimCalendar(state, today);
   const d = state.calendar.day;
   const claimed = can ? d % 7 : ((d - 1) % 7) + 1; // claimed in this week of rewards
-  return (
-    <Card title={t('pw.calendar')} right={<span style={{ fontSize: 12, color: '#8a8a99' }}>{t('pw.calendarNote')}</span>} style={{ marginTop: 20 }}>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5 }}>
-        {CALENDAR.map((r, i) => {
-          const done = i < claimed;
-          const next = can && i === claimed;
-          return (
-            <div key={i} style={{ borderRadius: 12, padding: '7px 0 6px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, background: next ? 'rgba(139,109,255,.18)' : 'rgba(255,255,255,.04)', border: next ? '1.5px solid #8b6dff' : '1px solid rgba(255,255,255,.06)', opacity: done ? 0.45 : 1, position: 'relative' }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: '#8a8a99' }}>{i + 1}</span>
-              {r.chest ? <ChestIcon type={r.chest} size={22} /> : <span style={{ height: 22, display: 'grid', placeItems: 'center' }}><CoinIcon size={18} /></span>}
-              <span style={{ fontSize: 9.5, fontWeight: 700, color: '#c9c9d6' }}>{r.coins || '×1'}</span>
-              {done && <span style={{ position: 'absolute', top: 2, right: 3, fontSize: 10, color: '#35d07f' }}>✓</span>}
-            </div>
-          );
-        })}
+  const dayNo = can ? claimed + 1 : claimed;
+  const tile = (r, i) => {
+    const done = i < claimed;
+    const now = can && i === claimed;
+    const pal = done ? CAL_TILE.done : now ? CAL_TILE.today : null;
+    return (
+      <div key={i} style={{ position: 'relative', height: 92, borderRadius: 18, marginBottom: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 3, ...(pal ? { background: `linear-gradient(160deg, ${pal[0]}, ${pal[1]})`, boxShadow: `0 4px 0 ${pal[2]}${now ? ', 0 0 22px rgba(255,150,0,.45)' : ''}` } : { background: '#1f1c2b', boxShadow: '0 4px 0 #0f0e17' }) }}>
+        <span style={{ position: 'absolute', top: 6, left: 9, fontSize: 10.5, fontWeight: 900, color: pal ? 'rgba(255,255,255,.92)' : '#8a8a99' }}>{now ? t('pw.today').toUpperCase() : i + 1}</span>
+        {done
+          ? <span style={{ fontSize: 26, fontWeight: 900, color: '#fff' }}>✓</span>
+          : r.chest ? <ChestIcon type={r.chest} size={now ? 44 : 34} glow={false} /> : <CoinIcon size={now ? 36 : 28} />}
+        <span style={{ fontSize: 11.5, fontWeight: 900, color: pal ? '#fff' : '#b9b9c8' }}>{r.coins ? '+' + r.coins : '×1'}</span>
       </div>
-      <Button onClick={onClaim} disabled={!can} ghost={!can} style={{ marginTop: 12, height: 42 }}>{t(can ? 'pw.claim' : 'pw.claimTomorrow')}</Button>
-    </Card>
+    );
+  };
+  const last = CALENDAR[6];
+  const lastDone = claimed > 6;
+  const lastNow = can && claimed === 6;
+  return (
+    <div style={{ marginTop: 20, padding: 16, borderRadius: 24, background: '#151221', border: '1px solid rgba(255,255,255,.07)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+        <div style={{ fontSize: 18, fontWeight: 900 }}>{t('pw.calendar')}</div>
+        <div style={{ fontSize: 12, fontWeight: 900, color: '#ff9600' }}>{t('pw.calDay', { n: Math.min(7, Math.max(1, dayNo)) })}</div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 9, marginTop: 14 }}>{CALENDAR.slice(0, 4).map((r, i) => tile(r, i))}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 2fr', gap: 9, marginTop: 9 }}>
+        {CALENDAR.slice(4, 6).map((r, k) => tile(r, k + 4))}
+        <div style={{ position: 'relative', height: 92, borderRadius: 18, marginBottom: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, color: '#5a3d00', background: lastDone ? 'linear-gradient(160deg,#9be35a,#58cc02)' : 'linear-gradient(160deg,#ffe680,#ffc800)', boxShadow: `0 4px 0 ${lastDone ? '#46a302' : '#e5a900'}${lastNow ? ', 0 0 22px rgba(255,200,0,.6)' : ''}` }}>
+          <span style={{ position: 'absolute', top: 6, left: 9, fontSize: 10.5, fontWeight: 900 }}>{lastNow ? t('pw.today').toUpperCase() : 7}</span>
+          {lastDone ? <span style={{ fontSize: 26, fontWeight: 900, color: '#fff' }}>✓</span> : <><ChestIcon type={last.chest || 'gold'} size={54} glow={false} /><span style={{ fontSize: 13, fontWeight: 900, lineHeight: 1.1, maxWidth: 70 }}>{t('pw.bigChest').toUpperCase()}</span></>}
+        </div>
+      </div>
+      <div style={{ marginTop: 14 }}>
+        {can
+          ? <Chunky onClick={onClaim}>{t('pw.claim')}</Chunky>
+          : <div style={{ height: 50, borderRadius: 16, display: 'grid', placeItems: 'center', fontSize: 14, fontWeight: 900, color: '#8a8a99', background: 'rgba(255,255,255,.05)' }}>{t('pw.claimTomorrow')}</div>}
+      </div>
+    </div>
   );
 }

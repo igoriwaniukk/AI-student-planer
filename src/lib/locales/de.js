@@ -1296,4 +1296,8 @@ export default {
   "pw.pack.hiding.few": "{n} Hunde verstecken sich noch – lerne weiter, um sie zu finden!",
   "pw.pack.hiding.many": "{n} Hunde verstecken sich noch – lerne weiter, um sie zu finden!",
   "pw.pack.all": "Du hast alle Hunde gefunden! 🏆",
+  "pw.dressUp": "Anziehen",
+  "pw.calDay": "Tag {n} von 7",
+  "pw.today": "Heute",
+  "pw.bigChest": "Große Truhe",
 };

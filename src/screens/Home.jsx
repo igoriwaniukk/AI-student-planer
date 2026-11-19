@@ -17,6 +17,18 @@ import { useNow } from '../hooks/useNow';
 import TaskEditSheet from '../components/TaskEditSheet';
 import { Pill, AnimatedNumber, StatusPill } from '../components/ui';
 
+// A quick action as a big chunky colour tile (Home, at the bottom).
+function QuickTile({ pal, title, sub, icon, onClick }) {
+  return (
+    <div onClick={onClick} style={{ position: 'relative', minHeight: 150, borderRadius: 24, padding: 14, cursor: 'pointer', overflow: 'hidden', background: `linear-gradient(160deg, ${pal[0]}, ${pal[1]} 55%, ${pal[2]})`, boxShadow: `0 5px 0 ${pal[2]}`, marginBottom: 5 }}>
+      <div style={{ width: 50, height: 50, borderRadius: 16, background: 'rgba(255,255,255,.22)', display: 'grid', placeItems: 'center' }}>{icon}</div>
+      <div style={{ position: 'absolute', right: 12, top: 14, width: 28, height: 28, borderRadius: '50%', background: 'rgba(255,255,255,.22)', display: 'grid', placeItems: 'center', fontWeight: 900, fontSize: 15 }}>›</div>
+      <div style={{ fontSize: 16.5, fontWeight: 900, marginTop: 14, lineHeight: 1.2 }}>{title}</div>
+      <div style={{ fontSize: 12.5, fontWeight: 700, opacity: 0.92, marginTop: 3, lineHeight: 1.3 }}>{sub}</div>
+    </div>
+  );
+}
+
 const RESTART_ICON = (color) => (
   <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path d="M13.2 8a5.2 5.2 0 01-8.9 3.7M2.8 8a5.2 5.2 0 018.9-3.7" stroke={color} strokeWidth="1.5" strokeLinecap="round" /><path d="M11.4 2.4v2.4H9M4.6 13.6v-2.4H7" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
 );
@@ -759,28 +771,23 @@ export default function Home({ planner, studentName, profilePhoto, studyHistory 
       )}
 
       <div style={{ fontSize: 10, fontWeight: 750, letterSpacing: '.1em', color: '#7a7a8a', margin: '20px 0 10px 2px' }}>{t('home.quickActions')}</div>
-      <div onClick={() => { planner.update({ planToday: false }); planner.go('planner'); }} style={{ padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-        <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(124,92,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2" y="3.2" width="12" height="11" rx="2.4" stroke="#a58cff" strokeWidth="1.2" /><path d="M2 6.6h12M5.6 1.8v2.4M10.4 1.8v2.4" stroke="#a58cff" strokeWidth="1.2" strokeLinecap="round" /></svg></div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 14.5, fontWeight: 700 }}>{t('home.planTomorrow')}</div>
-          <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 2 }}>{t('home.planTomorrowSub', { weekday: weekdayOn(REFERENCE_DAY) })}</div>
-        </div>
-        <span style={{ fontSize: 15, color: '#6b6b7a' }}>›</span>
+      {/* Two big colour tiles. The bottom margin keeps them clear of the
+          floating AI-chat button (right:16, 54px, see ChatWidget.jsx) —
+          they're the last thing in the scroll area. */}
+      <div style={{ display: 'grid', gridTemplateColumns: showRestart ? '1fr' : '1fr 1fr', gap: 12, marginBottom: 66 }}>
+        <QuickTile
+          pal={['#9b82ff', '#7c5cff', '#4a2fc0']} title={t('home.planTomorrow')} sub={t('home.planTomorrowSub', { weekday: weekdayOn(REFERENCE_DAY) })}
+          icon={<svg width="30" height="30" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16" rx="3.5" fill="#fff" /><rect x="3" y="4.5" width="18" height="5" rx="2.5" fill="#ffd1d1" /><path d="M8 3v3.5M16 3v3.5" stroke="#fff" strokeWidth="2" strokeLinecap="round" /><path d="M8 14l2.5 2.5L16 11" stroke="#7c5cff" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+          onClick={() => { planner.update({ planToday: false }); planner.go('planner'); }}
+        />
+        {!showRestart && (
+          <QuickTile
+            pal={['#ffc06b', '#ff9600', '#c26a00']} title={t('home.rescueDay')} sub={t('home.rescueDaySub')}
+            icon={<svg width="30" height="30" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 0 1 13-5.1M19.5 12a7.5 7.5 0 0 1-13 5.1" stroke="#fff" strokeWidth="2.6" fill="none" strokeLinecap="round" /><path d="M17.8 3.2v4h-4M6.2 20.8v-4h4" stroke="#fff" strokeWidth="2.6" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>}
+            onClick={() => planner.go('rescue')}
+          />
+        )}
       </div>
-      {/* marginRight reserves the floating AI-chat button's fixed footprint
-          (right:16 + 54px wide, see ChatWidget.jsx) — this is the last card
-          in the scroll area, so nothing below it can push it clear the way
-          it would if more content followed. */}
-      {!showRestart && (
-        <div onClick={() => planner.go('rescue')} style={{ marginTop: 12, marginRight: 60, padding: 15, borderRadius: 18, background: 'rgba(255,255,255,.035)', border: '1px solid rgba(255,255,255,.07)', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}>
-          <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(124,92,255,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{RESTART_ICON('#a58cff')}</div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14.5, fontWeight: 700 }}>{t('home.rescueDay')}</div>
-            <div style={{ fontSize: 12, color: '#8a8a99', marginTop: 2 }}>{t('home.rescueDaySub')}</div>
-          </div>
-          <span style={{ fontSize: 15, color: '#6b6b7a' }}>›</span>
-        </div>
-      )}
 
       <TaskEditSheet planner={planner} />
       <ScreenPets pw={pugWorld} place="home" />
