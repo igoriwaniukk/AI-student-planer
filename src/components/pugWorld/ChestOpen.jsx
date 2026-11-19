@@ -27,8 +27,26 @@ const KEYFRAMES = `
 @keyframes pwBreath{0%,100%{opacity:.7}50%{opacity:1}}
 @keyframes pwUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes pwTap{0%{transform:scale(1)}40%{transform:scale(1.12,.9)}100%{transform:scale(1)}}
+@keyframes pwSpIn{0%{opacity:0;transform:translate(var(--x),var(--y))}20%{opacity:1}100%{opacity:0;transform:translate(0,0) scale(.4)}}
+@keyframes pwGlowUp{from{opacity:.25;transform:scale(.6)}to{opacity:1;transform:scale(1.7)}}
+@keyframes pwWhite{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
+@keyframes pwConf{0%{opacity:0;transform:translate(0,0)}3%{opacity:1}70%{opacity:1;transform:translate(var(--dx),var(--dy)) rotate(var(--r))}100%{opacity:0;transform:translate(var(--dx),calc(var(--dy) + 90px)) rotate(var(--r))}}
 `;
-const SHAKE_MS = 750;
+// Animation B (charge & flash): sparks rush into the chest and it glows
+// brighter while it shakes, a white flash fills the screen, then what's
+// inside pops out with white rays and a burst of confetti.
+const SHAKE_MS = 1000;
+const GATHER = Array.from({ length: 14 }, (_, i) => {
+  const a = (i / 14) * Math.PI * 2;
+  const r = 150 + (i % 3) * 30;
+  return { x: Math.cos(a) * r, y: Math.sin(a) * r, delay: (i % 7) * 80 };
+});
+const CONFETTI_COLORS = ['#ff4b4b', '#ffc800', '#58cc02', '#1cb0f6', '#ce82ff', '#ffffff'];
+const CONFETTI = Array.from({ length: 30 }, (_, i) => {
+  const a = (i / 30) * Math.PI * 2 + (i % 2) * 0.1;
+  const r = 120 + ((i * 37) % 90);
+  return { dx: Math.cos(a) * r, dy: Math.sin(a) * r, r: (i * 53) % 540, w: 6 + (i % 4) * 2, color: CONFETTI_COLORS[i % 6], delay: (i % 5) * 20 };
+});
 const SHADOW = '0 2px 0 rgba(0,0,0,.18)';
 const BURST_MS = 520;
 const SPARKS = Array.from({ length: 14 }, (_, i) => {
@@ -110,6 +128,14 @@ export default function ChestOpen({ pw, chestId, onNext, onClose, auto = false, 
       {!revealed && (
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ position: 'relative', marginTop: -40 }}>
+            {phase === 'shake' && (
+              <>
+                <div style={{ position: 'absolute', left: '50%', top: '45%', width: 240, height: 240, marginLeft: -120, marginTop: -120, borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,255,255,.95), rgba(255,255,255,0) 65%)', animation: `pwGlowUp ${SHAKE_MS}ms ease-in both`, pointerEvents: 'none' }} />
+                {GATHER.map((g, i) => (
+                  <span key={i} style={{ position: 'absolute', left: '50%', top: '45%', width: 9, height: 9, marginLeft: -4.5, marginTop: -4.5, borderRadius: '50%', background: '#fff', boxShadow: '0 0 10px #fff', '--x': g.x + 'px', '--y': g.y + 'px', animation: `pwSpIn 620ms ${g.delay}ms ease-in both`, pointerEvents: 'none' }} />
+                ))}
+              </>
+            )}
             <div key={phase === 'charge' ? 'tap' + taps : phase} style={{ animation: phase === 'shake' ? `pwShake ${SHAKE_MS}ms ease-in both` : phase === 'burst' ? `pwPop ${BURST_MS}ms ease-in both` : phase === 'charge' && taps ? 'pwTap .35s ease-out both' : 'none', transformOrigin: '50% 80%' }}>
               <ChestIcon type={type} size={230} open={phase === 'burst'} />
             </div>
@@ -148,6 +174,8 @@ export default function ChestOpen({ pw, chestId, onNext, onClose, auto = false, 
       )}
 
       {/* the dog: loaded (hidden) from the start, shown at the burst */}
+      {/* the white flash, over everything */}
+      {phase === 'burst' && <div style={{ position: 'absolute', inset: 0, zIndex: 4, background: '#fff', animation: 'pwWhite 650ms ease-out both', pointerEvents: 'none' }} />}
       {res && <Reveal key={res.chest.id} res={res} c={c} pal={pal} revealed={revealed} happy={revealed && dogReady ? 1 : 0} onDogReady={() => setDogReady(true)} nextChest={nextChest} onNext={next} onClose={onClose} />}
     </div>
   );
@@ -173,7 +201,15 @@ function Reveal({ res, c, pal, revealed, happy, onDogReady, nextChest, onNext, o
       <div style={{ textAlign: 'center', marginTop: 18, ...up(0) }}>
         <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: '.16em', color: c, textShadow: SHADOW }}>{t(headline)}</div>
       </div>
-      <div style={{ flex: 1, minHeight: 240, position: 'relative', display: 'grid', placeItems: 'center', opacity: revealed ? 1 : 0, animation: revealed ? 'pwDogIn .55s ease-out both' : 'none' }}>
+      {revealed && (
+        <div style={{ position: 'absolute', left: '50%', top: '40%', width: 640, height: 640, marginLeft: -320, marginTop: -320, pointerEvents: 'none', animation: 'pwRaysIn .5s ease-out both' }}>
+          <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: 'repeating-conic-gradient(rgba(255,255,255,.32) 0deg 9deg, transparent 9deg 24deg)', WebkitMaskImage: 'radial-gradient(circle, #000 10%, transparent 62%)', maskImage: 'radial-gradient(circle, #000 10%, transparent 62%)', animation: 'pwSpin 9s linear infinite' }} />
+        </div>
+      )}
+      {revealed && CONFETTI.map((p, i) => (
+        <i key={i} style={{ position: 'absolute', left: '50%', top: '40%', width: p.w, height: p.w * 1.6, borderRadius: 2, background: p.color, '--dx': p.dx + 'px', '--dy': p.dy + 'px', '--r': p.r + 'deg', animation: `pwConf 1.3s ${p.delay}ms cubic-bezier(.2,.8,.4,1) both`, pointerEvents: 'none', zIndex: 3 }} />
+      ))}
+      <div style={{ flex: 1, minHeight: 240, position: 'relative', display: 'grid', placeItems: 'center', opacity: revealed ? 1 : 0, animation: revealed ? 'pwDogIn .55s cubic-bezier(.3,1.5,.5,1) both' : 'none' }}>
         {isDog && <Dog2D dogId={res.dog} worn={res.state.outfits.worn[res.dog]} happyKey={happy} onReady={onDogReady} />}
         {res.kind === 'outfit' && <div style={{ width: 210, height: 210, borderRadius: '50%', background: 'rgba(255,255,255,.9)', display: 'grid', placeItems: 'center', boxShadow: '0 6px 0 rgba(0,0,0,.12)' }}><OutfitPic id={res.outfit} size={150} /></div>}
         {res.kind === 'freeze' && <FreezeIcon size={190} style={{ filter: 'drop-shadow(0 6px 0 rgba(0,0,0,.15))' }} />}
