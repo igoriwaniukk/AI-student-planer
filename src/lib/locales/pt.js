@@ -1288,4 +1288,12 @@ export default {
   "pw.friends.f3": "Missões em equipa e high-fives",
   "pw.shop.title": "Ofertas de hoje",
   "pw.live.note2": "Põe quantos cães quiseres em cada ecrã. O teu favorito vive sempre no Início.",
+  "pw.pack.label": "A tua matilha",
+  "pw.pack.title.one": "{n} cão e a crescer!",
+  "pw.pack.title.few": "{n} cães e a crescer!",
+  "pw.pack.title.many": "{n} cães e a crescer!",
+  "pw.pack.hiding.one": "Ainda falta {n} cão — continua a estudar para o encontrar!",
+  "pw.pack.hiding.few": "Ainda faltam {n} cães — continua a estudar para os encontrar!",
+  "pw.pack.hiding.many": "Ainda faltam {n} cães — continua a estudar para os encontrar!",
+  "pw.pack.all": "Encontraste todos os cães! 🏆",
 };

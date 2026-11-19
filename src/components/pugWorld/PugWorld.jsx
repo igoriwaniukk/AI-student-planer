@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { AppShellPortal, BackButton } from '../ui';
 import { useLang } from '../../lib/useLang';
-import { localDateKey } from '../../lib/plannerLogic';
-import { DOGS, DOG_BY_ID, BREED_IDS, STARTERS, OUTFIT_BY_ID, OUTFIT_SETS } from '../../lib/pugWorld/catalog.js';
+import { localDateKey, pluralForm } from '../../lib/plannerLogic';
+import { DOGS, DOG_BY_ID, BREED_IDS, STARTERS, OUTFIT_BY_ID, OUTFIT_SETS, RARITIES } from '../../lib/pugWorld/catalog.js';
 import {
   CHEST_PRICE, collectionScore, dogPower, bumpMission,
   shopOffers, buyOutfit, buyChest, breedDogs, chooseStarter, buySet, setPrice, wearSet, fullSetOn,
@@ -233,11 +233,50 @@ function Chests({ state, onOpenChest, onChances, onStudy }) {
 // Colour counters on top; each dog you have on its rarity's bright colour
 // (common green, rare blue, epic purple, legendary gold).
 const CHIP = (on, pal = ['#e6bcff', '#ce82ff', '#a568cc']) => ({ flex: 'none', height: 32, padding: '0 13px', borderRadius: 11, display: 'flex', alignItems: 'center', fontSize: 12.5, fontWeight: 900, cursor: 'pointer', marginBottom: 3, ...(on ? { background: pal[1], boxShadow: `0 3px 0 ${pal[2]}`, color: '#fff' } : { background: '#1a1825', boxShadow: '0 3px 0 #0f0e17', color: '#b9b9c8' }) });
-function Counter({ value, label, pal }) {
+// The Album's top: your whole pack in one happy group photo (the favourite
+// in the middle, the rarest next to it), how many you have, how many are
+// still hiding, and your score.
+function PackPhoto({ state, owned }) {
+  const { t } = useLang();
+  const fav = state.favorite && state.dogs[state.favorite] ? state.favorite : Object.keys(state.dogs)[0];
+  const rest = Object.keys(state.dogs).filter((id) => id !== fav && DOG_BY_ID[id])
+    .sort((a, b) => RARITIES.indexOf(DOG_BY_ID[b].rarity) - RARITIES.indexOf(DOG_BY_ID[a].rarity)).slice(0, 8);
+  // favourite in the middle, the others alternating right and left of it
+  const left = rest.filter((_, i) => i % 2 === 1).reverse();
+  const right = rest.filter((_, i) => i % 2 === 0);
+  const row = [...left, fav, ...right].filter(Boolean);
+  const hiding = DOGS.length - owned;
+  const plural = (base, n) => t(base + '.' + pluralForm(n), { n });
   return (
-    <div style={{ flex: 1, borderRadius: 18, padding: '10px 14px', color: '#fff', background: `linear-gradient(160deg, ${pal[1]}, ${pal[2]})`, boxShadow: `0 4px 0 ${pal[2]}`, marginBottom: 4 }}>
-      <div style={{ fontSize: 21, fontWeight: 900 }}>{value}</div>
-      <div style={{ fontSize: 12, fontWeight: 800, opacity: 0.92 }}>{label}</div>
+    <div style={{ position: 'relative', marginTop: 6, marginBottom: 5, borderRadius: 26, overflow: 'hidden', background: 'radial-gradient(circle at 50% 30%, #ffe680 0, #ffc800 50%, #e5a900 100%)', boxShadow: '0 5px 0 #c08608' }}>
+      {[[92, 9], [6, 50], [93, 46], [30, 44], [68, 47]].map(([x, y], i) => <span key={i} style={{ position: 'absolute', left: x + '%', top: y + '%', color: '#fff', opacity: 0.8 }}>✦</span>)}
+      <div style={{ position: 'relative', padding: '14px 16px 0' }}>
+        <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.1em', color: '#7a4d00' }}>{t('pw.pack.label').toUpperCase()}</div>
+        <div style={{ fontSize: 22, fontWeight: 900, color: '#fff', textShadow: '0 2px 0 rgba(0,0,0,.15)', lineHeight: 1.2 }}>{plural('pw.pack.title', owned)} 🎉</div>
+      </div>
+      <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'flex-end', height: 112, marginTop: 4 }}>
+        {row.map((id, i) => {
+          const isFav = id === fav;
+          const size = isFav ? 100 : 66 + (i % 2) * 4;
+          return (
+            <div key={id} style={{ marginLeft: i ? -22 : 0, zIndex: isFav ? 20 : 10 - Math.abs(i - left.length), flex: 'none' }}>
+              <DogThumb dogId={id} worn={state.outfits.worn[id]} size={size} />
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 16px 12px', background: 'rgba(0,0,0,.14)' }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ height: 12, borderRadius: 99, background: 'rgba(255,255,255,.35)', overflow: 'hidden' }}>
+            <div style={{ width: (owned / DOGS.length) * 100 + '%', height: '100%', borderRadius: 99, background: '#fff' }} />
+          </div>
+          <div style={{ fontSize: 12, fontWeight: 900, marginTop: 5, color: '#fff', lineHeight: 1.3 }}>{hiding > 0 ? plural('pw.pack.hiding', hiding) : t('pw.pack.all')}</div>
+        </div>
+        <div style={{ flex: 'none', textAlign: 'center', padding: '5px 10px', borderRadius: 12, background: '#fff', color: '#c08608' }}>
+          <div style={{ fontSize: 15, fontWeight: 900 }}>⭐ {collectionScore(state)}</div>
+          <div style={{ fontSize: 10, fontWeight: 900 }}>{t('pw.score')}</div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -248,10 +287,7 @@ function Album({ state, onShowDog, onChances }) {
   const owned = Object.keys(state.dogs).length;
   return (
     <>
-      <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
-        <Counter value={`${owned} / ${DOGS.length}`} label={t('pw.collection')} pal={RARITY_BRIGHT.rare} />
-        <Counter value={collectionScore(state)} label={t('pw.score')} pal={RARITY_BRIGHT.epic} />
-      </div>
+      <PackPhoto state={state} owned={owned} />
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
         <span onClick={onChances} style={{ fontSize: 12.5, fontWeight: 700, color: '#a58cff', cursor: 'pointer' }}>{t('pw.chances')}</span>
       </div>

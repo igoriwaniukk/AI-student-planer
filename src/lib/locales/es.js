@@ -1288,4 +1288,12 @@ export default {
   "pw.friends.f3": "Misiones en equipo y chócala",
   "pw.shop.title": "Ofertas de hoy",
   "pw.live.note2": "Pon tantos perros como quieras en cada pantalla. Tu favorito siempre vive en Inicio.",
+  "pw.pack.label": "Tu manada",
+  "pw.pack.title.one": "{n} perro ¡y creciendo!",
+  "pw.pack.title.few": "{n} perros ¡y creciendo!",
+  "pw.pack.title.many": "{n} perros ¡y creciendo!",
+  "pw.pack.hiding.one": "Aún se esconde {n} perro: ¡sigue estudiando para encontrarlo!",
+  "pw.pack.hiding.few": "Aún se esconden {n} perros: ¡sigue estudiando para encontrarlos!",
+  "pw.pack.hiding.many": "Aún se esconden {n} perros: ¡sigue estudiando para encontrarlos!",
+  "pw.pack.all": "¡Encontraste todos los perros! 🏆",
 };

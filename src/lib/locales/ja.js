@@ -1288,4 +1288,12 @@ export default {
   "pw.friends.f3": "チームミッションとハイタッチ",
   "pw.shop.title": "今日のおすすめ",
   "pw.live.note2": "どの画面にも好きなだけ犬を置けます。お気に入りはいつもホームにいます。",
+  "pw.pack.label": "あなたのチーム",
+  "pw.pack.title.one": "{n}匹、まだまだ増えるよ！",
+  "pw.pack.title.few": "{n}匹、まだまだ増えるよ！",
+  "pw.pack.title.many": "{n}匹、まだまだ増えるよ！",
+  "pw.pack.hiding.one": "あと{n}匹がかくれています — 勉強して見つけよう！",
+  "pw.pack.hiding.few": "あと{n}匹がかくれています — 勉強して見つけよう！",
+  "pw.pack.hiding.many": "あと{n}匹がかくれています — 勉強して見つけよう！",
+  "pw.pack.all": "全部の犬を見つけた！🏆",
 };

@@ -1288,4 +1288,12 @@ export default {
   "pw.friends.f3": "团队任务和击掌",
   "pw.shop.title": "今日特惠",
   "pw.live.note2": "每个页面都可以放任意多只狗狗。你最喜欢的狗狗总是住在首页。",
+  "pw.pack.label": "你的狗狗队",
+  "pw.pack.title.one": "{n} 只狗狗，还在增加！",
+  "pw.pack.title.few": "{n} 只狗狗，还在增加！",
+  "pw.pack.title.many": "{n} 只狗狗，还在增加！",
+  "pw.pack.hiding.one": "还有 {n} 只狗狗藏着——继续学习去找到它！",
+  "pw.pack.hiding.few": "还有 {n} 只狗狗藏着——继续学习去找到它们！",
+  "pw.pack.hiding.many": "还有 {n} 只狗狗藏着——继续学习去找到它们！",
+  "pw.pack.all": "你找到了所有狗狗！🏆",
 };
