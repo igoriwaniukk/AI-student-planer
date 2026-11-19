@@ -39,8 +39,9 @@ const SPARKS = Array.from({ length: 14 }, (_, i) => {
 
 // `auto`: the chest right after a study session: 3 taps, each may upgrade
 // it (small → silver → gold → epic), then it opens by itself; `banner`
-// shows above it, and there's no "open next".
-export default function ChestOpen({ pw, chestId, onNext, onClose, auto = false, banner = null }) {
+// shows above it, and there's no "open next". `track`: counts as "busy"
+// while open (opened from My dogs), so earned chests wait their turn.
+export default function ChestOpen({ pw, chestId, onNext, onClose, auto = false, banner = null, track = true }) {
   const { t } = useLang();
   const [type, setType] = useState(() => pw.state.chests.find((x) => x.id === chestId)?.type || 'small');
   const [res, setRes] = useState(null);
@@ -50,6 +51,12 @@ export default function ChestOpen({ pw, chestId, onNext, onClose, auto = false, 
   const [dogReady, setDogReady] = useState(false);
   const timers = useRef([]);
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
+  useEffect(() => {
+    if (!track) return undefined;
+    pw.track?.(1);
+    return () => pw.track?.(-1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // What's inside is decided on opening, for the chest as it is then.
   const open = (finalType = type) => {

@@ -35,7 +35,8 @@ import { MAX_FREEZES } from './lib/streakRewards';
 import { usePugWorld } from './hooks/usePugWorld';
 import PugWorld from './components/pugWorld/PugWorld';
 import MissionsPage from './components/pugWorld/MissionsPage';
-import { SessionReward } from './components/pugWorld/PugWorldCard';
+import { SessionReward, EarnedChest } from './components/pugWorld/PugWorldCard';
+import RewardFx from './components/pugWorld/RewardFx';
 import { LanguageProvider } from './lib/LanguageContext';
 import { computeStreak, studiedToday, localDateKey, daySessionBreakdown, statusOn, dayOpenTasks, wrapUpMinutes, planFor } from './lib/plannerLogic';
 import { NUM_TODAY } from './lib/plannerData';
@@ -451,6 +452,8 @@ function MainApp({ name, setName, profilePhoto, setProfilePhoto, activities, set
       {celebrating && screen !== 'focus' && <StreakCelebration streak={streak} milestone={streakRewards.milestone} onClose={() => { setCelebrating(false); streakRewards.clearMilestone(); }} />}
 
       <SessionReward pw={pugWorld} ready={!celebrating && screen !== 'focus' && !paywall} />
+      <EarnedChest pw={pugWorld} ready={!celebrating && screen !== 'focus' && !paywall} />
+      <RewardFx pw={pugWorld} />
 
       {paywall && <Paywall reason={paywall} onClose={() => setPaywall(null)} />}
     </div>

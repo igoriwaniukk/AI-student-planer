@@ -90,10 +90,65 @@ export function usePugWorld({ streak, isPremium, freezeRoom = true, addFreeze, o
     return () => clearTimeout(toastTimer.current);
   }, [toast, started]);
 
+  // Chests earned anywhere (missions, daily rewards, streaks, the shop…)
+  // open right away, one after another: new chest ids join `queue`
+  // (EarnedChest shows them). The session's own chest is opened by
+  // SessionReward instead. `busy` = a chest is being opened on the My dogs
+  // page (ChestOpen counts itself in); then the queue waits.
+  const [queue, setQueue] = useState([]);
+  const [busy, setBusy] = useState(0);
+  const [showingChest, setShowingChest] = useState(null);
+  const showingRef = useRef(null);
+  useEffect(() => { showingRef.current = showingChest; }, [showingChest]);
+  const seenChests = useRef(null);
+  const chestKey = state.chests.map((c) => c.id).join(',');
+  useEffect(() => {
+    const ids = chestKey ? chestKey.split(',') : [];
+    const seen = seenChests.current;
+    seenChests.current = new Set(ids);
+    if (!seen || !enabled) return;
+    const fresh = ids.filter((id) => !seen.has(id) && id !== toast?.chest);
+    // New ones join; ones opened some other way (e.g. "open next") leave —
+    // except the one on screen, which is gone from the list once opened.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setQueue((q) => {
+      const next = q.filter((id) => ids.includes(id) || id === showingRef.current).concat(fresh.filter((id) => !q.includes(id)));
+      return next.length === q.length && next.every((id, i) => id === q[i]) ? q : next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chestKey, enabled]);
+
+  // Reward animation (RewardFx): coins gained (not while a chest is being
+  // opened — it shows its own coins) and missions just finished.
+  const [fx, setFx] = useState(null);
+  const prevReward = useRef(null);
+  const doneIds = (state.missions.items || []).filter((m) => m.done).map((m) => m.id);
+  const doneKey = state.missions.date + ':' + doneIds.join(',');
+  useEffect(() => {
+    const prev = prevReward.current;
+    prevReward.current = { coins: state.coins, date: state.missions.date, done: doneIds };
+    if (!prev || !enabled || !started) return;
+    const hold = busy > 0 || !!toast || queue.length > 0 || !!showingChest;
+    const gained = state.coins - prev.coins;
+    const newly = prev.date === state.missions.date ? doneIds.filter((id) => !prev.done.includes(id)) : [];
+    const coins = hold ? 0 : Math.max(0, gained);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (coins > 0 || newly.length) setFx({ at: Date.now(), coins, mission: newly[0] || null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.coins, doneKey]);
+
   return {
     enabled,
     state,
     started,
+    queue,
+    dequeue: (id) => setQueue((q) => q.filter((x) => x !== id)),
+    busy,
+    track: (d) => setBusy((b) => Math.max(0, b + d)),
+    showingChest,
+    setShowingChest,
+    fx,
+    clearFx: () => setFx(null),
     freezeRoom,
     addFreeze: () => addFreeze?.(),
     update,
