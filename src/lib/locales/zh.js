@@ -1287,4 +1287,5 @@ export default {
   "pw.friends.f2": "每周排行——赢取史诗宝箱",
   "pw.friends.f3": "团队任务和击掌",
   "pw.shop.title": "今日特惠",
+  "pw.live.note2": "每个页面都可以放任意多只狗狗。你最喜欢的狗狗总是住在首页。",
 };

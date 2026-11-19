@@ -3,7 +3,7 @@ import { DOGS, STARTERS, RARITIES, BREED_IDS } from './catalog';
 import {
   EMPTY, normalize, CHEST_ODDS, CHEST_CONTENTS, rollRarity, addDog, openChest, addChest, dogPower, collectionScore, coinBonus,
   missionsFor, ensureDay, bumpMission, claimCalendar, canClaimCalendar, shopOffers, buyOutfit, buyChest, toggleOutfit,
-  onSession, onPlan, onDayFinished, monthlyFor, MONTHLY_TARGET, dogsOn, placesOf, togglePlace, placeHasRoom, rollUpgrade, setChestType, buySet, setPrice, wearSet, fullSetOn, onStreak, onPremiumDay, chooseStarter, completedSets, breedDogs,
+  onSession, onPlan, onDayFinished, monthlyFor, MONTHLY_TARGET, dogsOn, placesOf, togglePlace, rollUpgrade, setChestType, buySet, setPrice, wearSet, fullSetOn, onStreak, onPremiumDay, chooseStarter, completedSets, breedDogs,
 } from './logic';
 
 const seq = (...xs) => { let i = 0; return () => xs[i++ % xs.length]; };
@@ -203,21 +203,18 @@ describe('where dogs live', () => {
     expect(dogsOn(base, 'focus')).toEqual([ids[0]]);
     expect(dogsOn(base, 'calendar')).toEqual([]);
   });
-  it('a dog lives on up to 2 screens, a screen holds up to 3 dogs, the favourite always on Home', () => {
+  it('a dog lives on up to 2 screens, a screen holds any number of dogs, the favourite always on Home', () => {
     let s = togglePlace(base, ids[5], 'calendar');
     s = togglePlace(s, ids[5], 'tasks');
     expect(placesOf(s, ids[5])).toEqual(['calendar', 'tasks']);
     expect(togglePlace(s, ids[5], 'planner')).toEqual(s); // a 3rd screen: no
-    s = togglePlace(s, ids[3], 'calendar');
-    s = togglePlace(s, ids[4], 'calendar');
-    expect(dogsOn(s, 'calendar')).toHaveLength(3);
-    expect(placeHasRoom(s, 'calendar', ids[2])).toBe(false);
-    expect(togglePlace(s, ids[2], 'calendar')).toEqual(s);
+    for (const id of ids.slice(1, 5)) s = togglePlace(s, id, 'calendar');
+    expect(dogsOn(s, 'calendar')).toHaveLength(5); // no limit per screen
     expect(togglePlace(s, ids[0], 'home')).toEqual(s); // can't take the favourite off Home
     expect(dogsOn(s, 'home')[0]).toBe(ids[0]);
     s = togglePlace(s, ids[5], null); // Nowhere
     expect(placesOf(s, ids[5])).toEqual([]);
-    expect(dogsOn(s, 'calendar')).toHaveLength(2);
+    expect(dogsOn(s, 'calendar')).toHaveLength(4);
   });
   it('choosing once keeps the default Home dogs where they were', () => {
     const before = dogsOn(base, 'home');

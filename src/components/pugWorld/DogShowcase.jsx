@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useLang } from '../../lib/useLang';
 import { DOG_BY_ID } from '../../lib/pugWorld/catalog.js';
-import { LEVEL_COPIES, MAX_LEVEL, dogPower, dogPerk, bumpMission, PLACES, DOG_MAX_PLACES, PLACE_MAX_DOGS, placesOf, placeHasRoom, togglePlace } from '../../lib/pugWorld/logic.js';
+import { LEVEL_COPIES, MAX_LEVEL, dogPower, dogPerk, bumpMission, PLACES, DOG_MAX_PLACES, placesOf, togglePlace } from '../../lib/pugWorld/logic.js';
 import Dog2D from './Dog2D';
 import Wardrobe from './Wardrobe';
 import { CoinIcon } from './icons';
@@ -65,9 +65,8 @@ export default function DogShowcase({ pw, dogId, onClose, onShop }) {
   );
 }
 
-// "Where does it live?": up to DOG_MAX_PLACES screens per dog, up to
-// PLACE_MAX_DOGS dogs per screen (a full screen is greyed out). The
-// favourite always lives on Home.
+// "Where does it live?": up to DOG_MAX_PLACES screens per dog, as many dogs
+// per screen as you like. The favourite always lives on Home.
 const PLACE_ICON = {
   home: (c) => <path d="M3.4 9.2L11 3.2l7.6 6v8.4a1.6 1.6 0 01-1.6 1.6H5a1.6 1.6 0 01-1.6-1.6V9.2z" stroke={c} strokeWidth="1.5" strokeLinejoin="round" />,
   calendar: (c) => <><rect x="3.2" y="4.6" width="15.6" height="14.2" rx="3" stroke={c} strokeWidth="1.5" /><path d="M3.2 9h15.6M7.6 2.8v3.2M14.4 2.8v3.2" stroke={c} strokeWidth="1.5" strokeLinecap="round" /></>,
@@ -91,8 +90,7 @@ export function Places({ state, dogId, update }) {
         {tiles.map((p) => {
           const on = p === 'none' ? !mine.length && !fav : (p === 'home' && fav) || mine.includes(p);
           const locked = p === 'home' && fav;
-          const blocked = !on && p !== 'none' && (mine.length >= DOG_MAX_PLACES || !placeHasRoom(state, p, dogId));
-          const full = !on && p !== 'none' && !placeHasRoom(state, p, dogId);
+          const blocked = !on && p !== 'none' && mine.length >= DOG_MAX_PLACES;
           return (
             <div
               key={p}
@@ -101,13 +99,12 @@ export function Places({ state, dogId, update }) {
             >
               <svg width="22" height="22" viewBox="0 0 22 22" fill="none">{PLACE_ICON[p](on ? '#fff' : '#8a8a99')}</svg>
               <span style={{ fontSize: 12, fontWeight: 750, color: on ? '#fff' : '#b9b9c8', textAlign: 'center', lineHeight: 1.15, padding: '0 4px' }}>{t('pw.place.' + p)}</span>
-              {full && <span style={{ position: 'absolute', top: 5, right: 7, fontSize: 9.5, fontWeight: 800, color: '#8a8a99' }}>{t('pw.live.full')}</span>}
               {on && p !== 'none' && <span style={{ position: 'absolute', top: 6, right: 7, width: 17, height: 17, borderRadius: '50%', background: '#fff', color: '#1899d6', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 900 }}>✓</span>}
             </div>
           );
         })}
       </div>
-      <div style={{ fontSize: 11.5, color: '#8a8a99', marginTop: 10, lineHeight: 1.45 }}>{t('pw.live.note', { n: PLACE_MAX_DOGS })}</div>
+      <div style={{ fontSize: 11.5, color: '#8a8a99', marginTop: 10, lineHeight: 1.45 }}>{t('pw.live.note2')}</div>
     </div>
   );
 }

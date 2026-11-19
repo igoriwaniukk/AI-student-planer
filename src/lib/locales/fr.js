@@ -1287,4 +1287,5 @@ export default {
   "pw.friends.f2": "Classement de la semaine — gagne des coffres épiques",
   "pw.friends.f3": "Missions d'équipe et tope-là",
   "pw.shop.title": "Offres du jour",
+  "pw.live.note2": "Mets autant de chiens que tu veux sur chaque écran. Ton favori vit toujours sur Accueil.",
 };

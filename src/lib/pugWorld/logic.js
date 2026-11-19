@@ -383,13 +383,13 @@ export function chooseStarter(state, dogId) {
 }
 
 // ---------- where dogs live ----------
-// Each dog can live on up to DOG_MAX_PLACES screens; each screen shows up to
-// PLACE_MAX_DOGS dogs. The favourite always lives on Home (on top of its
+// Each dog can live on up to DOG_MAX_PLACES screens; a screen can have as
+// many dogs as you like. The favourite always lives on Home (on top of its
 // other places). Until you choose (homes = null): Home shows the favourite
 // and your 2 rarest dogs, the study timer the favourite.
 export const PLACES = ['home', 'calendar', 'tasks', 'planner', 'focus'];
-export const PLACE_MAX_DOGS = 3;
 export const DOG_MAX_PLACES = 2;
+const DEFAULT_HOME_DOGS = 2;
 function rarest(s) {
   return Object.keys(s.dogs).filter((id) => DOG_BY_ID[id] && id !== s.favorite)
     .sort((a, b) => RARITIES.indexOf(DOG_BY_ID[b].rarity) - RARITIES.indexOf(DOG_BY_ID[a].rarity));
@@ -397,7 +397,7 @@ function rarest(s) {
 function homesOf(s) {
   if (s.homes) return s.homes;
   const out = {};
-  rarest(s).slice(0, PLACE_MAX_DOGS - 1).forEach((id) => { out[id] = ['home']; });
+  rarest(s).slice(0, DEFAULT_HOME_DOGS).forEach((id) => { out[id] = ['home']; });
   return out;
 }
 export function dogsOn(state, place) {
@@ -406,18 +406,12 @@ export function dogsOn(state, place) {
   let list = Object.keys(homes).filter((id) => s.dogs[id] && DOG_BY_ID[id] && (homes[id] || []).includes(place));
   if (place === 'home' && s.favorite) list = [s.favorite, ...list.filter((id) => id !== s.favorite)];
   if (place === 'focus' && !list.length && s.favorite) list = [s.favorite];
-  return list.slice(0, PLACE_MAX_DOGS);
+  return list;
 }
 // The screens a dog chose (the favourite's Home is not counted).
 export function placesOf(state, dogId) {
   const s = normalize(state);
   return (homesOf(s)[dogId] || []).filter((p) => PLACES.includes(p) && !(p === 'home' && dogId === s.favorite));
-}
-// Is there room for this dog on `place`?
-export function placeHasRoom(state, place, dogId) {
-  const s = normalize(state);
-  const others = dogsOn(s, place).filter((id) => id !== dogId);
-  return others.length < PLACE_MAX_DOGS;
 }
 // Turn a screen on/off for a dog (unchanged when it isn't allowed).
 // `place` null = "Nowhere": the dog leaves every screen.
@@ -431,7 +425,7 @@ export function togglePlace(state, dogId, place) {
   else if (cur.includes(place)) next = cur.filter((p) => p !== place);
   else {
     if (place === 'home' && dogId === s.favorite) return s;
-    if (cur.length >= DOG_MAX_PLACES || !placeHasRoom(s, place, dogId)) return s;
+    if (cur.length >= DOG_MAX_PLACES) return s;
     next = [...cur, place];
   }
   if (next.length) homes[dogId] = next; else delete homes[dogId];
