@@ -1287,4 +1287,5 @@ export default {
   "pw.friends.f2": "Ranking semanal — gana cofres épicos",
   "pw.friends.f3": "Misiones en equipo y chócala",
   "pw.shop.title": "Ofertas de hoy",
+  "pw.live.note2": "Pon tantos perros como quieras en cada pantalla. Tu favorito siempre vive en Inicio.",
 };

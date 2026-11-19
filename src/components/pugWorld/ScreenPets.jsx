@@ -4,7 +4,7 @@ import { openPugWorld } from '../../lib/pugWorld/events';
 import DogThumb from './DogThumb';
 
 // The tiny dogs that live on a screen (`place`: home, calendar, tasks,
-// planner — chosen per dog in My dogs, see dogsOn) stand on the top edges of
+// planner — chosen per dog in My dogs, as many as you like, see dogsOn) stand on the top edges of
 // the cards marked `data-perch`. Every 6–10 s one of them walks a little
 // along its card or hops to the card above or below — one at a time, calm.
 // Tap a dog: it jumps, then My dogs opens on it.
@@ -57,7 +57,12 @@ export default function ScreenPets({ pw, place }) {
     setSpots((cur) => {
       const next = {};
       ids.forEach((id, i) => {
-        next[id] = cur[id] && cur[id].p < perches.length ? cur[id] : { p: i % perches.length, f: SPOTS[i % SPOTS.length] };
+        // dogs share the cards in turn; several on one card stand spread out
+        const P = perches.length;
+        const p = i % P;
+        const onCard = Math.ceil((ids.length - p) / P);
+        const k = Math.floor(i / P);
+        next[id] = cur[id] && cur[id].p < P ? cur[id] : { p, f: onCard > 1 ? (k + 0.5) / onCard : SPOTS[p % SPOTS.length] };
       });
       return JSON.stringify(next) === JSON.stringify(cur) ? cur : next;
     });

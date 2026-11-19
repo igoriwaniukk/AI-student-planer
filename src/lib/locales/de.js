@@ -1287,4 +1287,5 @@ export default {
   "pw.friends.f2": "Wochenranking — gewinne epische Truhen",
   "pw.friends.f3": "Team-Missionen und High-Fives",
   "pw.shop.title": "Heutige Angebote",
+  "pw.live.note2": "Setze so viele Hunde auf jeden Bildschirm, wie du willst. Dein Liebling wohnt immer auf Start.",
 };

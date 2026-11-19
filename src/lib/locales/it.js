@@ -1287,4 +1287,5 @@ export default {
   "pw.friends.f2": "Classifica settimanale — vinci forzieri epici",
   "pw.friends.f3": "Missioni di squadra e batti cinque",
   "pw.shop.title": "Offerte di oggi",
+  "pw.live.note2": "Metti quanti cani vuoi in ogni schermata. Il tuo preferito vive sempre in Home.",
 };
