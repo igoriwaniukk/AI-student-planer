@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLang } from '../../lib/useLang';
 import { SESSION_COINS, MONTHLY_TARGET, monthlyFor, dogsOn } from '../../lib/pugWorld/logic.js';
 import { localDateKey } from '../../lib/plannerLogic';
@@ -125,11 +125,41 @@ export function SessionReward({ pw, ready }) {
   return (
     <AppShellPortal>
       <div style={{ position: 'absolute', inset: 0, zIndex: 120 }}>
-        <ChestOpen key={chestId} pw={pw} chestId={chestId} auto banner={banner} onClose={pw.clearToast} />
+        <ChestOpen key={chestId} pw={pw} chestId={chestId} auto banner={banner} track={false} onClose={pw.clearToast} />
       </div>
     </AppShellPortal>
   );
 }
+
+// Every other chest you earn (missions, daily rewards, streaks, a finished
+// day, the shop…) opens right away too, one after another, with where it
+// came from on top. Waits while another chest is being opened.
+export function EarnedChest({ pw, ready }) {
+  const exists = (id) => pw?.state.chests.some((c) => c.id === id);
+  const id = pw?.showingChest || (pw?.enabled && pw.started && ready && !pw.toast && !pw.busy ? pw.queue.find(exists) : null);
+  if (!id) return null;
+  return <EarnedChestOpen key={id} pw={pw} id={id} />;
+}
+function EarnedChestOpen({ pw, id }) {
+  const { t } = useLang();
+  const [from] = useState(() => pw.state.chests.find((c) => c.id === id)?.from);
+  useEffect(() => {
+    pw.setShowingChest(id);
+    return () => pw.setShowingChest(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+  const banner = FROM_KEY[from] ? (
+    <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.12em', color: '#fff', padding: '6px 12px', borderRadius: 99, background: 'rgba(0,0,0,.16)' }}>{t(FROM_KEY[from]).toUpperCase()}</div>
+  ) : null;
+  return (
+    <AppShellPortal>
+      <div style={{ position: 'absolute', inset: 0, zIndex: 120 }}>
+        <ChestOpen pw={pw} chestId={id} banner={banner} track={false} onClose={() => pw.dequeue(id)} />
+      </div>
+    </AppShellPortal>
+  );
+}
+const FROM_KEY = { missions: 'pw.from.missions', calendar: 'pw.from.calendar', monthly: 'pw.from.monthly', day: 'pw.from.day', streak: 'pw.from.streak', premium: 'pw.from.premium', set: 'pw.from.set', shop: 'pw.from.shop', welcome: 'pw.from.welcome' };
 
 // Small "+1 chest" message at the top, tap to open the game.
 export function PugWorldToast({ pw }) {

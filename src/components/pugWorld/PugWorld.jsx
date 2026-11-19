@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { AppShellPortal, BackButton } from '../ui';
 import { useLang } from '../../lib/useLang';
 import { localDateKey } from '../../lib/plannerLogic';
-import { DOGS, DOG_BY_ID, BREED_IDS, STARTERS, OUTFIT_BY_ID, OUTFIT_SETS, RARITY_COLOR } from '../../lib/pugWorld/catalog.js';
+import { DOGS, DOG_BY_ID, BREED_IDS, STARTERS, OUTFIT_BY_ID, OUTFIT_SETS } from '../../lib/pugWorld/catalog.js';
 import {
   CHEST_PRICE, collectionScore, dogPower, bumpMission,
   shopOffers, buyOutfit, buyChest, breedDogs, chooseStarter, buySet, setPrice, wearSet, fullSetOn,
@@ -13,11 +13,12 @@ import { CoinIcon, OutfitPic } from './icons';
 import DogThumb from './DogThumb';
 import ChestIcon from './Chest';
 import ChestOpen, { ChancesSheet } from './ChestOpen';
+import { ThickBar } from './missionBits';
+import { hoursToMidnight } from './missionUtil';
 import DogShowcase, { Places } from './DogShowcase';
 import { dogName } from './names';
-import { Card, RarityPill, Stars, Button, CoinPill, Stage, Chunky } from './bits';
-import { SparkleIcon } from './icons';
-import { PURPLE, CARD, CHEST_BRIGHT, RARITY_BRIGHT } from './theme';
+import { Card, RarityPill, Stars, Button, CoinPill, Stage, Chunky, ColorStage } from './bits';
+import { CHEST_BRIGHT, RARITY_BRIGHT } from './theme';
 
 // The dog collection game. Studying earns chests, chests hold dogs (and
 // coins, outfits, streak freezes).
@@ -66,7 +67,7 @@ export default function PugWorld({ pw, intent, onStudy, onBack }) {
           {tab === 'yard' && <MyDogs pw={pw} onOpenChest={setOpening} onChances={() => setChances(true)} onStudy={onStudy} onShop={() => setTab('shop')} onAlbum={() => setTab('album')} />}
           {tab === 'album' && <Album state={state} onShowDog={setShowDog} onChances={() => setChances(true)} />}
           {tab === 'shop' && <Shop pw={pw} />}
-          {tab === 'friends' && <Friends />}
+          {tab === 'friends' && <Friends state={state} />}
         </>
       )}
       {overlay && (
@@ -124,19 +125,12 @@ function MyDogs({ pw, onOpenChest, onChances, onStudy, onShop, onAlbum }) {
   const [jump, setJump] = useState(0);
   const doTrick = () => { setTrick((k) => k + 1); update((s) => bumpMission(s, 'trick')); };
   const owned = Object.keys(state.dogs).length;
-  const [light, base, shade] = RARITY_BRIGHT[DOG_BY_ID[fav].rarity];
   return (
     <>
-      <div onClick={() => setJump((k) => k + 1)} style={{ position: 'relative', marginTop: 14, height: 300, borderRadius: 28, overflow: 'hidden', cursor: 'pointer', background: `radial-gradient(circle at 50% 46%, ${light} 0, ${base} 48%, ${shade} 100%)`, boxShadow: `0 5px 0 ${shade}`, marginBottom: 5 }}>
-        {[[8, 12], [86, 18], [14, 76], [84, 72], [48, 7]].map(([x, y], i) => (
-          <span key={i} style={{ position: 'absolute', left: x + '%', top: y + '%', color: '#fff', fontSize: 14, opacity: 0.75 }}>✦</span>
-        ))}
-        <div style={{ position: 'absolute', left: '50%', bottom: 22, width: 190, height: 22, marginLeft: -95, borderRadius: '50%', background: 'rgba(0,0,0,.16)' }} />
-        <div style={{ position: 'absolute', inset: '6px 40px 8px' }}><Dog2D dogId={fav} worn={state.outfits.worn[fav]} trickKey={trick} happyKey={jump} /></div>
-        <div onClick={(e) => { e.stopPropagation(); doTrick(); }} style={{ position: 'absolute', right: 14, bottom: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-          <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#ffc800', boxShadow: '0 4px 0 #e5a900', display: 'grid', placeItems: 'center' }}><SparkleIcon size={24} /></div>
-          <span style={{ fontSize: 11, fontWeight: 900, color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,.3)' }}>{t('pw.trick')}</span>
-        </div>
+      <div style={{ marginTop: 14 }}>
+        <ColorStage rarity={DOG_BY_ID[fav].rarity} onTap={() => setJump((k) => k + 1)} onTrick={doTrick}>
+          <Dog2D dogId={fav} worn={state.outfits.worn[fav]} trickKey={trick} happyKey={jump} />
+        </ColorStage>
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, flexWrap: 'wrap', marginTop: 14 }}>
         <span style={{ fontSize: 22, fontWeight: 900 }}>{dogName(t, fav)}</span>
@@ -236,6 +230,17 @@ function Chests({ state, onOpenChest, onChances, onStudy }) {
 }
 
 // ---------- Album: every dog, "?" for the missing ones, breed sets ----------
+// Colour counters on top; each dog you have on its rarity's bright colour
+// (common green, rare blue, epic purple, legendary gold).
+const CHIP = (on, pal = ['#e6bcff', '#ce82ff', '#a568cc']) => ({ flex: 'none', height: 32, padding: '0 13px', borderRadius: 11, display: 'flex', alignItems: 'center', fontSize: 12.5, fontWeight: 900, cursor: 'pointer', marginBottom: 3, ...(on ? { background: pal[1], boxShadow: `0 3px 0 ${pal[2]}`, color: '#fff' } : { background: '#1a1825', boxShadow: '0 3px 0 #0f0e17', color: '#b9b9c8' }) });
+function Counter({ value, label, pal }) {
+  return (
+    <div style={{ flex: 1, borderRadius: 18, padding: '10px 14px', color: '#fff', background: `linear-gradient(160deg, ${pal[1]}, ${pal[2]})`, boxShadow: `0 4px 0 ${pal[2]}`, marginBottom: 4 }}>
+      <div style={{ fontSize: 21, fontWeight: 900 }}>{value}</div>
+      <div style={{ fontSize: 12, fontWeight: 800, opacity: 0.92 }}>{label}</div>
+    </div>
+  );
+}
 function Album({ state, onShowDog, onChances }) {
   const { t } = useLang();
   const [breed, setBreed] = useState('all');
@@ -243,29 +248,36 @@ function Album({ state, onShowDog, onChances }) {
   const owned = Object.keys(state.dogs).length;
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 2 }}>
-        <div style={{ fontSize: 13.5, color: '#b9b9c8' }}>{t('pw.dogsOf', { n: owned, total: DOGS.length })} · {t('pw.score')} <b style={{ color: '#c9baff' }}>{collectionScore(state)}</b></div>
-        <span onClick={onChances} style={{ fontSize: 12.5, fontWeight: 650, color: '#a58cff', cursor: 'pointer' }}>{t('pw.chances')}</span>
+      <div style={{ display: 'flex', gap: 10, marginTop: 6 }}>
+        <Counter value={`${owned} / ${DOGS.length}`} label={t('pw.collection')} pal={RARITY_BRIGHT.rare} />
+        <Counter value={collectionScore(state)} label={t('pw.score')} pal={RARITY_BRIGHT.epic} />
       </div>
-      <div style={{ display: 'flex', gap: 7, overflowX: 'auto', margin: '12px -16px 0', padding: '0 16px 2px' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6 }}>
+        <span onClick={onChances} style={{ fontSize: 12.5, fontWeight: 700, color: '#a58cff', cursor: 'pointer' }}>{t('pw.chances')}</span>
+      </div>
+      <div style={{ display: 'flex', gap: 7, overflowX: 'auto', margin: '6px -16px 0', padding: '0 16px 2px' }}>
         {['all', ...BREED_IDS].map((b) => (
-          <div key={b} onClick={() => setBreed(b)} style={{ flex: 'none', height: 32, padding: '0 13px', borderRadius: 99, display: 'flex', alignItems: 'center', fontSize: 12.5, fontWeight: 700, cursor: 'pointer', background: breed === b ? '#8b6dff' : 'rgba(255,255,255,.06)', color: breed === b ? '#fff' : '#b9b9c8' }}>
-            {b === 'all' ? t('pw.all') : t('pw.breed.' + b)}
-          </div>
+          <div key={b} onClick={() => setBreed(b)} style={CHIP(breed === b)}>{b === 'all' ? t('pw.all') : t('pw.breed.' + b)}</div>
         ))}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 9, marginTop: 12 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginTop: 12 }}>
         {list.map((d) => {
           const have = state.dogs[d.id];
-          const c = RARITY_COLOR[d.rarity];
-          return (
-            <div key={d.id} onClick={have ? () => onShowDog(d.id) : undefined} style={{ borderRadius: 16, padding: '6px 4px 9px', background: TILE[d.rarity], opacity: have ? 1 : 0.8, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: have ? 'pointer' : 'default', position: 'relative' }}>
+          const [light, base, shade] = RARITY_BRIGHT[d.rarity];
+          return have ? (
+            <div key={d.id} onClick={() => onShowDog(d.id)} style={{ borderRadius: 18, padding: '6px 4px 8px', marginBottom: 4, background: `linear-gradient(160deg, ${light}, ${base})`, boxShadow: `0 4px 0 ${shade}`, display: 'flex', flexDirection: 'column', alignItems: 'center', cursor: 'pointer' }}>
+              <DogThumb dogId={d.id} worn={state.outfits.worn[d.id]} size={84} />
+              <div style={{ fontSize: 11, fontWeight: 900, textAlign: 'center', lineHeight: 1.2, minHeight: 27, display: 'flex', alignItems: 'center', padding: '0 2px', color: '#fff', textShadow: '0 1px 1px rgba(0,0,0,.25)' }}>{dogName(t, d.id)}</div>
+              <Stars level={have.level} size={11} dim="rgba(255,255,255,.4)" />
+            </div>
+          ) : (
+            <div key={d.id} style={{ borderRadius: 18, padding: '6px 4px 8px', marginBottom: 4, background: '#1a1825', boxShadow: '0 4px 0 #0f0e17', border: '2px dashed rgba(255,255,255,.07)', display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative' }}>
               <div style={{ position: 'relative' }}>
-                <DogThumb dogId={d.id} silhouette={!have} size={84} />
-                {!have && <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 26, fontWeight: 900, color: '#fff' }}>?</span>}
+                <DogThumb dogId={d.id} silhouette size={80} />
+                <span style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', fontSize: 26, fontWeight: 900, color: '#6f6f80' }}>?</span>
               </div>
-              <div style={{ fontSize: 11, fontWeight: 750, textAlign: 'center', lineHeight: 1.25, minHeight: 28, display: 'flex', alignItems: 'center', padding: '0 2px', color: '#2a2440' }}>{have ? dogName(t, d.id) : '???'}</div>
-              {have ? <Stars level={have.level} size={11} dim="#8a8aa6" /> : <span style={{ width: 7, height: 7, borderRadius: '50%', background: c, marginTop: 3 }} />}
+              <div style={{ fontSize: 11, fontWeight: 900, minHeight: 27, display: 'flex', alignItems: 'center', color: '#5f5f72' }}>???</div>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: base }} />
             </div>
           );
         })}
@@ -280,12 +292,10 @@ function Album({ state, onShowDog, onChances }) {
             <div key={b} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0', borderTop: i ? '1px solid rgba(255,255,255,.06)' : 'none' }}>
               <DogThumb dogId={all[0].id} silhouette={!have} size={40} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 700 }}>{t('pw.breed.' + b)} <span style={{ color: '#8a8a99', fontWeight: 600 }}>{have}/{all.length}</span></div>
-                <div style={{ height: 5, borderRadius: 9, background: 'rgba(255,255,255,.07)', marginTop: 6, overflow: 'hidden' }}>
-                  <div style={{ width: (have / all.length) * 100 + '%', height: '100%', background: done ? '#35d07f' : PURPLE }} />
-                </div>
+                <div style={{ fontSize: 13.5, fontWeight: 800 }}>{t('pw.breed.' + b)} <span style={{ color: '#8a8a99', fontWeight: 700 }}>{have}/{all.length}</span></div>
+                <div style={{ marginTop: 6 }}><ThickBar pct={(have / all.length) * 100} done={done} height={10} /></div>
               </div>
-              {done ? <span style={{ fontSize: 12, fontWeight: 700, color: '#35d07f' }}>✓</span> : <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, color: '#b9b9c8' }}><ChestIcon type="gold" size={22} />+200</span>}
+              {done ? <span style={{ fontSize: 13, fontWeight: 900, color: '#58cc02' }}>✓</span> : <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 11.5, fontWeight: 800, color: '#ffd84d' }}><ChestIcon type="gold" size={24} />+200</span>}
             </div>
           );
         })}
@@ -295,6 +305,8 @@ function Album({ state, onShowDog, onChances }) {
 }
 
 // ---------- Shop: today's outfits and chests, for coins only ----------
+const SET_PAL = { wizard: ['#a58cff', '#7c5cff', '#5b3ee0'], hero: ['#ff8a8a', '#ff4b4b', '#d62828'], pirate: ['#6fb4ff', '#2b7fe0', '#1d5fb0'], chef: ['#ffc06b', '#ff9600', '#d97a00'] };
+const GOLD = ['#ffe680', '#ffc800', '#e5a900'];
 function Shop({ pw }) {
   const { t } = useLang();
   const { state, update } = pw;
@@ -309,52 +321,64 @@ function Shop({ pw }) {
   };
   return (
     <>
-      <div style={{ fontSize: 13, color: '#a3a3b3', marginTop: 2 }}>{t('pw.shop.today')}</div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, marginTop: 10 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10, marginTop: 8 }}>
+        <div style={{ fontSize: 17, fontWeight: 900 }}>{t('pw.shop.title')}</div>
+        <div style={{ fontSize: 12, fontWeight: 800, color: '#ff9600', whiteSpace: 'nowrap' }}>⏱ {t('pw.resetsIn', { n: hoursToMidnight() })}</div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 12, marginTop: 12 }}>
         {offers.map((o) => {
           const own = state.outfits.owned.includes(o.id);
           const full = OUTFIT_BY_ID[o.id].price;
           return (
-            <div key={o.id} style={{ borderRadius: 18, padding: 12, background: 'rgba(255,255,255,.035)', border: o.deal ? '1.5px solid rgba(245,165,36,.6)' : '1px solid rgba(255,255,255,.07)', position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              {o.deal && <span style={{ position: 'absolute', top: 8, right: 8, fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 99, background: '#f5a524', color: '#2a1300' }}>−50%</span>}
-              <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#c9d8f5', display: 'grid', placeItems: 'center', marginTop: 4 }}><OutfitPic id={o.id} size={54} /></div>
-              <div style={{ fontSize: 13, fontWeight: 700, marginTop: 6, textAlign: 'center' }}>{t('pw.outfit.' + o.id)}</div>
-              <div style={{ fontSize: 11, color: '#8a8a99', marginTop: 2 }}>{t('pw.slot.' + OUTFIT_BY_ID[o.id].slot)}</div>
-              <Button
-                ghost={own} disabled={own || state.coins < o.price} style={{ height: 36, marginTop: 10, alignSelf: 'stretch', fontSize: 13 }}
-                onClick={() => buy((s) => buyOutfit(s, today, o.id), t('pw.shop.got', { name: t('pw.outfit.' + o.id) }))}
-              >
-                {own ? t('pw.owned') : <>{o.deal && <s style={{ opacity: 0.6, fontWeight: 600 }}>{full}</s>} <CoinIcon size={14} /> {o.price}</>}
-              </Button>
+            <div key={o.id} style={{ position: 'relative', borderRadius: 20, padding: '12px 10px', marginBottom: 4, background: '#17141f', border: o.deal ? '2px solid #ff4b4b' : '2px solid rgba(255,255,255,.06)', boxShadow: o.deal ? '0 4px 0 #ea2b2b' : '0 4px 0 #0f0e17', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+              {o.deal && <span style={{ position: 'absolute', top: -11, right: 10, fontSize: 11, fontWeight: 900, padding: '3px 8px', borderRadius: 8, background: '#ff4b4b', boxShadow: '0 2px 0 #ea2b2b', color: '#fff' }}>−50%</span>}
+              <div style={{ width: 78, height: 78, borderRadius: 22, background: o.deal ? '#ffe3e3' : '#ddeeff', display: 'grid', placeItems: 'center' }}><OutfitPic id={o.id} size={58} /></div>
+              <div style={{ fontSize: 13.5, fontWeight: 900, marginTop: 6, textAlign: 'center' }}>{t('pw.outfit.' + o.id)}</div>
+              <div style={{ fontSize: 11, color: '#8a8a99', marginTop: 1 }}>{t('pw.slot.' + OUTFIT_BY_ID[o.id].slot)}</div>
+              <div style={{ alignSelf: 'stretch', marginTop: 10 }}>
+                {own
+                  ? <div style={{ height: 40, borderRadius: 14, display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 900, color: '#58cc02', background: 'rgba(88,204,2,.1)' }}>✓ {t('pw.owned')}</div>
+                  : <Chunky disabled={state.coins < o.price} style={{ height: 40, fontSize: 14, padding: 0, gap: 5 }} onClick={() => buy((s) => buyOutfit(s, today, o.id), t('pw.shop.got', { name: t('pw.outfit.' + o.id) }))}>{o.deal && <s style={{ opacity: 0.7 }}>{full}</s>}<CoinIcon size={15} />{o.price}</Chunky>}
+              </div>
             </div>
           );
         })}
       </div>
       <OutfitSets state={state} today={today} buy={buy} update={update} />
-      <Card title={t('pw.chests')} style={{ marginTop: 16 }}>
-        {['small', 'silver'].map((type, i) => (
-          <div key={type} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 0', borderTop: i ? '1px solid rgba(255,255,255,.06)' : 'none' }}>
-            <ChestIcon type={type} size={44} />
-            <div style={{ flex: 1, fontSize: 14, fontWeight: 700 }}>{t('pw.chest.' + type)}</div>
-            <Button disabled={state.coins < CHEST_PRICE[type]} style={{ height: 36, fontSize: 13 }} onClick={() => buy((s) => buyChest(s, type), t('pw.shop.gotChest'))}><CoinIcon size={14} /> {CHEST_PRICE[type]}</Button>
-          </div>
-        ))}
-      </Card>
-      {msg && <div style={{ marginTop: 12, fontSize: 13, color: '#c9baff', textAlign: 'center' }}>{msg}</div>}
+      <div style={{ fontSize: 17, fontWeight: 900, marginTop: 22 }}>{t('pw.chests')}</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 10 }}>
+        {['small', 'silver'].map((type) => {
+          const [, base, shade] = CHEST_BRIGHT[type];
+          return (
+            <div key={type} style={{ borderRadius: 22, padding: 12, marginBottom: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', background: `linear-gradient(160deg, ${base}, ${shade})`, boxShadow: `0 5px 0 ${shade}` }}>
+              <ChestIcon type={type} size={88} />
+              <div style={{ fontSize: 13.5, fontWeight: 900, color: '#fff', marginTop: 4 }}>{t('pw.chest.' + type)}</div>
+              <div style={{ alignSelf: 'stretch', marginTop: 8 }}>
+                <Chunky pal={['#fff', '#fff', 'rgba(0,0,0,.2)']} text={shade} disabled={state.coins < CHEST_PRICE[type]} style={{ height: 40, fontSize: 14, padding: 0, gap: 5 }} onClick={() => buy((s) => buyChest(s, type), t('pw.shop.gotChest'))}><CoinIcon size={15} />{CHEST_PRICE[type]}</Chunky>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {msg && <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700, color: '#c9baff', textAlign: 'center' }}>{msg}</div>}
       <div style={{ fontSize: 11.5, color: '#77778a', textAlign: 'center', marginTop: 16, lineHeight: 1.45 }}>{t('pw.shop.note')}</div>
     </>
   );
 }
 
-// Full outfit sets: the favourite dog wearing it, its parts (buy one by
-// one) and the whole set for 25% less; once owned, put it all on at once.
+// Full outfit sets, each on its own colour: the favourite dog wearing it,
+// its parts (buy one by one) and the whole set for 25% less; once owned,
+// put it all on at once.
 function OutfitSets({ state, today, buy, update }) {
   const { t } = useLang();
   const fav = state.favorite && state.dogs[state.favorite] ? state.favorite : Object.keys(state.dogs)[0];
   const wearingSet = fullSetOn(state, fav);
   return (
     <>
-      <div style={{ fontSize: 15, fontWeight: 750, marginTop: 20 }}>{t('pw.outfitSets')}</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 22 }}>
+        <span style={{ fontSize: 17, fontWeight: 900 }}>{t('pw.outfitSets')}</span>
+        <span style={{ fontSize: 11, fontWeight: 900, padding: '3px 7px', borderRadius: 7, background: '#ff9600', boxShadow: '0 2px 0 #e08500', color: '#fff' }}>−25%</span>
+      </div>
       <div style={{ fontSize: 12.5, color: '#a3a3b3', marginTop: 4, lineHeight: 1.45 }}>{t('pw.outfitSetsSub')}</div>
       {OUTFIT_SETS.map((set) => {
         const owned = set.parts.filter((p) => state.outfits.owned.includes(p));
@@ -362,39 +386,39 @@ function OutfitSets({ state, today, buy, update }) {
         const price = setPrice(state, set.id);
         const full = set.parts.filter((p) => !owned.includes(p)).reduce((a, p) => a + OUTFIT_BY_ID[p].price, 0);
         const worn = Object.fromEntries(set.parts.map((p) => [OUTFIT_BY_ID[p].slot, p]));
+        const [light, base, shade] = SET_PAL[set.id] || SET_PAL.wizard;
         return (
-          <div key={set.id} style={{ ...CARD, marginTop: 10, display: 'flex', gap: 12, alignItems: 'center' }}>
-            <div style={{ width: 96, height: 96, borderRadius: 16, background: '#c9d8f5', display: 'grid', placeItems: 'center', flex: 'none' }}>
-              <DogThumb dogId={fav} worn={worn} size={90} />
+          <div key={set.id} style={{ marginTop: 12, marginBottom: 5, borderRadius: 22, padding: 12, display: 'flex', gap: 12, alignItems: 'center', color: '#fff', background: `linear-gradient(160deg, ${light}, ${base} 55%, ${shade})`, boxShadow: `0 5px 0 ${shade}` }}>
+            <div style={{ width: 96, height: 96, borderRadius: 18, background: 'rgba(255,255,255,.2)', display: 'grid', placeItems: 'center', flex: 'none' }}>
+              <DogThumb dogId={fav} worn={worn} size={92} />
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 15, fontWeight: 800 }}>{t('pw.set.' + set.id)}</span>
-                {!all && <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 7px', borderRadius: 99, background: '#f5a524', color: '#2a1300' }}>−25%</span>}
-              </div>
-              <div style={{ display: 'flex', gap: 6, marginTop: 8 }}>
+              <div style={{ fontSize: 16, fontWeight: 900 }}>{t('pw.set.' + set.id)}</div>
+              <div style={{ display: 'flex', gap: 6, marginTop: 7 }}>
                 {set.parts.map((p) => {
                   const own = owned.includes(p);
                   return (
                     <div key={p} onClick={own ? undefined : () => buy((s) => buyOutfit(s, today, p), t('pw.shop.got', { name: t('pw.outfit.' + p) }))} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: own ? 'default' : 'pointer' }}>
-                      <div style={{ width: '100%', height: 40, borderRadius: 11, background: own ? '#c9d8f5' : 'rgba(255,255,255,.06)', display: 'grid', placeItems: 'center' }}>
-                        <OutfitPic id={p} size={34} style={own ? undefined : { filter: 'grayscale(1)', opacity: 0.45 }} />
+                      <div style={{ width: '100%', height: 40, borderRadius: 11, background: own ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.2)', display: 'grid', placeItems: 'center' }}>
+                        <OutfitPic id={p} size={32} style={own ? undefined : { opacity: 0.6 }} />
                       </div>
                       {own
-                        ? <span style={{ fontSize: 10.5, fontWeight: 800, color: '#35d07f' }}>✓</span>
-                        : <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10.5, fontWeight: 800, color: '#ffd27a' }}><CoinIcon size={11} />{OUTFIT_BY_ID[p].price}</span>}
+                        ? <span style={{ fontSize: 10.5, fontWeight: 900 }}>✓</span>
+                        : <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 10.5, fontWeight: 900 }}><CoinIcon size={11} />{OUTFIT_BY_ID[p].price}</span>}
                     </div>
                   );
                 })}
               </div>
-              {!all && (
-                <Button disabled={state.coins < price} style={{ height: 36, marginTop: 8, fontSize: 13 }} onClick={() => buy((s) => buySet(s, set.id), t('pw.shop.got', { name: t('pw.set.' + set.id) }))}>
-                  {t('pw.buySet')} · <s style={{ opacity: 0.6, fontWeight: 600 }}>{full}</s> <CoinIcon size={14} /> {price}
-                </Button>
-              )}
-              {all && (wearingSet === set.id
-                ? <div style={{ height: 36, marginTop: 8, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, color: '#7fe3ad', background: 'rgba(53,208,127,.1)', border: '1px solid rgba(53,208,127,.35)' }}>✓ {t('pw.wearing')}</div>
-                : <Button ghost style={{ height: 36, marginTop: 8, fontSize: 13 }} onClick={() => update((s) => wearSet(s, fav, set.id))}>{t('pw.wearSet')}</Button>)}
+              <div style={{ marginTop: 8 }}>
+                {!all && (
+                  <Chunky pal={GOLD} text="#5a3d00" disabled={state.coins < price} style={{ height: 38, fontSize: 12.5, padding: '0 8px', gap: 5, letterSpacing: '.03em' }} onClick={() => buy((s) => buySet(s, set.id), t('pw.shop.got', { name: t('pw.set.' + set.id) }))}>
+                    {t('pw.buySet')} · <s style={{ opacity: 0.6 }}>{full}</s> <CoinIcon size={14} /> {price}
+                  </Chunky>
+                )}
+                {all && (wearingSet === set.id
+                  ? <div style={{ height: 38, borderRadius: 14, display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 900, background: 'rgba(255,255,255,.22)' }}>✓ {t('pw.wearing')}</div>
+                  : <Chunky pal={['#fff', '#fff', 'rgba(0,0,0,.2)']} text={shade} style={{ height: 38, fontSize: 13 }} onClick={() => update((s) => wearSet(s, fav, set.id))}>{t('pw.wearSet')}</Chunky>)}
+              </div>
             </div>
           </div>
         );
@@ -403,14 +427,35 @@ function OutfitSets({ state, today, buy, update }) {
   );
 }
 
-function Friends() {
+// ---------- Friends: coming soon ----------
+function Friends({ state }) {
   const { t } = useLang();
+  const fav = state.favorite && state.dogs[state.favorite] ? state.favorite : 'pug-fawn';
+  const others = Object.keys(state.dogs).filter((id) => id !== fav && DOG_BY_ID[id]);
+  const left = others[0] || 'corgi-red';
+  const right = others[1] || 'husky-grey';
+  const rows = [['🤝', 'pw.friends.f1', ['#7fd6ff', '#1cb0f6', '#1899d6']], ['🏆', 'pw.friends.f2', GOLD], ['🖐️', 'pw.friends.f3', ['#ffc06b', '#ff9600', '#e08500']]];
   return (
-    <div style={{ textAlign: 'center', padding: '40px 12px 0' }}>
-      <div style={{ fontSize: 52 }}>👥</div>
-      <div style={{ fontSize: 20, fontWeight: 800, marginTop: 12 }}>{t('pw.friends.title')}</div>
-      <div style={{ fontSize: 13.5, color: '#a3a3b3', marginTop: 8, lineHeight: 1.5 }}>{t('pw.friends.sub')}</div>
-      <div style={{ display: 'inline-block', marginTop: 18, fontSize: 11, fontWeight: 800, letterSpacing: '.08em', padding: '5px 12px', borderRadius: 99, background: 'rgba(139,109,255,.15)', color: '#c9baff' }}>{t('pw.soon')}</div>
-    </div>
+    <>
+      <div style={{ position: 'relative', height: 230, marginTop: 14, marginBottom: 5, borderRadius: 28, overflow: 'hidden', background: 'radial-gradient(circle at 50% 40%, #9be35a 0, #58cc02 50%, #46a302 100%)', boxShadow: '0 5px 0 #3e8f00' }}>
+        {[[8, 14], [88, 12], [20, 78], [80, 74]].map(([x, y], i) => <span key={i} style={{ position: 'absolute', left: x + '%', top: y + '%', color: '#fff', opacity: 0.75 }}>✦</span>)}
+        <div style={{ position: 'absolute', left: 12, bottom: 10 }}><DogThumb dogId={left} worn={state.outfits.worn[left]} size={112} /></div>
+        <div style={{ position: 'absolute', left: '50%', bottom: 14, marginLeft: -76 }}><DogThumb dogId={fav} worn={state.outfits.worn[fav]} size={152} /></div>
+        <div style={{ position: 'absolute', right: 12, bottom: 10 }}><DogThumb dogId={right} worn={state.outfits.worn[right]} size={112} /></div>
+      </div>
+      <div style={{ textAlign: 'center', marginTop: 16 }}>
+        <div style={{ fontSize: 23, fontWeight: 900 }}>{t('pw.friends.head')}</div>
+        <div style={{ display: 'inline-block', marginTop: 8, fontSize: 11.5, fontWeight: 900, letterSpacing: '.1em', color: '#fff', padding: '5px 12px', borderRadius: 10, background: '#ce82ff', boxShadow: '0 3px 0 #a568cc' }}>{t('pw.soon').toUpperCase()}</div>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 18 }}>
+        {rows.map(([e, k, pal]) => (
+          <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 14px', borderRadius: 18, marginBottom: 4, background: '#17141f', boxShadow: '0 4px 0 #0f0e17' }}>
+            <div style={{ width: 42, height: 42, borderRadius: 14, flex: 'none', display: 'grid', placeItems: 'center', fontSize: 20, background: pal[1], boxShadow: `0 3px 0 ${pal[2]}` }}>{e}</div>
+            <div style={{ fontSize: 14.5, fontWeight: 800 }}>{t(k)}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: 12.5, color: '#8a8a99', textAlign: 'center', marginTop: 12, lineHeight: 1.5 }}>{t('pw.friends.sub')}</div>
+    </>
   );
 }

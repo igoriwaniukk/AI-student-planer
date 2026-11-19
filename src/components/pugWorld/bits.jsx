@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { RARITY_COLOR } from '../../lib/pugWorld/catalog.js';
 import { MAX_LEVEL } from '../../lib/pugWorld/logic.js';
 import { useLang } from '../../lib/useLang';
@@ -77,10 +78,30 @@ export function TopBar({ title, onBack, right, back = '✕' }) {
   );
 }
 
+// Your coins; when they go up, the number counts up and the pill bumps.
 export function CoinPill({ n }) {
+  const [shown, setShown] = useState(n);
+  const [bump, setBump] = useState(0);
+  const from = useRef(n);
+  useEffect(() => {
+    const start = from.current;
+    from.current = n;
+    if (n <= start) { const id = requestAnimationFrame(() => setShown(n)); return () => cancelAnimationFrame(id); }
+    const t0 = performance.now() + 650; // after the flying coins arrive
+    let raf;
+    const step = (now) => {
+      const k = Math.min(1, Math.max(0, (now - t0) / 600));
+      setShown(Math.round(start + (n - start) * k));
+      if (k === 0) setBump(0);
+      if (k > 0 && k < 1) setBump(1);
+      if (k < 1) raf = requestAnimationFrame(step); else setBump(0);
+    };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [n]);
   return (
-    <div style={{ height: 32, padding: '0 12px', borderRadius: 99, background: 'rgba(245,165,36,.12)', border: '1px solid rgba(245,165,36,.35)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 800, color: '#ffd27a', flex: 'none' }}>
-      <CoinIcon size={17} />{n}
+    <div style={{ height: 32, padding: '0 12px', borderRadius: 99, background: 'rgba(245,165,36,.12)', border: '1px solid rgba(245,165,36,.35)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 800, color: '#ffd27a', flex: 'none', transform: bump ? 'scale(1.12)' : 'none', transition: 'transform .15s ease' }}>
+      <CoinIcon size={17} />{shown}
     </div>
   );
 }
@@ -120,6 +141,28 @@ export function Chunky({ children, onClick, pal = GREEN, text = '#fff', disabled
       }}
     >
       {children}
+    </div>
+  );
+}
+
+// The big dog's stage in its rarity's bright colour, with a yellow Trick
+// button. `onTap`: tapping the stage (the dog jumps).
+export function ColorStage({ rarity, onTap, onTrick, height = 300, children }) {
+  const { t } = useLang();
+  const [light, base, shade] = RARITY_BRIGHT[rarity] || RARITY_BRIGHT.common;
+  return (
+    <div onClick={onTap} style={{ position: 'relative', height, borderRadius: 28, overflow: 'hidden', cursor: onTap ? 'pointer' : 'default', background: `radial-gradient(circle at 50% 46%, ${light} 0, ${base} 48%, ${shade} 100%)`, boxShadow: `0 5px 0 ${shade}`, marginBottom: 5 }}>
+      {[[8, 12], [86, 18], [14, 76], [84, 72], [48, 7]].map(([x, y], i) => (
+        <span key={i} style={{ position: 'absolute', left: x + '%', top: y + '%', color: '#fff', fontSize: 14, opacity: 0.75 }}>✦</span>
+      ))}
+      <div style={{ position: 'absolute', left: '50%', bottom: 22, width: 190, height: 22, marginLeft: -95, borderRadius: '50%', background: 'rgba(0,0,0,.16)' }} />
+      <div style={{ position: 'absolute', inset: '6px 40px 8px' }}>{children}</div>
+      {onTrick && (
+        <div onClick={(e) => { e.stopPropagation(); onTrick(); }} style={{ position: 'absolute', right: 14, bottom: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#ffc800', boxShadow: '0 4px 0 #e5a900', display: 'grid', placeItems: 'center' }}><SparkleIcon size={24} /></div>
+          <span style={{ fontSize: 11, fontWeight: 900, color: '#fff', textShadow: '0 1px 2px rgba(0,0,0,.3)' }}>{t('pw.trick')}</span>
+        </div>
+      )}
     </div>
   );
 }

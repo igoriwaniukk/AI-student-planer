@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useLang } from '../../lib/useLang';
-import { DOG_BY_ID, RARITY_COLOR } from '../../lib/pugWorld/catalog.js';
+import { DOG_BY_ID } from '../../lib/pugWorld/catalog.js';
 import { LEVEL_COPIES, MAX_LEVEL, dogPower, dogPerk, bumpMission, PLACES, DOG_MAX_PLACES, PLACE_MAX_DOGS, placesOf, placeHasRoom, togglePlace } from '../../lib/pugWorld/logic.js';
 import Dog2D from './Dog2D';
 import Wardrobe from './Wardrobe';
 import { CoinIcon } from './icons';
 import { dogName } from './names';
-import { RarityPill, Stars, Button, TopBar, Stage, TrickButton } from './bits';
-import { CARD, PURPLE } from './theme';
+import { RarityPill, Stars, TopBar, Chunky, ColorStage } from './bits';
+import { ThickBar } from './missionBits';
+import { CARD } from './theme';
 
 // One dog up close: tap it to jump, a trick, outfits, set as favourite, its level
 // (copies towards the next star), power and perk, and which screens it lives on.
@@ -18,41 +19,42 @@ export default function DogShowcase({ pw, dogId, onClose, onShop }) {
   const have = state.dogs[dogId] || { level: 1, copies: 0 };
   const worn = state.outfits.worn[dogId] || {};
   const [trick, setTrick] = useState(0);
+  const [jump, setJump] = useState(0);
   const fav = state.favorite === dogId;
   const perk = dogPerk(dogId, have.level);
   const need = have.level < MAX_LEVEL ? LEVEL_COPIES[have.level + 1] : 0;
-  const c = RARITY_COLOR[dog.rarity];
 
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 5, background: '#08080c', display: 'flex', flexDirection: 'column', paddingTop: 'var(--top-pad)', animation: 'fadeUp .2s ease both' }}>
       <TopBar title={dogName(t, dogId)} onBack={onClose} back="‹" />
       <div style={{ flex: 1, overflowY: 'auto', padding: '0 16px calc(var(--safe-bottom) + 24px)' }}>
-        <Stage height={300} color={c}>
-          <Dog2D dogId={dogId} worn={worn} trickKey={trick} />
-          <TrickButton onClick={() => { setTrick((k) => k + 1); update((s) => bumpMission(s, 'trick')); }} />
-        </Stage>
-        <div style={{ textAlign: 'center', fontSize: 11.5, color: '#77778a', marginTop: -6 }}>{t('pw.tapHint')}</div>
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 10 }}>
-          <RarityPill rarity={dog.rarity} />
-          <Stars level={have.level} size={16} />
+        <div style={{ marginTop: 6 }}>
+          <ColorStage rarity={dog.rarity} height={280} onTap={() => setJump((k) => k + 1)} onTrick={() => { setTrick((k) => k + 1); update((s) => bumpMission(s, 'trick')); }}>
+            <Dog2D dogId={dogId} worn={worn} trickKey={trick} happyKey={jump} />
+          </ColorStage>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, marginTop: 12 }}>
+          <RarityPill rarity={dog.rarity} solid />
+          <Stars level={have.level} size={18} />
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 14 }}>
-          <Stat label={t('pw.powerLabel')} value={'⚡ ' + dogPower(dogId, have.level)} />
-          <Stat label={t('pw.level')} value={need ? `${have.copies}/${need}` : t('pw.max')} sub={need ? t('pw.toNextStar') : null} />
-          <Stat label={t('pw.perk')} value={perk ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>+{perk}% <CoinIcon size={15} /></span> : '—'} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, marginTop: 14 }}>
+          <Stat pal={['#ffc06b', '#ff9600', '#e08500']} label={t('pw.powerLabel')} value={'⚡ ' + dogPower(dogId, have.level)} />
+          <Stat pal={['#7fd6ff', '#1cb0f6', '#1899d6']} label={t('pw.level')} value={need ? `${have.copies} / ${need}` : t('pw.max')} />
+          <Stat pal={['#9be35a', '#58cc02', '#46a302']} label={t('pw.perk')} value={perk ? <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>+{perk}% <CoinIcon size={15} /></span> : '—'} />
         </div>
         {need > 0 && (
-          <div style={{ height: 5, borderRadius: 9, background: 'rgba(255,255,255,.07)', marginTop: 10, overflow: 'hidden' }}>
-            <div style={{ width: (have.copies / need) * 100 + '%', height: '100%', background: PURPLE }} />
+          <div style={{ marginTop: 14 }}>
+            <div style={{ fontSize: 12, fontWeight: 800, color: '#b9b9c8', marginBottom: 6 }}>{t('pw.res.copyDetail', { n: have.copies, total: need })}</div>
+            <ThickBar pct={(have.copies / need) * 100} height={14} />
           </div>
         )}
 
-        <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
+        <div style={{ marginTop: 18 }}>
           {fav ? (
-            <div style={{ flex: 1, height: 46, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14.5, fontWeight: 700, color: '#ffd27a', background: 'rgba(245,165,36,.1)', border: '1px solid rgba(245,165,36,.35)' }}>★ {t('pw.isFavorite')}</div>
+            <div style={{ height: 50, borderRadius: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 900, letterSpacing: '.04em', color: '#ffd84d', background: 'rgba(255,200,0,.12)', border: '2px solid rgba(255,200,0,.5)' }}>★ {t('pw.isFavorite')}</div>
           ) : (
-            <Button style={{ flex: 1 }} onClick={() => update((s) => ({ ...s, favorite: dogId }))}>☆ {t('pw.setFavorite')}</Button>
+            <Chunky pal={['#ffe680', '#ffc800', '#e5a900']} text="#5a3d00" onClick={() => update((s) => ({ ...s, favorite: dogId }))}>☆ {t('pw.setFavorite')}</Chunky>
           )}
         </div>
 
@@ -95,12 +97,12 @@ export function Places({ state, dogId, update }) {
             <div
               key={p}
               onClick={locked || blocked ? undefined : () => update((s) => togglePlace(s, dogId, p === 'none' ? null : p))}
-              style={{ position: 'relative', height: 76, borderRadius: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: locked || blocked ? 'default' : 'pointer', background: on ? 'rgba(139,109,255,.16)' : 'rgba(255,255,255,.04)', border: `1.5px solid ${on ? '#8b6dff' : 'rgba(255,255,255,.06)'}`, opacity: blocked ? 0.4 : 1 }}
+              style={{ position: 'relative', height: 76, borderRadius: 16, marginBottom: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, cursor: locked || blocked ? 'default' : 'pointer', ...(on ? { background: '#1cb0f6', boxShadow: '0 4px 0 #1899d6' } : { background: '#1f1c2b', boxShadow: '0 4px 0 #0f0e17' }), opacity: blocked ? 0.4 : 1 }}
             >
-              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">{PLACE_ICON[p](on ? '#c9baff' : '#8a8a99')}</svg>
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none">{PLACE_ICON[p](on ? '#fff' : '#8a8a99')}</svg>
               <span style={{ fontSize: 12, fontWeight: 750, color: on ? '#fff' : '#b9b9c8', textAlign: 'center', lineHeight: 1.15, padding: '0 4px' }}>{t('pw.place.' + p)}</span>
               {full && <span style={{ position: 'absolute', top: 5, right: 7, fontSize: 9.5, fontWeight: 800, color: '#8a8a99' }}>{t('pw.live.full')}</span>}
-              {on && p !== 'none' && <span style={{ position: 'absolute', top: 6, right: 7, width: 17, height: 17, borderRadius: '50%', background: '#8b6dff', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 900 }}>✓</span>}
+              {on && p !== 'none' && <span style={{ position: 'absolute', top: 6, right: 7, width: 17, height: 17, borderRadius: '50%', background: '#fff', color: '#1899d6', display: 'grid', placeItems: 'center', fontSize: 10, fontWeight: 900 }}>✓</span>}
             </div>
           );
         })}
@@ -110,12 +112,11 @@ export function Places({ state, dogId, update }) {
   );
 }
 
-function Stat({ label, value, sub }) {
+function Stat({ label, value, pal }) {
   return (
-    <div style={{ ...CARD, padding: '10px 8px', textAlign: 'center' }}>
-      <div style={{ fontSize: 11, color: '#8a8a99', fontWeight: 650 }}>{label}</div>
-      <div style={{ fontSize: 15, fontWeight: 800, marginTop: 4 }}>{value}</div>
-      {sub && <div style={{ fontSize: 10, color: '#77778a', marginTop: 2 }}>{sub}</div>}
+    <div style={{ borderRadius: 18, padding: '10px 6px 11px', textAlign: 'center', color: '#fff', background: `linear-gradient(160deg, ${pal[1]}, ${pal[2]})`, boxShadow: `0 4px 0 ${pal[2]}`, marginBottom: 4 }}>
+      <div style={{ fontSize: 11.5, fontWeight: 900, opacity: 0.92 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 900, marginTop: 3 }}>{value}</div>
     </div>
   );
 }
