@@ -112,7 +112,8 @@ export function initialState(defaults, activities, persisted) {
     prepRationale: null,
     // "Extra note for the planner" — sent to the AI with this plan only.
     planNote: '',
-    energy: defaults?.energy || 'Normalna',
+    // Energy isn't asked any more: plans always assume a normal day.
+    energy: 'Normalna',
     pref: defaults?.pref || 'Wolny wieczór',
     // What the student does (onboarding / Profile "I am") — passed along to
     // the AI plan/rescue requests. Their own note travels in context.aboutMe
@@ -156,7 +157,7 @@ export function initialState(defaults, activities, persisted) {
     teToast: false,
 
     reasons: ['Plan się opóźnił'],
-    rescueEnergy: 'Niska',
+    rescueEnergy: 'Normalna',
     rescueTime: '1 godz. 30 min',
     rescueMoved: false,
     rescueFailed: false,
@@ -326,7 +327,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileKey]);
   // "What Pulgo knows about you" (Profile), sent with every AI request.
-  const aboutMe = aboutMeForAI({ activities, defaults, energy: state.energy, recurringActivities });
+  const aboutMe = aboutMeForAI({ activities, defaults, recurringActivities });
 
   useEffect(() => () => clearInterval(timerRef.current), []);
 

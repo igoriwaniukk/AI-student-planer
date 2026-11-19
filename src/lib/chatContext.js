@@ -43,7 +43,6 @@ export function buildChatContext({ state, weeklyCapacity, profileDefaults, study
     todaySessions,
     weeklyCapacityMinutes: weeklyCapacity,
     weekGoalMinutes,
-    energy: state.energy,
     streak: computeStreak(studyHistory || {}),
     studyTime: profileDefaults?.studyTime,
     prioritySubjects: profileDefaults?.prioritySubjects || [],

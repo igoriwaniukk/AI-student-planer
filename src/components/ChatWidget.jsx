@@ -119,16 +119,6 @@ function describeAction(action, planner, deps, t) {
       },
     };
   }
-  if (name === 'log_energy') {
-    return {
-      summary: t('chat.actionLogEnergy', { level: subj(args.level) }),
-      confirmedSummary: t('chat.actionLogEnergyDone', { level: subj(args.level) }),
-      run: () => {
-        planner.update({ energy: args.level });
-        deps.logEnergy(args.level);
-      },
-    };
-  }
   if (name === 'add_recurring_activity') {
     return {
       summary: t('chat.actionAddRecurring', { name: args.name, day: day(args.day), start: args.start, min: args.durationMinutes }),
@@ -303,7 +293,7 @@ function ReportSheet({ onPick, onClose }) {
   );
 }
 
-export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, studyHistory, studentName, logEnergy, recurringActivities, setRecurringActivities, raised = false }) {
+export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, studyHistory, studentName, recurringActivities, setRecurringActivities, raised = false }) {
   const { t } = useLang();
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState('');
@@ -311,7 +301,7 @@ export default function ChatWidget({ planner, weeklyCapacity, profileDefaults, s
   const [reporting, setReporting] = useState(null);
   const bottomRef = useRef(null);
   const scrollRef = useRef(null);
-  const deps = { logEnergy, recurringActivities, setRecurringActivities };
+  const deps = { recurringActivities, setRecurringActivities };
   const area = useVisibleArea(open);
   // Typing in the message box means the keyboard is up. (Inside the iPhone
   // app the page itself shrinks with the keyboard, so sizes alone can't

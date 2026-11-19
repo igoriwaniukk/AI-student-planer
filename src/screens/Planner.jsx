@@ -2,7 +2,7 @@ import { useState } from 'react';
 import ScreenPets from '../components/pugWorld/ScreenPets';
 import { durOf, hm, weekdayDateLabel, fmt, freeWindows, taskDueOnDay, isTaskOn, plannedElsewhere } from '../lib/plannerLogic';
 import { iconForTask, iconForActivity } from '../lib/taskAuto';
-import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
+import { BackButton, StickyFooter, PrimaryButton, Chip } from '../components/ui';
 import WheelTimePicker from '../components/WheelTimePicker';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
@@ -103,9 +103,6 @@ export default function Planner({ planner, pugWorld = null }) {
           onClick={() => (b.kind === 'todo' && b.taskId ? openTaskEdit(b.taskId) : openWeekly())}
         />
       ))}
-      <SettingRow icon="⚡" label={t('planner.energy')} value={t(VALUE_KEY[state.energy]) || state.energy} open={open === 'energy'} onClick={() => toggle('energy')}>
-        <EnergyPicker value={state.energy} onChange={(v) => update({ energy: v })} />
-      </SettingRow>
       <SettingRow icon="⚙️" label={t('addTask.more')} value="" open={open === 'more'} onClick={() => toggle('more')}>
         <div style={{ fontSize: 13.5, fontWeight: 700, marginBottom: 10 }}>{t('planner.prefQ')}</div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
