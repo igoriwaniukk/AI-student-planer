@@ -5,7 +5,7 @@ import { aboutMeFacts, ABOUT_NOTE_MAX } from '../lib/aboutMe';
 import { VALUE_KEY, getCurrentLang, localeOf } from '../lib/i18n';
 import { useLang } from '../lib/useLang';
 import { resizeImageToDataURL } from '../lib/image';
-import { Chip, EnergyPicker, BottomSheet } from '../components/ui';
+import { Chip, BottomSheet } from '../components/ui';
 import { PugImg } from '../components/PugMascot';
 import { usePremium, openPaywall, MANAGE_SUBSCRIPTION_URL } from '../lib/premium';
 import { useLocalStorage, KEYS } from '../lib/store';
@@ -236,7 +236,6 @@ function RhythmList({ profileDefaults, setProfileDefaults, activities, setActivi
   const subjects = d.prioritySubjects || [];
   const iam = activities?.selected || [];
   const rows = [
-    { key: 'energy', icon: '⚡', bg: 'rgba(245,165,36,.18)', title: t('profile.energyLabel'), value: label(planner.state.energy) },
     { key: 'studyTime', icon: '🌙', bg: 'rgba(139,109,255,.2)', title: t('profile.bestStudyTime'), value: d.studyTime ? label(d.studyTime) : '' },
     { key: 'sleep', icon: '😴', bg: 'rgba(46,230,197,.16)', title: t('profile.sleep'), value: d.bedtime && d.wake ? d.bedtime + '–' + d.wake : '' },
     { key: 'pref', icon: '🧘', bg: 'rgba(53,208,127,.16)', title: t('profile.planningStyle'), value: d.pref ? label(d.pref) : '' },
@@ -257,7 +256,6 @@ function RhythmList({ profileDefaults, setProfileDefaults, activities, setActivi
       </div>
       {current && (
         <EditSheet title={current.title} onClose={() => setOpen(null)}>
-          {open === 'energy' && <EnergyPicker value={planner.state.energy} onChange={(v) => { planner.update({ energy: v }); set('energy', v); }} emoji />}
           {open === 'studyTime' && chips(STUDY_TIME_OPTIONS, (o) => d.studyTime === o, (o) => set('studyTime', o))}
           {open === 'sleep' && (
             <div style={{ display: 'flex', gap: 12 }}>
@@ -335,7 +333,7 @@ function PremiumCard({ studentName }) {
 
 export default function Profile({ studentName, setStudentName, profilePhoto, setProfilePhoto, activities, setActivities, planner, profileDefaults, setProfileDefaults, studyHistory, recurringActivities, streak }) {
   const { t } = useLang();
-  const facts = aboutMeFacts({ activities, defaults: profileDefaults, energy: planner.state.energy, recurringActivities });
+  const facts = aboutMeFacts({ activities, defaults: profileDefaults, recurringActivities });
 
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '16px 18px 120px', position: 'relative', zIndex: 1 }}>

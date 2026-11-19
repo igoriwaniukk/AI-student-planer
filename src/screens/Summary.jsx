@@ -3,7 +3,7 @@ import { HARD_OPTIONS, KNOW_OPTIONS, DAY_HARD_OPTIONS, NUM_TODAY } from '../lib/
 import { hm, pluralForm, weekdayDateLabel, daySessionBreakdown, statusOn, localDateKey, dayOpenTasks, planFor } from '../lib/plannerLogic';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
 import { iconForTask } from '../lib/taskAuto';
-import { BackButton, StickyFooter, PrimaryButton, EnergyPicker, Chip, Confetti } from '../components/ui';
+import { BackButton, StickyFooter, PrimaryButton, Chip, Confetti } from '../components/ui';
 import { Eyebrow, Check, SettingRow, ROW_LINE } from '../components/ListRows';
 import { useLang } from '../lib/useLang';
 
@@ -120,9 +120,6 @@ export default function Summary({ planner, recordStudyDay = () => {} }) {
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
           {DAY_HARD_OPTIONS.map((x) => <Chip key={x} label={t(VALUE_KEY[x]) || x} active={state.dayHard === x} onClick={() => update({ dayHard: x })} />)}
         </div>
-      </SettingRow>
-      <SettingRow icon="⚡" label={t('sum.energy')} value={t(VALUE_KEY[state.dayEnergy]) || state.dayEnergy} open={open === 'energy'} onClick={() => toggle('energy')}>
-        <EnergyPicker value={state.dayEnergy} onChange={(v) => update({ dayEnergy: v })} />
       </SettingRow>
       <SettingRow icon="📝" label={t('sum.noteRow')} value="" open={open === 'note'} onClick={() => toggle('note')}>
         <div style={{ fontSize: 13, color: '#9a9aab', marginBottom: 9 }}>{t('sum.whatBothered')}</div>

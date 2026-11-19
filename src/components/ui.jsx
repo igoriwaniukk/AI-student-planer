@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useLang } from '../lib/useLang';
-import { VALUE_KEY } from '../lib/i18n';
 import { STATUS_COLOR } from '../lib/plannerData';
 
 // Every screen wraps its own content in `position: relative; z-index: 1` —
@@ -220,54 +219,6 @@ export function Toggle({ on, onClick }) {
     >
       <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff' }} />
     </div>
-  );
-}
-
-export function EnergyPicker({ value, onChange, emoji = false }) {
-  const { t } = useLang();
-  const opts = emoji
-    ? [['Niska', '🔋'], ['Normalna', '⚡'], ['Wysoka', '🔥']]
-    : [['Niska', null], ['Normalna', null], ['Wysoka', null]];
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-      {opts.map(([name, icon]) => {
-        const on = value === name;
-        return (
-          <div
-            key={name}
-            onClick={() => onChange(name)}
-            style={{
-              position: 'relative', padding: '14px 10px', borderRadius: 16, cursor: 'pointer', textAlign: 'center',
-              background: on ? 'rgba(124,92,255,.12)' : 'rgba(255,255,255,.035)',
-              border: '1.5px solid ' + (on ? 'rgba(124,92,255,.6)' : 'rgba(255,255,255,.08)'),
-            }}
-          >
-            {icon ? (
-              <div style={{ fontSize: 20 }}>{icon}</div>
-            ) : (
-              <>
-                <div style={{ position: 'absolute', top: 8, right: 8, width: 17, height: 17, borderRadius: '50%', background: '#7c5cff', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: on ? 1 : 0 }}>
-                  <svg width="9" height="7" viewBox="0 0 10 8" fill="none"><path d="M1 4l2.8 2.8L9 1.4" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                </div>
-                <BatteryIcon level={name} />
-              </>
-            )}
-            <div style={{ fontSize: 13.5, fontWeight: 700, marginTop: icon ? 6 : 8 }}>{t(VALUE_KEY[name]) || name}</div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function BatteryIcon({ level }) {
-  const w = level === 'Niska' ? 3.4 : level === 'Normalna' ? 8.4 : 13.4;
-  return (
-    <svg width="20" height="12" viewBox="0 0 22 12" fill="none" style={{ marginBottom: 8 }}>
-      <rect x=".8" y=".8" width="17" height="10.4" rx="2.4" stroke="#c9c9d6" strokeWidth="1.2" />
-      <rect x="2.6" y="2.6" width={w} height="6.8" rx="1" fill="#c9c9d6" />
-      <path d="M19.6 4.2v3.6" stroke="#c9c9d6" strokeWidth="1.4" strokeLinecap="round" />
-    </svg>
   );
 }
 

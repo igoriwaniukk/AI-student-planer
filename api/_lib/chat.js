@@ -1,4 +1,4 @@
-import { GOALS, IMPORTANCE_OPTIONS, ENERGY_OPTIONS, RECUR_DAYS } from '../../src/lib/plannerData.js';
+import { GOALS, IMPORTANCE_OPTIONS, RECUR_DAYS } from '../../src/lib/plannerData.js';
 import { anthropic, ANTHROPIC_MODEL, anthropicErrorResponse, NO_KEY_RESPONSE } from './anthropic.js';
 import { aboutMeLines } from './context.js';
 import { langName, detectLang } from './lang.js';
@@ -63,17 +63,6 @@ export const CHAT_TOOLS = [
     },
   },
   {
-    name: 'log_energy',
-    description: 'Zapisuje aktualny poziom energii ucznia. Użyj, gdy uczeń mówi, jak się czuje/ile ma energii.',
-    input_schema: {
-      type: 'object',
-      properties: {
-        level: { type: 'string', enum: ENERGY_OPTIONS, description: 'Poziom energii ucznia.' },
-      },
-      required: ['level'],
-    },
-  },
-  {
     name: 'add_recurring_activity',
     description:
       'Dodaje cotygodniowe stałe zajęcie (np. basen, korepetycje) do planu ucznia, powtarzające się co tydzień w ten sam dzień i o tę samą godzinę.',
@@ -109,7 +98,7 @@ export function buildChatSystemPrompt(context, lang, replyLang) {
       'Nie obrażaj ucznia. Odpuść i okaż wsparcie tylko wtedy, gdy widać prawdziwy kryzys (np. myśli o zrobieniu sobie krzywdy). ' +
       'Gdy prosi, żebyś powtórzył lub napisał podany tekst, zrób to.',
     'Gdy uczeń prosi o dodanie/zmianę sprawdzianu, oznaczenie sesji jako wykonanej, przełożenie sesji na inną ' +
-      'godzinę, zapisanie poziomu energii albo dodanie cotygodniowego zajęcia — użyj odpowiedniej funkcji zamiast ' +
+      'godzinę albo dodanie cotygodniowego zajęcia — użyj odpowiedniej funkcji zamiast ' +
       'tylko opisywać to słowami. Aplikacja zawsze poprosi ucznia o potwierdzenie przed zapisaniem zmiany, więc ' +
       'możesz swobodnie proponować konkretne wartości, a nie tylko pytać co zrobić.',
   ];
@@ -135,7 +124,6 @@ export function buildChatSystemPrompt(context, lang, replyLang) {
       lines.push(`Tygodniowy limit nauki: ${context.weeklyCapacityMinutes} min, obecnie zaplanowane cele na ten tydzień: ${context.weekGoalMinutes || 0} min.`);
     }
     if (context.streak != null) lines.push(`Seria dni z rzędu z w pełni ukończonym planem: ${context.streak}.`);
-    if (context.energy) lines.push(`Aktualny poziom energii: ${context.energy}.`);
     if (context.studyTime) lines.push(`Uczeń najlepiej uczy się: ${context.studyTime}.`);
     if (context.prioritySubjects?.length) lines.push('Priorytetowe przedmioty: ' + context.prioritySubjects.join(', ') + '.');
     lines.push(...aboutMeLines(context.aboutMe));

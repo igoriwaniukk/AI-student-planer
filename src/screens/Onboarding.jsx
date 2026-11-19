@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ENERGY_OPTIONS, PREF_OPTIONS, STUDY_TIME_OPTIONS, PRIORITY_SUBJECT_OPTIONS, RECUR_DAYS, ACTIVITY_OPTIONS } from '../lib/plannerData';
+import { PREF_OPTIONS, STUDY_TIME_OPTIONS, PRIORITY_SUBJECT_OPTIONS, RECUR_DAYS, ACTIVITY_OPTIONS } from '../lib/plannerData';
 import { VALUE_KEY, DAY_KEY, LANGS, LANG_NAMES, LANG_FLAGS } from '../lib/i18n';
 import { timeStrToMinutes } from '../lib/plannerLogic';
 import { useLang } from '../lib/useLang';
@@ -87,7 +87,6 @@ export default function Onboarding({ onComplete }) {
   const [studyTime, setStudyTime] = useState('Wieczorem');
   const [bedtime, setBedtime] = useState('22:30');
   const [wake, setWake] = useState('06:30');
-  const [energy, setEnergy] = useState('Normalna');
   const [pref, setPref] = useState('Wolny wieczór');
   const [prioritySubjects, setPrioritySubjects] = useState([]);
 
@@ -121,7 +120,7 @@ export default function Onboarding({ onComplete }) {
       name: nameDraft.trim(),
       schoolHours,
       activities: { selected: selectedActivities, note: activitiesNote.trim() },
-      profile: { studyTime, bedtime, wake, energy, pref, prioritySubjects },
+      profile: { studyTime, bedtime, wake, pref, prioritySubjects },
     });
   }
 
@@ -255,13 +254,6 @@ export default function Onboarding({ onComplete }) {
           <div style={{ fontSize: 22, fontWeight: 750 }}>{t('onb.step4.title')}</div>
           <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 8 }}>
             {t('onb.step4.desc')}
-          </div>
-
-          <div style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6', marginTop: 18 }}>{t('onb.step4.energyQ')}</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
-            {ENERGY_OPTIONS.map((opt) => (
-              <Chip key={opt} label={t(VALUE_KEY[opt]) || opt} active={energy === opt} onClick={() => setEnergy(opt)} />
-            ))}
           </div>
 
           <div style={{ fontSize: 12.5, fontWeight: 650, color: '#c9c9d6', marginTop: 18 }}>{t('onb.step4.prefQ')}</div>

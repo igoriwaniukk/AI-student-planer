@@ -4,7 +4,7 @@ import { durOf, hm, fmt, rescueCandidates } from '../lib/plannerLogic';
 import { iconForTask, iconForActivity } from '../lib/taskAuto';
 import { Eyebrow, SettingRow, ROW_LINE } from '../components/ListRows';
 import { VALUE_KEY, TASK_TEXT_KEY } from '../lib/i18n';
-import { BackButton, StickyFooter, PrimaryButton, Chip, EnergyPicker } from '../components/ui';
+import { BackButton, StickyFooter, PrimaryButton, Chip } from '../components/ui';
 import { useLang } from '../lib/useLang';
 
 // The real current time, re-read every 30s — this screen is specifically
@@ -66,9 +66,6 @@ export default function Rescue({ planner }) {
             <Chip key={rt} label={t(VALUE_KEY[rt]) || rt} active={state.rescueTime === rt} onClick={() => setRescueTime(rt)} />
           ))}
         </div>
-      </SettingRow>
-      <SettingRow icon="⚡" label={t('rescue.energy')} value={t(VALUE_KEY[state.rescueEnergy]) || state.rescueEnergy} open={open === 'energy'} onClick={() => toggle('energy')}>
-        <EnergyPicker value={state.rescueEnergy} onChange={(v) => update({ rescueEnergy: v })} />
       </SettingRow>
       {constraints.blocks.map((b) => (
         <SettingRow key={b.label + b.start} icon={iconForActivity(b.label) || '📌'} label={b.label} value={'🔒 ' + fmt(b.start) + '–' + fmt(b.end)} color="#8fbaff" />
