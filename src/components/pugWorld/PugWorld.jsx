@@ -24,6 +24,7 @@ import { CHEST_BRIGHT, RARITY_BRIGHT } from './theme';
 // coins, outfits, streak freezes).
 const TABS = ['yard', 'album', 'shop', 'friends'];
 const CHEST_ORDER = ['epic', 'gold', 'silver', 'small'];
+const CARD_SLIM = { marginTop: 14, padding: '12px 16px', borderRadius: 20, background: '#151221', border: '1px solid rgba(255,255,255,.07)' };
 // Album cards: light, in the rarity's colour (the dogs are stickers).
 const TILE = { common: '#c9d8f5', rare: '#bfe0ff', epic: '#dccbff', legendary: '#ffe7a8' };
 
@@ -169,16 +170,17 @@ function MyDogs({ pw, onOpenChest, onChances, onStudy, onShop, onAlbum }) {
       <Places state={state} dogId={fav} update={update} />
       <Wardrobe state={state} dogId={fav} update={update} onShop={onShop} />
 
-      <Card style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 13, color: '#a3a3b3' }}>{t('pw.collection')}</div>
-          <div style={{ fontSize: 17, fontWeight: 800, marginTop: 3 }}>{t('pw.dogsOf', { n: owned, total: DOGS.length })}</div>
+      {/* your collection as a slim bar; tap for the Album */}
+      <div onClick={onAlbum} style={{ ...CARD_SLIM, cursor: 'pointer' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 10 }}>
+          <span style={{ fontSize: 15, fontWeight: 900 }}>🐾 {t('pw.dogsOf', { n: owned, total: DOGS.length })}</span>
+          <span style={{ fontSize: 13, fontWeight: 900, color: '#ffd84d', whiteSpace: 'nowrap' }}>⭐ {collectionScore(state)}</span>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <div style={{ fontSize: 13, color: '#a3a3b3' }}>{t('pw.score')}</div>
-          <div style={{ fontSize: 17, fontWeight: 800, marginTop: 3, color: '#c9baff' }}>{collectionScore(state)}</div>
+        <div style={{ height: 12, borderRadius: 99, background: 'rgba(255,255,255,.08)', marginTop: 9, overflow: 'hidden' }}>
+          <div style={{ width: (owned / DOGS.length) * 100 + '%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#ce82ff,#8b6dff)' }} />
         </div>
-      </Card>
+        {DOGS.length > owned && <div style={{ fontSize: 11.5, fontWeight: 800, color: '#8a8a99', marginTop: 6 }}>{t('pw.pack.hiding.' + pluralForm(DOGS.length - owned), { n: DOGS.length - owned })}</div>}
+      </div>
     </>
   );
 }

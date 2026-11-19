@@ -1296,4 +1296,8 @@ export default {
   "pw.pack.hiding.few": "あと{n}匹がかくれています — 勉強して見つけよう！",
   "pw.pack.hiding.many": "あと{n}匹がかくれています — 勉強して見つけよう！",
   "pw.pack.all": "全部の犬を見つけた！🏆",
+  "pw.dressUp": "着せかえ",
+  "pw.calDay": "7日中{n}日目",
+  "pw.today": "今日",
+  "pw.bigChest": "大きな宝箱",
 };
