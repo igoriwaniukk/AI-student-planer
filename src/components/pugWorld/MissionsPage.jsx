@@ -8,7 +8,7 @@ import { BackButton } from '../ui';
 import DogThumb from './DogThumb';
 import ChestIcon from './Chest';
 import { CoinIcon } from './icons';
-import { Card, Button } from './bits';
+import { Card, Button, CoinPill } from './bits';
 import { MissionRow, ThickBar } from './missionBits';
 import { hoursToMidnight } from './missionUtil';
 
@@ -28,7 +28,10 @@ export default function MissionsPage({ pw, onBack }) {
     .sort((a, b) => RARITIES.indexOf(DOG_BY_ID[b].rarity) - RARITIES.indexOf(DOG_BY_ID[a].rarity))].filter((id) => id && DOG_BY_ID[id]);
   return (
     <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 16px calc(var(--tabbar-h) + 28px)', position: 'relative', zIndex: 1 }}>
-      <BackButton onClick={onBack} />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <BackButton onClick={onBack} />
+        <CoinPill n={state.coins} />
+      </div>
       <MonthlyHero state={state} today={today} />
 
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '24px 2px 2px' }}>

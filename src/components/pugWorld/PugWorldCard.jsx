@@ -136,7 +136,8 @@ export function SessionReward({ pw, ready }) {
 // came from on top. Waits while another chest is being opened.
 export function EarnedChest({ pw, ready }) {
   const exists = (id) => pw?.state.chests.some((c) => c.id === id);
-  const id = pw?.showingChest || (pw?.enabled && pw.started && ready && !pw.toast && !pw.busy ? pw.queue.find(exists) : null);
+  // (and after a coin animation that's playing, so they don't overlap)
+  const id = pw?.showingChest || (pw?.enabled && pw.started && ready && !pw.toast && !pw.busy && !pw.fx ? pw.queue.find(exists) : null);
   if (!id) return null;
   return <EarnedChestOpen key={id} pw={pw} id={id} />;
 }
