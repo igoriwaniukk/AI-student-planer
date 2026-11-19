@@ -33,3 +33,7 @@ export const KIND_BRIGHT = {
   coins: ['#ffe680', '#ffc800', '#e5a900'],
 };
 export const GREEN = ['#89e219', '#58cc02', '#46a302'];
+
+// When the flying coins of a reward reach the coin counter (RewardFx); the
+// counter (CoinPill) counts up then.
+export const COIN_ARRIVE_MS = 1900;

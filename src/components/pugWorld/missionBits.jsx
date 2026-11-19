@@ -25,13 +25,13 @@ export function MissionRow({ state, m, big = false }) {
   const tint = MISSION_TINT[m.id] || '#a58cff';
   const size = big ? 42 : 34;
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: big ? '13px 0' : '8px 0' }}>
+    <div data-mission-row={m.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: big ? '13px 0' : '8px 0' }}>
       <div style={{ width: size, height: size, borderRadius: 12, background: tint + '22', display: 'grid', placeItems: 'center', fontSize: big ? 20 : 16, flex: 'none' }}>{MISSION_ICON[m.id] || '⭐'}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: big ? 15 : 13.5, fontWeight: 700, marginBottom: big ? 8 : 6, color: m.done ? '#a3a3b3' : '#f4f4f7' }}>{t('pw.mission.' + m.id)}</div>
         <ThickBar pct={(have / n) * 100} done={m.done} height={big ? 20 : 16} label={(m.done ? '✓ ' : '') + have + ' / ' + n} />
       </div>
-      <span style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 800, color: m.done ? '#7fe3ad' : '#ffd27a', padding: '4px 9px', borderRadius: 99, background: m.done ? 'rgba(53,208,127,.1)' : 'rgba(245,165,36,.12)', border: `1px solid ${m.done ? 'rgba(53,208,127,.3)' : 'rgba(245,165,36,.3)'}` }}>
+      <span data-mission-chip={m.id} style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 800, color: m.done ? '#7fe3ad' : '#ffd27a', padding: '4px 9px', borderRadius: 99, background: m.done ? 'rgba(53,208,127,.1)' : 'rgba(245,165,36,.12)', border: `1px solid ${m.done ? 'rgba(53,208,127,.3)' : 'rgba(245,165,36,.3)'}` }}>
         <CoinIcon size={13} />+{MISSION_COINS}
       </span>
     </div>

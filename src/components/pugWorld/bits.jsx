@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { RARITY_COLOR } from '../../lib/pugWorld/catalog.js';
 import { MAX_LEVEL } from '../../lib/pugWorld/logic.js';
 import { useLang } from '../../lib/useLang';
-import { CARD, PURPLE, RARITY_BRIGHT, GREEN } from './theme';
+import { CARD, PURPLE, RARITY_BRIGHT, GREEN, COIN_ARRIVE_MS } from './theme';
 import { CoinIcon, SparkleIcon } from './icons';
 
 // Small shared pieces of the Pug World screens.
@@ -78,29 +78,27 @@ export function TopBar({ title, onBack, right, back = '✕' }) {
   );
 }
 
-// Your coins; when they go up, the number counts up and the pill bumps.
+// Your coins (where reward coins fly to: data-coin-target); when they go
+// up, the number counts up as the flying coins land.
 export function CoinPill({ n }) {
   const [shown, setShown] = useState(n);
-  const [bump, setBump] = useState(0);
   const from = useRef(n);
   useEffect(() => {
     const start = from.current;
     from.current = n;
     if (n <= start) { const id = requestAnimationFrame(() => setShown(n)); return () => cancelAnimationFrame(id); }
-    const t0 = performance.now() + 650; // after the flying coins arrive
+    const t0 = performance.now() + COIN_ARRIVE_MS;
     let raf;
     const step = (now) => {
-      const k = Math.min(1, Math.max(0, (now - t0) / 600));
+      const k = Math.min(1, Math.max(0, (now - t0) / 500));
       setShown(Math.round(start + (n - start) * k));
-      if (k === 0) setBump(0);
-      if (k > 0 && k < 1) setBump(1);
-      if (k < 1) raf = requestAnimationFrame(step); else setBump(0);
+      if (k < 1) raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
   }, [n]);
   return (
-    <div style={{ height: 32, padding: '0 12px', borderRadius: 99, background: 'rgba(245,165,36,.12)', border: '1px solid rgba(245,165,36,.35)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 800, color: '#ffd27a', flex: 'none', transform: bump ? 'scale(1.12)' : 'none', transition: 'transform .15s ease' }}>
+    <div data-coin-target="" style={{ height: 32, padding: '0 12px', borderRadius: 99, background: 'rgba(245,165,36,.12)', border: '1px solid rgba(245,165,36,.35)', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13.5, fontWeight: 800, color: '#ffd27a', flex: 'none' }}>
       <CoinIcon size={17} />{shown}
     </div>
   );

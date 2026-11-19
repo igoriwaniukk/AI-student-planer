@@ -133,7 +133,7 @@ export function usePugWorld({ streak, isPremium, freezeRoom = true, addFreeze, o
     const newly = prev.date === state.missions.date ? doneIds.filter((id) => !prev.done.includes(id)) : [];
     const coins = hold ? 0 : Math.max(0, gained);
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (coins > 0 || newly.length) setFx({ at: Date.now(), coins, mission: newly[0] || null });
+    if (coins > 0 || newly.length) setFx({ at: Date.now(), coins, mission: newly[0] || null, hold });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.coins, doneKey]);
 
