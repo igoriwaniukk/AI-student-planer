@@ -14,6 +14,7 @@ import DogThumb from './DogThumb';
 import ChestIcon from './Chest';
 import ChestOpen, { ChancesSheet } from './ChestOpen';
 import { ThickBar } from './missionBits';
+import ShopReveal from './ShopReveal';
 import { hoursToMidnight } from './missionUtil';
 import DogShowcase, { Places } from './DogShowcase';
 import { dogName } from './names';
@@ -374,11 +375,13 @@ function Shop({ pw }) {
   const today = localDateKey();
   const offers = shopOffers(state, today);
   const [msg, setMsg] = useState(null);
-  const buy = (fn, text) => {
+  const [reveal, setReveal] = useState(null); // what was just bought (ShopReveal); chests open by themselves
+  const buy = (fn, text, item) => {
     const next = fn(state);
     if (!next) { setMsg(t('pw.shop.notEnough')); return; }
     update(() => next);
-    setMsg(text);
+    setMsg(item ? null : text);
+    if (item) setReveal(item);
   };
   return (
     <>
@@ -399,7 +402,7 @@ function Shop({ pw }) {
               <div style={{ alignSelf: 'stretch', marginTop: 10 }}>
                 {own
                   ? <div style={{ height: 40, borderRadius: 14, display: 'grid', placeItems: 'center', fontSize: 13, fontWeight: 900, color: '#58cc02', background: 'rgba(88,204,2,.1)' }}>✓ {t('pw.owned')}</div>
-                  : <Chunky disabled={state.coins < o.price} style={{ height: 40, fontSize: 14, padding: 0, gap: 5 }} onClick={() => buy((s) => buyOutfit(s, today, o.id), t('pw.shop.got', { name: t('pw.outfit.' + o.id) }))}>{o.deal && <s style={{ opacity: 0.7 }}>{full}</s>}<CoinIcon size={15} />{o.price}</Chunky>}
+                  : <Chunky disabled={state.coins < o.price} style={{ height: 40, fontSize: 14, padding: 0, gap: 5 }} onClick={() => buy((s) => buyOutfit(s, today, o.id), t('pw.shop.got', { name: t('pw.outfit.' + o.id) }), { kind: 'outfit', id: o.id })}>{o.deal && <s style={{ opacity: 0.7 }}>{full}</s>}<CoinIcon size={15} />{o.price}</Chunky>}
               </div>
             </div>
           );
@@ -423,6 +426,7 @@ function Shop({ pw }) {
       </div>
       {msg && <div style={{ marginTop: 12, fontSize: 13, fontWeight: 700, color: '#c9baff', textAlign: 'center' }}>{msg}</div>}
       <div style={{ fontSize: 11.5, color: '#77778a', textAlign: 'center', marginTop: 16, lineHeight: 1.45 }}>{t('pw.shop.note')}</div>
+      {reveal && <ShopReveal key={reveal.kind + reveal.id} pw={pw} item={reveal} onClose={() => setReveal(null)} />}
     </>
   );
 }
@@ -459,7 +463,7 @@ function OutfitSets({ state, today, buy, update }) {
                 {set.parts.map((p) => {
                   const own = owned.includes(p);
                   return (
-                    <div key={p} onClick={own ? undefined : () => buy((s) => buyOutfit(s, today, p), t('pw.shop.got', { name: t('pw.outfit.' + p) }))} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: own ? 'default' : 'pointer' }}>
+                    <div key={p} onClick={own ? undefined : () => buy((s) => buyOutfit(s, today, p), t('pw.shop.got', { name: t('pw.outfit.' + p) }), { kind: 'outfit', id: p })} style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3, cursor: own ? 'default' : 'pointer' }}>
                       <div style={{ width: '100%', height: 40, borderRadius: 11, background: own ? 'rgba(255,255,255,.9)' : 'rgba(255,255,255,.2)', display: 'grid', placeItems: 'center' }}>
                         <OutfitPic id={p} size={32} style={own ? undefined : { opacity: 0.6 }} />
                       </div>
@@ -472,7 +476,7 @@ function OutfitSets({ state, today, buy, update }) {
               </div>
               <div style={{ marginTop: 8 }}>
                 {!all && (
-                  <Chunky pal={GOLD} text="#5a3d00" disabled={state.coins < price} style={{ height: 38, fontSize: 12.5, padding: '0 8px', gap: 5, letterSpacing: '.03em' }} onClick={() => buy((s) => buySet(s, set.id), t('pw.shop.got', { name: t('pw.set.' + set.id) }))}>
+                  <Chunky pal={GOLD} text="#5a3d00" disabled={state.coins < price} style={{ height: 38, fontSize: 12.5, padding: '0 8px', gap: 5, letterSpacing: '.03em' }} onClick={() => buy((s) => buySet(s, set.id), t('pw.shop.got', { name: t('pw.set.' + set.id) }), { kind: 'set', id: set.id })}>
                     {t('pw.buySet')} · <s style={{ opacity: 0.6 }}>{full}</s> <CoinIcon size={14} /> {price}
                   </Chunky>
                 )}
