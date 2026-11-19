@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { dogsOn } from '../../lib/pugWorld/logic.js';
+import { dogsOn, bumpMission } from '../../lib/pugWorld/logic.js';
 import { openPugWorld } from '../../lib/pugWorld/events';
 import DogThumb from './DogThumb';
 
@@ -7,7 +7,8 @@ import DogThumb from './DogThumb';
 // planner — chosen per dog in My dogs, as many as you like, see dogsOn) stand on the top edges of
 // the cards marked `data-perch`. Every 6–10 s one of them walks a little
 // along its card or hops to the card above or below — one at a time, calm.
-// Tap a dog: it jumps, then My dogs opens on it.
+// Tap a dog once: it does a trick (a flip, a spin or a double hop — counts
+// for the "trick" mission). Tap it twice quickly: My dogs opens on it.
 // `data-perch="0.55-1"` = dogs only stand on that part of the card's edge
 // (e.g. not under text that sits right above it).
 // Render it as a direct child of the screen's scrolling area (position:
@@ -17,11 +18,21 @@ const FAV_SIZE = 40;
 const EDGE = 26; // keep dogs this far from a card's rounded corners
 const SPOTS = [0.7, 0.1, 0.62, 0.3]; // where dogs first stand on their card
 
+const DOUBLE_TAP_MS = 380;
+// The tricks a dog does when tapped, in turn: a flip, a spin, a double hop.
+const TRICKS = [
+  [{ transform: 'translateY(0) rotateY(0)' }, { transform: 'translateY(-26px) rotateY(180deg)', offset: 0.45 }, { transform: 'translateY(0) rotateY(360deg)' }],
+  [{ transform: 'translateY(0) rotate(0)' }, { transform: 'translateY(-24px) rotate(-180deg)', offset: 0.45 }, { transform: 'translateY(0) rotate(-360deg)' }],
+  [{ transform: 'translateY(0)' }, { transform: 'translateY(-18px)', offset: 0.25 }, { transform: 'translateY(0) scale(1.08,.92)', offset: 0.5 }, { transform: 'translateY(-14px)', offset: 0.72 }, { transform: 'translateY(0)' }],
+];
 const reducedMotion = () => typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 export default function ScreenPets({ pw, place }) {
   const layer = useRef(null);
   const els = useRef({});
+  const trickEls = useRef({});
+  const lastTap = useRef({ id: null, t: 0 });
+  const trickN = useRef(-1);
   const [perches, setPerches] = useState([]); // [{top, x0, w}]: the edge dogs may stand on, relative to the layer
   const [spots, setSpots] = useState({}); // dogId → {p: perch index, f: 0..1 along it}
   const on = !!(pw?.enabled && pw.started);
@@ -129,10 +140,20 @@ export default function ScreenPets({ pw, place }) {
   if (!active) return null;
   const chests = pw.state.chests.length;
   const tap = (id) => {
-    els.current[id]?.animate([
-      { transform: 'translateY(0)' }, { transform: 'translateY(-18px)', offset: 0.45 }, { transform: 'translateY(0)' },
-    ], { duration: 420, easing: 'ease-out' });
-    setTimeout(() => openPugWorld({ dog: id }), 380);
+    const now = Date.now();
+    const last = lastTap.current;
+    if (last.id === id && now - last.t < DOUBLE_TAP_MS) {
+      lastTap.current = { id: null, t: 0 };
+      setTimeout(() => openPugWorld({ dog: id }), 120);
+      return;
+    }
+    lastTap.current = { id, t: now };
+    const el = trickEls.current[id];
+    if (el?.animate) {
+      const n = (trickN.current = (trickN.current + 1) % TRICKS.length);
+      el.animate(TRICKS[n], { duration: 820, easing: 'ease-out' });
+    }
+    pw.update((st) => bumpMission(st, 'trick'));
   };
 
   return (
@@ -148,10 +169,12 @@ export default function ScreenPets({ pw, place }) {
             key={id}
             ref={(el) => { if (el) els.current[id] = el; else delete els.current[id]; }}
             onClick={() => tap(id)}
-            style={{ position: 'absolute', left: pos.x - size / 2, top: pos.y - size + 3, width: size, height: size, cursor: 'pointer' }}
+            style={{ position: 'absolute', left: pos.x - size / 2, top: pos.y - size + 3, width: size, height: size, cursor: 'pointer', touchAction: 'manipulation' }}
           >
             <div style={{ position: 'absolute', left: '22%', right: '22%', bottom: 0, height: 5, borderRadius: '50%', background: 'rgba(0,0,0,.45)' }} />
-            <DogThumb dogId={id} worn={pw.state.outfits.worn[id]} size={size} style={{ position: 'relative' }} />
+            <div ref={(el) => { if (el) trickEls.current[id] = el; else delete trickEls.current[id]; }} style={{ position: 'relative', transformOrigin: '50% 70%' }}>
+              <DogThumb dogId={id} worn={pw.state.outfits.worn[id]} size={size} />
+            </div>
             {fav && chests > 0 && (
               <span style={{ position: 'absolute', top: -4, right: -6, minWidth: 16, height: 16, padding: '0 4px', borderRadius: 99, background: '#ff5f6d', border: '2px solid #08080c', display: 'grid', placeItems: 'center', fontSize: 9.5, fontWeight: 800, color: '#fff' }}>{chests}</span>
             )}
