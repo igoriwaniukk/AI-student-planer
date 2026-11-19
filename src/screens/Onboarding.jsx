@@ -31,8 +31,8 @@ const BLUE = ['#1cb0f6', '#1899d6'];
 const ORANGE = ['#ff9600', '#e08500'];
 // The onboarding's main colour [light, base, shade]: progress bar, Continue,
 // the chosen answer and the buddy's stage.
-const ACCENT = ['#9be35a', '#58cc02', '#46a302'];
-const GREEN = [ACCENT[1], ACCENT[2]];
+const ACCENT = ['#a58cff', '#7c5cff', '#5b3ee0'];
+const MAIN = [ACCENT[1], ACCENT[2]];
 
 // A thick green bar with the step number; a back arrow after the first step.
 function Progress({ step, total, onBack }) {
@@ -320,7 +320,7 @@ export default function Onboarding({ onComplete }) {
           <>
             <PugSays>{t('onb.step4.prefQ')}</PugSays>
             {PREF_OPTIONS.map((opt) => (
-              <TapCard key={opt} emoji={PREF_EMOJI[opt] || '⭐'} label={t(VALUE_KEY[opt]) || opt} sub={t(PREF_SUB[opt])} on={pref === opt} pal={GREEN} onClick={() => setPref(opt)} />
+              <TapCard key={opt} emoji={PREF_EMOJI[opt] || '⭐'} label={t(VALUE_KEY[opt]) || opt} sub={t(PREF_SUB[opt])} on={pref === opt} pal={MAIN} onClick={() => setPref(opt)} />
             ))}
           </>
         )}
@@ -353,7 +353,7 @@ export default function Onboarding({ onComplete }) {
         <button
           type="button"
           onClick={() => canGo && next()}
-          style={{ width: '100%', height: 56, border: 'none', borderRadius: 16, background: GREEN[0], boxShadow: `0 4px 0 ${GREEN[1]}`, color: '#fff', fontSize: 16, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', cursor: canGo ? 'pointer' : 'default', opacity: canGo ? 1 : 0.5, fontFamily: 'inherit' }}
+          style={{ width: '100%', height: 56, border: 'none', borderRadius: 16, background: MAIN[0], boxShadow: `0 4px 0 ${MAIN[1]}`, color: '#fff', fontSize: 16, fontWeight: 900, letterSpacing: '.06em', textTransform: 'uppercase', cursor: canGo ? 'pointer' : 'default', opacity: canGo ? 1 : 0.5, fontFamily: 'inherit' }}
         >
           {buttonLabel}
         </button>
