@@ -143,11 +143,11 @@ export function Chunky({ children, onClick, pal = GREEN, text = '#fff', disabled
   );
 }
 
-// The big dog's stage in its rarity's bright colour, with a yellow Trick
-// button. `onTap`: tapping the stage (the dog jumps).
-export function ColorStage({ rarity, onTap, onTrick, height = 300, children }) {
+// The big dog's stage in its rarity's bright colour (or `pal`), with a
+// yellow Trick button. `onTap`: tapping the stage (the dog jumps).
+export function ColorStage({ rarity, pal, onTap, onTrick, height = 300, children }) {
   const { t } = useLang();
-  const [light, base, shade] = RARITY_BRIGHT[rarity] || RARITY_BRIGHT.common;
+  const [light, base, shade] = pal || RARITY_BRIGHT[rarity] || RARITY_BRIGHT.common;
   return (
     <div onClick={onTap} style={{ position: 'relative', height, borderRadius: 28, overflow: 'hidden', cursor: onTap ? 'pointer' : 'default', background: `radial-gradient(circle at 50% 46%, ${light} 0, ${base} 48%, ${shade} 100%)`, boxShadow: `0 5px 0 ${shade}`, marginBottom: 5 }}>
       {[[8, 12], [86, 18], [14, 76], [84, 72], [48, 7]].map(([x, y], i) => (

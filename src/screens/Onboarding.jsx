@@ -29,7 +29,10 @@ const PREF_SUB = { 'Wolny wieczór': 'onb.a.prefEveningSub', 'Najpierw najtrudni
 const WEEKDAYS = RECUR_DAYS.slice(0, 5);
 const BLUE = ['#1cb0f6', '#1899d6'];
 const ORANGE = ['#ff9600', '#e08500'];
-const GREEN = ['#58cc02', '#46a302'];
+// The onboarding's main colour [light, base, shade]: progress bar, Continue,
+// the chosen answer and the buddy's stage.
+const ACCENT = ['#9be35a', '#58cc02', '#46a302'];
+const GREEN = [ACCENT[1], ACCENT[2]];
 
 // A thick green bar with the step number; a back arrow after the first step.
 function Progress({ step, total, onBack }) {
@@ -38,7 +41,7 @@ function Progress({ step, total, onBack }) {
     <div role="progressbar" aria-label={t('onb.stepOf', { step: step + 1, total })} style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
       {onBack ? <span onClick={onBack} style={{ fontSize: 24, color: '#8a8a99', cursor: 'pointer', padding: '0 4px', lineHeight: 1 }}>‹</span> : null}
       <div style={{ flex: 1, height: 14, borderRadius: 99, background: '#1f1c2b', overflow: 'hidden' }}>
-        <div style={{ position: 'relative', width: ((step + 1) / total) * 100 + '%', height: '100%', borderRadius: 99, background: 'linear-gradient(90deg,#58cc02,#89e219)', transition: 'width .3s ease' }}>
+        <div style={{ position: 'relative', width: ((step + 1) / total) * 100 + '%', height: '100%', borderRadius: 99, background: `linear-gradient(90deg, ${ACCENT[1]}, ${ACCENT[0]})`, transition: 'width .3s ease' }}>
           <div style={{ position: 'absolute', left: 8, right: 8, top: 3, height: 3, borderRadius: 9, background: 'rgba(255,255,255,.35)' }} />
         </div>
       </div>
@@ -329,7 +332,7 @@ export default function Onboarding({ onComplete }) {
               {STARTERS.map((id) => {
                 const on = starter === id;
                 return (
-                  <div key={id} onClick={() => setStarter(id)} style={{ borderRadius: 20, padding: '6px 4px 10px', textAlign: 'center', cursor: 'pointer', marginBottom: 4, ...(on ? { background: 'linear-gradient(160deg,#9be35a,#58cc02)', boxShadow: '0 4px 0 #46a302, 0 0 0 3px #08080c, 0 0 0 6px #58cc02' } : { background: '#17141f', boxShadow: '0 4px 0 #0f0e17' }) }}>
+                  <div key={id} onClick={() => setStarter(id)} style={{ borderRadius: 20, padding: '6px 4px 10px', textAlign: 'center', cursor: 'pointer', marginBottom: 4, ...(on ? { background: `linear-gradient(160deg, ${ACCENT[0]}, ${ACCENT[1]})`, boxShadow: `0 4px 0 ${ACCENT[2]}, 0 0 0 3px #08080c, 0 0 0 6px ${ACCENT[1]}` } : { background: '#17141f', boxShadow: '0 4px 0 #0f0e17' }) }}>
                     <DogThumb dogId={id} size={92} style={{ margin: '0 auto' }} />
                     <div style={{ fontSize: 12.5, fontWeight: 900 }}>{dogName(t, id)}</div>
                   </div>
@@ -337,7 +340,7 @@ export default function Onboarding({ onComplete }) {
               })}
             </div>
             <div style={{ marginTop: 16, position: 'relative' }}>
-              <ColorStage rarity="common" height={230}>
+              <ColorStage pal={ACCENT} height={230}>
                 <Dog2D key={starter} dogId={starter} />
               </ColorStage>
               <div style={{ position: 'absolute', right: 14, top: 12, padding: '5px 10px', borderRadius: 99, background: 'rgba(0,0,0,.18)', fontSize: 12, fontWeight: 900 }}>{t('onb.a.welcomeChest')}</div>
