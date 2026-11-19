@@ -57,13 +57,7 @@ export default function PugWorld({ pw, intent, onStudy, onBack }) {
             <div style={{ flex: 1, fontSize: 24, fontWeight: 800, letterSpacing: '-.02em' }}>{t('pw.title')}</div>
             <CoinPill n={state.coins} />
           </div>
-          <div style={{ display: 'flex', gap: 7, overflowX: 'auto', margin: '14px -16px 4px', padding: '0 16px 2px' }}>
-            {TABS.map((id) => (
-              <div key={id} onClick={() => setTab(id)} style={{ flex: 'none', height: 36, padding: '0 15px', borderRadius: 12, display: 'flex', alignItems: 'center', fontSize: 13.5, fontWeight: 900, cursor: 'pointer', marginBottom: 3, ...(tab === id ? { background: '#1cb0f6', boxShadow: '0 3px 0 #1899d6', color: '#fff' } : { background: '#1a1825', boxShadow: '0 3px 0 #0f0e17', color: '#b9b9c8' }) }}>
-                {t(id === 'yard' ? 'pw.tab.dog' : 'pw.tab.' + id)}
-              </div>
-            ))}
-          </div>
+          <TabBarPill tab={tab} onTab={setTab} />
           {tab === 'yard' && <MyDogs pw={pw} onOpenChest={setOpening} onChances={() => setChances(true)} onStudy={onStudy} onShop={() => setTab('shop')} onAlbum={() => setTab('album')} />}
           {tab === 'album' && <Album state={state} onShowDog={setShowDog} onChances={() => setChances(true)} />}
           {tab === 'shop' && <Shop pw={pw} />}
@@ -79,6 +73,35 @@ export default function PugWorld({ pw, intent, onStudy, onBack }) {
           </div>
         </AppShellPortal>
       )}
+    </div>
+  );
+}
+
+// The page's parts as one calm bar; a white pill slides to the open one,
+// whose icon shows in its colour (dog green, album purple, shop orange,
+// friends blue).
+const TAB_ICON = {
+  yard: (c) => <><path d="M5 5c-1.6 0-2.6 2-2.4 4.2.2 1.7 1.2 2.6 2.1 2.4L6 9.5C6.4 7.6 6 5 5 5zm14 0c1.6 0 2.6 2 2.4 4.2-.2 1.7-1.2 2.6-2.1 2.4L18 9.5C17.6 7.6 18 5 19 5z" fill={c} opacity=".75" /><path d="M12 5.5c-3.6 0-6 2.6-6 6.4 0 3.9 2.6 6.6 6 6.6s6-2.7 6-6.6c0-3.8-2.4-6.4-6-6.4z" fill={c} /><circle cx="9.6" cy="11" r="1.1" fill="#1b1530" /><circle cx="14.4" cy="11" r="1.1" fill="#1b1530" /><ellipse cx="12" cy="14.2" rx="1.6" ry="1.1" fill="#1b1530" /></>,
+  album: (c) => <><rect x="4" y="3" width="16" height="18" rx="3" fill={c} /><rect x="7" y="6" width="4.5" height="5" rx="1.2" fill="#1b1530" opacity=".55" /><rect x="12.5" y="6" width="4.5" height="5" rx="1.2" fill="#1b1530" opacity=".55" /><rect x="7" y="12.5" width="4.5" height="5" rx="1.2" fill="#1b1530" opacity=".55" /><rect x="12.5" y="12.5" width="4.5" height="5" rx="1.2" fill="#fff" opacity=".7" /></>,
+  shop: (c) => <><path d="M3.5 9.5h17l-1.4 9.2a2 2 0 0 1-2 1.8H6.9a2 2 0 0 1-2-1.8z" fill={c} /><path d="M8 9.5V8a4 4 0 0 1 8 0v1.5" stroke={c} strokeWidth="2" fill="none" strokeLinecap="round" /><circle cx="12" cy="14.5" r="2.2" fill="#1b1530" opacity=".5" /></>,
+  friends: (c) => <><circle cx="8.5" cy="8.5" r="3.3" fill={c} /><circle cx="16" cy="9.5" r="2.8" fill={c} opacity=".75" /><path d="M2.5 19c.6-3.4 3-5.4 6-5.4s5.4 2 6 5.4z" fill={c} /><path d="M13.6 14.3c.7-.4 1.5-.6 2.4-.6 2.6 0 4.6 1.8 5.1 4.9h-5.6c-.3-1.7-1-3.1-1.9-4.3z" fill={c} opacity=".75" /></>,
+};
+const TAB_COLOR = { yard: '#58cc02', album: '#ce82ff', shop: '#ff9600', friends: '#1cb0f6' };
+function TabBarPill({ tab, onTab }) {
+  const { t } = useLang();
+  const i = Math.max(0, TABS.indexOf(tab));
+  return (
+    <div style={{ position: 'relative', marginTop: 14, padding: 5, borderRadius: 18, background: '#17141f', display: 'grid', gridTemplateColumns: `repeat(${TABS.length}, 1fr)` }}>
+      <div style={{ position: 'absolute', top: 5, bottom: 5, left: `calc(5px + (100% - 10px) * ${i / TABS.length})`, width: `calc((100% - 10px) / ${TABS.length})`, borderRadius: 14, background: '#fff', boxShadow: '0 3px 0 rgba(0,0,0,.25)', transition: 'left .25s ease' }} />
+      {TABS.map((id) => {
+        const on = id === tab;
+        return (
+          <div key={id} onClick={() => onTab(id)} style={{ position: 'relative', height: 44, minWidth: 0, padding: '0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: 'pointer', fontSize: 12.5, fontWeight: 900, color: on ? '#2a2440' : '#9a9aab', transition: 'color .2s' }}>
+            <svg width="19" height="19" viewBox="0 0 24 24" style={{ flex: 'none' }}>{TAB_ICON[id](on ? TAB_COLOR[id] : '#6f6f80')}</svg>
+            <span style={{ minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t(id === 'yard' ? 'pw.tab.dog' : 'pw.tab.' + id)}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
