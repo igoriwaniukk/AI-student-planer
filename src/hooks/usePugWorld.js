@@ -118,6 +118,18 @@ export function usePugWorld({ streak, isPremium, freezeRoom = true, addFreeze, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chestKey, enabled]);
 
+  // The welcome chest (from picking your first dog) opens by itself the
+  // first time the game is open with it still waiting.
+  const welcomeDone = useRef(false);
+  useEffect(() => {
+    if (!enabled || !started || welcomeDone.current) return;
+    welcomeDone.current = true;
+    const w = state.chests.find((c) => c.from === 'welcome');
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (w) setQueue((q) => (q.includes(w.id) ? q : [w.id, ...q]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, started]);
+
   // Reward animation (RewardFx): coins gained (not while a chest is being
   // opened — it shows its own coins) and missions just finished.
   const [fx, setFx] = useState(null);
