@@ -1288,4 +1288,12 @@ export default {
   "pw.friends.f3": "Team-Missionen und High-Fives",
   "pw.shop.title": "Heutige Angebote",
   "pw.live.note2": "Setze so viele Hunde auf jeden Bildschirm, wie du willst. Dein Liebling wohnt immer auf Start.",
+  "pw.pack.label": "Dein Rudel",
+  "pw.pack.title.one": "{n} Hund – und es werden mehr!",
+  "pw.pack.title.few": "{n} Hunde – und es werden mehr!",
+  "pw.pack.title.many": "{n} Hunde – und es werden mehr!",
+  "pw.pack.hiding.one": "{n} Hund versteckt sich noch – lerne weiter, um ihn zu finden!",
+  "pw.pack.hiding.few": "{n} Hunde verstecken sich noch – lerne weiter, um sie zu finden!",
+  "pw.pack.hiding.many": "{n} Hunde verstecken sich noch – lerne weiter, um sie zu finden!",
+  "pw.pack.all": "Du hast alle Hunde gefunden! 🏆",
 };

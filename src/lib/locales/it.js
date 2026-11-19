@@ -1288,4 +1288,12 @@ export default {
   "pw.friends.f3": "Missioni di squadra e batti cinque",
   "pw.shop.title": "Offerte di oggi",
   "pw.live.note2": "Metti quanti cani vuoi in ogni schermata. Il tuo preferito vive sempre in Home.",
+  "pw.pack.label": "Il tuo branco",
+  "pw.pack.title.one": "{n} cane, e cresce!",
+  "pw.pack.title.few": "{n} cani, e cresce!",
+  "pw.pack.title.many": "{n} cani, e cresce!",
+  "pw.pack.hiding.one": "Manca ancora {n} cane: continua a studiare per trovarlo!",
+  "pw.pack.hiding.few": "Mancano ancora {n} cani: continua a studiare per trovarli!",
+  "pw.pack.hiding.many": "Mancano ancora {n} cani: continua a studiare per trovarli!",
+  "pw.pack.all": "Hai trovato tutti i cani! 🏆",
 };

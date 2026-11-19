@@ -1288,4 +1288,12 @@ export default {
   "pw.friends.f3": "Missions d'équipe et tope-là",
   "pw.shop.title": "Offres du jour",
   "pw.live.note2": "Mets autant de chiens que tu veux sur chaque écran. Ton favori vit toujours sur Accueil.",
+  "pw.pack.label": "Ta meute",
+  "pw.pack.title.one": "{n} chien, et ça grandit !",
+  "pw.pack.title.few": "{n} chiens, et ça grandit !",
+  "pw.pack.title.many": "{n} chiens, et ça grandit !",
+  "pw.pack.hiding.one": "{n} chien se cache encore — continue à réviser pour le trouver !",
+  "pw.pack.hiding.few": "{n} chiens se cachent encore — continue à réviser pour les trouver !",
+  "pw.pack.hiding.many": "{n} chiens se cachent encore — continue à réviser pour les trouver !",
+  "pw.pack.all": "Tu as trouvé tous les chiens ! 🏆",
 };
