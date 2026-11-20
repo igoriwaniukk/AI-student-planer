@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import PugWorldCard, { HomeMissions } from '../components/pugWorld/PugWorldCard';
 import ScreenPets from '../components/pugWorld/ScreenPets';
+import { CoinPill } from '../components/pugWorld/bits';
+import { openPugWorld } from '../lib/pugWorld/events';
 import { REFERENCE_DAY, NUM_TODAY, realDateForNum } from '../lib/plannerData';
-import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, planFor, draftFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, bestStreak, studiedToday, dayInfo, upcomingExams, formatMonthDay, weekdayOn, taskDueOnDay, isTaskOn, offTrackReason, fmt, todoTimeLabel } from '../lib/plannerLogic';
+import { span, hm, zad, pluralForm, taskShortLabel, daysPill, sessionClock, dayOpenTasks, planFor, draftFor, daySessionBreakdown, weekStats, finishedOnDay, localDateKey, computeStreak, bestStreak, studiedToday, dayInfo, upcomingExams, weekdayOn, taskDueOnDay, isTaskOn, offTrackReason, fmt, todoTimeLabel } from '../lib/plannerLogic';
 import { dailyTip } from '../lib/dailyTip';
 import { OPEN_CHAT_EVENT } from '../lib/chatContext';
 import { usePremium, openPaywall } from '../lib/premium';
@@ -143,9 +145,9 @@ function StreakCard({ streak, best, doneToday, selectedDay, onSelectDay, eventDa
   const freezes = rewards?.freezes || 0;
   const progress = rewards?.progress || 0;
   return (
-    // data-perch: the little dogs (ScreenPets) stand only on the right part
-    // of this card's edge, clear of the greeting text above it.
-    <div data-perch="0.55-1" style={{
+    // No data-perch: little dogs standing on this card would cover the stats
+    // bar above it, so they stand on the cards further down instead.
+    <div style={{
       marginTop: 14, padding: '16px 14px 10px', borderRadius: 22,
       border: isPremium ? '1px solid rgba(245,196,81,.55)' : '1px solid rgba(255,255,255,.07)',
       boxShadow: isPremium ? '0 0 26px rgba(245,196,81,.16)' : 'none',
@@ -639,13 +641,46 @@ function TipCard({ state, streak, doneToday }) {
   );
 }
 
+// The top of Home (Duolingo-style): your photo on the left (→ Profile) and
+// small counters on the right — streak (grey flame until today's session is
+// done), streak freezes, and with the dog game your coins (→ Shop) and dogs
+// (→ My dogs).
+function StatsBar({ profilePhoto, initials, onProfile, streak, doneToday, freezes, pw }) {
+  const game = pw?.enabled && pw.started;
+  const pill = (color, extra) => ({ height: 32, padding: '0 11px', borderRadius: 99, display: 'flex', alignItems: 'center', gap: 5, fontSize: 14, fontWeight: 800, color, background: 'rgba(255,255,255,.06)', border: '1px solid rgba(255,255,255,.09)', flex: 'none', ...extra });
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+      <div
+        onClick={onProfile}
+        style={{
+          width: 38, height: 38, borderRadius: '50%', overflow: 'hidden', cursor: 'pointer', flex: 'none',
+          background: profilePhoto ? `center/cover no-repeat url(${profilePhoto})` : 'linear-gradient(150deg,#8b6dff,#6d4dff)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, letterSpacing: '.02em',
+        }}
+      >
+        {!profilePhoto && initials}
+      </div>
+      <div style={{ flex: 1 }} />
+      <div style={pill(doneToday || streak > 0 ? '#ffb54a' : '#8a8a99')}>
+        <span style={{ fontSize: 15, filter: doneToday ? 'none' : 'grayscale(1)', opacity: doneToday ? 1 : 0.7 }}>🔥</span>{streak}
+      </div>
+      <div style={pill('#9fd0ff')}><span style={{ fontSize: 14 }}>🧊</span>{freezes}</div>
+      {game && <div onClick={() => openPugWorld('shop')} style={{ cursor: 'pointer' }}><CoinPill n={pw.state.coins} /></div>}
+      {game && (
+        <div onClick={() => openPugWorld()} style={pill('#ff9fb8', { cursor: 'pointer' })}>
+          <span style={{ fontSize: 15 }}>🐶</span>{Object.keys(pw.state.dogs).length}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Home({ planner, studentName, profilePhoto, studyHistory = {}, streakRewards = null, pugWorld = null }) {
   const { t } = useLang();
   const { state } = planner;
   const [viewDay, setViewDay] = useState(NUM_TODAY);
   const info = dayInfo(viewDay);
   const isRealDay = viewDay === NUM_TODAY;
-  const dateLong = t('home.dateLong', { day: t(DAY_KEY[info.label]) || info.label, date: formatMonthDay(viewDay, { year: true }) });
   const parts = (studentName || 'Ty').trim().split(/\s+/);
   const initials = parts.map((p) => p[0]).join('').slice(0, 2).toUpperCase();
 
@@ -688,28 +723,10 @@ export default function Home({ planner, studentName, profilePhoto, studyHistory 
   return (
     <>
       <div className="sc" style={{ height: '100%', overflowY: 'auto', padding: '20px 20px 108px', position: 'relative', zIndex: 1 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-        <div>
-          <div style={{ fontSize: 12.5, color: '#8a8a99', letterSpacing: '.01em' }}>{dateLong}</div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
-            <div style={{ fontSize: 28, fontWeight: 750, letterSpacing: '-.02em' }}>{t('home.greeting', { name: parts[0] })}</div>
-            <span style={{ fontSize: 22, display: 'inline-block', transformOrigin: '70% 70%', animation: 'handWave 3.2s ease-in-out infinite' }}>👋</span>
-          </div>
-          <div style={{ fontSize: 13.5, color: '#8a8a99', marginTop: 6 }}>{t('home.subtitle')}</div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 4 }}>
-          <div
-            onClick={() => planner.go('profile')}
-            style={{
-              width: 38, height: 38, borderRadius: '50%', overflow: 'hidden', cursor: 'pointer',
-              background: profilePhoto ? `center/cover no-repeat url(${profilePhoto})` : 'linear-gradient(150deg,#8b6dff,#6d4dff)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, letterSpacing: '.02em',
-            }}
-          >
-            {!profilePhoto && initials}
-          </div>
-        </div>
-      </div>
+      <StatsBar
+        profilePhoto={profilePhoto} initials={initials} onProfile={() => planner.go('profile')}
+        streak={streak} doneToday={doneToday} freezes={streakRewards?.freezes || 0} pw={pugWorld}
+      />
 
       <StreakCard
         streak={streak} best={Math.max(streak, bestStreak(studyHistory))} doneToday={doneToday} selectedDay={viewDay} onSelectDay={setViewDay} eventDays={new Set(upcoming.map((e) => e.day))}
