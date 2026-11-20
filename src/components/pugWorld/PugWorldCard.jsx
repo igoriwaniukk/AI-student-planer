@@ -149,13 +149,16 @@ function EarnedChestOpen({ pw, id }) {
     return () => pw.setShowingChest(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+  // Done / ✕: off the queue and off the screen (showingChest keeps it up
+  // while it opens, so it has to be cleared here too, or it stays).
+  const close = () => { pw.dequeue(id); pw.setShowingChest(null); };
   const banner = FROM_KEY[from] ? (
     <div style={{ fontSize: 12, fontWeight: 900, letterSpacing: '.12em', color: '#fff', padding: '6px 12px', borderRadius: 99, background: 'rgba(0,0,0,.16)' }}>{t(FROM_KEY[from]).toUpperCase()}</div>
   ) : null;
   return (
     <AppShellPortal>
       <div style={{ position: 'absolute', inset: 0, zIndex: 120 }}>
-        <ChestOpen pw={pw} chestId={id} banner={banner} track={false} onClose={() => pw.dequeue(id)} />
+        <ChestOpen pw={pw} chestId={id} banner={banner} track={false} onClose={close} />
       </div>
     </AppShellPortal>
   );
