@@ -195,7 +195,7 @@ export default function Settings({ planner, studentName, profilePhoto, email, st
         <Row first title={t('settings.privacyPolicy')} nav onClick={() => setInfoSheet('privacy')} />
         <Row title={t('settings.termsOfService')} nav onClick={() => setInfoSheet('terms')} />
         <Row title={t('settings.versionLabel')} value={APP_VERSION} onClick={tapVersion} />
-        {pugOn && <Row title={'🐶 ' + t('pw.title')} sub={PUG_LAUNCHED ? undefined : t('pw.previewOn')} nav onClick={() => openPugWorld()} />}
+        {pugOn && !PUG_LAUNCHED && <Row title={'🐶 ' + t('pw.title')} sub={t('pw.previewOn')} nav onClick={() => openPugWorld()} />}
       </Group>
 
       <Label>{t('settings.account')}</Label>
