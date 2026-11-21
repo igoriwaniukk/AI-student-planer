@@ -1,12 +1,9 @@
 import { useLang } from '../../lib/useLang';
-import { MISSION_COINS } from '../../lib/pugWorld/logic.js';
-import { missionProgress } from './missionUtil';
-import { CoinIcon } from './icons';
+import { missionProgress, missionLabel, MISSION_ICON, MISSION_TINT } from './missionUtil';
+import ChestIcon from './Chest';
 
 // Shared by the Home card and the Missions page: one daily mission with a
-// thick progress bar ("1 / 2" inside), and the hours until they reset.
-const MISSION_ICON = { session: '📖', session2: '📚', chest: '🎁', chest2: '🎁', dress: '👕', plan: '🗓️', trick: '✨', album: '📒' };
-const MISSION_TINT = { session: '#2ee6c5', session2: '#2ee6c5', chest: '#f5a524', chest2: '#f5a524', dress: '#ff7eb6', plan: '#a58cff', trick: '#ffd166', album: '#5aa9ff' };
+// thick progress bar ("1 / 2" inside) and the chest it gives at the end.
 
 export function ThickBar({ pct, done, height = 18, label }) {
   return (
@@ -29,10 +26,10 @@ export function MissionRow({ state, m, big = false }) {
       <div style={{ width: size, height: size, borderRadius: 12, background: tint + '22', display: 'grid', placeItems: 'center', fontSize: big ? 20 : 16, flex: 'none' }}>{MISSION_ICON[m.id] || '⭐'}</div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: big ? 15 : 13.5, fontWeight: 700, marginBottom: big ? 8 : 6, color: m.done ? '#a3a3b3' : '#f4f4f7' }}>{t('pw.mission.' + m.id)}</div>
-        <ThickBar pct={(have / n) * 100} done={m.done} height={big ? 20 : 16} label={(m.done ? '✓ ' : '') + have + ' / ' + n} />
+        <ThickBar pct={(have / n) * 100} done={m.done} height={big ? 20 : 16} label={(m.done ? '✓ ' : '') + missionLabel(m.id, have, n)} />
       </div>
-      <span data-mission-chip={m.id} style={{ flex: 'none', display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 12, fontWeight: 800, color: m.done ? '#7fe3ad' : '#ffd27a', padding: '4px 9px', borderRadius: 99, background: m.done ? 'rgba(53,208,127,.1)' : 'rgba(245,165,36,.12)', border: `1px solid ${m.done ? 'rgba(53,208,127,.3)' : 'rgba(245,165,36,.3)'}` }}>
-        <CoinIcon size={13} />+{MISSION_COINS}
+      <span data-mission-chip={m.id} style={{ flex: 'none', width: big ? 44 : 38, display: 'grid', placeItems: 'center', opacity: m.done ? 0.55 : 1 }}>
+        <ChestIcon type="small" size={big ? 40 : 34} open={m.done} />
       </span>
     </div>
   );

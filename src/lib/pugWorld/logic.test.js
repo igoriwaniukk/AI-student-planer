@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { DOGS, STARTERS, RARITIES, BREED_IDS } from './catalog';
 import {
   EMPTY, normalize, CHEST_ODDS, CHEST_CONTENTS, rollRarity, addDog, openChest, addChest, dogPower, collectionScore, coinBonus,
-  missionsFor, ensureDay, bumpMission, claimCalendar, canClaimCalendar, shopOffers, buyOutfit, buyChest, toggleOutfit,
+  missionsFor, ensureDay, bumpMission, onTaskDone, claimCalendar, canClaimCalendar, shopOffers, buyOutfit, buyChest, toggleOutfit,
   onSession, onPlan, onDayFinished, monthlyFor, MONTHLY_TARGET, dogsOn, placesOf, togglePlace, rollUpgrade, setChestType, buySet, setPrice, wearSet, fullSetOn, onStreak, onPremiumDay, chooseStarter, completedSets, breedDogs,
 } from './logic';
 
@@ -95,17 +95,28 @@ describe('daily', () => {
     const m = missionsFor('2026-11-13');
     expect(m).toHaveLength(3);
     expect(new Set(m).size).toBe(3);
-    expect(m[0]).toMatch(/^session/);
+    expect(m[0]).toMatch(/^(session|min)/);
     expect(missionsFor('2026-11-13')).toEqual(m);
   });
-  it('missions pay coins and all 3 give a silver chest', () => {
+  it('each mission gives a small chest and all 3 give a silver chest', () => {
     let s = ensureDay(EMPTY, '2026-11-13');
     s = { ...s, missions: { ...s.missions, items: [{ id: 'session', done: false }, { id: 'chest', done: false }, { id: 'dress', done: false }] } };
     s = bumpMission(s, 'session'); s = bumpMission(s, 'chest');
-    expect(s.coins).toBe(30);
+    expect(s.coins).toBe(0);
+    expect(s.chests.filter((c) => c.from === 'mission' && c.type === 'small')).toHaveLength(2);
     s = bumpMission(s, 'dress');
     expect(s.missions.bonus).toBe(true);
     expect(s.chests.at(-1)).toMatchObject({ type: 'silver', from: 'missions' });
+  });
+  it('minutes and tasks: a session counts its minutes and as a task; a to-do counts once a day', () => {
+    let s = ensureDay(EMPTY, '2026-11-13');
+    s = { ...s, missions: { ...s.missions, items: [{ id: 'min45', done: false }, { id: 'task3', done: false }, { id: 'trick', done: false }] } };
+    s = onSession(s, 'c1', null, 30);
+    expect(s.missions.counts).toMatchObject({ minutes: 30, task: 1, session: 1 });
+    s = onTaskDone(s, 'todo-a'); s = onTaskDone(s, 'todo-a');
+    expect(s.missions.counts.task).toBe(2);
+    s = onSession(s, 'c2', null, 20);
+    expect(s.missions.items.filter((m) => m.done).map((m) => m.id)).toEqual(['min45', 'task3']);
   });
   it('calendar: once a day, day 7 is a gold chest, missing a day never resets', () => {
     let s = EMPTY;

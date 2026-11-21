@@ -1318,4 +1318,11 @@ export default {
   "onb.a.prefEveningSub": "Früh fertig und ausruhen",
   "onb.a.prefHardSub": "Das Schwerste zuerst",
   "onb.a.prefBreaksSub": "Kürzere Einheiten, mehr Pausen",
+    'pw.mission.min30': "Lerne 30 Minuten",
+    'pw.mission.min45': "Lerne 45 Minuten",
+    'pw.mission.task': "Hake eine Aufgabe ab",
+    'pw.mission.task3': "Hake 3 Aufgaben ab",
+    'pw.mp.progress': "Missionsfortschritt!",
+    'pw.mp.open': "Truhe öffnen",
+    'pw.mp.continue': "Weiter",
 };

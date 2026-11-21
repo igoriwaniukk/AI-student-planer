@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { KEYS, STORAGE_CHANGED_EVENT } from '../lib/store';
 import { localDateKey } from '../lib/plannerLogic';
 import { SESSION_DONE_EVENT } from '../lib/streakRewards';
-import { PLAN_DONE_EVENT, DAY_DONE_EVENT, PUG_OPEN_EVENT, PUG_PREVIEW_EVENT, pugPreviewOn } from '../lib/pugWorld/events';
-import { EMPTY, normalize, ensureDay, chestId, onSession, onPlan, onDayFinished, onStreak, onPremiumDay } from '../lib/pugWorld/logic';
+import { PLAN_DONE_EVENT, DAY_DONE_EVENT, PUG_OPEN_EVENT, PUG_PREVIEW_EVENT, TASK_DONE_EVENT, pugPreviewOn } from '../lib/pugWorld/events';
+import { EMPTY, normalize, ensureDay, chestId, onSession, onTaskDone, onPlan, onDayFinished, onStreak, onPremiumDay, monthlyFor } from '../lib/pugWorld/logic';
 
 // Owns Pug World's state (KEYS.pugWorld, synced like the rest). Mounted once
 // in MainApp. Studying feeds the game: a finished session, an approved plan,
@@ -32,6 +32,7 @@ export function usePugWorld({ streak, isPremium, freezeRoom = true, addFreeze, o
   const openRequest = useRef(onOpenRequest);
   useEffect(() => { openRequest.current = onOpenRequest; });
   const [toast, setToast] = useState(null);
+  const sessionPending = useRef(false);
   const update = useCallback((fn) => setStored((s) => fn(normalize(s || EMPTY))), [setStored]);
 
   useEffect(() => {
@@ -50,14 +51,22 @@ export function usePugWorld({ streak, isPremium, freezeRoom = true, addFreeze, o
 
   useEffect(() => {
     if (!enabled) return undefined;
-    const session = () => { const id = chestId(); update((s) => onSession(s, id, localDateKey().slice(0, 7))); setToast({ at: Date.now(), chest: id }); };
+    const session = (e) => {
+      const id = chestId();
+      sessionPending.current = true;
+      update((s) => onSession(s, id, localDateKey().slice(0, 7), e?.detail?.minutes || 0));
+      setToast({ at: Date.now(), chest: id });
+    };
+    const task = (e) => { if (e?.detail?.key) update((s) => onTaskDone(s, e.detail.key)); };
     const plan = () => update((s) => onPlan(s, localDateKey()));
     const day = () => update((s) => onDayFinished(s, localDateKey()));
     window.addEventListener(SESSION_DONE_EVENT, session);
+    window.addEventListener(TASK_DONE_EVENT, task);
     window.addEventListener(PLAN_DONE_EVENT, plan);
     window.addEventListener(DAY_DONE_EVENT, day);
     return () => {
       window.removeEventListener(SESSION_DONE_EVENT, session);
+      window.removeEventListener(TASK_DONE_EVENT, task);
       window.removeEventListener(PLAN_DONE_EVENT, plan);
       window.removeEventListener(DAY_DONE_EVENT, day);
     };
@@ -130,24 +139,44 @@ export function usePugWorld({ streak, isPremium, freezeRoom = true, addFreeze, o
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, started]);
 
-  // Reward animation (RewardFx): coins gained (not while a chest is being
-  // opened — it shows its own coins) and missions just finished.
-  const [fx, setFx] = useState(null);
-  const prevReward = useRef(null);
-  const doneIds = (state.missions.items || []).filter((m) => m.done).map((m) => m.id);
-  const doneKey = state.missions.date + ':' + doneIds.join(',');
+  // The mission progress screen (MissionProgress): after every finished
+  // session, and whenever a mission gets finished, today's missions before
+  // → after (and the monthly challenge after a session). Shown before the
+  // chests it earned open.
+  const [progress, setProgress] = useState(null);
+  const prevMissions = useRef(null);
+  const month = today.slice(0, 7);
+  const monthSessions = monthlyFor(state, month).sessions;
+  const missionsKey = state.missions.date + ':' + JSON.stringify(state.missions.counts) + ':' + (state.missions.items || []).map((m) => m.id + (m.done ? '1' : '0')).join(',') + ':' + monthSessions;
   useEffect(() => {
-    const prev = prevReward.current;
-    prevReward.current = { coins: state.coins, date: state.missions.date, done: doneIds };
-    if (!prev || !enabled || !started) return;
-    const hold = busy > 0 || !!toast || queue.length > 0 || !!showingChest;
-    const gained = state.coins - prev.coins;
-    const newly = prev.date === state.missions.date ? doneIds.filter((id) => !prev.done.includes(id)) : [];
-    const coins = hold ? 0 : Math.max(0, gained);
+    const prev = prevMissions.current;
+    const cur = { date: state.missions.date, counts: state.missions.counts, items: state.missions.items || [], monthly: monthSessions, month };
+    prevMissions.current = cur;
+    const fromSession = sessionPending.current;
+    sessionPending.current = false;
+    if (!prev || !enabled || !started || prev.date !== cur.date || !cur.items.length) return;
+    const newly = cur.items.some((m) => m.done && !prev.items.find((p) => p.id === m.id)?.done);
+    if (!fromSession && !newly) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (coins > 0 || newly.length) setFx({ at: Date.now(), coins, mission: newly[0] || null, hold });
+    setProgress((p) => (p ? { ...p, to: cur, session: p.session || fromSession } : { at: Date.now(), from: prev, to: cur, session: fromSession }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state.coins, doneKey]);
+  }, [missionsKey]);
+
+  // Coin animation (RewardFx) for coins gained outside a chest (daily
+  // reward, an approved plan…), not while a chest or the progress screen
+  // is showing (they show their own rewards).
+  const [fx, setFx] = useState(null);
+  const prevCoins = useRef(null);
+  useEffect(() => {
+    const prev = prevCoins.current;
+    prevCoins.current = state.coins;
+    if (prev == null || !enabled || !started) return;
+    const hold = busy > 0 || !!toast || queue.length > 0 || !!showingChest || !!progress || sessionPending.current;
+    const coins = hold ? 0 : Math.max(0, state.coins - prev);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (coins > 0) setFx({ at: Date.now(), coins });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.coins]);
 
   return {
     enabled,
@@ -161,6 +190,8 @@ export function usePugWorld({ streak, isPremium, freezeRoom = true, addFreeze, o
     setShowingChest,
     fx,
     clearFx: () => setFx(null),
+    progress,
+    clearProgress: () => setProgress(null),
     freezeRoom,
     addFreeze: () => addFreeze?.(),
     update,

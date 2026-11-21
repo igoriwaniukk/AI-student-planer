@@ -1318,4 +1318,11 @@ export default {
   "onb.a.prefEveningSub": "Termina pronto y descansa",
   "onb.a.prefHardSub": "Lo más difícil primero",
   "onb.a.prefBreaksSub": "Sesiones cortas, más descansos",
+    'pw.mission.min30': "Estudia 30 minutos",
+    'pw.mission.min45': "Estudia 45 minutos",
+    'pw.mission.task': "Completa una tarea",
+    'pw.mission.task3': "Completa 3 tareas",
+    'pw.mp.progress': "¡Progreso de misiones!",
+    'pw.mp.open': "Abrir cofre",
+    'pw.mp.continue': "Continuar",
 };

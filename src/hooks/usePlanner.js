@@ -12,6 +12,7 @@ import { requestAIPrep, toPrepCards } from '../lib/aiPrep';
 import { requestAIRescue } from '../lib/aiRescue';
 import { WIN_EVENT } from '../lib/premium';
 import { SESSION_DONE_EVENT } from '../lib/streakRewards';
+import { TASK_DONE_EVENT } from '../lib/pugWorld/events';
 import { PLAN_DONE_EVENT, DAY_DONE_EVENT } from '../lib/pugWorld/events';
 
 // The only slice of usePlanner's state that survives a reload / syncs across
@@ -430,6 +431,12 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
   }
 
   function toggleTask(id, dayNum) {
+    // A to-do being ticked off counts for the dog game's task missions.
+    const cur = def(id, state);
+    if (cur?.category === 'personal') {
+      const dn = dayNum != null ? dayNum : dayNumOf(state);
+      if (!isTaskOn(state.tasks, cur, dn)) window.dispatchEvent(new CustomEvent(TASK_DONE_EVENT, { detail: { key: taskKey(cur, dn) } }));
+    }
     update((s) => {
       const d = def(id, s);
       if (!d) return {};
@@ -667,7 +674,7 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
     // that merge keeps `completed` sticky once true — Finish day can't un-set
     // it either, even on a day where not everything planned got finished.
     recordStudyDay?.({ completed: true });
-    window.dispatchEvent(new Event(SESSION_DONE_EVENT));
+    window.dispatchEvent(new CustomEvent(SESSION_DONE_EVENT, { detail: { id: state.finishTask, minutes: state.finishDur || 0 } }));
     window.dispatchEvent(new Event(WIN_EVENT));
   }
 
@@ -687,7 +694,8 @@ export function usePlanner(defaults, activities, recurringActivities, persisted,
       };
     });
     recordStudyDay?.({ completed: true });
-    window.dispatchEvent(new Event(SESSION_DONE_EVENT));
+    const mins = minutes ?? (planFor(state, NUM_TODAY)?.[id]?.dur || def(id, state)?.dur || 30);
+    window.dispatchEvent(new CustomEvent(SESSION_DONE_EVENT, { detail: { id, minutes: mins } }));
   }
 
   // ---- block edit (plan screen, manual mode) ----

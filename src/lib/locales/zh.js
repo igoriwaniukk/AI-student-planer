@@ -1318,4 +1318,11 @@ export default {
   "onb.a.prefEveningSub": "早点结束好好休息",
   "onb.a.prefHardSub": "最难的先做",
   "onb.a.prefBreaksSub": "更短的学习，更多休息",
+    'pw.mission.min30': "学习 30 分钟",
+    'pw.mission.min45': "学习 45 分钟",
+    'pw.mission.task': "完成一项任务",
+    'pw.mission.task3': "完成 3 项任务",
+    'pw.mp.progress': "任务进度！",
+    'pw.mp.open': "打开宝箱",
+    'pw.mp.continue': "继续",
 };

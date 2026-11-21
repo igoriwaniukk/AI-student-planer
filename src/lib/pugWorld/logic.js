@@ -4,7 +4,7 @@ import { DOGS, DOG_BY_ID, BREED_IDS, RARITIES, OUTFITS, OUTFIT_BY_ID, OUTFIT_SET
 // is one object kept under KEYS.pugWorld (see hooks/usePugWorld.js):
 //   dogs: { [dogId]: { copies, level } }   favorite, coins
 //   chests: [{ id, type, from }]           outfits: { owned: [], worn: { [dogId]: { head, face, neck } } }
-//   calendar: { day, last }                missions: { date, items: [{ id, done }], counts, bonus }
+//   calendar: { day, last }                missions: { date, items: [{ id, done }], counts, bonus, seen }
 //   shop: { date, bought: [] }             sets: [breed]   rewarded: { streaks: [], days: [] }
 //   monthly: { month, sessions, done }     homes: { [dogId]: [place] } | null (= never chosen)
 
@@ -194,16 +194,20 @@ function seeded(str) {
   for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
   return () => { h = Math.imul(h ^ (h >>> 15), 2246822507); h = Math.imul(h ^ (h >>> 13), 3266489909); h ^= h >>> 16; return (h >>> 0) / 4294967296; };
 }
-// id → [event that counts, how many]
+// id → [event that counts, how many]. 'minutes' counts minutes studied;
+// 'task' = a study session finished or a to-do ticked off (each once a day).
 export const MISSIONS = {
-  session: ['session', 1], session2: ['session', 2], chest: ['chest', 1], chest2: ['chest', 2],
-  dress: ['dress', 1], plan: ['plan', 1], trick: ['trick', 1], album: ['album', 1],
+  session: ['session', 1], session2: ['session', 2], min30: ['minutes', 30], min45: ['minutes', 45],
+  chest: ['chest', 1], chest2: ['chest', 2], dress: ['dress', 1], plan: ['plan', 1], trick: ['trick', 1], album: ['album', 1],
+  task: ['task', 1], task3: ['task', 3],
 };
-export const MISSION_COINS = 15;
+// Every finished mission gives a small chest (all 3: a silver one on top).
+export const MISSION_CHEST = 'small';
 export function missionsFor(date) {
   const rng = seeded('m' + date);
-  const study = rng() < 0.5 ? 'session' : 'session2';
-  const pool = ['chest', 'chest2', 'dress', 'plan', 'trick', 'album'];
+  const studyPool = ['session', 'session2', 'min30', 'min45'];
+  const study = studyPool[Math.floor(rng() * studyPool.length)];
+  const pool = ['chest', 'chest2', 'dress', 'plan', 'trick', 'album', 'task', 'task3'];
   const a = pool.splice(Math.floor(rng() * pool.length), 1)[0];
   const others = pool.filter((p) => MISSIONS[p][0] !== MISSIONS[a][0]);
   const b = others[Math.floor(rng() * others.length)];
@@ -212,23 +216,28 @@ export function missionsFor(date) {
 export function ensureDay(state, date) {
   const s = normalize(state);
   let next = s;
-  if (s.missions.date !== date) next = { ...next, missions: { date, items: missionsFor(date).map((id) => ({ id, done: false })), counts: {}, bonus: false } };
+  if (s.missions.date !== date) next = { ...next, missions: { date, items: missionsFor(date).map((id) => ({ id, done: false })), counts: {}, bonus: false, seen: [] } };
   if (s.shop.date !== date) next = { ...next, shop: { date, bought: [] } };
   return next;
 }
-// Counts an event (session, chest, dress, plan, trick, album) towards
-// today's missions: coins per finished mission, a silver chest for all 3.
-export function bumpMission(state, event) {
+// Counts an event (session, minutes, task, chest, dress, plan, trick, album)
+// towards today's missions: a small chest per finished mission, a silver
+// one for all 3. `amount` = how much it counts (minutes); `key`, when given,
+// counts only once a day (the same to-do ticked, unticked and ticked again).
+export function bumpMission(state, event, amount = 1, key = null) {
   const s = normalize(state);
-  if (!s.missions.date) return s;
-  const counts = { ...s.missions.counts, [event]: (s.missions.counts[event] || 0) + 1 };
-  let coins = 0;
+  if (!s.missions.date || !(amount > 0)) return s;
+  const seen = s.missions.seen || [];
+  if (key != null && seen.includes(key)) return s;
+  const counts = { ...s.missions.counts, [event]: (s.missions.counts[event] || 0) + amount };
+  const won = [];
   const items = s.missions.items.map((m) => {
     const [ev, n] = MISSIONS[m.id] || [];
-    if (!m.done && ev === event && counts[event] >= n) { coins += MISSION_COINS; return { ...m, done: true }; }
+    if (!m.done && ev === event && counts[event] >= n) { won.push(m.id); return { ...m, done: true }; }
     return m;
   });
-  let next = { ...s, coins: s.coins + coins, missions: { ...s.missions, counts, items } };
+  let next = { ...s, missions: { ...s.missions, counts, items, ...(key != null ? { seen: seen.concat(key) } : {}) } };
+  won.forEach(() => { next = addChest(next, MISSION_CHEST, 'mission'); });
   if (!next.missions.bonus && items.length && items.every((m) => m.done)) {
     next = { ...next, missions: { ...next.missions, bonus: true }, chests: next.chests.concat({ id: chestId(), type: 'silver', from: 'missions' }) };
   }
@@ -321,9 +330,14 @@ export const STREAK_CHESTS = [3, 7, 14, 30, 50, 100];
 
 // `id`: the new chest's id, so the app can open exactly that one;
 // `month` ('2026-11'): counts towards the monthly challenge.
-export function onSession(state, id, month) {
-  const s = bumpMission(addCoins(addChest(state, 'small', 'session', id), SESSION_COINS), 'session');
+export function onSession(state, id, month, minutes = 0) {
+  let s = bumpMission(addCoins(addChest(state, 'small', 'session', id), SESSION_COINS), 'session');
+  s = bumpMission(bumpMission(s, 'minutes', Math.round(minutes) || 0), 'task', 1, 'session:' + id);
   return month ? countMonthly(s, month) : s;
+}
+// A to-do ticked off (counted once a day per to-do).
+export function onTaskDone(state, key) {
+  return bumpMission(state, 'task', 1, 'todo:' + key);
 }
 
 // ---------- monthly challenge ----------

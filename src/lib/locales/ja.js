@@ -1318,4 +1318,11 @@ export default {
   "onb.a.prefEveningSub": "早めに終わって休む",
   "onb.a.prefHardSub": "いちばん難しい教科から",
   "onb.a.prefBreaksSub": "短めの勉強、休けい多め",
+    'pw.mission.min30': "30分勉強する",
+    'pw.mission.min45': "45分勉強する",
+    'pw.mission.task': "タスクを1つ完了",
+    'pw.mission.task3': "タスクを3つ完了",
+    'pw.mp.progress': "ミッション進行中！",
+    'pw.mp.open': "宝箱を開ける",
+    'pw.mp.continue': "続ける",
 };
