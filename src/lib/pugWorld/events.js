@@ -1,8 +1,11 @@
 // Signals between the planner and Pug World (see hooks/usePugWorld.js).
-// A finished session uses SESSION_DONE_EVENT from streakRewards.js.
+// A finished session uses SESSION_DONE_EVENT from streakRewards.js
+// (detail { id, minutes }).
 export const PLAN_DONE_EVENT = 'pulgo-plan-approved';
 export const DAY_DONE_EVENT = 'pulgo-day-finished';
 export const PUG_OPEN_EVENT = 'pulgo-open-pugworld';
+// A to-do ticked off: detail { key } (counts for the "tick off tasks" missions).
+export const TASK_DONE_EVENT = 'pulgo-task-done';
 
 // The dog game is launched: on for everyone (PUG_LAUNCHED). Settings → tap
 // the Version row 7 times still switches it off / on for this device (kept

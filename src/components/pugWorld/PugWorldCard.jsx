@@ -112,7 +112,7 @@ function SpeechBubble({ children }) {
 // the game is started: a small "+1 chest" message at the top instead.
 export function SessionReward({ pw, ready }) {
   const { t } = useLang();
-  if (!pw?.enabled || !pw.toast || !ready) return null;
+  if (!pw?.enabled || !pw.toast || !ready || pw.progress) return null;
   // The chest this session added (remembered in the toast, so it stays put
   // while it opens and leaves the list).
   const chestId = pw.toast.chest;
@@ -137,7 +137,7 @@ export function SessionReward({ pw, ready }) {
 export function EarnedChest({ pw, ready }) {
   const exists = (id) => pw?.state.chests.some((c) => c.id === id);
   // (and after a coin animation that's playing, so they don't overlap)
-  const id = pw?.showingChest || (pw?.enabled && pw.started && ready && !pw.toast && !pw.busy && !pw.fx ? pw.queue.find(exists) : null);
+  const id = pw?.showingChest || (pw?.enabled && pw.started && ready && !pw.toast && !pw.busy && !pw.fx && !pw.progress ? pw.queue.find(exists) : null);
   if (!id) return null;
   return <EarnedChestOpen key={id} pw={pw} id={id} />;
 }
