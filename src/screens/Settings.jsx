@@ -11,7 +11,7 @@ import { useLang } from '../lib/useLang';
 import { useCustomReminders, resetAppData } from '../lib/store';
 import { usePushNotifications } from '../hooks/usePushNotifications';
 import { BackButton, BottomSheet, Toggle } from '../components/ui';
-import { pugPreviewOn, setPugPreview, openPugWorld } from '../lib/pugWorld/events';
+import { pugPreviewOn, setPugPreview, openPugWorld, PUG_LAUNCHED } from '../lib/pugWorld/events';
 import { usePremium, openPaywall, restorePremium, canBuyHere, MANAGE_SUBSCRIPTION_URL } from '../lib/premium';
 
 function Label({ children }) {
@@ -91,7 +91,7 @@ export default function Settings({ planner, studentName, profilePhoto, email, st
   const [reminders] = useCustomReminders();
   const [page, setPage] = useState(null);
   const [confirming, setConfirming] = useState(null);
-  // Hidden switch for Pug World while it isn't launched: tap Version 7 times.
+  // Hidden per-device switch for the dog game: tap Version 7 times.
   const [pugOn, setPugOn] = useState(pugPreviewOn);
   const versionTaps = useRef({ n: 0, at: 0 });
   const tapVersion = () => {
@@ -195,7 +195,7 @@ export default function Settings({ planner, studentName, profilePhoto, email, st
         <Row first title={t('settings.privacyPolicy')} nav onClick={() => setInfoSheet('privacy')} />
         <Row title={t('settings.termsOfService')} nav onClick={() => setInfoSheet('terms')} />
         <Row title={t('settings.versionLabel')} value={APP_VERSION} onClick={tapVersion} />
-        {pugOn && <Row title={'🐶 ' + t('pw.title')} sub={t('pw.previewOn')} nav onClick={() => openPugWorld()} />}
+        {pugOn && <Row title={'🐶 ' + t('pw.title')} sub={PUG_LAUNCHED ? undefined : t('pw.previewOn')} nav onClick={() => openPugWorld()} />}
       </Group>
 
       <Label>{t('settings.account')}</Label>
